@@ -10,7 +10,7 @@ function scaleParam(text) {
         "方图": { height: 1024, width: 1024 }
     };
 
-    let parameters = null;
+    let parameters = { height: 1024, width: 1024 };
 
     Object.entries(scale).forEach(([size, dimensions]) => {
         if (text.includes(size)) {
@@ -18,10 +18,9 @@ function scaleParam(text) {
             text = text.replace(new RegExp(size, 'g'), '');
         }
     });
-    let [width, height] = [1024, 1024]
     const result = /(\d{2,7})[\*×](\d{2,7})/.exec(text);
     if (result) {
-        [width, height] = [Math.floor(Number(result[1]) / 64) * 64, Math.floor(Number(result[2]) / 64) * 64];
+        let [width, height] = [Math.floor(Number(result[1]) / 64) * 64, Math.floor(Number(result[2]) / 64) * 64];
 
         const FLUXDEV_c = new FLUXDEV();
         const config_this = FLUXDEV_c.get_config_this()
@@ -32,7 +31,7 @@ function scaleParam(text) {
             height -= height > 64 ? 64 : 0;
         }
 
-        parameters = { height, width };
+        parameters = { height: height, width: width };
         text = text.replace(/(\d{2,7})[\*×](\d{2,7})/g, '');
     }
 
