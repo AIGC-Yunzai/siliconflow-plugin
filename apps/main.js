@@ -148,7 +148,7 @@ export class FLUXDEV extends plugin {
             if (data?.images?.[0]?.url) {
                 const imageUrl = data.images[0].url
 
-                const strs = `图片生成完成：
+                const strs = `${canImg2Img ? "图生图" : "文生图"}完成：
 原始提示词：${userPrompt}
 最终提示词：${finalPrompt}
 负面提示词：${param.parameters.negative_prompt ? param.parameters.negative_prompt : "sf默认"}
@@ -159,7 +159,7 @@ export class FLUXDEV extends plugin {
 生成时间：${data.timings.inference.toFixed(2)}秒
 种子：${data.seed}`
 
-                const msgx = await common.makeForwardMsg(e, strs, `图片生成完成：${userPrompt}`)
+                const msgx = await common.makeForwardMsg(e, strs, `${canImg2Img ? "图生图" : "文生图"}：${userPrompt}`)
                 this.reply(msgx)
 
                 this.reply(segment.image(imageUrl))
