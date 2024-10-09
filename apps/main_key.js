@@ -21,7 +21,7 @@ export class FLUXDEV extends plugin {
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词)\\s*(.*)$',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数)\\s*(.*)$',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 }
@@ -44,7 +44,7 @@ export class FLUXDEV extends plugin {
     }
 
     async sf_setConfig(e) {
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词)\s*(.*)$/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数)\s*(.*)$/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -62,6 +62,9 @@ export class FLUXDEV extends plugin {
                     break
                 case '生成提示词':
                     this.config.generatePrompt = value.toLowerCase() === '开'
+                    break
+                case '推理步数':
+                    this.config.num_inference_steps = value
                     break
             }
             this.saveConfig(this.config)
@@ -119,7 +122,7 @@ export class FLUXDEV extends plugin {
                 body: JSON.stringify({
                     "prompt": finalPrompt,
                     "model": this.config.imageModel,
-                    "num_inference_steps": 20,
+                    "num_inference_steps": this.config.num_inference_steps,
                     "image_size": "1024x1024",
                     "image": canImg2Img ? "data:image/png;base64," + souce_image_base64 : undefined,
                 })
@@ -144,7 +147,7 @@ export class FLUXDEV extends plugin {
                 this.reply(segment.image(imageUrl))
             } else {
                 logger.error("[sf插件]返回错误：\n", data)
-                this.reply('生成图片失败，未能获取到图片URL。')
+                this.reply('生成图片失败：${result.message}')
             }
         } catch (error) {
             logger.error("[sf插件]API调用失败\n", error)

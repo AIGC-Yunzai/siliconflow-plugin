@@ -68,6 +68,12 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: "num_inference_steps",
+          label: "推理步数",
+          bottomHelpMessage: "推理的步数越多，生成图片的质量越高，但时间也随着推理步数线性增加",
+          component: "Input",
+        },
+        {
           field: "translateModel",
           label: "提示词模型",
           bottomHelpMessage: "在画图时输入的提示词是中文的时候自动使用提示词模型",
