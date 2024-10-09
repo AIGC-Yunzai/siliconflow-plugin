@@ -102,6 +102,8 @@ export class FLUXDEV extends plugin {
                 return false
             }
         }
+        else
+            canImg2Img = false;
 
         let msg = e.msg.replace(/^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))/, '').trim()
 
