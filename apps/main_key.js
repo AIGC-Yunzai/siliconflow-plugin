@@ -3,6 +3,10 @@ import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
 import Config from '../components/Config.js'
 import common from '../../../lib/common/common.js';
+import {
+    parseSourceImg,
+    url2Base64,
+} from '../utils/getImg.js'
 
 export class FLUXDEV extends plugin {
     constructor() {
@@ -73,11 +77,28 @@ export class FLUXDEV extends plugin {
             return
         }
 
+        // 处理图生图模型
+        let canImg2Img = false;
+        if (this.config.imageModel.match(/stabilityai\/stable-diffusion-3-medium|stabilityai\/stable-diffusion-xl-base-1.0|stabilityai\/stable-diffusion-2-1/)) {
+            canImg2Img = true;
+        }
+
+        // 处理引用图片
+        await parseSourceImg(e)
+        let souce_image_base64
+        if (e.img && canImg2Img) {
+            souce_image_base64 = await url2Base64(e.img[0])
+            if (!souce_image_base64) {
+                this.reply('引用的图片地址已失效，请重新发送图片', true)
+                return false
+            }
+        }
+
         let userPrompt = e.msg.replace(/^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))/, '').trim()
 
         let finalPrompt = userPrompt
         if (this.config.generatePrompt) {
-            await this.reply('请稍等哦，正在生成提示词...')
+            this.reply('请稍等哦，正在生成提示词...')
             finalPrompt = await this.generatePrompt(userPrompt)
             if (!finalPrompt) {
                 await this.reply('生成提示词失败，请稍后再试。')
@@ -85,7 +106,7 @@ export class FLUXDEV extends plugin {
             }
         }
 
-        await this.reply('正在生成图片...')
+        this.reply('正在生成图片...')
 
         logger.mark("[sf插件]开始图片生成API调用")
         try {
@@ -99,7 +120,8 @@ export class FLUXDEV extends plugin {
                     "prompt": finalPrompt,
                     "model": this.config.imageModel,
                     "num_inference_steps": 20,
-                    "image_size": "1024x1024"
+                    "image_size": "1024x1024",
+                    "image": canImg2Img ? "data:image/png;base64," + souce_image_base64 : undefined,
                 })
             })
 
@@ -111,6 +133,7 @@ export class FLUXDEV extends plugin {
                 const strs = `图片生成完成：
 原始提示词：${userPrompt}
 最终提示词：${finalPrompt}
+绘图模型：${this.config.imageModel}
 图片URL：${imageUrl}
 生成时间：${data.timings.inference.toFixed(2)}秒
 种子：${data.seed}`
