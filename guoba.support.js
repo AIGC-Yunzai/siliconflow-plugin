@@ -84,6 +84,13 @@ export function supportGuoba() {
           componentProps: {
             options: [
               { label: "black-forest-labs/FLUX.1-dev", value: "black-forest-labs/FLUX.1-dev" },
+              { label: "Pro/black-forest-labs/FLUX.1-schnell", value: "Pro/black-forest-labs/FLUX.1-schnell" },
+              { label: "black-forest-labs/FLUX.1-schnell", value: "black-forest-labs/FLUX.1-schnell" },
+              { label: "stabilityai/sd-turbo", value: "stabilityai/sd-turbo" },
+              { label: "stabilityai/sdxl-turbo", value: "stabilityai/sdxl-turbo" },
+              { label: "stabilityai/stable-diffusion-2-1", value: "stabilityai/stable-diffusion-2-1" },
+              { label: "stabilityai/stable-diffusion-3-medium", value: "stabilityai/stable-diffusion-3-medium" },
+              { label: "stabilityai/stable-diffusion-xl-base-1.0", value: "stabilityai/stable-diffusion-xl-base-1.0" }
             ],
           },
         },
