@@ -18,10 +18,10 @@ function scaleParam(text) {
             text = text.replace(new RegExp(size, 'g'), '');
         }
     });
-
+    let [width, height] = [1024, 1024]
     const result = /(\d{2,7})[\*×](\d{2,7})/.exec(text);
     if (result) {
-        let [width, height] = [Math.floor(Number(result[1]) / 64) * 64, Math.floor(Number(result[2]) / 64) * 64];
+        [width, height] = [Math.floor(Number(result[1]) / 64) * 64, Math.floor(Number(result[2]) / 64) * 64];
 
         const FLUXDEV_c = new FLUXDEV();
         const config_this = FLUXDEV_c.get_config_this()
