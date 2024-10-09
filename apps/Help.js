@@ -53,12 +53,12 @@ export class help extends plugin {
                     },
                     {
                         "icon": 7,
-                        "title": "#flux [描述][步数20]",
+                        "title": "#sf绘图 [描述][步数20]",
                         "desc": "指定绘画步数"
                     },
                     {
                         "icon": 11,
-                        "title": "#flux [描述][横图|竖图]",
+                        "title": "#sf绘图 [描述][横图|竖图]",
                         "desc": "指定绘画长宽 [横图|竖图|方图|512*512]"
                     },
                     {
