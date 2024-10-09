@@ -75,9 +75,9 @@ export class FLUXDEV extends plugin {
         if (match) {
             const [, , type, value] = match
             switch (type) {
-                // case '画图key':
-                //     this.config.sf_keys = value
-                //     break
+                case '画图key':
+                    this.config.sf_keys.push = { sf_key: value }
+                    break
                 // case '翻译key':
                 //     this.config.translateKey = value
                 //     break
