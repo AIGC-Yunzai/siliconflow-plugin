@@ -41,7 +41,8 @@ pnpm install --filter=siliconflow-plugin
 
 - [x] 接入图像生成
 - [x] 可更换画图模型
-- [ ] 接入LLM推理
+- [x] 支持图生图
+- [ ] 接入更多LLM推理
 - [ ] TODO...
 
 ## 支持与贡献
