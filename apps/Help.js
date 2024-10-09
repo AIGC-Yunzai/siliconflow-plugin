@@ -72,6 +72,11 @@ export class help extends plugin {
                         "desc": "设置生成提示词开关"
                     },
                     {
+                        "icon": 91,
+                        "title": "#sf设置推理步数 [Num]",
+                        "desc": "设置默认推理步数"
+                    },
+                    {
                         "icon": 3,
                         "title": "#sf帮助",
                         "desc": "帮助"

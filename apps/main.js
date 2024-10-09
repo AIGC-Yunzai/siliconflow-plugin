@@ -76,7 +76,7 @@ export class FLUXDEV extends plugin {
             const [, , type, value] = match
             switch (type) {
                 case '画图key':
-                    this.config.sf_keys.push = { sf_key: value }
+                    this.config.sf_keys.push({ sf_key: value })
                     break
                 // case '翻译key':
                 //     this.config.translateKey = value
@@ -91,13 +91,13 @@ export class FLUXDEV extends plugin {
                     this.config.generatePrompt = value.toLowerCase() === '开'
                     break
                 case '推理步数':
-                    this.config.num_inference_steps = value
+                    this.config.num_inference_steps = parseInt(value)
                     break
                 default:
                     return
             }
             this.saveConfig(this.config)
-            await this.reply(`${type}设置成功！`)
+            await this.reply(`${type}已设置：${value}`)
         }
         return
     }

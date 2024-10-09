@@ -56,6 +56,7 @@ export function supportGuoba() {
                 label: "sf key",
                 required: true,
                 component: "Input",
+                bottomHelpMessage: "登录https://cloud.siliconflow.cn/account/ak 后获取API密钥；",
                 componentProps: {
                   placeholder: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
                 },
@@ -75,7 +76,7 @@ export function supportGuoba() {
               {
                 field: "isDisable",
                 label: "是否禁用",
-                component: "switch",
+                component: "Switch",
                 required: false,
               },
             ],
