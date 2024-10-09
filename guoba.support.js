@@ -2,7 +2,7 @@ import Config from "./components/Config.js";
 import lodash from "lodash";
 import path from "path";
 import { pluginRoot } from "./model/path.js";
-import { FLUXDEV } from './apps/main_key.js'
+import { FLUXDEV } from './apps/main.js'
 
 export function supportGuoba() {
   return {

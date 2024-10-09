@@ -58,7 +58,7 @@ export class help extends plugin {
                     },
                     {
                         "icon": 11,
-                        "title": "#sf绘图 [描述][横图|竖图]",
+                        "title": "#sf绘图 [描述][横图]",
                         "desc": "指定绘画长宽 [横图|竖图|方图|512*512]"
                     },
                     {

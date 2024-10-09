@@ -1,4 +1,4 @@
-import { FLUXDEV } from '../apps/main_key.js'
+import { FLUXDEV } from '../apps/main.js'
 import _ from "lodash";
 // 尺寸处理
 function scaleParam(text) {

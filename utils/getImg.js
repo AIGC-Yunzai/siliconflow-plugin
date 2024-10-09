@@ -1,3 +1,4 @@
+import axios from 'axios'
 
 /**
  * @description: 处理消息中的图片：当消息引用了图片，则将对应图片放入e.img ，优先级==> e.source.img > e.img
@@ -10,14 +11,9 @@ export async function parseSourceImg(e, alsoGetAtAvatar = false, useOrigin = fal
   let reply;
   if (alsoGetAtAvatar && e.at && !e.source && !e.reply_id && !e.img) {
     if (e.atBot) {
-      const setting = await Config.getSetting();
-      if (setting.shield) {
-        delete e.img;
-      } else {
-        e.img = [];
-        e.img[0] =
-          e.bot.avatar || `https://q1.qlogo.cn/g?b=qq&s=0&nk=${e.self_id}`;
-      }
+      e.img = [];
+      e.img[0] =
+        e.bot.avatar || `https://q1.qlogo.cn/g?b=qq&s=0&nk=${e.self_id}`;
     }
     if (e.at) {
       try {
