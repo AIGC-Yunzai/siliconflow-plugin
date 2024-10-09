@@ -64,13 +64,13 @@ export function supportGuoba() {
         {
           field: "generatePrompt",
           label: "自动提示词",
-          bottomHelpMessage: "启用自动提示词；在画图时输入的提示词是中文的时候自动使用提示词模型生成英文提示词",
+          bottomHelpMessage: "启用自动提示词；在画图时根据文本自动使用提示词模型生成英文提示词",
           component: "Switch",
         },
         {
           field: "free_mode",
           label: "大图模式",
-          bottomHelpMessage: "开启后可以绘制更大的图片和更多的步数；注意额度消耗",
+          bottomHelpMessage: "开启后可以绘制更大的图片和更多的步数；注意额度消耗；指令：2048*2048 或 步数30",
           component: "Switch",
         },
         {
@@ -82,7 +82,7 @@ export function supportGuoba() {
         {
           field: "num_inference_steps",
           label: "推理步数",
-          bottomHelpMessage: "设置推理步数；注意额度消耗",
+          bottomHelpMessage: "设置默认推理步数；注意额度消耗",
           component: "InputNumber",
           componentProps: {
             min: 1,
