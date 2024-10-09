@@ -2,6 +2,7 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
 import Config from '../components/Config.js'
+import common from '../../../lib/common/common.js';
 
 export class FLUXDEV extends plugin {
     constructor() {
@@ -64,24 +65,6 @@ export class FLUXDEV extends plugin {
         }
     }
 
-    //     async showHelp(e) {
-    //         const helpText = `
-    // FLUXDEV插件使用帮助：
-    // 1. 生成图片：#flux [描述]
-    // 2. 设置画图API Key：#flux设置画图key [值]
-    // 3. 设置翻译API Key：#flux设置翻译key [值]
-    // 4. 设置翻译API地址：#flux设置翻译baseurl [地址] (OpenAI格式，以/v1结尾)
-    // 5. 设置翻译模型：#flux设置翻译模型 [模型名]
-    // 6. 开关提示词生成：#flux设置生成提示词 开/关
-    // 7. 查看帮助：#flux帮助
-
-    // 注意：设置命令仅限主人使用。
-    // 可用别名：siliconflow、硅基流动
-    //         `.trim()
-    //         await this.reply(helpText)
-    //     }
-
-
     async sf_draw(e) {
         // logger.mark("draw方法被调用，消息内容:", e.msg)
 
@@ -122,18 +105,20 @@ export class FLUXDEV extends plugin {
 
             const data = await response.json()
 
-            if (data.images && data.images.length > 0 && data.images[0].url) {
+            if (data?.images?.[0]?.url) {
                 const imageUrl = data.images[0].url
-                // logger.mark("生成的图片URL:", imageUrl)
 
-                await this.reply(`图片生成完成！
+                const strs = `图片生成完成！
 原始提示词：${userPrompt}
 最终提示词：${finalPrompt}
 图片URL：${imageUrl}
 生成时间：${data.timings.inference.toFixed(2)}秒
-种子：${data.seed}`)
+种子：${data.seed}`
 
-                await this.reply(segment.image(imageUrl))
+                const msgx = await common.makeForwardMsg(e, strs, `${userPrompt}`)
+                this.reply(msgx)
+
+                this.reply(segment.image(imageUrl))
             } else {
                 this.reply('生成图片失败，未能获取到图片URL。')
             }
@@ -175,7 +160,7 @@ export class FLUXDEV extends plugin {
 
             const data = await response.json()
 
-            if (data.choices && data.choices.length > 0 && data.choices[0].message.content) {
+            if (data?.choices?.[0]?.message?.content) {
                 return data.choices[0].message.content
             } else {
                 logger.error("[sf插件]无法从API响应中获取提示词", data)
