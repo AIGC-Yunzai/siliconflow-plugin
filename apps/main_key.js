@@ -124,7 +124,7 @@ export class FLUXDEV extends plugin {
                 this.reply(segment.image(imageUrl))
             } else {
                 logger.error("[sf插件]返回错误：\n", data)
-                this.reply('生成图片失败：${result.error}')
+                this.reply('生成图片失败：${result.message}')
             }
         } catch (error) {
             logger.error("[sf插件]API调用失败\n", error)
