@@ -189,7 +189,7 @@ export function supportGuoba() {
           lodash.set(config, keyPath, value)
         }
         config = lodash.merge({}, Config.getConfig(), config)
-        config.sf_keys = data['config.sf_keys']
+        config.sf_keys = data['sf_keys']
         config.sfBaseUrl = config.sfBaseUrl.replace(/\/$/, '')
         Config.setConfig(config)
         // config 写入内存
