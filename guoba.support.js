@@ -44,26 +44,32 @@ export function supportGuoba() {
           },
         },
         {
-          field: "drawKey",
-          label: "画图key",
-          bottomHelpMessage: "flux设置画图key；登录https://cloud.siliconflow.cn/account/ak 后获取API密钥",
+          field: "sf_key",
+          label: "sf key",
+          bottomHelpMessage: "设置sf的key；登录https://cloud.siliconflow.cn/account/ak 后获取API密钥；用于免费/收费画图",
           component: "Input",
           componentProps: {
             placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
           },
         },
+        // {
+        //   field: "translateKey",
+        //   label: "翻译key",
+        //   bottomHelpMessage: "flux设置翻译key",
+        //   component: "Input",
+        //   componentProps: {
+        //     placeholder: 'xxxxxxxxxxxxx',
+        //   },
+        // },
         {
-          field: "translateKey",
-          label: "翻译key",
-          bottomHelpMessage: "flux设置翻译key",
-          component: "Input",
-          componentProps: {
-            placeholder: 'xxxxxxxxxxxxx',
-          },
+          field: "generatePrompt",
+          label: "自动prompt",
+          bottomHelpMessage: "启用自动prompt；在输入的提示词是中文的时候自动使用提示词模型生成英文提示词",
+          component: "Switch",
         },
         {
           field: "translateModel",
-          label: "翻译模型",
+          label: "提示词模型",
           bottomHelpMessage: "flux设置翻译模型",
           component: "Select",
           componentProps: {
@@ -101,12 +107,6 @@ export function supportGuoba() {
              { label: "internlm/internlm2_5-20b-chat", value: "internlm/internlm2_5-20b-chat" }
             ],
           },
-        },
-        {
-          field: "generatePrompt",
-          label: "自动prompt",
-          bottomHelpMessage: "启用自动prompt",
-          component: "Switch",
         },
         {
           field: "imageModel",

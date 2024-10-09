@@ -1,5 +1,5 @@
-drawKey: ""
-translateKey: ""
+sf_key: ""
+# translateKey: ""
 sfBaseUrl: "https://api.siliconflow.cn/v1"
 translateModel: "Vendor-A/Qwen/Qwen2-72B-Instruct"
 generatePrompt: true

@@ -51,11 +51,11 @@ export class help extends plugin {
                         "title": "#sf设置画图key [值]",
                         "desc": "写入key"
                     },
-                    {
-                        "icon": 7,
-                        "title": "#sf设置翻译key [值]",
-                        "desc": "写入翻译"
-                    },
+                    // {
+                    //     "icon": 7,
+                    //     "title": "#sf设置翻译key [值]",
+                    //     "desc": "写入翻译"
+                    // },
                     {
                         "icon": 11,
                         "title": "#sf设置翻译baseurl [地址]",

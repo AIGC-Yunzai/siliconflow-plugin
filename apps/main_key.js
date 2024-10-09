@@ -44,11 +44,11 @@ export class FLUXDEV extends plugin {
             const [, , type, value] = match
             switch (type) {
                 case '画图key':
-                    this.config.drawKey = value
+                    this.config.sf_key = value
                     break
-                case '翻译key':
-                    this.config.translateKey = value
-                    break
+                // case '翻译key':
+                //     this.config.translateKey = value
+                //     break
                 case '翻译baseurl':
                     this.config.sfBaseUrl = value
                     break
@@ -85,7 +85,7 @@ export class FLUXDEV extends plugin {
     async sf_draw(e) {
         // logger.mark("draw方法被调用，消息内容:", e.msg)
 
-        if (!this.config.drawKey) {
+        if (!this.config.sf_key) {
             await this.reply('请先设置画图API Key。使用命令：#flux设置画图key [值]（仅限主人设置）')
             return
         }
@@ -109,7 +109,7 @@ export class FLUXDEV extends plugin {
             const response = await fetch(`${this.config.sfBaseUrl}/image/generations`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${this.config.drawKey}`,
+                    'Authorization': `Bearer ${this.config.sf_key}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -145,7 +145,7 @@ export class FLUXDEV extends plugin {
 
 
     async generatePrompt(userPrompt) {
-        if (!this.config.translateKey) {
+        if (!this.config.sf_key) {
             logger.error("[sf插件]翻译API Key未设置")
             return userPrompt
         }
@@ -154,7 +154,7 @@ export class FLUXDEV extends plugin {
             const response = await fetch(`${this.config.sfBaseUrl}/chat/completions`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${this.config.translateKey}`,
+                    'Authorization': `Bearer ${this.config.sf_key}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
