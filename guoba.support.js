@@ -68,8 +68,8 @@ export function supportGuoba() {
           component: "Select",
           componentProps: {
             options: [
-             { label: "深度求索/DeepSeek-Coder-V2-Instruct", value: "deepseek-ai/DeepSeek-Coder-V2-Instruct" },
              { label: "深度求索/DeepSeek-V2-Chat", value: "deepseek-ai/DeepSeek-V2-Chat" },
+             { label: "深度求索/DeepSeek-Coder-V2-Instruct", value: "deepseek-ai/DeepSeek-Coder-V2-Instruct" },
              { label: "深度求索/DeepSeek-V2.5", value: "deepseek-ai/DeepSeek-V2.5" },
              { label: "零一万物/Yi-1.5-34B-Chat-16K", value: "01-ai/Yi-1.5-34B-Chat-16K" },
              { label: "零一万物/Yi-1.5-6B-Chat", value: "01-ai/Yi-1.5-6B-Chat" },
