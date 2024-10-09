@@ -1,0 +1,19 @@
+{
+  "name": "siliconflow-plugin",
+  "version": "0.0.1",
+  "description": "Yunzai-Bot插件",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "type": "module",
+  "module": "index.js",
+  "dependencies": {
+  },
+  "keywords": [
+    "Yunzai-Bot",
+    "云崽"
+  ],
+  "author": "@Misaka20002",
+  "license": "ISC"
+}
