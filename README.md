@@ -5,6 +5,7 @@
 # SiliconFlow-PLUGIN 🍓
 
 - 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的接入 SiliconFlow 的插件
+- 为什么要接入？因为他众多免费的绘图模型~可以白嫖~
 
 > [!TIP]
 > 将逐步接入更多API
@@ -34,6 +35,8 @@ pnpm install --filter=siliconflow-plugin
 
 > [!WARNING]
 > 非常不建议手动修改配置文件，本插件已兼容 [Guoba-plugin](https://github.com/guoba-yunzai/guoba-plugin) ，请使用锅巴插件对配置项进行修改
+
+<img decoding="async" align=right src="https://github.com/user-attachments/assets/d8b39d2a-84b7-4856-9bb1-ce79b41a310c" width="35%">
 
 ## 功能列表
 
