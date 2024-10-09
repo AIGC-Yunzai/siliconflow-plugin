@@ -1,6 +1,6 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import { createRequire } from 'module'
-import lodash from 'lodash'
+import _ from 'lodash'
 import { Restart } from '../../other/restart.js'
 
 const require = createRequire(import.meta.url)
@@ -15,7 +15,7 @@ let uping = false
 export class update extends plugin {
   constructor () {
     super({
-      name: 'sf-更新插件',
+      name: 'siliconflow-更新插件',
       event: 'message',
       priority: 1009,
       rule: [
@@ -28,6 +28,7 @@ export class update extends plugin {
   }
 
   /**
+   * rule - 更新sf
    * @returns
    */
   async update () {
@@ -49,7 +50,7 @@ export class update extends plugin {
 
     /** 是否需要重启 */
     if (this.isUp) {
-      await this.reply('更新完毕，正在重启云崽以应用更新')
+      // await this.reply("更新完毕，请重启云崽后生效")
       setTimeout(() => this.restart(), 2000)
     }
   }
@@ -74,7 +75,7 @@ export class update extends plugin {
     /** 获取上次提交的commitId，用于获取日志时判断新增的更新日志 */
     this.oldCommitId = await this.getcommitId('siliconflow-plugin')
     uping = true
-    const ret = await this.execSync(command)
+    let ret = await this.execSync(command)
     uping = false
 
     if (ret.error) {
@@ -84,7 +85,7 @@ export class update extends plugin {
     }
 
     /** 获取插件提交的最新时间 */
-    const time = await this.getTime('siliconflow-plugin')
+    let time = await this.getTime('siliconflow-plugin')
 
     if (/(Already up[ -]to[ -]date|已经是最新的)/.test(ret.stdout)) {
       await this.reply(`siliconflow-plugin已经是最新版本\n最后更新时间：${time}`)
@@ -92,7 +93,7 @@ export class update extends plugin {
       await this.reply(`siliconflow-plugin\n最后更新时间：${time}`)
       this.isUp = true
       /** 获取siliconflow-plugin的更新日志 */
-      const log = await this.getLog('siliconflow-plugin')
+      let log = await this.getLog('siliconflow-plugin')
       await this.reply(log)
     }
 
@@ -107,7 +108,7 @@ export class update extends plugin {
    * @returns
    */
   async getLog (plugin = '') {
-    const cm = `cd ./plugins/${plugin}/ && git log  -20 --oneline --pretty=format:"%h||[%cd]  %s" --date=format:"%m-%d %H:%M"`
+    let cm = `cd ./plugins/${plugin}/ && git log  -20 --oneline --pretty=format:"%h||[%cd]  %s" --date=format:"%m-%d %H:%M"`
 
     let logAll
     try {
@@ -128,7 +129,7 @@ export class update extends plugin {
       if (str[1].includes('Merge branch')) continue
       log.push(str[1])
     }
-    const line = log.length
+    let line = log.length
     log = log.join('\n\n')
 
     if (log.length <= 0) return ''
@@ -148,10 +149,10 @@ export class update extends plugin {
    * @returns
    */
   async getcommitId (plugin = '') {
-    const cm = `git -C ./plugins/${plugin}/ rev-parse --short HEAD`
+    let cm = `git -C ./plugins/${plugin}/ rev-parse --short HEAD`
 
     let commitId = await execSync(cm, { encoding: 'utf-8' })
-    commitId = lodash.trim(commitId)
+    commitId = _.trim(commitId)
 
     return commitId
   }
@@ -162,12 +163,12 @@ export class update extends plugin {
    * @returns
    */
   async getTime (plugin = '') {
-    const cm = `cd ./plugins/${plugin}/ && git log -1 --oneline --pretty=format:"%cd" --date=format:"%m-%d %H:%M"`
+    let cm = `cd ./plugins/${plugin}/ && git log -1 --oneline --pretty=format:"%cd" --date=format:"%m-%d %H:%M"`
 
     let time = ''
     try {
       time = await execSync(cm, { encoding: 'utf-8' })
-      time = lodash.trim(time)
+      time = _.trim(time)
     } catch (error) {
       logger.error(error.toString())
       time = '获取时间失败'
@@ -183,13 +184,13 @@ export class update extends plugin {
    * @returns
    */
   async makeForwardMsg (title, msg, end) {
-    let nickname = Bot.nickname
+    let nickname = (this.e.bot ?? Bot).nickname
     if (this.e.isGroup) {
-      const info = await Bot.getGroupMemberInfo(this.e.group_id, Bot.uin)
+      let info = await (this.e.bot ?? Bot).getGroupMemberInfo?.(this.e.group_id, (this.e.bot ?? Bot).uin) || await (this.e.bot ?? Bot).pickMember?.(this.e.group_id, (this.e.bot ?? Bot).uin);
       nickname = info.card || info.nickname
     }
-    const userInfo = {
-      user_id: Bot.uin,
+    let userInfo = {
+      user_id: (this.e.bot ?? Bot).uin,
       nickname
     }
 
@@ -212,17 +213,27 @@ export class update extends plugin {
     }
 
     /** 制作转发内容 */
-    if (this.e.isGroup) {
+    if (this.e.group?.makeForwardMsg) {
       forwardMsg = await this.e.group.makeForwardMsg(forwardMsg)
-    } else {
+    } else if (this.e?.friend?.makeForwardMsg) {
       forwardMsg = await this.e.friend.makeForwardMsg(forwardMsg)
+    } else {
+      return msg.join('\n')
     }
 
+    let dec = 'siliconflow-plugin 更新日志'
     /** 处理描述 */
-    forwardMsg.data = forwardMsg.data
-      .replace(/\n/g, '')
-      .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
-      .replace(/___+/, `<title color="#777777" size="26">${title}</title>`)
+    if (typeof (forwardMsg.data) === 'object') {
+      let detail = forwardMsg.data?.meta?.detail
+      if (detail) {
+        detail.news = [{ text: dec }]
+      }
+    } else {
+      forwardMsg.data = forwardMsg.data
+        .replace(/\n/g, '')
+        .replace(/<title color="#777777" size="26">(.+?)<\/title>/g, '___')
+        .replace(/___+/, `<title color="#777777" size="26">${dec}</title>`)
+    }
 
     return forwardMsg
   }
@@ -234,18 +245,18 @@ export class update extends plugin {
    * @returns
    */
   async gitErr (err, stdout) {
-    const msg = '更新失败！'
-    const errMsg = err.toString()
+    let msg = '更新失败！'
+    let errMsg = err.toString()
     stdout = stdout.toString()
 
     if (errMsg.includes('Timed out')) {
-      const remote = errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')
+      let remote = errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')
       await this.reply(msg + `\n连接超时：${remote}`)
       return
     }
 
     if (/Failed to connect|unable to access/g.test(errMsg)) {
-      const remote = errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')
+      let remote = errMsg.match(/'(.+?)'/g)[0].replace(/'/g, '')
       await this.reply(msg + `\n连接失败：${remote}`)
       return
     }
@@ -253,8 +264,8 @@ export class update extends plugin {
     if (errMsg.includes('be overwritten by merge')) {
       await this.reply(
         msg +
-          `存在冲突：\n${errMsg}\n` +
-          '请解决冲突后再更新，或者执行#强制更新，放弃本地修改'
+        `存在冲突：\n${errMsg}\n` +
+        '请解决冲突后再更新，或者执行#强制更新，放弃本地修改'
       )
       return
     }
@@ -290,7 +301,7 @@ export class update extends plugin {
    * @returns
    */
   async checkGit () {
-    const ret = await execSync('git --version', { encoding: 'utf-8' })
+    let ret = await execSync('git --version', { encoding: 'utf-8' })
     if (!ret || !ret.includes('git version')) {
       await this.reply('请先安装git')
       return false
