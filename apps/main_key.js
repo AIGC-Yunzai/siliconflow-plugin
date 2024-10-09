@@ -108,22 +108,23 @@ export class FLUXDEV extends plugin {
             if (data?.images?.[0]?.url) {
                 const imageUrl = data.images[0].url
 
-                const strs = `图片生成完成！
+                const strs = `图片生成完成：
 原始提示词：${userPrompt}
 最终提示词：${finalPrompt}
 图片URL：${imageUrl}
 生成时间：${data.timings.inference.toFixed(2)}秒
 种子：${data.seed}`
 
-                const msgx = await common.makeForwardMsg(e, strs, `${userPrompt}`)
+                const msgx = await common.makeForwardMsg(e, strs, `图片生成完成：${userPrompt}`)
                 this.reply(msgx)
 
                 this.reply(segment.image(imageUrl))
             } else {
+                logger.error("[sf插件]返回错误：\n", data)
                 this.reply('生成图片失败，未能获取到图片URL。')
             }
         } catch (error) {
-            logger.error("[sf插件]API调用失败", error)
+            logger.error("[sf插件]API调用失败\n", error)
             this.reply('生成图片时遇到了一个错误，请稍后再试。')
         }
     }
@@ -163,11 +164,11 @@ export class FLUXDEV extends plugin {
             if (data?.choices?.[0]?.message?.content) {
                 return data.choices[0].message.content
             } else {
-                logger.error("[sf插件]无法从API响应中获取提示词", data)
+                logger.error("[sf插件]获取提示词错误：\n", data)
                 return userPrompt
             }
         } catch (error) {
-            logger.error("[sf插件]生成提示词API调用失败", error)
+            logger.error("[sf插件]生成提示词API调用失败\n", error)
             return userPrompt
         }
     }
