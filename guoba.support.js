@@ -35,6 +35,15 @@ export function supportGuoba() {
           },
         },
         {
+          field: "sfBaseUrl",
+          label: "接口地址",
+          bottomHelpMessage: "设置接口地址；用于画图和翻译",
+          component: "Input",
+          componentProps: {
+            placeholder: 'https://api.siliconflow.cn/v1',
+          },
+        },
+        {
           field: "drawKey",
           label: "画图key",
           bottomHelpMessage: "flux设置画图key；登录https://cloud.siliconflow.cn/account/ak 后获取API密钥",
@@ -47,15 +56,6 @@ export function supportGuoba() {
           field: "translateKey",
           label: "翻译key",
           bottomHelpMessage: "flux设置翻译key",
-          component: "Input",
-          componentProps: {
-            placeholder: 'xxxxxxxxxxxxx',
-          },
-        },
-        {
-          field: "translateBaseUrl",
-          label: "翻译源",
-          bottomHelpMessage: "flux设置翻译源",
           component: "Input",
           componentProps: {
             placeholder: 'xxxxxxxxxxxxx',
@@ -106,7 +106,7 @@ export function supportGuoba() {
           lodash.set(config, keyPath, value)
         }
         config = lodash.merge({}, Config.getConfig(), config)
-        config.translateBaseUrl = config.translateBaseUrl.replace(/\/$/, '')
+        config.sfBaseUrl = config.sfBaseUrl.replace(/\/$/, '')
         Config.setConfig(config)
         // config 写入内存
         const FLUXDEV_c = new FLUXDEV();

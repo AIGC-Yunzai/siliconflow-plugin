@@ -50,7 +50,7 @@ export class FLUXDEV extends plugin {
                     this.config.translateKey = value
                     break
                 case '翻译baseurl':
-                    this.config.translateBaseUrl = value
+                    this.config.sfBaseUrl = value
                     break
                 case '翻译模型':
                     this.config.translateModel = value
@@ -106,7 +106,7 @@ export class FLUXDEV extends plugin {
 
         logger.mark("[sf插件]开始图片生成API调用")
         try {
-            const response = await fetch(`${this.config.translateBaseUrl}/image/generations`, {
+            const response = await fetch(`${this.config.sfBaseUrl}/image/generations`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${this.config.drawKey}`,
@@ -151,7 +151,7 @@ export class FLUXDEV extends plugin {
         }
 
         try {
-            const response = await fetch(`${this.config.translateBaseUrl}/chat/completions`, {
+            const response = await fetch(`${this.config.sfBaseUrl}/chat/completions`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${this.config.translateKey}`,
