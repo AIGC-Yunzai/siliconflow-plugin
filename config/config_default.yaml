@@ -5,3 +5,4 @@ translateModel: "Vendor-A/Qwen/Qwen2-72B-Instruct"
 generatePrompt: true
 num_inference_steps: 20
 imageModel: "black-forest-labs/FLUX.1-schnell"
+free_mode: false

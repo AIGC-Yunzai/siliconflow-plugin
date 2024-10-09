@@ -68,6 +68,12 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: "free_mode",
+          label: "大图模式",
+          bottomHelpMessage: "开启后可以绘制更大的图片和更多的步数；注意额度消耗",
+          component: "Switch",
+        },
+        {
           field: "num_inference_steps",
           label: "推理步数",
           bottomHelpMessage: "推理的步数越多，生成图片的质量越高，但时间也随着推理步数线性增加",

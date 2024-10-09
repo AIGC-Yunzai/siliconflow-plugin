@@ -7,6 +7,7 @@ import {
     parseSourceImg,
     url2Base64,
 } from '../utils/getImg.js'
+import { handleParam } from '../utils/parse.js'
 
 export class FLUXDEV extends plugin {
     constructor() {
@@ -41,6 +42,11 @@ export class FLUXDEV extends plugin {
         if (isCover)
             this.config = config_data
         Config.setConfig(config_data)
+    }
+
+    /** 获取当前配置 */
+    get_config_this() {
+        return this.config
     }
 
     async sf_setConfig(e) {
@@ -97,7 +103,12 @@ export class FLUXDEV extends plugin {
             }
         }
 
-        let userPrompt = e.msg.replace(/^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))/, '').trim()
+        let msg = e.msg.replace(/^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))/, '').trim()
+
+        // 处理 msg
+        let param = await handleParam(e, msg)
+
+        let userPrompt = param.input
 
         let finalPrompt = userPrompt
         if (this.config.generatePrompt) {
@@ -121,10 +132,12 @@ export class FLUXDEV extends plugin {
                 },
                 body: JSON.stringify({
                     "prompt": finalPrompt,
-                    "model": this.config.imageModel,
-                    "num_inference_steps": this.config.num_inference_steps,
-                    "image_size": "1024x1024",
+                    "model": param.parameters.imageModel,
+                    "num_inference_steps": param.parameters.steps,
+                    "image_size": `${param.parameters.width}x${param.parameters.height}`,
                     "image": canImg2Img ? "data:image/png;base64," + souce_image_base64 : undefined,
+                    "seed": param.parameters.seed,
+                    "negative_prompt": param.parameters.negative_prompt
                 })
             })
 
@@ -136,8 +149,10 @@ export class FLUXDEV extends plugin {
                 const strs = `图片生成完成：
 原始提示词：${userPrompt}
 最终提示词：${finalPrompt}
-绘图模型：${this.config.imageModel}
-步数：${this.config.num_inference_steps}
+负面提示词：${param.parameters.negative_prompt ? param.parameters.negative_prompt : "sf默认"}
+绘图模型：${param.parameters.imageModel}
+步数：${param.parameters.steps}
+图片大小：${param.parameters.width}x${param.parameters.height}
 图片URL：${imageUrl}
 生成时间：${data.timings.inference.toFixed(2)}秒
 种子：${data.seed}`
