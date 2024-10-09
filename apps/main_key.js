@@ -12,11 +12,11 @@ export class FLUXDEV extends plugin {
             priority: 6,
             rule: [
                 {
-                    reg: '^#(flux|siliconflow|硅基流动)(画图)?(.*)$',
+                    reg: '^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))(.*)$',
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(flux|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词)\\s*(.*)$',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词)\\s*(.*)$',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 }
@@ -39,7 +39,7 @@ export class FLUXDEV extends plugin {
     }
 
     async sf_setConfig(e) {
-        const match = e.msg.match(/^#(flux|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词)\s*(.*)$/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词)\s*(.*)$/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -90,7 +90,7 @@ export class FLUXDEV extends plugin {
             return
         }
 
-        let userPrompt = e.msg.replace(/^#(flux|siliconflow|硅基流动)(画图)?/, '').trim()
+        let userPrompt = e.msg.replace(/^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))/, '').trim()
 
         let finalPrompt = userPrompt
         if (this.config.generatePrompt) {

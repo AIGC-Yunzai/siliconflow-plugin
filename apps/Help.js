@@ -16,7 +16,7 @@ export class help extends plugin {
             rule: [
                 {
                     /** 命令正则匹配 */
-                    reg: '^(/|#)(sf|siliconflow|flux)帮助$',
+                    reg: '^(/|#)(sf|SF|siliconflow)帮助$',
                     /** 执行方法 */
                     fnc: 'help'
                 }
@@ -48,32 +48,32 @@ export class help extends plugin {
                     },
                     {
                         "icon": 5,
-                        "title": "#flux设置画图key [值]",
+                        "title": "#sf设置画图key [值]",
                         "desc": "写入key"
                     },
                     {
                         "icon": 7,
-                        "title": "#flux设置翻译key [值]",
+                        "title": "#sf设置翻译key [值]",
                         "desc": "写入翻译"
                     },
                     {
                         "icon": 11,
-                        "title": "#flux设置翻译baseurl [地址]",
+                        "title": "#sf设置翻译baseurl [地址]",
                         "desc": "OpenAI格式，以/v1结尾"
                     },
                     {
                         "icon": 54,
-                        "title": "#flux设置翻译模型 [模型名]",
+                        "title": "#sf设置翻译模型 [模型名]",
                         "desc": "设置翻译模型"
                     },
                     {
                         "icon": 86,
-                        "title": "#flux设置生成提示词 [开|关]",
+                        "title": "#sf设置生成提示词 [开|关]",
                         "desc": "设置生成提示词开关"
                     },
                     {
                         "icon": 3,
-                        "title": "#flux帮助",
+                        "title": "#sf帮助",
                         "desc": "帮助"
                     },
                     {
