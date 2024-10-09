@@ -12,7 +12,7 @@ export class FLUXDEV extends plugin {
             priority: 6,
             rule: [
                 {
-                    reg: '^#(flux|siliconflow|硅基流动)画图(.*)$',
+                    reg: '^#(flux|siliconflow|硅基流动)(画图)?(.*)$',
                     fnc: 'sf_draw'
                 },
                 {

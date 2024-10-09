@@ -36,16 +36,16 @@ export function supportGuoba() {
         },
         {
           field: "drawKey",
-          label: "flux设置画图key",
-          bottomHelpMessage: "flux设置画图key",
+          label: "画图key",
+          bottomHelpMessage: "flux设置画图key；登录https://cloud.siliconflow.cn/account/ak 后获取API密钥",
           component: "Input",
           componentProps: {
-            placeholder: 'xxxxxxxxxxxxx',
+            placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
           },
         },
         {
           field: "translateKey",
-          label: "flux设置翻译key",
+          label: "翻译key",
           bottomHelpMessage: "flux设置翻译key",
           component: "Input",
           componentProps: {
@@ -54,7 +54,7 @@ export function supportGuoba() {
         },
         {
           field: "translateBaseUrl",
-          label: "flux设置翻译源",
+          label: "翻译源",
           bottomHelpMessage: "flux设置翻译源",
           component: "Input",
           componentProps: {
@@ -63,7 +63,7 @@ export function supportGuoba() {
         },
         {
           field: "translateModel",
-          label: "flux设置翻译模型",
+          label: "翻译模型",
           bottomHelpMessage: "flux设置翻译模型",
           component: "Input",
           componentProps: {
@@ -72,17 +72,19 @@ export function supportGuoba() {
         },
         {
           field: "generatePrompt",
-          label: "启用自动prompt",
+          label: "自动prompt",
           bottomHelpMessage: "启用自动prompt",
           component: "Switch",
         },
         {
           field: "imageModel",
-          label: "flux设置绘图模型",
+          label: "绘图模型",
           bottomHelpMessage: "flux设置绘图模型",
-          component: "Input",
+          component: "Select",
           componentProps: {
-            placeholder: 'xxxxxxxxxxxxx',
+            options: [
+              { label: "black-forest-labs/FLUX.1-dev", value: "black-forest-labs/FLUX.1-dev" },
+            ],
           },
         },
       ],
