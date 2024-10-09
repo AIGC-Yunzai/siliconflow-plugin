@@ -113,16 +113,22 @@ export class FLUXDEV extends plugin {
         let userPrompt = param.input
 
         let finalPrompt = userPrompt
+        let onleReplyOnce = 0;
         if (this.config.generatePrompt) {
-            this.reply('请稍等哦，正在生成提示词...')
+            if (!onleReplyOnce && !this.config.simpleMode) {
+                this.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成提示词并绘图...`)
+                onleReplyOnce++
+            }
             finalPrompt = await this.generatePrompt(userPrompt)
             if (!finalPrompt) {
                 await this.reply('生成提示词失败，请稍后再试。')
                 return
             }
         }
-
-        this.reply('正在生成图片...')
+        if (!onleReplyOnce && !this.config.simpleMode) {
+            this.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成图片...`)
+            onleReplyOnce++
+        }
 
         logger.mark("[sf插件]开始图片生成API调用")
         try {
@@ -148,7 +154,7 @@ export class FLUXDEV extends plugin {
             if (data?.images?.[0]?.url) {
                 const imageUrl = data.images[0].url
 
-                const strs = `${canImg2Img ? "图生图" : "文生图"}完成：
+                const strs = `@${e.sender.card || e.sender.nickname} ${e.user_id}您的${canImg2Img ? "图生图" : "文生图"}已完成：
 原始提示词：${userPrompt}
 最终提示词：${finalPrompt}
 负面提示词：${param.parameters.negative_prompt ? param.parameters.negative_prompt : "sf默认"}
@@ -159,10 +165,14 @@ export class FLUXDEV extends plugin {
 生成时间：${data.timings.inference.toFixed(2)}秒
 种子：${data.seed}`
 
-                const msgx = await common.makeForwardMsg(e, strs, `${canImg2Img ? "图生图" : "文生图"}：${userPrompt}`)
-                this.reply(msgx)
-
-                this.reply(segment.image(imageUrl))
+                if (this.config.simpleMode) {
+                    const msgx = await common.makeForwardMsg(e, [await segment.image(imageUrl), strs], `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
+                    this.reply(msgx)
+                } else {
+                    const msgx = await common.makeForwardMsg(e, strs, `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
+                    this.reply(msgx)
+                    this.reply(segment.image(imageUrl))
+                }
             } else {
                 logger.error("[sf插件]返回错误：\n", data)
                 this.reply(`生成图片失败：${data.message || '未知错误'}`)

@@ -6,3 +6,4 @@ generatePrompt: true
 num_inference_steps: 20
 imageModel: "black-forest-labs/FLUX.1-schnell"
 free_mode: false
+simpleMode: false

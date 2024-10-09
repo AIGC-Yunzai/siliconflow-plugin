@@ -74,6 +74,12 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: "simpleMode",
+          label: "简洁模式",
+          bottomHelpMessage: "开启后合并输出图片与prompt，且不提示进入绘画队列",
+          component: "Switch",
+        },
+        {
           field: "num_inference_steps",
           label: "推理步数",
           bottomHelpMessage: "设置推理步数；注意额度消耗",
