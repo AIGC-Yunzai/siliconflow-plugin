@@ -8,7 +8,7 @@ export function supportGuoba() {
   return {
     pluginInfo: {
       name: 'siliconflow-plugin',
-      title: 'AI绘画插件',
+      title: 'SF插件',
       author: ['@Misaka20002', '@syfantasy'],
       authorLink: ['https://github.com/Misaka20002', 'https://github.com/syfantasy'],
       link: 'https://github.com/Misaka20002/siliconflow-plugin',
@@ -44,12 +44,41 @@ export function supportGuoba() {
           },
         },
         {
-          field: "sf_key",
-          label: "sf key",
-          bottomHelpMessage: "设置sf的key；登录https://cloud.siliconflow.cn/account/ak 后获取API密钥；用于免费/收费画图",
-          component: "Input",
+          field: "sf_keys",
+          label: "sf keys",
+          bottomHelpMessage: "设置sf的key；登录https://cloud.siliconflow.cn/account/ak 后获取API密钥；用于免费/收费画图；设置多个时可多路并发",
+          component: "GSubForm",
           componentProps: {
-            placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx',
+            multiple: true,
+            schemas: [
+              {
+                field: "sf_key",
+                label: "sf key",
+                required: true,
+                component: "Input",
+                componentProps: {
+                  placeholder: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                },
+              },
+              {
+                field: "name",
+                label: "名称",
+                component: "Input",
+                required: false,
+              },
+              {
+                field: "remark",
+                label: "备注",
+                component: "Input",
+                required: false,
+              },
+              {
+                field: "isDisable",
+                label: "是否禁用",
+                component: "switch",
+                required: false,
+              },
+            ],
           },
         },
         // {
@@ -160,6 +189,7 @@ export function supportGuoba() {
           lodash.set(config, keyPath, value)
         }
         config = lodash.merge({}, Config.getConfig(), config)
+        config.sf_keys = data['config.sf_keys']
         config.sfBaseUrl = config.sfBaseUrl.replace(/\/$/, '')
         Config.setConfig(config)
         // config 写入内存

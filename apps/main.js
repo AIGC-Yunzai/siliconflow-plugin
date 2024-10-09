@@ -30,6 +30,7 @@ export class FLUXDEV extends plugin {
         })
         // 读取配置
         this.config = Config.getConfig()
+        this.sf_keys_index = -1
     }
 
     /**
@@ -49,20 +50,40 @@ export class FLUXDEV extends plugin {
         return this.config
     }
 
+    /** 轮询 sf_keys */
+    get_use_sf_key() {
+        let use_sf_key = null
+        let count = 0;
+        while (!use_sf_key && count < this.config.sf_keys.length) {
+            count++
+            if (this.sf_keys_index < this.config.sf_keys.length - 1) {
+                this.sf_keys_index++
+            } else
+                this.sf_keys_index = 0
+
+            if (this.config.sf_keys[this.sf_keys_index].isDisable)
+                continue
+            else {
+                use_sf_key = this.config.sf_keys[this.sf_keys_index].sf_key
+            }
+        }
+        return use_sf_key
+    }
+
     async sf_setConfig(e) {
         const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数)\s*(.*)$/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
-                case '画图key':
-                    this.config.sf_key = value
-                    break
+                // case '画图key':
+                //     this.config.sf_keys = value
+                //     break
                 // case '翻译key':
                 //     this.config.translateKey = value
                 //     break
-                case '翻译baseurl':
-                    this.config.sfBaseUrl = value
-                    break
+                // case '翻译baseurl':
+                //     this.config.sfBaseUrl = value
+                //     break
                 case '翻译模型':
                     this.config.translateModel = value
                     break
@@ -72,16 +93,19 @@ export class FLUXDEV extends plugin {
                 case '推理步数':
                     this.config.num_inference_steps = value
                     break
+                default:
+                    return
             }
             this.saveConfig(this.config)
             await this.reply(`${type}设置成功！`)
         }
+        return
     }
 
     async sf_draw(e) {
         // logger.mark("draw方法被调用，消息内容:", e.msg)
 
-        if (!this.config.sf_key) {
+        if (this.config.sf_keys.length == 0) {
             await this.reply('请先设置画图API Key。使用命令：#flux设置画图key [值]（仅限主人设置）')
             return
         }
@@ -114,12 +138,13 @@ export class FLUXDEV extends plugin {
 
         let finalPrompt = userPrompt
         let onleReplyOnce = 0;
+        const use_sf_key = this.get_use_sf_key();
         if (this.config.generatePrompt) {
             if (!onleReplyOnce && !this.config.simpleMode) {
                 this.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成提示词并绘图...`)
                 onleReplyOnce++
             }
-            finalPrompt = await this.generatePrompt(userPrompt)
+            finalPrompt = await this.generatePrompt(userPrompt, use_sf_key)
             if (!finalPrompt) {
                 await this.reply('生成提示词失败，请稍后再试。')
                 return
@@ -135,7 +160,7 @@ export class FLUXDEV extends plugin {
             const response = await fetch(`${this.config.sfBaseUrl}/image/generations`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${this.config.sf_key}`,
+                    'Authorization': `Bearer ${use_sf_key}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -184,9 +209,15 @@ export class FLUXDEV extends plugin {
     }
 
 
-    async generatePrompt(userPrompt) {
-        if (!this.config.sf_key) {
-            logger.error("[sf插件]翻译API Key未设置")
+    /**
+     * @description: 自动提示词
+     * @param {*} userPrompt
+     * @param {*} use_sf_key
+     * @return {*}
+     */
+    async generatePrompt(userPrompt, use_sf_key) {
+        if (this.config.sf_keys.length == 0) {
+            logger.error("[sf插件]自动提示词API Key未设置")
             return userPrompt
         }
 
@@ -194,7 +225,7 @@ export class FLUXDEV extends plugin {
             const response = await fetch(`${this.config.sfBaseUrl}/chat/completions`, {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${this.config.sf_key}`,
+                    'Authorization': `Bearer ${use_sf_key}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({

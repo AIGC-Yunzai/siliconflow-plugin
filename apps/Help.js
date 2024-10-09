@@ -46,11 +46,11 @@ export class help extends plugin {
                         "title": "#flux [描述]",
                         "desc": "根据用户输入的提示词生成图片"
                     },
-                    {
-                        "icon": 5,
-                        "title": "#sf设置画图key [值]",
-                        "desc": "写入key"
-                    },
+                    // {
+                    //     "icon": 5,
+                    //     "title": "#sf设置画图key [值]",
+                    //     "desc": "写入key"
+                    // },
                     {
                         "icon": 7,
                         "title": "#sf绘图 [描述][步数20]",

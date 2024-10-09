@@ -1,4 +1,4 @@
-sf_key: ""
+sf_keys: []
 # translateKey: ""
 sfBaseUrl: "https://api.siliconflow.cn/v1"
 translateModel: "Vendor-A/Qwen/Qwen2-72B-Instruct"
