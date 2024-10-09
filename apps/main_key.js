@@ -137,6 +137,7 @@ export class FLUXDEV extends plugin {
 原始提示词：${userPrompt}
 最终提示词：${finalPrompt}
 绘图模型：${this.config.imageModel}
+步数：${this.config.num_inference_steps}
 图片URL：${imageUrl}
 生成时间：${data.timings.inference.toFixed(2)}秒
 种子：${data.seed}`
