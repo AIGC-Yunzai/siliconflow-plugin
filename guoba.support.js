@@ -63,14 +63,14 @@ export function supportGuoba() {
         // },
         {
           field: "generatePrompt",
-          label: "自动prompt",
-          bottomHelpMessage: "启用自动prompt；在输入的提示词是中文的时候自动使用提示词模型生成英文提示词",
+          label: "自动提示词",
+          bottomHelpMessage: "启用自动提示词；在画图时输入的提示词是中文的时候自动使用提示词模型生成英文提示词",
           component: "Switch",
         },
         {
           field: "translateModel",
           label: "提示词模型",
-          bottomHelpMessage: "flux设置翻译模型",
+          bottomHelpMessage: "在画图时输入的提示词是中文的时候自动使用提示词模型",
           component: "Select",
           componentProps: {
             options: [
