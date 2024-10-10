@@ -136,7 +136,7 @@ export class update extends plugin {
 
     let end = ''
     end =
-      '更多详细信息，请前往github查看\nhttps://github.com/Misaka20002/siliconflow-plugin/commits/main'
+      '更多详细信息，请前往github查看\nhttps://github.com/AIGC-Yunzai/siliconflow-plugin/commits/main'
 
     log = await this.makeForwardMsg(`siliconflow-plugin更新日志，共${line}条`, log, end)
 
