@@ -180,7 +180,7 @@ export class FLUXDEV extends plugin {
                     const msgx = await common.makeForwardMsg(e, [str_1, { ...segment.image(imageUrl), origin: true }, str_2, str_3], `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
                     this.reply(msgx)
                 } else {
-                    const msgx = await common.makeForwardMsg(e, str_1, str_2, str_3, `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
+                    const msgx = await common.makeForwardMsg(e, [str_1, str_2, str_3], `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
                     this.reply(msgx)
                     this.reply({ ...segment.image(imageUrl), origin: true })
                 }
