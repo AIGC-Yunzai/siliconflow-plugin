@@ -193,9 +193,6 @@ export function supportGuoba() {
         config.sf_keys = data['sf_keys']
         config.sfBaseUrl = config.sfBaseUrl.replace(/\/$/, '')
         Config.setConfig(config)
-        // config 写入内存
-        const FLUXDEV_c = new FLUXDEV();
-        FLUXDEV_c.saveConfig(config, true)
         return Result.ok({}, '保存成功~')
       },
     },

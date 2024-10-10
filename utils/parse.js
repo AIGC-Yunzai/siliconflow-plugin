@@ -1,7 +1,7 @@
-import { FLUXDEV } from '../apps/main.js'
 import _ from "lodash";
+
 // 尺寸处理
-function scaleParam(text) {
+function scaleParam(text, e) {
     const scale = {
         "竖图": { height: 1216, width: 832 },
         "长图": { height: 1216, width: 832 },
@@ -22,9 +22,7 @@ function scaleParam(text) {
     if (result) {
         let [width, height] = [Math.floor(Number(result[1]) / 64) * 64, Math.floor(Number(result[2]) / 64) * 64];
 
-        const FLUXDEV_c = new FLUXDEV();
-        const config_this = FLUXDEV_c.get_config_this()
-        const maxArea = config_this.free_mode ? 3145728 : 1048576;
+        const maxArea = e.sfRuntime.config.free_mode ? 3145728 : 1048576;
 
         while (width * height > maxArea && (width > 64 || height > 64)) {
             width -= width > 64 ? 64 : 0;
@@ -37,7 +35,7 @@ function scaleParam(text) {
 
     return { parameters, text };
 }
-function imgModelParam(text) {
+function imgModelParam(text, e) {
     const samplers = {
         // 注释掉 非免费的
         // 'FLUX.1-dev': 'black-forest-labs/FLUX.1-dev',
@@ -49,9 +47,7 @@ function imgModelParam(text) {
         'stable-diffusion-3-medium': 'stabilityai/stable-diffusion-3-medium',
         'stable-diffusion-xl-base-1.0': 'stabilityai/stable-diffusion-xl-base-1.0',
     }
-    const FLUXDEV_c = new FLUXDEV();
-    const config_this = FLUXDEV_c.get_config_this()
-    let parameters = { imageModel: config_this.imageModel }
+    let parameters = { imageModel: e.sfRuntime.config.imageModel }
     Object.entries(samplers).forEach(([alias, imageModel]) => {
         if (text.includes(alias)) {
             parameters.imageModel = imageModel
@@ -71,13 +67,11 @@ function seedParam(text) {
     }
     return { parameters, text }
 }
-function stepsParam(text) {
+function stepsParam(text, e) {
     let parameters = {}
     let steps = text.match(/步数\s?(\d+)/)?.[1]
-    const FLUXDEV_c = new FLUXDEV();
-    const config_this = FLUXDEV_c.get_config_this()
-    const maxStep = config_this.free_mode ? 50 : 28
-    parameters.steps = steps ? Math.min(Math.max(1, Number(steps)), maxStep) : config_this.num_inference_steps
+    const maxStep = e.sfRuntime.config.free_mode ? 50 : 28
+    parameters.steps = steps ? Math.min(Math.max(1, Number(steps)), maxStep) : e.sfRuntime.config.num_inference_steps
     text = text.replace(/步数\s?\d+/g, '')
     return { parameters, text }
 }
@@ -115,15 +109,15 @@ export async function handleParam(e, text) {
     let result = null
 
     // 尺寸处理
-    result = scaleParam(text)
+    result = scaleParam(text, e)
     parameters = Object.assign(parameters, result.parameters)
     text = result.text
     // 模型处理
-    result = imgModelParam(text)
+    result = imgModelParam(text, e)
     parameters = Object.assign(parameters, result.parameters)
     text = result.text
     // 步数处理
-    result = stepsParam(text)
+    result = stepsParam(text, e)
     parameters = Object.assign(parameters, result.parameters)
     text = result.text
     // 种子处理

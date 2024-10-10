@@ -28,91 +28,77 @@ export class FLUXDEV extends plugin {
                 }
             ]
         })
-        // 读取配置
-        this.config = Config.getConfig()
         this.sf_keys_index = -1
     }
 
-    /**
-     * @description: 写入硬盘的 config
-     * @param {*} config_data
-     * @param {*} isCover 是否覆盖内存中的 config；用于锅巴立即写入内存
-     * @return {*}
-     */
-    saveConfig(config_data, isCover = false) {
-        if (isCover)
-            this.config = config_data
-        Config.setConfig(config_data)
-    }
-
-    /** 获取当前配置 */
-    get_config_this() {
-        return this.config
-    }
-
     /** 轮询 sf_keys */
-    get_use_sf_key() {
+    get_use_sf_key(config_date) {
         let use_sf_key = null
         let count = 0;
-        while (!use_sf_key && count < this.config.sf_keys.length) {
+        while (!use_sf_key && count < config_date.sf_keys.length) {
             count++
-            if (this.sf_keys_index < this.config.sf_keys.length - 1) {
+            if (this.sf_keys_index < config_date.sf_keys.length - 1) {
                 this.sf_keys_index++
             } else
                 this.sf_keys_index = 0
 
-            if (this.config.sf_keys[this.sf_keys_index].isDisable)
+            if (config_date.sf_keys[this.sf_keys_index].isDisable)
                 continue
             else {
-                use_sf_key = this.config.sf_keys[this.sf_keys_index].sf_key
+                use_sf_key = config_date.sf_keys[this.sf_keys_index].sf_key
             }
         }
         return use_sf_key
     }
 
     async sf_setConfig(e) {
+        // 读取配置
+        let config_date = Config.getConfig()
         const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数)\s*(.*)$/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
                 case '画图key':
-                    this.config.sf_keys.push({ sf_key: value })
+                    config_date.sf_keys.push({ sf_key: value })
                     break
                 // case '翻译key':
-                //     this.config.translateKey = value
+                //     config_date.translateKey = value
                 //     break
                 // case '翻译baseurl':
-                //     this.config.sfBaseUrl = value
+                //     config_date.sfBaseUrl = value
                 //     break
                 case '翻译模型':
-                    this.config.translateModel = value
+                    config_date.translateModel = value
                     break
                 case '生成提示词':
-                    this.config.generatePrompt = value.toLowerCase() === '开'
+                    config_date.generatePrompt = value.toLowerCase() === '开'
                     break
                 case '推理步数':
-                    this.config.num_inference_steps = parseInt(value)
+                    config_date.num_inference_steps = parseInt(value)
                     break
                 default:
                     return
             }
-            this.saveConfig(this.config)
+            Config.setConfig(config_date)
             await this.reply(`${type}已设置：${value}`)
         }
         return
     }
 
     async sf_draw(e) {
+        // 读取配置
+        const config_date = Config.getConfig()
+        e.sfRuntime = { config: config_date }
         // logger.mark("draw方法被调用，消息内容:", e.msg)
 
-        if (this.config.sf_keys.length == 0) {
+        if (config_date.sf_keys.length == 0) {
             await this.reply('请先设置画图API Key。使用命令：#flux设置画图key [值]（仅限主人设置）')
             return
         }
 
         // 处理图生图模型
         let canImg2Img = false;
-        if (this.config.imageModel.match(/stabilityai\/stable-diffusion-3-medium|stabilityai\/stable-diffusion-xl-base-1.0|stabilityai\/stable-diffusion-2-1/)) {
+        if (config_date.imageModel.match(/stabilityai\/stable-diffusion-3-medium|stabilityai\/stable-diffusion-xl-base-1.0|stabilityai\/stable-diffusion-2-1/)) {
             canImg2Img = true;
         }
 
@@ -138,26 +124,26 @@ export class FLUXDEV extends plugin {
 
         let finalPrompt = userPrompt
         let onleReplyOnce = 0;
-        const use_sf_key = this.get_use_sf_key();
-        if (this.config.generatePrompt) {
-            if (!onleReplyOnce && !this.config.simpleMode) {
+        const use_sf_key = this.get_use_sf_key(config_date);
+        if (config_date.generatePrompt) {
+            if (!onleReplyOnce && !config_date.simpleMode) {
                 this.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成提示词并绘图...`)
                 onleReplyOnce++
             }
-            finalPrompt = await this.generatePrompt(userPrompt, use_sf_key)
+            finalPrompt = await this.generatePrompt(userPrompt, use_sf_key, config_date)
             if (!finalPrompt) {
                 await this.reply('生成提示词失败，请稍后再试。')
                 return
             }
         }
-        if (!onleReplyOnce && !this.config.simpleMode) {
+        if (!onleReplyOnce && !config_date.simpleMode) {
             this.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成图片...`)
             onleReplyOnce++
         }
 
         logger.mark("[sf插件]开始图片生成API调用")
         try {
-            const response = await fetch(`${this.config.sfBaseUrl}/image/generations`, {
+            const response = await fetch(`${config_date.sfBaseUrl}/image/generations`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${use_sf_key}`,
@@ -190,7 +176,7 @@ export class FLUXDEV extends plugin {
 种子：${data.seed}`
                 const str_3 = `图片URL：${imageUrl}`
 
-                if (this.config.simpleMode) {
+                if (config_date.simpleMode) {
                     const msgx = await common.makeForwardMsg(e, [str_1, { ...segment.image(imageUrl), origin: true }, str_2, str_3], `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
                     this.reply(msgx)
                 } else {
@@ -213,23 +199,24 @@ export class FLUXDEV extends plugin {
      * @description: 自动提示词
      * @param {*} userPrompt
      * @param {*} use_sf_key
+     * @param {*} config_date
      * @return {*}
      */
-    async generatePrompt(userPrompt, use_sf_key) {
-        if (this.config.sf_keys.length == 0) {
+    async generatePrompt(userPrompt, use_sf_key, config_date) {
+        if (config_date.sf_keys.length == 0) {
             logger.error("[sf插件]自动提示词API Key未设置")
             return userPrompt
         }
 
         try {
-            const response = await fetch(`${this.config.sfBaseUrl}/chat/completions`, {
+            const response = await fetch(`${config_date.sfBaseUrl}/chat/completions`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${use_sf_key}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    "model": this.config.translateModel,
+                    "model": config_date.translateModel,
                     "messages": [
                         {
                             "role": "system",
