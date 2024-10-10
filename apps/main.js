@@ -9,11 +9,11 @@ import {
 } from '../utils/getImg.js'
 import { handleParam } from '../utils/parse.js'
 
-export class FLUXDEV extends plugin {
+export class SF_Painting extends plugin {
     constructor() {
         super({
-            name: 'FLUXDEV插件',
-            dsc: 'FLUXDEV生成图片',
+            name: 'SF_Painting插件',
+            dsc: 'SF_Painting生成图片',
             event: 'message',
             priority: 6,
             rule: [
@@ -93,7 +93,7 @@ export class FLUXDEV extends plugin {
 
         if (config_date.sf_keys.length == 0) {
             await this.reply('请先设置画图API Key。使用命令：#flux设置画图key [值]（仅限主人设置）')
-            return
+            return false
         }
 
         // 处理图生图模型
@@ -133,7 +133,7 @@ export class FLUXDEV extends plugin {
             finalPrompt = await this.generatePrompt(userPrompt, use_sf_key, config_date)
             if (!finalPrompt) {
                 await this.reply('生成提示词失败，请稍后再试。')
-                return
+                return false
             }
         }
         if (!onleReplyOnce && !config_date.simpleMode) {
@@ -176,6 +176,7 @@ export class FLUXDEV extends plugin {
 种子：${data.seed}`
                 const str_3 = `图片URL：${imageUrl}`
 
+                // 发送图片
                 if (config_date.simpleMode) {
                     const msgx = await common.makeForwardMsg(e, [str_1, { ...segment.image(imageUrl), origin: true }, str_2, str_3], `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
                     this.reply(msgx)
@@ -184,13 +185,17 @@ export class FLUXDEV extends plugin {
                     this.reply(msgx)
                     this.reply({ ...segment.image(imageUrl), origin: true })
                 }
+
+                return true;
             } else {
                 logger.error("[sf插件]返回错误：\n", data)
                 this.reply(`生成图片失败：${data.message || '未知错误'}`)
+                return false;
             }
         } catch (error) {
             logger.error("[sf插件]API调用失败\n", error)
             this.reply('生成图片时遇到了一个错误，请稍后再试。')
+            return false;
         }
     }
 
@@ -208,6 +213,7 @@ export class FLUXDEV extends plugin {
             return userPrompt
         }
 
+        logger.info("[sf插件]开始提示词生成API调用")
         try {
             const response = await fetch(`${config_date.sfBaseUrl}/chat/completions`, {
                 method: 'POST',
