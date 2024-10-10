@@ -42,8 +42,8 @@ pnpm install --filter=siliconflow-plugin
 
 请使用 `#sf帮助` 获取完整帮助
 
-- [x] 接入图像生成
-- [x] 可更换画图多项免费模型
+- [x] 文生图
+- [x] 接入多项免费画图/语言模型
 - [x] 支持图生图
 - [x] 多keys同时并发
 - [ ] 接入更多LLM推理
