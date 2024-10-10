@@ -36,14 +36,14 @@ pnpm install --filter=siliconflow-plugin
 > [!WARNING]
 > 非常不建议手动修改配置文件，本插件已兼容 [Guoba-plugin](https://github.com/guoba-yunzai/guoba-plugin) ，请使用锅巴插件对配置项进行修改
 
-<img decoding="async" align=right src="https://github.com/user-attachments/assets/d8b39d2a-84b7-4856-9bb1-ce79b41a310c" width="35%">
-
 ## 功能列表
+
+<img decoding="async" align=right src="https://github.com/user-attachments/assets/9698e837-49e7-4c19-8dab-6aa17d1faed4" width="35%">
 
 请使用 `#sf帮助` 获取完整帮助
 
 - [x] 接入图像生成
-- [x] 可更换画图模型
+- [x] 可更换画图多项免费模型
 - [x] 支持图生图
 - [x] 多keys同时并发
 - [ ] 接入更多LLM推理
