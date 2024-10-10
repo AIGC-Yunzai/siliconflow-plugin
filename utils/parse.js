@@ -39,8 +39,9 @@ function scaleParam(text) {
 }
 function imgModelParam(text) {
     const samplers = {
-        'FLUX.1-dev': 'black-forest-labs/FLUX.1-dev',
-        'FLUX.1-schnell': 'Pro/black-forest-labs/FLUX.1-schnell',
+        // 注释掉 非免费的
+        // 'FLUX.1-dev': 'black-forest-labs/FLUX.1-dev',
+        // 'FLUX.1-schnell': 'Pro/black-forest-labs/FLUX.1-schnell',
         'FLUX.1-schnell': 'black-forest-labs/FLUX.1-schnell',
         'sd-turbo': 'stabilityai/sd-turbo',
         'sdxl-turbo': 'stabilityai/sdxl-turbo',

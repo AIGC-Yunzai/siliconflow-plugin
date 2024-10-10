@@ -179,24 +179,24 @@ export class FLUXDEV extends plugin {
             if (data?.images?.[0]?.url) {
                 const imageUrl = data.images[0].url
 
-                const strs = `@${e.sender.card || e.sender.nickname} ${e.user_id}您的${canImg2Img ? "图生图" : "文生图"}已完成：
-原始提示词：${userPrompt}
+                const str_1 = `@${e.sender.card || e.sender.nickname} ${e.user_id}您的${canImg2Img ? "图生图" : "文生图"}已完成：`
+                const str_2 = `原始提示词：${userPrompt}
 最终提示词：${finalPrompt}
 负面提示词：${param.parameters.negative_prompt ? param.parameters.negative_prompt : "sf默认"}
 绘图模型：${param.parameters.imageModel}
 步数：${param.parameters.steps}
 图片大小：${param.parameters.width}x${param.parameters.height}
-图片URL：${imageUrl}
 生成时间：${data.timings.inference.toFixed(2)}秒
 种子：${data.seed}`
+                const str_3 = `图片URL：${imageUrl}`
 
                 if (this.config.simpleMode) {
-                    const msgx = await common.makeForwardMsg(e, [await segment.image(imageUrl), strs], `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
+                    const msgx = await common.makeForwardMsg(e, [str_1, { ...segment.image(imageUrl), origin: true }, str_2, str_3], `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
                     this.reply(msgx)
                 } else {
-                    const msgx = await common.makeForwardMsg(e, strs, `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
+                    const msgx = await common.makeForwardMsg(e, str_1, str_2, str_3, `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
                     this.reply(msgx)
-                    this.reply(segment.image(imageUrl))
+                    this.reply({ ...segment.image(imageUrl), origin: true })
                 }
             } else {
                 logger.error("[sf插件]返回错误：\n", data)
