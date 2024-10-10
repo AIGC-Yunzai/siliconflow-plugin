@@ -1,4 +1,4 @@
-![](https://socialify.git.ci/misaka20002/siliconflow-plugin/image?font=KoHo&forks=1&issues=1&language=1&name=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Auto)
+![](https://socialify.git.ci/AIGC-Yunzai/siliconflow-plugin/image?font=KoHo&forks=1&issues=1&language=1&name=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Auto)
 
 <img decoding="async" align=right src="resources/readme/girl.png" width="35%">
 
@@ -15,14 +15,14 @@
 #### 1. 克隆仓库
 
 ```
-git clone https://github.com/Misaka20002/siliconflow-plugin.git ./plugins/siliconflow-plugin
+git clone https://github.com/AIGC-Yunzai/siliconflow-plugin.git ./plugins/siliconflow-plugin
 ```
 
 > [!NOTE]
 > 如果你的网络环境较差，无法连接到 Github，可以使用 [GitHub Proxy](https://mirror.ghproxy.com/) 提供的文件代理加速下载服务
 >
 > ```
-> git clone https://mirror.ghproxy.com/https://github.com/Misaka20002/siliconflow-plugin.git ./plugins/siliconflow-plugin
+> git clone https://mirror.ghproxy.com/https://github.com/AIGC-Yunzai/siliconflow-plugin.git ./plugins/siliconflow-plugin
 > ```
 
 #### 2. 安装依赖
@@ -53,7 +53,7 @@ pnpm install --filter=siliconflow-plugin
 
 如果你喜欢这个项目，请不妨点个 Star🌟，这是对开发者最大的动力。
 
-有意见或者建议也欢迎提交 [Issues](https://github.com/Misaka20002/siliconflow-plugin/issues) 和 [Pull requests](https://github.com/Misaka20002/siliconflow-plugin/pulls)。
+有意见或者建议也欢迎提交 [Issues](https://github.com/AIGC-Yunzai/siliconflow-plugin/issues) 和 [Pull requests](https://github.com/AIGC-Yunzai/siliconflow-plugin/pulls)。
 
 ## 许可证
 
