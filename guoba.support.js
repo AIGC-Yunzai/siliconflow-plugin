@@ -35,8 +35,8 @@ export function supportGuoba() {
         },
         {
           field: "sfBaseUrl",
-          label: "接口地址",
-          bottomHelpMessage: "设置接口地址；用于画图和翻译",
+          label: "SF接口地址",
+          bottomHelpMessage: "设置SF接口地址；用于画图和翻译",
           component: "Input",
           componentProps: {
             placeholder: 'https://api.siliconflow.cn/v1',
@@ -81,15 +81,6 @@ export function supportGuoba() {
             ],
           },
         },
-        // {
-        //   field: "translateKey",
-        //   label: "翻译key",
-        //   bottomHelpMessage: "flux设置翻译key",
-        //   component: "Input",
-        //   componentProps: {
-        //     placeholder: 'xxxxxxxxxxxxx',
-        //   },
-        // },
         {
           field: "generatePrompt",
           label: "自动提示词",
@@ -175,6 +166,68 @@ export function supportGuoba() {
               { label: "stabilityai/stable-diffusion-3-medium（免费/图生图）", value: "stabilityai/stable-diffusion-3-medium" },
               { label: "stabilityai/stable-diffusion-xl-base-1.0（免费/图生图）", value: "stabilityai/stable-diffusion-xl-base-1.0" }
             ],
+          },
+        },
+        {
+          component: "Divider",
+          label: "MJ 相关配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "mj_apiBaseUrl",
+          label: "MJ接口地址",
+          bottomHelpMessage: "设置MJ接口地址；用于MJ画图；可选：https://ai.trueai.org 或 https://api.ephone.ai",
+          component: "Input",
+          componentProps: {
+            placeholder: 'https://ai.trueai.org',
+          },
+        },
+        {
+          field: "mj_apiKey",
+          label: "MJ接口Key",
+          bottomHelpMessage: "你的账户的API Key",
+          component: "Input",
+          componentProps: {
+            placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
+          },
+        },
+        {
+          field: "mj_mode",
+          label: "MJ绘画模式",
+          bottomHelpMessage: "MJ绘画模式",
+          component: "Select",
+          componentProps: {
+            options: [
+              { label: "fast", value: "fast" },
+              { label: "slow", value: "slow" },
+            ],
+          },
+        },
+        {
+          field: "mj_translationEnabled",
+          label: "MJ自动提示词",
+          bottomHelpMessage: "启用自动提示词；在画图时根据文本自动使用提示词模型生成英文提示词",
+          component: "Switch",
+        },
+        {
+          field: "mj_translationBaseUrl",
+          label: "MJ提示词接口地址",
+          bottomHelpMessage: "填写提供标准openAI API的接口地址",
+          component: "Input",
+          componentProps: {
+            placeholder: 'https://',
+          },
+        },
+        {
+          field: "mj_translationModel",
+          label: "MJ提示词模型",
+          bottomHelpMessage: "填写提供标准openAI API的接口的模型",
+          component: "Input",
+          componentProps: {
+            placeholder: 'gpt-4o',
           },
         },
       ],

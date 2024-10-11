@@ -1,5 +1,5 @@
+# SF插件
 sf_keys: []
-# translateKey: ""
 sfBaseUrl: "https://api.siliconflow.cn/v1"
 translateModel: "Vendor-A/Qwen/Qwen2-72B-Instruct"
 generatePrompt: true
@@ -7,3 +7,11 @@ num_inference_steps: 20
 imageModel: "black-forest-labs/FLUX.1-schnell"
 free_mode: false
 simpleMode: false
+# MJ 插件
+mj_apiKey: '1011'
+mj_apiBaseUrl: 'https://ai.trueai.org'
+mj_translationKey: ''
+mj_translationBaseUrl: ''
+mj_translationModel: 'gpt-4o'
+mj_translationEnabled: false
+mj_mode: 'fast'

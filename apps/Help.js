@@ -43,13 +43,13 @@ export class help extends plugin {
                 "list": [
                     {
                         "icon": 1,
-                        "title": "#flux [描述]",
-                        "desc": "根据用户输入的提示词生成图片"
+                        "title": "#mjp [描述]",
+                        "desc": "使用 MID_JOURNEY 绘画"
                     },
                     {
                         "icon": 5,
-                        "title": "#sf设置画图key [值]",
-                        "desc": "写入key"
+                        "title": "#niji [描述]",
+                        "desc": "使用 NIJI_JOURNEY 绘画"
                     },
                     {
                         "icon": 7,
@@ -61,24 +61,24 @@ export class help extends plugin {
                         "title": "#sf绘图 [描述][横图]",
                         "desc": "指定绘画长宽 [横图|竖图|方图|512*512]"
                     },
-                    {
-                        "icon": 54,
-                        "title": "#sf设置翻译模型 [模型名]",
-                        "desc": "设置翻译模型"
-                    },
-                    {
-                        "icon": 86,
-                        "title": "#sf设置生成提示词 [开|关]",
-                        "desc": "设置生成提示词开关"
-                    },
+                    // {
+                    //     "icon": 54,
+                    //     "title": "#sf设置翻译模型 [模型名]",
+                    //     "desc": "设置翻译模型"
+                    // },
+                    // {
+                    //     "icon": 86,
+                    //     "title": "#sf设置生成提示词 [开|关]",
+                    //     "desc": "设置生成提示词开关"
+                    // },
                     {
                         "icon": 91,
-                        "title": "#sf设置推理步数 [Num]",
+                        "title": "#mjp帮助",
                         "desc": "设置默认推理步数"
                     },
                     {
                         "icon": 3,
-                        "title": "#sf帮助",
+                        "title": "#sf设置帮助",
                         "desc": "帮助"
                     },
                     {
