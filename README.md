@@ -8,6 +8,8 @@
 - 为什么要接入？因为他众多免费的绘图模型~可以白嫖~
 
 > [!TIP]
+> 插件官网：[SiliconFlow-插件](https://aigc-yunzai.dwe.me/)
+> 
 > 将逐步接入更多API
 
 ## 安装插件
@@ -31,6 +33,10 @@ git clone https://github.com/AIGC-Yunzai/siliconflow-plugin.git ./plugins/silico
 pnpm install --filter=siliconflow-plugin
 ```
 
+## 使用教程
+
+- [配置教程](https://aigc-yunzai.dwe.me/siliconflow/%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AE)🍈
+
 ## 插件配置
 
 > [!WARNING]
@@ -42,7 +48,7 @@ pnpm install --filter=siliconflow-plugin
 
 请使用 `#sf帮助` 获取完整帮助
 
-- [x] 文生图
+<!-- - [x] 文生图 -->
 - [x] 接入多项免费画图/语言模型
 - [x] 支持图生图
 - [x] 多keys同时并发
