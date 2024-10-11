@@ -57,7 +57,7 @@ export function supportGuoba() {
                 component: "Input",
                 bottomHelpMessage: "登录https://cloud.siliconflow.cn/account/ak 后获取API密钥；",
                 componentProps: {
-                  placeholder: "sk-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+                  placeholder: "sk-xxxxxxxxxxxxxxxxxxxxxxxx",
                 },
               },
               {
@@ -83,25 +83,25 @@ export function supportGuoba() {
         },
         {
           field: "generatePrompt",
-          label: "自动提示词",
+          label: "SF自动提示词",
           bottomHelpMessage: "启用自动提示词；在画图时根据文本自动使用提示词模型生成英文提示词",
           component: "Switch",
         },
         {
           field: "free_mode",
-          label: "大图模式",
+          label: "SF大图模式",
           bottomHelpMessage: "开启后可以绘制更大的图片和更多的步数；注意额度消耗；指令：2048*2048 或 步数30",
           component: "Switch",
         },
         {
           field: "simpleMode",
-          label: "简洁模式",
+          label: "SF简洁模式",
           bottomHelpMessage: "开启后合并输出图片与prompt，且不提示进入绘画队列",
           component: "Switch",
         },
         {
           field: "num_inference_steps",
-          label: "推理步数",
+          label: "SF推理步数",
           bottomHelpMessage: "设置默认推理步数；注意额度消耗",
           component: "InputNumber",
           componentProps: {
@@ -111,7 +111,7 @@ export function supportGuoba() {
         },
         {
           field: "translateModel",
-          label: "提示词模型",
+          label: "SF提示词模型",
           bottomHelpMessage: "在画图时输入的提示词是中文的时候自动使用提示词模型",
           component: "Select",
           componentProps: {
@@ -152,7 +152,7 @@ export function supportGuoba() {
         },
         {
           field: "imageModel",
-          label: "绘图模型",
+          label: "SF绘图模型",
           bottomHelpMessage: "flux设置绘图模型",
           component: "Select",
           componentProps: {
@@ -179,7 +179,7 @@ export function supportGuoba() {
         {
           field: "mj_apiBaseUrl",
           label: "MJ接口地址",
-          bottomHelpMessage: "设置MJ接口地址；用于MJ画图；可选：https://ai.trueai.org 或 https://api.ephone.ai",
+          bottomHelpMessage: "设置MJ接口地址，用于MJ画图；可选：https://ai.trueai.org （免费无key但每一张图片5分钟）或 https://api.ephone.ai",
           component: "Input",
           componentProps: {
             placeholder: 'https://ai.trueai.org',
@@ -219,6 +219,15 @@ export function supportGuoba() {
           component: "Input",
           componentProps: {
             placeholder: 'https://',
+          },
+        },
+        {
+          field: "mj_translationKey",
+          label: "MJ提示词接口Key",
+          bottomHelpMessage: "填写提供标准openAI API的接口Key",
+          component: "Input",
+          componentProps: {
+            placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
           },
         },
         {
