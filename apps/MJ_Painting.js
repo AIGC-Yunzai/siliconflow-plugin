@@ -187,7 +187,7 @@ export class MJ_Painting extends plugin {
 
     async pollTaskResult(taskId, config_date) {
         let attempts = 0
-        const maxAttempts = 84 // 5分钟超时
+        const maxAttempts = 120 // 10分钟超时
         while (attempts < maxAttempts) {
             const response = await fetch(`${config_date.mj_apiBaseUrl}/mj/task/${taskId}/fetch`, {
                 method: 'GET',
