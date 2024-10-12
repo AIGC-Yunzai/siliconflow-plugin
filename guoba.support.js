@@ -253,6 +253,8 @@ export function supportGuoba() {
         config = lodash.merge({}, Config.getConfig(), config)
         config.sf_keys = data['sf_keys']
         config.sfBaseUrl = config.sfBaseUrl.replace(/\/$/, '')
+        config.mj_apiBaseUrl = config.mj_apiBaseUrl.replace(/\/$/, '')
+        config.mj_translationBaseUrl = config.mj_translationBaseUrl.replace(/\/$/, '')
         Config.setConfig(config)
         return Result.ok({}, '保存成功~')
       },

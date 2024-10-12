@@ -118,7 +118,7 @@ export class MJ_Painting extends plugin {
             const result = await this.pollTaskResult(taskId, config_date)
             if (result) {
                 await this.reply(`图片生成完成！\n原始提示词：${prompt}\n任务ID：${taskId}\n图片链接：${result.imageUrl}`)
-                await this.reply(segment.image(result.imageUrl))
+                await this.reply({ ...segment.image(result.imageUrl), origin: true })
                 redis.set(`sf_plugin:MJ_Painting:lastTaskId:${e.user_id}`, taskId, { EX: 7 * 24 * 60 * 60 }); // 写入redis，有效期7天
             } else {
                 await this.reply('生成图片失败，请稍后重试。')
@@ -260,7 +260,7 @@ export class MJ_Painting extends plugin {
                 const result = await this.pollTaskResult(newTaskId, config_date)
                 if (result) {
                     await this.reply(`操作完成！\n操作类型：${action}${position}\n新任务ID：${newTaskId}\n图片链接：${result.imageUrl}`)
-                    await this.reply(segment.image(result.imageUrl))
+                    await this.reply({ ...segment.image(result.imageUrl), origin: true })
                     redis.set(`sf_plugin:MJ_Painting:lastTaskId:${e.user_id}`, newTaskId, { EX: 7 * 24 * 60 * 60 }); // 写入redis，有效期7天
                 } else {
                     await this.reply('操作失败，请稍后重试。')

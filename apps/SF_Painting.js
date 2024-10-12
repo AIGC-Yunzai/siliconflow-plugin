@@ -252,14 +252,12 @@ export class SF_Painting extends plugin {
 
     async sf_help(e) {
         const helpMessage = `
-FLUXDEV插件使用帮助：
-1. 生成图片：#flux [描述]
-2. 设置画图API Key：#flux设置画图key [值]
-3. 设置翻译API Key：#flux设置翻译key [值]
-4. 设置翻译API地址：#flux设置翻译baseurl [地址] (OpenAI格式，以/v1结尾)
-5. 设置翻译模型：#flux设置翻译模型 [模型名]
-6. 开关提示词生成：#flux设置生成提示词 开/关
-7. 查看帮助：#flux帮助
+SF插件设置帮助：
+1. 设置画图API Key：#flux设置画图key [值]
+2. 设置翻译模型：#flux设置翻译模型 [模型名]
+3. 开关提示词生成：#flux设置生成提示词 开/关
+4. 开关提示词生成：#flux设置推理步数 [值]
+5. 查看帮助：#flux帮助
 
 注意：设置命令仅限主人使用。
 可用别名：siliconflow、硅基流动
