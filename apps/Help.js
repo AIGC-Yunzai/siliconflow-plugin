@@ -53,13 +53,13 @@ export class help extends plugin {
                     },
                     {
                         "icon": 7,
-                        "title": "#sf绘图 [描述][步数20]",
-                        "desc": "指定绘画步数"
+                        "title": "#sf绘图 [描述]",
+                        "desc": "使用 Siliconflow 预设模型绘画"
                     },
                     {
                         "icon": 11,
                         "title": "#sf绘图 [描述][横图]",
-                        "desc": "指定绘画长宽 [横图|竖图|方图|512*512]"
+                        "desc": "指定绘画参数 [横图|竖图|方图|512*512|步数20]"
                     },
                     // {
                     //     "icon": 54,
@@ -74,12 +74,12 @@ export class help extends plugin {
                     {
                         "icon": 91,
                         "title": "#mjp帮助",
-                        "desc": "设置默认推理步数"
+                        "desc": "获取 mjp 帮助"
                     },
                     {
                         "icon": 3,
                         "title": "#sf设置帮助",
-                        "desc": "帮助"
+                        "desc": "获取 sf 设置帮助"
                     },
                     {
                         "icon": 38,
