@@ -1,21 +1,21 @@
-import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
 import Config from '../components/Config.js'
 
-export class ChatGPTResponsePostHandler extends plugin {
+export class ChatGPTResponsePostHandler_in_SF extends plugin {
   constructor() {
     super({
-      name: 'chatgpt文本回复后处理器',
+      name: 'chatgpt文本回复后处理器-SF插件',
       priority: -100,
       namespace: 'chatgpt-plugin',
       handler: [{
         key: 'chatgpt.response.post', // key必须是chatgpt.response.post
-        fn: 'postHandler'
+        fn: 'postHandler_fish_sf'
       }]
     })
   }
 
-  async postHandler(e, options, reject) {
+  async postHandler_fish_sf(e, options, reject) {
+    logger.info("[sf插件]Chatgpt后处理器生成音频")
     // 读取配置
     let config_date = Config.getConfig()
 
