@@ -238,7 +238,7 @@ export class SF_Painting extends plugin {
 
         msgArr.push(optionMsg)
         const msgx = await common.makeForwardMsg(e, msgArr, `Fish发音人`)
-        await e.reply(msgx, true);
+        await e.reply(msgx);
     }
 
     async sf_chat(e) {
