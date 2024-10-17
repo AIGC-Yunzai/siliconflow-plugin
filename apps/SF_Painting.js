@@ -36,7 +36,7 @@ export class SF_Painting extends plugin {
                     fnc: 'sf_chat',
                 },
                 {
-                    reg: '^#搜索fish发音人(.*)$',
+                    reg: '^#sf搜索fish发音人(.*)$',
                     fnc: 'searchFishVoices'
                 },
             ]
@@ -217,7 +217,7 @@ export class SF_Painting extends plugin {
             e.reply("请先在锅巴中设置fish.audio的Api Key", true);
             return
         }
-        const keyword = e.msg.replace(/^#搜索fish发音人/, '').trim();
+        const keyword = e.msg.replace(/^#sf搜索fish发音人/, '').trim();
 
         const options = {
             method: 'GET',
