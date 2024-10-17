@@ -245,6 +245,22 @@ export function supportGuoba() {
             placeholder: 'gpt-4o',
           },
         },
+        {
+          label: 'fish.audio的设置',
+          component: 'Divider'
+        },
+        {
+          field: 'fishApiKey',
+          label: 'Api Key',
+          bottomHelpMessage: '此设置为chatgpt-插件 Fish语音合成后处理器，用于在对话中自动合成语音；（需要配置key且chatgpt插件内云转码设置为“文件”）收费，API KEY获取地址：https://fish.audio/zh-CN/go-api/api-keys',
+          component: 'Input'
+        },
+        {
+          field: 'fish_reference_id',
+          label: '发音人ID',
+          bottomHelpMessage: '这里填入你想要的模型model的代码，例如派蒙的是efc1ce3726a64bbc947d53a1465204aa；说明：api.fish.audio 不受 vits默认角色 控制，仅由 发音人ID 决定其发音人；可用指令：#搜索fish发音人[名称]',
+          component: 'Input'
+        },
       ],
       getConfigData() {
         let config = Config.getConfig()

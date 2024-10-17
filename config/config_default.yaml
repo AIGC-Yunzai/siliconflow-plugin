@@ -16,3 +16,6 @@ mj_translationBaseUrl: ''
 mj_translationModel: 'gpt-4o'
 mj_translationEnabled: false
 mj_mode: 'fast'
+# chatgpt插件后处理器
+fishApiKey: ""
+fish_reference_id: "efc1ce3726a64bbc947d53a1465204aa"
