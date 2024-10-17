@@ -63,7 +63,7 @@ export class help extends plugin {
                     },
                     {
                         "icon": 54,
-                        "title": "#sf [对话]",
+                        "title": "#ss [对话]",
                         "desc": "与LLM对话"
                     },
                     // {

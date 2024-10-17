@@ -32,7 +32,7 @@ export class SF_Painting extends plugin {
                     permission: 'master'
                 },
                 {
-                    reg: '^#(sf|SF)[sS]*',
+                    reg: '^#(ss|SS)[sS]*',
                     fnc: 'sf_chat',
                 },
             ]
