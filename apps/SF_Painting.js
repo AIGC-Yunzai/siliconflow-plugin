@@ -22,7 +22,7 @@ export class SF_Painting extends plugin {
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数)\\s*(.*)$',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人)\\s*(.*)$',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 },
@@ -67,7 +67,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数)\s*(.*)$/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人)\s*(.*)$/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -82,6 +82,9 @@ export class SF_Painting extends plugin {
                     break
                 case '推理步数':
                     config_date.num_inference_steps = parseInt(value)
+                    break
+                case 'fish发音人':
+                    config_date.fish_reference_id = value
                     break
                 default:
                     return
@@ -221,7 +224,7 @@ export class SF_Painting extends plugin {
             headers: { Authorization: `Bearer ${config_date.fishApiKey}` }
         };
 
-        let optionMsg = "可用指令：#chatgpt设置全局vits语音角色"
+        let optionMsg = "可用指令：#sf设置fish发音人"
         let msgArr = [`Fish发音人：`];
         await fetch(`https://api.fish.audio/model?tag=${encodeURIComponent(keyword)}`, options)
             .then(response => response.json())

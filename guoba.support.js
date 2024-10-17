@@ -250,9 +250,15 @@ export function supportGuoba() {
           component: 'Divider'
         },
         {
+          field: "fish_HandlerOn",
+          label: "Fish语音开关",
+          bottomHelpMessage: "开启chatgpt-插件 Fish语音合成后处理器，用于在对话中自动合成语音（需要配置key且chatgpt插件内云转码设置为“文件”）",
+          component: "Switch",
+        },
+        {
           field: 'fishApiKey',
           label: 'Api Key',
-          bottomHelpMessage: '此设置为chatgpt-插件 Fish语音合成后处理器，用于在对话中自动合成语音；（需要配置key且chatgpt插件内云转码设置为“文件”）收费，API KEY获取地址：https://fish.audio/zh-CN/go-api/api-keys',
+          bottomHelpMessage: '收费，API KEY获取地址：https://fish.audio/zh-CN/go-api/api-keys',
           component: 'Input'
         },
         {

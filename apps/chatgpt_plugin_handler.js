@@ -19,6 +19,9 @@ export class ChatGPTResponsePostHandler extends plugin {
     // 读取配置
     let config_date = Config.getConfig()
 
+    // 开关
+    if (!config_date.fish_HandlerOn) return false;
+
     const { content, use, prompt } = options
 
     const response = await fetch('https://api.fish.audio/v1/tts', {
