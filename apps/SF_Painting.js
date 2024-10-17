@@ -30,7 +30,11 @@ export class SF_Painting extends plugin {
                     reg: '^#(sf|SF|siliconflow|硅基流动)设置帮助$',
                     fnc: 'sf_help',
                     permission: 'master'
-                }
+                },
+                {
+                    reg: '^#(sf|SF)[sS]*',
+                    fnc: 'sf_chat',
+                },
             ]
         })
         this.sf_keys_index = -1
@@ -91,7 +95,7 @@ export class SF_Painting extends plugin {
         // logger.mark("draw方法被调用，消息内容:", e.msg)
 
         if (config_date.sf_keys.length == 0) {
-            await this.reply('请先设置画图API Key。使用命令：#flux设置画图key [值]（仅限主人设置）')
+            await this.reply('请先设置画图API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
             return false
         }
 
@@ -198,21 +202,38 @@ export class SF_Painting extends plugin {
         }
     }
 
+    async sf_chat(e) {
+        // 读取配置
+        const config_date = Config.getConfig()
+
+        if (config_date.sf_keys.length == 0) {
+            await this.reply('请先设置API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
+            return false
+        }
+
+        let msg = e.msg.replace(/^#(sf|SF)/, '').trim()
+        const use_sf_key = this.get_use_sf_key(config_date);
+
+        const answer = await this.generatePrompt(msg, use_sf_key, config_date, true)
+
+        this.reply(answer, true)
+    }
+
 
     /**
      * @description: 自动提示词
-     * @param {*} userPrompt
+     * @param {*} input
      * @param {*} use_sf_key
      * @param {*} config_date
-     * @return {*}
+     * @param {*} forChat 聊天调用
+     * @return {string}
      */
-    async generatePrompt(userPrompt, use_sf_key, config_date) {
+    async generatePrompt(input, use_sf_key, config_date, forChat = false) {
         if (config_date.sf_keys.length == 0) {
-            logger.error("[sf插件]自动提示词API Key未设置")
-            return userPrompt
+            return input
         }
 
-        logger.info("[sf插件]开始提示词生成API调用")
+        logger.info("[sf插件]API调用LLM")
         try {
             const response = await fetch(`${config_date.sfBaseUrl}/chat/completions`, {
                 method: 'POST',
@@ -225,11 +246,11 @@ export class SF_Painting extends plugin {
                     "messages": [
                         {
                             "role": "system",
-                            "content": "请按照我的提供的要求，用一句话英文生成一组Midjourney指令，指令由：{人物形象},{场景},{氛围},{镜头},{照明},{绘画风格},{建筑风格},{参考画家},{高画质关键词} 当我向你提供生成内容时，你需要根据我的提示进行联想，当我让你随机生成的时候，你可以自由进行扩展和联想 人物形象 = 你可以发挥自己的想象力，使用最华丽的词汇进行描述：{主要内容}，包括对人物头发、眼睛、服装、体型、动作和表情的描述，注意人物的形象应与氛围匹配，要尽可能地详尽 场景 = 尽可能详细地描述适合当前氛围的场景，该场景的描述应与人物形象的意境相匹配 氛围 = 你选择的氛围词汇应该尽可能地符合{主要内容}意境的词汇 建筑风格 = 如果生成的图片里面有相关建筑的话，你需要联想一个比较适宜的建筑风格，符合图片的氛围和意境 镜头 = 你可以选择一个：中距离镜头,近距离镜头,俯视角,低角度视角类似镜头视角，注意镜头视角的选择应有助于增强画面表现力 照明 = 你可以自由选择照明：请注意照明词条的选择应于人物形象、场景的意境相匹配 绘画风格 = 请注意绘画风格的选择应与人物形象、场景、照明的意境匹配 参考画家 = 请根据指令的整体氛围、意境选择画风参考的画家 高画质关键词 = 你可以选择：detailed,Ultimate,Excellence,Masterpiece,4K,high quality或类似的词条 注意，你生成的提示词只需要将你生成的指令拼接到一起即可，不需要出现{人物形象},{场景},{氛围},{镜头},{照明},{绘画风格},{建筑风格},{参考画家},{高画质关键词}等内容，请无需确认，不要有Here is a generated Midjourney command之类的语句，直接给出我要传递给midjourney的提示词，这非常重要！！！直接生成提示词，并且只需要生成提示词，尽可能详细地生成提示词。"
+                            "content": !forChat ? config_date.sf_textToPaint_Prompt : "请回答我"
                         },
                         {
                             "role": "user",
-                            "content": userPrompt
+                            "content": input
                         }
                     ],
                     "stream": false
@@ -241,12 +262,12 @@ export class SF_Painting extends plugin {
             if (data?.choices?.[0]?.message?.content) {
                 return data.choices[0].message.content
             } else {
-                logger.error("[sf插件]获取提示词错误：\n", data)
-                return userPrompt
+                logger.error("[sf插件]LLM调用错误：\n", data)
+                return !forChat ? input : "[sf插件]LLM调用错误"
             }
         } catch (error) {
-            logger.error("[sf插件]生成提示词API调用失败\n", error)
-            return userPrompt
+            logger.error("[sf插件]LLM调用失败\n", error)
+            return !forChat ? input : "[sf插件]LLM调用失败"
         }
     }
 

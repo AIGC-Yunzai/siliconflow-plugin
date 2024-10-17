@@ -61,11 +61,11 @@ export class help extends plugin {
                         "title": "#sf绘图 [描述][横图]",
                         "desc": "指定绘画参数 [横图|竖图|方图|512*512|步数20]"
                     },
-                    // {
-                    //     "icon": 54,
-                    //     "title": "#sf设置翻译模型 [模型名]",
-                    //     "desc": "设置翻译模型"
-                    // },
+                    {
+                        "icon": 54,
+                        "title": "#sf [对话]",
+                        "desc": "与LLM对话"
+                    },
                     // {
                     //     "icon": 86,
                     //     "title": "#sf设置生成提示词 [开|关]",

@@ -88,6 +88,12 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: "sf_textToPaint_Prompt",
+          label: "SF提示词prompt",
+          bottomHelpMessage: "自定义你的提示词prompt",
+          component: "InputTextArea",
+        },
+        {
           field: "free_mode",
           label: "SF大图模式",
           bottomHelpMessage: "开启后可以绘制更大的图片和更多的步数；注意额度消耗；指令：2048*2048 或 步数30",
