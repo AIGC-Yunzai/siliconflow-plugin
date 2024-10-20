@@ -1,3 +1,4 @@
+import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
 import Config from '../components/Config.js'
 

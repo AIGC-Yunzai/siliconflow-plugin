@@ -250,7 +250,7 @@ export class SF_Painting extends plugin {
             return false
         }
 
-        let msg = e.msg.replace(/^#(sf|SF)/, '').trim()
+        let msg = e.msg.replace(/^#(ss|SS)/, '').trim()
         const use_sf_key = this.get_use_sf_key(config_date);
 
         const answer = await this.generatePrompt(msg, use_sf_key, config_date, true)
@@ -285,7 +285,7 @@ export class SF_Painting extends plugin {
                     "messages": [
                         {
                             "role": "system",
-                            "content": !forChat ? config_date.sf_textToPaint_Prompt : "请回答我"
+                            "content": !forChat ? config_date.sf_textToPaint_Prompt : "You are a helpful assistant, you prefer to speak Chinese"
                         },
                         {
                             "role": "user",
