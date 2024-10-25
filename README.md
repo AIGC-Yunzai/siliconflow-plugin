@@ -8,7 +8,7 @@
 - 为什么要接入？因为他众多免费的绘图模型~可以白嫖~
 
 > [!TIP]
-> 插件官网：[SiliconFlow-插件](https://aigc-yunzai.dwe.me/)
+> 插件官网（施工中）：[SiliconFlow-插件](https://aigc-yunzai.dwe.me/)
 > 
 > 将逐步接入更多API
 
@@ -52,7 +52,9 @@ pnpm install --filter=siliconflow-plugin
 - [x] 接入多项免费画图/语言模型
 - [x] 支持图生图
 - [x] 多keys同时并发
+- [x] 接入MJ绘图
 - [ ] 接入更多LLM推理
+- [ ] 接入更多语音合成
 - [ ] TODO...
 
 ## 支持与贡献
