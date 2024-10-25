@@ -77,6 +77,16 @@ export class help extends plugin {
                         "desc": "获取 mjp 帮助"
                     },
                     {
+                        "icon": 60,
+                        "title": "#(fish)同传帮助",
+                        "desc": "获取 fish 同传帮助信息"
+                    },
+                    {
+                        "icon": 61,
+                        "title": "#fish群号同传QQ号",
+                        "desc": "设置TTS同传，例如#fish56789同传12345"
+                    },
+                    {
                         "icon": 3,
                         "title": "#sf设置帮助",
                         "desc": "获取 sf 设置帮助"
