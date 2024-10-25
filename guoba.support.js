@@ -247,26 +247,38 @@ export function supportGuoba() {
           },
         },
         {
-          label: 'fish.audio的设置',
+          label: 'Fish.audio的设置',
           component: 'Divider'
         },
         {
-          field: "fish_HandlerOn",
-          label: "Fish语音开关",
-          bottomHelpMessage: "开启chatgpt-插件 Fish语音合成后处理器，用于在对话中自动合成语音（需要配置key且chatgpt插件内云转码设置为“文件”）",
+          field: 'fish_apiKey',
+          label: 'Fish_ApiKey',
+          bottomHelpMessage: '收费，但是用手机号接码后可以获得10刀，API KEY获取地址：https://fish.audio/zh-CN/go-api/api-keys',
+          component: 'Input'
+        },
+        {
+          field: 'defaultVoice',
+          label: '发音人ID',
+          bottomHelpMessage: '这里填入你想要的模型model的代码，例如派蒙的是efc1ce3726a64bbc947d53a1465204aa；可用指令：#搜索fish音色[名称]',
+          component: 'Input'
+        },
+        {
+          field: "enableTranslation",
+          label: "翻译功能开关",
+          bottomHelpMessage: "开启翻译功能，将要进行同传的语言变成日语",
           component: "Switch",
         },
         {
-          field: 'fishApiKey',
-          label: 'Api Key',
-          bottomHelpMessage: '收费，API KEY获取地址：https://fish.audio/zh-CN/go-api/api-keys',
-          component: 'Input'
-        },
-        {
-          field: 'fish_reference_id',
-          label: '发音人ID',
-          bottomHelpMessage: '这里填入你想要的模型model的代码，例如派蒙的是efc1ce3726a64bbc947d53a1465204aa；说明：api.fish.audio 不受 vits默认角色 控制，仅由 发音人ID 决定其发音人；可用指令：#sf搜索fish发音人[名称]',
-          component: 'Input'
+          field: "targetLang",
+          label: "翻译目标语言",
+          bottomHelpMessage: "翻译目标语言",
+          component: "Select",
+          componentProps: {
+            options: [
+              { label: "日语", value: "JA" },
+              { label: "英语", value: "EN" },
+            ],
+          },
         },
       ],
       getConfigData() {
