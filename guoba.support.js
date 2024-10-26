@@ -257,7 +257,7 @@ export function supportGuoba() {
           component: 'Input'
         },
         {
-          field: 'defaultVoice',
+          field: 'fish_reference_id',
           label: '发音人ID',
           bottomHelpMessage: '这里填入你想要的模型model的代码，例如派蒙的是efc1ce3726a64bbc947d53a1465204aa；可用指令：#搜索fish音色[名称]',
           component: 'Input'

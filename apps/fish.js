@@ -103,7 +103,7 @@ export class FishPlugin extends plugin {
         for (const blackMsg of config.fish_text_blacklist)
             if (text.includes(blackMsg)) return false;
 
-        const selectedVoice = getVoice(config.defaultVoice)
+        const selectedVoice = getVoice(config.fish_reference_id)
 
         try {
             const audioBuffer = await this.generateAudio(text, selectedVoice.speaker, config)
@@ -245,7 +245,7 @@ export class FishPlugin extends plugin {
         }
 
         if (voice) {
-            config.defaultVoice = voice.speaker
+            config.fish_reference_id = voice.speaker
             Config.setConfig(config)
             await e.reply(`默认音色已设置为: ${voice.name}`)
         } else {
@@ -289,7 +289,7 @@ export class FishPlugin extends plugin {
             }
         }
 
-        const currentVoice = getVoice(config.defaultVoice)
+        const currentVoice = getVoice(config.fish_reference_id)
         configList.push(`当前音色: ${currentVoice.name} (${currentVoice.speaker})`)
         configList.push(`翻译功能: ${config.enableTranslation ? '开启' : '关闭'}`)
         configList.push(`翻译语言: ${config.targetLang === 'JA' ? '日语' : '英语'}`)
