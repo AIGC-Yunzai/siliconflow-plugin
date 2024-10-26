@@ -90,7 +90,7 @@ export class FishPlugin extends plugin {
     // 同传翻译
     async syncTranslation(e) {
         const config = Config.getConfig()
-        if (!e.group_id || !e.user_id) return false
+        if (!config.fish_apiKey || !e.group_id || !e.user_id) return false
 
         const groupId = e.group_id.toString()
         if (!config.syncConfig[groupId] || !config.syncConfig[groupId].includes(e.user_id)) {
@@ -124,7 +124,7 @@ export class FishPlugin extends plugin {
     async generateAudio(text, voiceId, config) {
         let translatedText = text
         if (config.enableTranslation) {
-            translatedText = await this.translateText(text)
+            translatedText = await this.translateText(text, config)
         }
 
         const controller = new AbortController()
@@ -161,10 +161,9 @@ export class FishPlugin extends plugin {
     }
 
     // 翻译文本
-    async translateText(text) {
+    async translateText(text, config) {
         const controller = new AbortController()
         const timeoutId = setTimeout(() => controller.abort(), 10000)
-        const config = Config.getConfig()
 
         try {
             const response = await fetch("https://deeplx.mingming.dev/translate", {
