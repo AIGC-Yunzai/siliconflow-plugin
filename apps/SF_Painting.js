@@ -35,10 +35,6 @@ export class SF_Painting extends plugin {
                     reg: '^#(ss|SS)[sS]*',
                     fnc: 'sf_chat',
                 },
-                {
-                    reg: '^#sf搜索fish发音人(.*)$',
-                    fnc: 'searchFishVoices'
-                },
             ]
         })
         this.sf_keys_index = -1
@@ -207,38 +203,6 @@ export class SF_Painting extends plugin {
             this.reply('生成图片时遇到了一个错误，请稍后再试。')
             return false;
         }
-    }
-
-    async searchFishVoices(e) {
-        // 读取配置
-        const config_date = Config.getConfig()
-
-        if (config_date.fishApiKey.length == 0) {
-            e.reply("请先在锅巴中设置fish.audio的Api Key", true);
-            return
-        }
-        const keyword = e.msg.replace(/^#sf搜索fish发音人/, '').trim();
-
-        const options = {
-            method: 'GET',
-            headers: { Authorization: `Bearer ${config_date.fishApiKey}` }
-        };
-
-        let optionMsg = "可用指令：#sf设置fish发音人"
-        let msgArr = [`Fish发音人列表 ${keyword}：`];
-        await fetch(`https://api.fish.audio/model?tag=${encodeURIComponent(keyword)}`, options)
-            .then(response => response.json())
-            .then(response => {
-                for (let index = 0; index < response.total; index++) {
-                    if (0 == index) optionMsg += response.items[0]._id
-                    msgArr.push(`名称：${response.items[index].title}\n发音人ID：${response.items[index]._id}`)
-                }
-            })
-            .catch(err => logger.error(err));
-
-        msgArr.push(optionMsg)
-        const msgx = await common.makeForwardMsg(e, msgArr, `Fish发音人`)
-        await e.reply(msgx);
     }
 
     async sf_chat(e) {

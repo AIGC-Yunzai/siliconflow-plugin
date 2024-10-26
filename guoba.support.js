@@ -252,7 +252,7 @@ export function supportGuoba() {
         },
         {
           field: 'fish_apiKey',
-          label: 'Fish_ApiKey',
+          label: 'Fish ApiKey',
           bottomHelpMessage: '收费，但是用手机号接码后可以获得10刀，API KEY获取地址：https://fish.audio/zh-CN/go-api/api-keys',
           component: 'Input'
         },
