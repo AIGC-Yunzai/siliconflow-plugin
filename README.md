@@ -4,7 +4,7 @@
 
 # SiliconFlow-PLUGIN 🍓
 
-- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的接入 SiliconFlow 的插件
+- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的接入 SiliconFlow 的插件（Synaptic Fusion插件——对接万物）
 - 为什么要接入？因为他众多免费的绘图模型~可以白嫖~
 
 > [!TIP]
@@ -53,6 +53,7 @@ pnpm install --filter=siliconflow-plugin
 - [x] 支持图生图
 - [x] 多keys同时并发
 - [x] 接入MJ绘图
+- [x] 接入Fishaudio语音合成 
 - [ ] 接入更多LLM推理
 - [ ] 接入更多语音合成
 - [ ] TODO...
@@ -62,6 +63,16 @@ pnpm install --filter=siliconflow-plugin
 如果你喜欢这个项目，请不妨点个 Star🌟，这是对开发者最大的动力。
 
 有意见或者建议也欢迎提交 [Issues](https://github.com/AIGC-Yunzai/siliconflow-plugin/issues) 和 [Pull requests](https://github.com/AIGC-Yunzai/siliconflow-plugin/pulls)。
+
+## 相关项目
+
+- [vits-plugin](https://github.com/erzaozi/vits-plugin)：一个适用于 Yunzai 系列机器人框架 的的 AI 语音合成插件，让你能够在机器人中使用 AI 语音合成功能
+- [Fish-Audio](https://fish.audio)：Brand new TTS solution
+
+## 感谢
+- [vits-plugin](https://github.com/erzaozi/vits-plugin)：Fishaudio语音同传的方式绝大部分参考了该项目的实现方法，Fish-Audio.json也是直接用的该项目的，很是感谢
+- 所以fishaudio发音人名称可以看[发音人名称](https://github.com/erzaozi/vits-plugin#fish-audio)
+
 
 ## 许可证
 
