@@ -6,15 +6,15 @@ import { pluginRoot } from "./model/path.js";
 export function supportGuoba() {
   return {
     pluginInfo: {
-      name: 'siliconflow-plugin',
+      name: 'SF-plugin',
       title: 'SF插件',
-      author: ['@Misaka20002', '@syfantasy'],
-      authorLink: ['https://github.com/Misaka20002', 'https://github.com/syfantasy'],
+      author: ['@Misaka20002', '@syfantasy', '@eggacheb'],
+      authorLink: ['https://github.com/Misaka20002', 'https://github.com/syfantasy', 'https://github.com/eggacheb'],
       link: 'https://github.com/Misaka20002/siliconflow-plugin',
       isV3: true,
       isV2: false,
       showInMenu: true,
-      description: '基于 Yunzai 的接入 Siliconflow 的插件',
+      description: '基于 Yunzai 的 Synaptic Fusion 插件。SF插件——对接万物',
       // 显示图标，此为个性化配置
       // 图标可在 https://icon-sets.iconify.design 这里进行搜索
       icon: 'fluent-emoji-flat:artist-palette',
@@ -263,6 +263,26 @@ export function supportGuoba() {
           component: 'Input'
         },
         {
+          field: 'fish_text_blacklist',
+          label: '同传文本黑名单',
+          bottomHelpMessage: '可以写上你不想发音的句子，例如一些命令反馈',
+          component: "GTags",
+          componentProps: {
+            placeholder: '请输文本',
+            allowAdd: true,
+            allowDel: true,
+            showPrompt: true,
+            promptProps: {
+              content: '请输文本',
+              okText: '添加',
+              rules: [
+                { required: true, message: '不能为空' },
+              ],
+            },
+            valueParser: ((value) => value.split(',') || []),
+          },
+        },
+        {
           field: "enableTranslation",
           label: "翻译功能开关",
           bottomHelpMessage: "开启翻译功能，将要进行同传的语言变成日语",
@@ -293,6 +313,7 @@ export function supportGuoba() {
         }
         config = lodash.merge({}, Config.getConfig(), config)
         config.sf_keys = data['sf_keys']
+        config.fish_text_blacklist = data['fish_text_blacklist']
         config.sfBaseUrl = config.sfBaseUrl.replace(/\/$/, '')
         config.mj_apiBaseUrl = config.mj_apiBaseUrl.replace(/\/$/, '')
         config.mj_translationBaseUrl = config.mj_translationBaseUrl.replace(/\/$/, '')

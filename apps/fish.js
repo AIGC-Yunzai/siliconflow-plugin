@@ -98,6 +98,11 @@ export class FishPlugin extends plugin {
         }
 
         const text = e.msg
+
+        // 匹配文本黑名单
+        for (const blackMsg of config.fish_text_blacklist)
+            if (text.includes(blackMsg)) return false;
+
         const selectedVoice = getVoice(config.defaultVoice)
 
         try {

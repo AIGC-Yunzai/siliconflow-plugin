@@ -22,3 +22,4 @@ defaultVoice: 'efc1ce3726a64bbc947d53a1465204aa' # 默认音色ID
 enableTranslation: false # 是否开启翻译功能
 targetLang: 'JA' # 翻译目标语言 JA/EN
 syncConfig: {} # 同传配置
+fish_text_blacklist: []
