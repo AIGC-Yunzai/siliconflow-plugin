@@ -159,7 +159,7 @@ export function supportGuoba() {
         {
           field: "imageModel",
           label: "SF绘图模型",
-          bottomHelpMessage: "flux设置绘图模型",
+          bottomHelpMessage: "SF设置绘图模型",
           component: "Select",
           componentProps: {
             options: [
@@ -172,6 +172,7 @@ export function supportGuoba() {
               { label: "stabilityai/stable-diffusion-3-medium（免费/图生图）", value: "stabilityai/stable-diffusion-3-medium" },
               { label: "stabilityai/stable-diffusion-3-5-large（免费/图生图）", value: "stabilityai/stable-diffusion-3-5-large" },
               { label: "stabilityai/stable-diffusion-xl-base-1.0（免费/图生图）", value: "stabilityai/stable-diffusion-xl-base-1.0" }
+              // 添加图生图模型后，还需要添加正则表达式： SF_Painting.js 处理图生图模型 match(/.../)
             ],
           },
         },

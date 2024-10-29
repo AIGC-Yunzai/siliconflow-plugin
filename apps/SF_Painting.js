@@ -104,7 +104,7 @@ export class SF_Painting extends plugin {
 
         // 处理图生图模型
         let canImg2Img = false;
-        if (config_date.imageModel.match(/stabilityai\/stable-diffusion-3-medium|stabilityai\/stable-diffusion-xl-base-1.0|stabilityai\/stable-diffusion-2-1/)) {
+        if (config_date.imageModel.match(/stabilityai\/stable-diffusion-3-medium|stabilityai\/stable-diffusion-xl-base-1.0|stabilityai\/stable-diffusion-2-1|stabilityai\/stable-diffusion-3-5-large/)) {
             canImg2Img = true;
         }
 
