@@ -1,4 +1,3 @@
-
 import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
 import Config from '../components/Config.js'
@@ -17,7 +16,7 @@ export class MJ_Painting extends plugin {
             priority: 6,
             rule: [
                 {
-                    reg: '^#(mjp|niji)\\s(.+)$',
+                    reg: '^#(mjp|niji)',
                     fnc: 'generateImage'
                 },
                 {
@@ -95,9 +94,29 @@ export class MJ_Painting extends plugin {
             return
         }
 
-        const match = e.msg.match(/^#(mjp|niji)\s(.+)$/)
+        const match = e.msg.match(/^#(mjp|niji)\s*(.*)/)
         const botType = match[1] === 'mjp' ? 'MID_JOURNEY' : 'NIJI_JOURNEY'
-        let prompt = match[2].trim()
+        let prompt = match[2] ? match[2].trim() : ''
+
+        if (!prompt && !e.img) {
+            await this.reply('请输入提示词或者提供一张图片')
+            return
+        }
+
+        // 处理引用图片
+        await parseSourceImg(e)
+        let base64Array = []
+        if (e.img) {
+            for (let imgUrl of e.img) {
+                const imgBase64 = await url2Base64(imgUrl)
+                if (!imgBase64) {
+                    this.reply('引用的图片地址已失效，请重新发送图片', true)
+                    return false
+                }
+                base64Array.push(`data:image/png;base64,${imgBase64}`)
+            }
+        }
+
         await this.reply('正在生成图片，请稍候...')
 
         try {
@@ -109,7 +128,8 @@ export class MJ_Painting extends plugin {
                 }
             }
 
-            const taskId = await this.submitTask(prompt, botType, config_date)
+            // 修改submitTask方法调用，添加base64Array参数
+            const taskId = await this.submitTask(prompt, botType, config_date, base64Array)
             if (!taskId) {
                 await this.reply('提交任务失败，请稍后重试。')
                 return
@@ -142,7 +162,7 @@ export class MJ_Painting extends plugin {
                     "messages": [
                         {
                             "role": "system",
-                            "content": "请按照我的提供的要求，用一句话英文生成一组Midjourney指令，指令由：{人物形象},{场景},{氛围},{镜头},{照明},{绘画风格},{建筑风格},{参考画家},{高画质关键词} 当我向你提供生成内容时，你需要根据我的提示进行联想，当我让你随机生成的时候，你可以自由进行扩展和联想 人物形象 = 你可以发挥自己的想象力，使用最华丽的词汇进行描述：{主要内容}，包括对人物头发、眼睛、服装、体型、动作和表情的描述，注意人物的形象应与氛围匹配，要尽可能地详尽 场景 = 尽可能详细地描述适合当前氛围的场景，该场景的描述应与人物形象的意境相匹配 氛围 = 你选择的氛围词汇应该尽可能地符合{主要内容}意境的词汇 建筑风格 = 如果生成的图片里面有相关建筑的话，你需要联想一个比较适宜的建筑风格，符合图片的氛围和意境 镜头 = 你可以选择一个：中距离镜头,近距离镜头,俯视角,低角度视角类似镜头视角，注意镜头视角的选择应有助于增强画面表现力 照明 = 你可以自由选择照明：请注意照明词条的选择应于人物形象、场景的意境相匹配 绘画风格 = 请注意绘画风格的选择应与人物形象、场景、照明的意境匹配 参考画家 = 请根据指令的整体氛围、意境选择画风参考的画家 高画质关键词 = 你可以选择：detailed,Ultimate,Excellence,Masterpiece,4K,high quality或类似的词条 注意，你生成的提示词只需要将你生成的指令拼接到一起即可，不需要出现{人物形象},{场景},{氛围},{镜头},{照明},{绘画风格},{建筑风格},{参考画家},{高画质关键词}等内容，请无需确认，不要有Here is a generated Midjourney command之类的语句，直接给出我要传递给midjourney的提示词，这非常重要！！！直接生成提示词，并且只需要生成提示词，尽可能详细地生成提示词。"
+                            "content": "请按照我的提供的要求，用一句话英文生成一组Midjourney指令，指令由：{人物形象},{场景},{氛围},{镜头},{照明},{绘画风格},{建筑风格},{参考画家},{高画质关键词} 当我向你提供生成内容时，你需要根据我的提示进行联想，当我让你随机生成的时候，你可以自由进行扩展和联想 人物形象 = 你可以发挥自己的想象力，使用最华丽的词汇进行描述：{主要内容}，包括对人物头发、眼睛、服装、体型、动作和表情的描述，注意人物的形象应与氛围匹配，要尽可能地详尽 场景 = 尽可能详细地描述适合当前氛围的场景，该场景的描述应与人物形象的意境相匹配 氛围 = 你选择的氛围词汇应该尽可能地符合{主要内容}意境的词汇 建筑风格 = 如果生成的图片里面有相关建筑的话，你需要联想一个比较适宜的建筑风格，符合图片的氛围和意境 镜头 = 你可以选择一个：中距离镜头,近距离镜头,俯视角,低角度视角类似镜头视角，注意镜头视角的选择应有助于增强画面表现力 照明 = 你可以自由选择照明：请注意照明词条的选择应于人物形象、场景的意境相匹配 绘画风格 = 请注意绘画风格的选择应与人物形象、场景、照明的意境匹配 参考画家 = 请据指令的整体氛围、意境选择画风参考的画家 高画质关键词 = 你可以选择：detailed,Ultimate,Excellence,Masterpiece,4K,high quality或类似的词条 注意，你生成的提示词只需要将你生成的指令拼接到一起即可，不需要出现{人物形象},{场景},{氛围},{镜头},{照明},{绘画风格},{建筑风格},{参考画家},{高画质关键词}等内容，请无需确认，不要有Here is a generated Midjourney command之类的语句，直接给出我要传递给midjourney的提示词，这非常重要！！！直接生成提示词，并且只需要生成提示词，尽可能详细地生成提示词。"
                         },
                         {
                             "role": "user",
@@ -163,7 +183,7 @@ export class MJ_Painting extends plugin {
         return null
     }
 
-    async submitTask(prompt, botType, config_date) {
+    async submitTask(prompt, botType, config_date, base64Array = []) {
         const endpoint = config_date.mj_mode === 'fast' ? '/mj/submit/imagine' : '/mj-relax/mj/submit/imagine'
         const response = await fetch(`${config_date.mj_apiBaseUrl}${endpoint}`, {
             method: 'POST',
@@ -172,7 +192,7 @@ export class MJ_Painting extends plugin {
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-                base64Array: [],
+                base64Array: base64Array,
                 botType: botType,
                 notifyHook: "",
                 prompt: prompt,
@@ -240,7 +260,7 @@ export class MJ_Painting extends plugin {
                     return
                 }
 
-                const positionMap = { '左上': 1, '右上': 2, '左下': 3, '右下': 4 }
+                const positionMap = { '左上': 1, '上': 2, '左下': 3, '右下': 4 }
                 const actionNumber = positionMap[position]
                 let customId
 
@@ -313,6 +333,10 @@ MJP插件帮助：
    #niji [提示词] (使用Niji Journey)  
    例：#mjp 一只可爱的猫咪  
    例：#niji 一只可爱的动漫风格猫咪  
+
+   垫图功能：
+   引用一张图片并发送命令即可使用垫图功能
+   例：[图片] #mjp 基于这张图片画一只可爱的猫咪
 
 2. 图片操作：  
    #[操作][位置] [任务ID]  
