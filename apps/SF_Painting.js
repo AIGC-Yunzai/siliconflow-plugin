@@ -18,11 +18,11 @@ export class SF_Painting extends plugin {
             priority: 6,
             rule: [
                 {
-                    reg: '^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))(.*)$',
+                    reg: '^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))',
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人)\\s*(.*)$',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人)',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 },
@@ -32,7 +32,7 @@ export class SF_Painting extends plugin {
                     permission: 'master'
                 },
                 {
-                    reg: '^#(ss|SS)[sS]*',
+                    reg: '^#(ss|SS)',
                     fnc: 'sf_chat',
                 },
             ]
@@ -63,7 +63,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人)\s*(.*)$/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人)([\s\S]*)/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
