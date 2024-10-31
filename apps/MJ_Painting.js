@@ -260,7 +260,7 @@ export class MJ_Painting extends plugin {
                     return
                 }
 
-                const positionMap = { '左上': 1, '上': 2, '左下': 3, '右下': 4 }
+                const positionMap = { '左上': 1, '右上': 2, '左下': 3, '右下': 4 }
                 const actionNumber = positionMap[position]
                 let customId
 
