@@ -17,7 +17,7 @@ export class MJ_Painting extends plugin {
             rule: [
                 {
                     reg: '^#(mjp|niji)',
-                    fnc: 'generateImage'
+                    fnc: 'mj_draw'
                 },
                 {
                     reg: '^#mjp设置(apikey|apibaseurl|翻译key|翻译baseurl|翻译模型|翻译开关)',
@@ -67,13 +67,13 @@ export class MJ_Painting extends plugin {
                     config_date.mj_translationEnabled = value.toLowerCase() === '开'
                     break
                 default:
-                    await this.reply('未知的设置类型')
+                    await e.reply('未知的设置类型')
                     return
             }
             Config.setConfig(config_date)
-            await this.reply(`${type}设置成功！`)
+            await e.reply(`${type}设置成功！`)
         } else {
-            await this.reply('设置格式错误，请使用 "#mjp设置[类型] [值]"')
+            await e.reply('设置格式错误，请使用 "#mjp设置[类型] [值]"')
         }
     }
 
@@ -83,14 +83,14 @@ export class MJ_Painting extends plugin {
         const mode = e.msg.includes('快速') ? 'fast' : 'slow'
         config_date.mj_mode = mode
         Config.setConfig(config_date)
-        await this.reply(`已切换到${mode === 'fast' ? '快速' : '慢速'}模式`)
+        await e.reply(`已切换到${mode === 'fast' ? '快速' : '慢速'}模式`)
     }
 
-    async generateImage(e) {
+    async mj_draw(e) {
         // 读取配置
         let config_date = Config.getConfig()
         if (!config_date.mj_apiKey || !config_date.mj_apiBaseUrl) {
-            await this.reply('请先设置API Key和API Base URL。使用命令：\n#mjp设置apikey [值]\n#mjp设置apibaseurl [值]\n（仅限主人设置）')
+            await e.reply('请先设置API Key和API Base URL。使用命令：\n#mjp设置apikey [值]\n#mjp设置apibaseurl [值]\n（仅限主人设置）')
             return
         }
 
@@ -99,7 +99,7 @@ export class MJ_Painting extends plugin {
         let prompt = match[2] ? match[2].trim() : ''
 
         if (!prompt && !e.img) {
-            await this.reply('请输入提示词或者提供一张图片')
+            await e.reply('请输入提示词或者提供一张图片')
             return
         }
 
@@ -110,43 +110,16 @@ export class MJ_Painting extends plugin {
             for (let imgUrl of e.img) {
                 const imgBase64 = await url2Base64(imgUrl)
                 if (!imgBase64) {
-                    this.reply('引用的图片地址已失效，请重新发送图片', true)
+                    e.reply('引用的图片地址已失效，请重新发送图片', true)
                     return false
                 }
                 base64Array.push(`data:image/png;base64,${imgBase64}`)
             }
         }
 
-        await this.reply('正在生成图片，请稍候...')
-
-        try {
-            if (config_date.mj_translationEnabled && config_date.mj_translationKey && config_date.mj_translationBaseUrl) {
-                const translatedPrompt = await this.translatePrompt(prompt, config_date)
-                if (translatedPrompt) {
-                    prompt = translatedPrompt
-                    await this.reply(`翻译后的提示词：${prompt}`)
-                }
-            }
-
-            // 修改submitTask方法调用，添加base64Array参数
-            const taskId = await this.submitTask(prompt, botType, config_date, base64Array)
-            if (!taskId) {
-                await this.reply('提交任务失败，请稍后重试。')
-                return
-            }
-
-            const result = await this.pollTaskResult(taskId, config_date)
-            if (result) {
-                await this.reply(`图片生成完成！\n原始提示词：${prompt}\n任务ID：${taskId}\n图片链接：${result.imageUrl}`)
-                await this.reply({ ...segment.image(result.imageUrl), origin: true })
-                redis.set(`sf_plugin:MJ_Painting:lastTaskId:${e.user_id}`, taskId, { EX: 7 * 24 * 60 * 60 }); // 写入redis，有效期7天
-            } else {
-                await this.reply('生成图片失败，请稍后重试。')
-            }
-        } catch (error) {
-            console.error("图片生成失败", error)
-            await this.reply('生成图片时遇到了一个错误，请稍后再试。')
-        }
+        e.reply('正在生成图片，请稍候...')
+        this.mj_send_pic(e, prompt, botType, config_date, base64Array)
+        return true;
     }
 
     async translatePrompt(userPrompt, config_date) {
@@ -237,7 +210,7 @@ export class MJ_Painting extends plugin {
         // 读取配置
         let config_date = Config.getConfig()
         if (!config_date.mj_apiKey || !config_date.mj_apiBaseUrl) {
-            await this.reply('请先设置API Key和API Base URL。使用命令：\n#mjp设置apikey [值]\n#mjp设置apibaseurl [值]\n（仅限主人设置）')
+            await e.reply('请先设置API Key和API Base URL。使用命令：\n#mjp设置apikey [值]\n#mjp设置apibaseurl [值]\n（仅限主人设置）')
             return
         }
 
@@ -247,16 +220,16 @@ export class MJ_Painting extends plugin {
             let useTaskId = taskId.trim() || await redis.get(`sf_plugin:MJ_Painting:lastTaskId:${e.user_id}`)
 
             if (!useTaskId) {
-                await this.reply('请提供任务ID或先生成一张图片。')
+                await e.reply('请提供任务ID或先生成一张图片。')
                 return
             }
 
-            await this.reply('正在处理，请稍候...')
+            await e.reply('正在处理，请稍候...')
 
             try {
                 const originalTask = await this.fetchTaskDetails(useTaskId, config_date)
                 if (!originalTask) {
-                    await this.reply('获取原始任务信息失败，请确保任务ID正确。')
+                    await e.reply('获取原始任务信息失败，请确保任务ID正确。')
                     return
                 }
 
@@ -273,21 +246,21 @@ export class MJ_Painting extends plugin {
 
                 const newTaskId = await this.submitAction(customId, useTaskId, config_date)
                 if (!newTaskId) {
-                    await this.reply('提交操作失败，请稍后重试。')
+                    await e.reply('提交操作失败，请稍后重试。')
                     return
                 }
 
                 const result = await this.pollTaskResult(newTaskId, config_date)
                 if (result) {
-                    await this.reply(`操作完成！\n操作类型：${action}${position}\n新任务ID：${newTaskId}\n图片链接：${result.imageUrl}`)
-                    await this.reply({ ...segment.image(result.imageUrl), origin: true })
+                    await e.reply(`操作完成！\n操作类型：${action}${position}\n新任务ID：${newTaskId}\n图片链接：${result.imageUrl}`)
+                    await e.reply({ ...segment.image(result.imageUrl), origin: true })
                     redis.set(`sf_plugin:MJ_Painting:lastTaskId:${e.user_id}`, newTaskId, { EX: 7 * 24 * 60 * 60 }); // 写入redis，有效期7天
                 } else {
-                    await this.reply('操作失败，请稍后重试。')
+                    await e.reply('操作失败，请稍后重试。')
                 }
             } catch (error) {
                 console.error("操作失败", error)
-                await this.reply('处理时遇到了一个错误，请稍后再试。')
+                await e.reply('处理时遇到了一个错误，请稍后再试。')
             }
         }
     }
@@ -364,6 +337,37 @@ MJP插件帮助：
 注意：使用前请确保已正确设置所有必要的API密钥和基础URL。
         `.trim()
 
-        await this.reply(helpMessage)
+        await e.reply(helpMessage)
+    }
+
+    async mj_send_pic(e, prompt, botType, config_date, base64Array) {
+        try {
+            if (config_date.mj_translationEnabled && config_date.mj_translationKey && config_date.mj_translationBaseUrl) {
+                const translatedPrompt = await this.translatePrompt(prompt, config_date)
+                if (translatedPrompt) {
+                    prompt = translatedPrompt
+                    await e.reply(`翻译后的提示词：${prompt}`)
+                }
+            }
+
+            // 修改submitTask方法调用，添加base64Array参数
+            const taskId = await this.submitTask(prompt, botType, config_date, base64Array)
+            if (!taskId) {
+                await e.reply('提交任务失败，请稍后重试。')
+                return
+            }
+
+            const result = await this.pollTaskResult(taskId, config_date)
+            if (result) {
+                await e.reply(`图片生成完成！\n原始提示词：${prompt}\n任务ID：${taskId}\n图片链接：${result.imageUrl}`)
+                e.reply({ ...segment.image(result.imageUrl), origin: true })
+                redis.set(`sf_plugin:MJ_Painting:lastTaskId:${e.user_id}`, taskId, { EX: 7 * 24 * 60 * 60 }); // 写入redis，有效期7天
+            } else {
+                e.reply('生成图片失败，请稍后重试。')
+            }
+        } catch (error) {
+            logger.error("图片生成失败", error)
+            e.reply('生成图片时遇到了一个错误，请稍后再试。')
+        }
     }
 }
