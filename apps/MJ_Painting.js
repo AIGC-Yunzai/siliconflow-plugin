@@ -20,7 +20,7 @@ export class MJ_Painting extends plugin {
                     fnc: 'mj_draw'
                 },
                 {
-                    reg: '^#mjp设置(apikey|apibaseurl|翻译key|翻译baseurl|翻译模型|翻译开关)',
+                    reg: '^#sfmj设置(apikey|apibaseurl|翻译key|翻译baseurl|翻译模型|翻译开关)',
                     fnc: 'setConfig',
                     permission: 'master'
                 },
@@ -29,14 +29,10 @@ export class MJ_Painting extends plugin {
                     fnc: 'handleAction'
                 },
                 {
-                    reg: '^#mjp开启(快速|慢速)模式$',
+                    reg: '^#sfmj设置开启(快速|慢速)模式$',
                     fnc: 'setMode',
                     permission: 'master'
                 },
-                {
-                    reg: '^#mjp帮助$',
-                    fnc: 'showHelp'
-                }
             ]
         })
     }
@@ -44,7 +40,7 @@ export class MJ_Painting extends plugin {
     async setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#mjp设置(apikey|apibaseurl|翻译key|翻译baseurl|翻译模型|翻译开关)([\s\S]*)/i)
+        const match = e.msg.match(/^#sfmj设置(apikey|apibaseurl|翻译key|翻译baseurl|翻译模型|翻译开关)([\s\S]*)/i)
         if (match) {
             const [, type, value] = match
             switch (type.toLowerCase()) {
@@ -73,7 +69,7 @@ export class MJ_Painting extends plugin {
             Config.setConfig(config_date)
             await e.reply(`${type}设置成功！`)
         } else {
-            await e.reply('设置格式错误，请使用 "#mjp设置[类型] [值]"')
+            await e.reply('设置格式错误，请使用 "#sfmj设置[类型] [值]"')
         }
     }
 
@@ -90,13 +86,18 @@ export class MJ_Painting extends plugin {
         // 读取配置
         let config_date = Config.getConfig()
         if (!config_date.mj_apiKey || !config_date.mj_apiBaseUrl) {
-            await e.reply('请先设置API Key和API Base URL。使用命令：\n#mjp设置apikey [值]\n#mjp设置apibaseurl [值]\n（仅限主人设置）')
+            await e.reply('请先设置API Key和API Base URL。使用命令：\n#sfmj设置apikey [值]\n#sfmj设置apibaseurl [值]\n（仅限主人设置）')
             return
         }
 
         const match = e.msg.match(/^#(mjp|niji)([\s\S]*)/)
         const botType = match[1] === 'mjp' ? 'MID_JOURNEY' : 'NIJI_JOURNEY'
         let prompt = match[2] ? match[2].trim() : ''
+
+        if (prompt == "帮助") {
+            this.showHelp(e)
+            return true;
+        }
 
         if (!prompt && !e.img) {
             await e.reply('请输入提示词或者提供一张图片')
@@ -210,7 +211,7 @@ export class MJ_Painting extends plugin {
         // 读取配置
         let config_date = Config.getConfig()
         if (!config_date.mj_apiKey || !config_date.mj_apiBaseUrl) {
-            await e.reply('请先设置API Key和API Base URL。使用命令：\n#mjp设置apikey [值]\n#mjp设置apibaseurl [值]\n（仅限主人设置）')
+            await e.reply('请先设置API Key和API Base URL。使用命令：\n#sfmj设置apikey [值]\n#sfmj设置apibaseurl [值]\n（仅限主人设置）')
             return
         }
 
@@ -320,16 +321,16 @@ MJP插件帮助：
    例：#重绘 1234567890  
 
 3. 设置（仅限主人）：  
-   #mjp设置apikey [API密钥]  
-   #mjp设置apibaseurl [API基础URL] （不带/v1）  
-   #mjp设置翻译key [翻译API密钥]  
-   #mjp设置翻译baseurl [翻译API基础URL] （不带/v1）  
-   #mjp设置翻译模型 [翻译模型名称]  
-   #mjp设置翻译开关 [开/关]  
+   #sfmj设置apikey [API密钥]  
+   #sfmj设置apibaseurl [API基础URL] （不带/v1）  
+   #sfmj设置翻译key [翻译API密钥]  
+   #sfmj设置翻译baseurl [翻译API基础URL] （不带/v1）  
+   #sfmj设置翻译模型 [翻译模型名称]  
+   #sfmj设置翻译开关 [开/关]  
 
 4. 切换模式（仅限主人）：  
-   #mjp开启快速模式  
-   #mjp开启慢速模式  
+   #sfmj设置开启快速模式  
+   #sfmj设置开启慢速模式  
 
 5. 显示帮助：  
    #mjp帮助  
