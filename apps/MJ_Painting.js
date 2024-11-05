@@ -6,6 +6,7 @@ import {
     parseSourceImg,
     url2Base64,
 } from '../utils/getImg.js'
+import { LinkPlugin } from './link.js'
 
 export class MJ_Painting extends plugin {
     constructor() {
@@ -18,6 +19,10 @@ export class MJ_Painting extends plugin {
                 {
                     reg: '^#(mjp|niji)',
                     fnc: 'mj_draw'
+                },
+                {
+                   reg: '^#mjc',
+                    fnc: 'mj_draw_with_link'
                 },
                 {
                     reg: '^#sfmj设置(apikey|apibaseurl|翻译key|翻译baseurl|翻译模型|翻译开关)',
@@ -35,6 +40,7 @@ export class MJ_Painting extends plugin {
                 },
             ]
         })
+        this.linkPlugin = new LinkPlugin()
     }
 
     async setConfig(e) {
@@ -93,6 +99,11 @@ export class MJ_Painting extends plugin {
         const match = e.msg.match(/^#(mjp|niji)([\s\S]*)/)
         const botType = match[1] === 'mjp' ? 'MID_JOURNEY' : 'NIJI_JOURNEY'
         let prompt = match[2] ? match[2].trim() : ''
+
+        // 如果是niji命令，自动添加--niji参数
+        if (match[1] === 'niji' && !prompt.includes('--niji')) {
+            prompt = `${prompt} --niji`
+        }
 
         if (prompt == "帮助") {
             this.showHelp(e)
@@ -305,6 +316,7 @@ MJP插件帮助：
 1. 生成图片：  
    #mjp [提示词] (使用Midjourney)  
    #niji [提示词] (使用Niji Journey)  
+   #mjc [提示词] (使用图片参考)
    例：#mjp 一只可爱的猫咪  
    例：#niji 一只可爱的动漫风格猫咪  
 
@@ -319,6 +331,7 @@ MJP插件帮助：
    例：#放大左上 1234567890  
    例：#微调右下 1234567890  
    例：#重绘 1234567890  
+   注：mjc生成的图片也支持这些操作
 
 3. 设置（仅限主人）：  
    #sfmj设置apikey [API密钥]  
@@ -369,6 +382,104 @@ MJP插件帮助：
         } catch (error) {
             logger.error("图片生成失败", error)
             e.reply('生成图片时遇到了一个错误，请稍后再试。')
+        }
+    }
+
+    async mj_draw_with_link(e) {
+        let config_date = Config.getConfig()
+        if (!config_date.mj_apiKey || !config_date.mj_apiBaseUrl) {
+            await e.reply('请先设置API Key和API Base URL。使用命令：\n#mjp设置apikey [值]\n#mjp设置apibaseurl [值]\n（仅限主人设置）')
+            return
+        }
+
+        const match = e.msg.match(/^#mjc([\s\S]*)/)
+        let prompt = match[1] ? match[1].trim() : ''
+
+        // 添加图片解析
+        await parseSourceImg(e)
+
+        if (!prompt || !e.img) {
+            await e.reply('请输入提示词并提供一张图片')
+            return
+        }
+
+        try {
+            // 创建一个新的LinkPlugin实例
+            const linkPlugin = new LinkPlugin()
+            
+            // 设置必要的属性，确保包含所有需要的字段
+            const linkE = {
+                msg: e.msg,
+                img: e.img,
+                isMaster: e.isMaster,
+                reply: async (msg) => {
+                    logger.info('[MJ_Painting] LinkPlugin reply:', msg)
+                    linkPlugin.reply = msg  // 存储回复内容
+                    return msg
+                },
+                isGroup: e.isGroup,
+                group_id: e.group_id,
+                user_id: e.user_id,
+                source: e.source,
+                message: e.message,
+                at: e.at,
+                adapter: e.adapter,
+                friend: e.friend,
+                group: e.group,
+                bot: e.bot,
+                self_id: e.self_id,
+                e: e
+            }
+
+            linkPlugin.e = linkE
+
+            // 调用zhil方法并等待结果
+            const result = await linkPlugin.zhil(linkE)
+            logger.info('[MJ_Painting] LinkPlugin zhil result:', result)
+            
+            // 检查返回的结果
+            if (!result) {
+                logger.error('[MJ_Painting] Failed to get image link')
+                await e.reply('获取图片直链失败，请重试')
+                return
+            }
+
+            // 获取直链结果
+            const imageLink = linkPlugin.reply
+            logger.info('[MJ_Painting] Raw image link:', imageLink)
+
+            // 如果imageLink是字符串，直接使用
+            if (typeof imageLink === 'string' && imageLink.startsWith('http')) {
+                prompt = `${prompt} --cref ${imageLink}`
+                logger.info(`[MJ_Painting] Using direct string link. Final prompt: ${prompt}`)
+            }
+            // 如果imageLink是数组，使用最后一个元素
+            else if (Array.isArray(imageLink) && imageLink.length > 0) {
+                const finalImageLink = imageLink[imageLink.length - 1]
+                logger.info('[MJ_Painting] Final image link from array:', finalImageLink)
+                
+                if (typeof finalImageLink === 'string' && finalImageLink.startsWith('http')) {
+                    prompt = `${prompt} --cref ${finalImageLink}`
+                    logger.info(`[MJ_Painting] Using array link. Final prompt: ${prompt}`)
+                } else {
+                    logger.error('[MJ_Painting] Invalid final image link format:', finalImageLink)
+                    await e.reply('获取到的直链格式不正确，请重试')
+                    return
+                }
+            } else {
+                logger.error('[MJ_Painting] Unexpected image link format:', imageLink)
+                await e.reply('获取到的直链格式不正确，请重试')
+                return
+            }
+
+            await e.reply('正在生成图片，请稍候...')
+            await this.mj_send_pic(e, prompt, 'MID_JOURNEY', config_date, [])
+            return true
+
+        } catch (error) {
+            logger.error('[MJ_Painting] Error in mj_draw_with_link:', error)
+            await e.reply('处理图片时发生错误，请重试')
+            return false
         }
     }
 }

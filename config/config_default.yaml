@@ -23,3 +23,5 @@ enableTranslation: false # 是否开启翻译功能
 targetLang: 'JA' # 翻译目标语言 JA/EN
 syncConfig: {} # 同传配置
 fish_text_blacklist: []
+# 直链配置
+link_domain: "https://xiaozhian-slink.hf.space" # 直链服务器域名

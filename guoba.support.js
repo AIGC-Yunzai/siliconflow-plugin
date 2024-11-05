@@ -301,6 +301,20 @@ export function supportGuoba() {
             ],
           },
         },
+        {
+          component: "Divider",
+          label: "直链功能配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "link_domain",
+          label: "直链服务器域名",
+          bottomHelpMessage: "设置直链服务器域名，用于图片上传和删除",
+          component: "Input",
+        },
       ],
       getConfigData() {
         let config = Config.getConfig()

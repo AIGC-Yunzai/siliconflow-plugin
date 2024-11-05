@@ -36,6 +36,7 @@ pnpm install --filter=siliconflow-plugin
 ## 使用教程
 
 - [配置教程](https://aigc-yunzai.dwe.me/siliconflow/%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AE)🍈
+- [直链服务器，一键复制huggingface空间](https://huggingface.co/spaces/xiaozhian/slink/tree/main?duplicate=true)🍉
 
 ## 插件配置
 
