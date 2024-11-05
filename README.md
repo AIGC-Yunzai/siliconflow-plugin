@@ -35,6 +35,11 @@ pnpm install --filter=siliconflow-plugin
 
 ## 使用教程
 
+- 如果是低版本的icqq，图生图和直链无法获取图链，请使用以下脚本，在 Yunzai 根目录执行即可
+```
+curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
+```
+
 - [SF-PULGIN配置教程](https://aigc-yunzai.dwe.me/siliconflow/%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AE) 🍈
 - [直链服务器，一键复制huggingface空间](https://huggingface.co/spaces/xiaozhian/slink/tree/main?duplicate=true) 🍉
 - [Stable Diffusion教程](https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf) 🍇
