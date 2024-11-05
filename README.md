@@ -35,8 +35,16 @@ pnpm install --filter=siliconflow-plugin
 
 ## 使用教程
 
-- [配置教程](https://aigc-yunzai.dwe.me/siliconflow/%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AE)🍈
-- [直链服务器，一键复制huggingface空间](https://huggingface.co/spaces/xiaozhian/slink/tree/main?duplicate=true)🍉
+- [SF-PULGIN配置教程](https://aigc-yunzai.dwe.me/siliconflow/%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AE) 🍈
+- [直链服务器，一键复制huggingface空间](https://huggingface.co/spaces/xiaozhian/slink/tree/main?duplicate=true) 🍉
+- [Stable Diffusion教程](https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf) 🍇
+- [Midjourney基础教程](https://waytoagi.feishu.cn/wiki/VUadwndc5iRJktkzaYPcaLEynZc) 🍊
+- [MJ prompt参考](https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf) 🍎
+- [Midjourney V6 prompt参考](https://aituts.com/midjourney-v6/) 🍐
+- [又一个prompt参考站](https://catjourney.life/all) 🍌
+- [Midjourney Prompt生成器](https://promptfolder.com/midjourney-prompt-helper/) 🥝
+- [MJ和SD Prompt生成器相关合集](https://waytoagi.feishu.cn/wiki/TQogw5uIziB4fykbGhSciaQfndm?table=tbl5kMFjDDdeYoAt&view=vew8AJm3cI) 🍑
+- [帮你生成NovelAI的tag](https://nai4-tag-select.pages.dev/) 🥭
 
 ## 插件配置
 
@@ -54,7 +62,8 @@ pnpm install --filter=siliconflow-plugin
 - [x] 支持图生图
 - [x] 多keys同时并发
 - [x] 接入MJ绘图
-- [x] 接入Fishaudio语音合成 
+- [x] 接入Fishaudio语音合成
+- [x] 支持图片直链获取
 - [ ] 接入更多LLM推理
 - [ ] 接入更多语音合成
 - [ ] TODO...
