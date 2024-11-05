@@ -353,7 +353,7 @@ export function supportGuoba() {
         {
           field: "link_domain",
           label: "直链服务器域名",
-          bottomHelpMessage: "设置直链服务器域名，用于图片上传和删除",
+          bottomHelpMessage: "设置直链服务器域名，用于图片上传和删除，复制并打开这个链接https://huggingface.co/spaces/xiaozhian/slink/tree/main?duplicate=true，可以复制huggingface空间",
           component: "Input",
         },
       ],

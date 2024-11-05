@@ -7,6 +7,7 @@ import {
     url2Base64,
 } from '../utils/getImg.js'
 import { LinkPlugin } from './link.js'
+import { uploadImage } from '../utils/uploadImage.js'
 
 export class MJ_Painting extends plugin {
     constructor() {
@@ -407,81 +408,30 @@ MJP插件帮助：
         }
 
         try {
-            // 创建一个新的LinkPlugin实例
-            const linkPlugin = new LinkPlugin()
-            
-            // 设置必要的属性，确保包含所有需要的字段
-            const linkE = {
-                msg: e.msg,
-                img: e.img,
-                isMaster: e.isMaster,
-                reply: async (msg) => {
-                    logger.info('[MJ_Painting] LinkPlugin reply:', msg)
-                    linkPlugin.reply = msg  // 存储回复内容
-                    return msg
-                },
-                isGroup: e.isGroup,
-                group_id: e.group_id,
-                user_id: e.user_id,
-                source: e.source,
-                message: e.message,
-                at: e.at,
-                adapter: e.adapter,
-                friend: e.friend,
-                group: e.group,
-                bot: e.bot,
-                self_id: e.self_id,
-                e: e
-            }
+            const imgUrl = e.img[0]
+            logger.info('[MJ_Painting] Original image URL:', imgUrl)
 
-            linkPlugin.e = linkE
+            // 使用 uploadImage 获取直链
+            const uploadedUrl = await uploadImage(imgUrl)
+            logger.info('[MJ_Painting] Uploaded image URL:', uploadedUrl)
 
-            // 调用zhil方法并等待结果
-            const result = await linkPlugin.zhil(linkE)
-            logger.info('[MJ_Painting] LinkPlugin zhil result:', result)
-            
-            // 检查返回的结果
-            if (!result) {
+            if (!uploadedUrl) {
                 logger.error('[MJ_Painting] Failed to get image link')
                 await e.reply('获取图片直链失败，请重试')
                 return
             }
 
-            // 获取直链结果
-            const imageLink = linkPlugin.reply
-            logger.info('[MJ_Painting] Raw image link:', imageLink)
-
-            // 如果imageLink是字符串，直接使用
-            if (typeof imageLink === 'string' && imageLink.startsWith('http')) {
-                prompt = `${prompt} --cref ${imageLink}${isNiji ? ' --niji' : ''}`
-                logger.info(`[MJ_Painting] Using direct string link. Final prompt: ${prompt}`)
-            }
-            // 如果imageLink是数组，使用最后一个元素
-            else if (Array.isArray(imageLink) && imageLink.length > 0) {
-                const finalImageLink = imageLink[imageLink.length - 1]
-                logger.info('[MJ_Painting] Final image link from array:', finalImageLink)
-                
-                if (typeof finalImageLink === 'string' && finalImageLink.startsWith('http')) {
-                    prompt = `${prompt} --cref ${finalImageLink}${isNiji ? ' --niji' : ''}`
-                    logger.info(`[MJ_Painting] Using array link. Final prompt: ${prompt}`)
-                } else {
-                    logger.error('[MJ_Painting] Invalid final image link format:', finalImageLink)
-                    await e.reply('获取到的直链格式不正确，请重试')
-                    return
-                }
-            } else {
-                logger.error('[MJ_Painting] Unexpected image link format:', imageLink)
-                await e.reply('获取到的直链格式不正确，请重试')
-                return
-            }
+            // 构建最终的 prompt
+            prompt = `${prompt} --cref ${uploadedUrl}${isNiji ? ' --niji' : ''}`
+            logger.info(`[MJ_Painting] Final prompt: ${prompt}`)
 
             await e.reply('正在生成图片，请稍候...')
             const botType = isNiji ? 'NIJI_JOURNEY' : 'MID_JOURNEY'
             await this.mj_send_pic(e, prompt, botType, config_date, [])
             return true
 
-        } catch (error) {
-            logger.error('[MJ_Painting] Error in mj_draw_with_link:', error)
+        } catch (err) {
+            logger.error('[MJ_Painting] Error in mj_draw_with_link:', err)
             await e.reply('处理图片时发生错误，请重试')
             return false
         }
