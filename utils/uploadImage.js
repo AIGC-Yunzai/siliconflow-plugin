@@ -1,12 +1,5 @@
 import fetch from 'node-fetch'
-import fs from 'fs'
-import path from 'path'
 import Config from '../components/Config.js'
-
-const tempDir = './temp'
-if (!fs.existsSync(tempDir)) {
-    fs.mkdirSync(tempDir)
-}
 
 /**
  * 上传图片到指定域名
@@ -20,8 +13,6 @@ export async function uploadImage(imgUrl) {
     if (!domain) {
         throw new Error('未配置图片服务器域名，请使用 #设置直链域名 命令设置')
     }
-
-    let tempFilePath = null;
 
     try {
         // 添加超时控制
@@ -38,11 +29,7 @@ export async function uploadImage(imgUrl) {
             throw new Error(`获取图片失败: ${response.status} ${response.statusText}`);
         }
 
-        const arrayBuffer = await response.arrayBuffer();
-        const imgBuffer = Buffer.from(arrayBuffer);
-
-        tempFilePath = path.join(tempDir, `image_${Date.now()}.jpg`);
-        fs.writeFileSync(tempFilePath, imgBuffer);
+        const imgBuffer = Buffer.from(await response.arrayBuffer());
 
         const boundary = '----WebKitFormBoundary' + Math.random().toString(36).slice(2);
         let formBody = '';
@@ -50,7 +37,7 @@ export async function uploadImage(imgUrl) {
         formBody += `--${boundary}\r\n`;
         formBody += 'Content-Disposition: form-data; name="file"; filename="image.jpg"\r\n';
         formBody += 'Content-Type: image/jpeg\r\n\r\n';
-        formBody += Buffer.from(fs.readFileSync(tempFilePath)).toString('binary');
+        formBody += imgBuffer.toString('binary');
         formBody += `\r\n--${boundary}--\r\n`;
 
         // 添加新的超时控制
@@ -82,13 +69,5 @@ export async function uploadImage(imgUrl) {
     } catch (error) {
         throw error;
     } finally {
-        // 清理临时文件
-        if (tempFilePath && fs.existsSync(tempFilePath)) {
-            try {
-                fs.unlinkSync(tempFilePath);
-            } catch (err) {
-                console.error('删除临时文件失败:', err);
-            }
-        }
     }
 } 
