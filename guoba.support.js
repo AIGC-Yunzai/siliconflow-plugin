@@ -178,6 +178,47 @@ export function supportGuoba() {
         },
         {
           component: "Divider",
+          label: "对话相关配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "ss_apiBaseUrl",
+          label: "对话API地址",
+          bottomHelpMessage: "设置#ss[对话] 的API接口地址，兼容所有OpenAI格式的API接口，无连续对话功能；若不填则使用SF接口",
+          component: "Input",
+          componentProps: {
+            placeholder: 'https://api.openai.com/v1',
+          },
+        },
+        {
+          field: "ss_Key",
+          label: "对话API Key",
+          bottomHelpMessage: "设置#ss 对话的API接口的Key",
+          component: 'InputPassword'
+        },
+        {
+          field: "ss_model",
+          label: "对话API模型",
+          bottomHelpMessage: "设置#ss 对话的API接口模型",
+          component: "Input",
+          componentProps: {
+            placeholder: 'gpt-4',
+          },
+        },
+        {
+          field: "ss_Prompt",
+          label: "对话API提示词",
+          bottomHelpMessage: "设置#ss 对话的API接口的提示词/人格/扮演的角色",
+          component: "InputTextArea",
+          componentProps: {
+            placeholder: 'You are a helpful assistant, you prefer to speak Chinese',
+          },
+        },
+        {
+          component: "Divider",
           label: "MJ 相关配置",
           componentProps: {
             orientation: "left",

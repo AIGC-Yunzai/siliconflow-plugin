@@ -156,15 +156,21 @@ export class SF_Painting extends plugin {
         // 读取配置
         const config_date = Config.getConfig()
 
-        if (config_date.sf_keys.length == 0) {
+        let use_sf_key = "", apiBaseUrl = "", model = ""
+        if (config_date.ss_apiBaseUrl) {
+            use_sf_key = config_date.ss_Key;
+            apiBaseUrl = config_date.ss_apiBaseUrl;
+            model = config_date.ss_model || "gpt-4";
+        } else if (config_date.sf_keys.length == 0) {
             await e.reply('请先设置API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
             return false
+        } else {
+            use_sf_key = this.get_use_sf_key(config_date);
         }
 
         let msg = e.msg.replace(/^#(ss|SS)/, '').trim()
-        const use_sf_key = this.get_use_sf_key(config_date);
 
-        const answer = await this.generatePrompt(msg, use_sf_key, config_date, true)
+        const answer = await this.generatePrompt(msg, use_sf_key, config_date, true, apiBaseUrl, model)
 
         e.reply(answer, true)
     }
@@ -176,27 +182,29 @@ export class SF_Painting extends plugin {
      * @param {*} use_sf_key
      * @param {*} config_date
      * @param {*} forChat 聊天调用
+     * @param {*} apiBaseUrl 使用的API地址
+     * @param {*} model 使用的API模型
      * @return {string}
      */
-    async generatePrompt(input, use_sf_key, config_date, forChat = false) {
+    async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "") {
         if (config_date.sf_keys.length == 0) {
             return input
         }
 
-        logger.info("[sf插件]API调用LLM")
+        logger.debug("[sf插件]API调用LLM msg：\n" + input)
         try {
-            const response = await fetch(`${config_date.sfBaseUrl}/chat/completions`, {
+            const response = await fetch(`${apiBaseUrl || config_date.sfBaseUrl}/chat/completions`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${use_sf_key}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    "model": config_date.translateModel,
+                    "model": model || config_date.translateModel,
                     "messages": [
                         {
                             "role": "system",
-                            "content": !forChat ? config_date.sf_textToPaint_Prompt : "You are a helpful assistant, you prefer to speak Chinese"
+                            "content": !forChat ? config_date.sf_textToPaint_Prompt : config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
                         },
                         {
                             "role": "user",
