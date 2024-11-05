@@ -7,9 +7,9 @@ export class help extends plugin {
     constructor() {
         super({
             /** 功能名称 */
-            name: 'siliconflow-帮助',
+            name: 'SF-PLUGIN-帮助',
             /** 功能描述 */
-            dsc: 'siliconflow帮助',
+            dsc: 'SF-PLUGIN帮助',
             event: 'message',
             /** 优先级，数字越小等级越高 */
             priority: 1009,
@@ -27,8 +27,8 @@ export class help extends plugin {
     async help(e) {
         const helpCfg = {
             "themeSet": false,
-            "title": "Siliconflow帮助",
-            "subTitle": "Siliconflow-Bot",
+            "title": "SF-PLUGIN帮助",
+            "subTitle": "Synaptic Fusion-对接万物",
             "colWidth": 265,
             "theme": "all",
             "themeExclude": [
@@ -39,7 +39,7 @@ export class help extends plugin {
         }
         const helpList = [
             {
-                "group": "Siliconflow帮助",
+                "group": "SF-plugin帮助",
                 "list": [
                     {
                         "icon": 1,

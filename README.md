@@ -2,10 +2,10 @@
 
 <img decoding="async" align=right src="resources/readme/girl.png" width="35%">
 
-# SiliconFlow-PLUGIN 🍓
+# SiliconFlow-PLUGIN(SF-PLUGIN) 🍓
 
-- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的接入 SiliconFlow 的插件（Synaptic Fusion插件——对接万物）
-- 为什么要接入？因为他众多免费的绘图模型~可以白嫖~
+- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的接入 SiliconFlow以及MJ绘图, Fishaudio语音合成等的插件（Synaptic Fusion插件——对接万物）
+- 为什么要接入？因为SiliconFlow众多免费的绘图模型,Fishaudio有很多优秀的语音合成模型~可以白嫖~
 
 > [!TIP]
 > 插件官网（施工中）：[SiliconFlow-插件](https://aigc-yunzai.dwe.me/)
