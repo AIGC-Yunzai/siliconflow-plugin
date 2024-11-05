@@ -21,7 +21,7 @@ export class MJ_Painting extends plugin {
                     fnc: 'mj_draw'
                 },
                 {
-                   reg: '^#mjc',
+                   reg: '^#(mjc|nic)',
                     fnc: 'mj_draw_with_link'
                 },
                 {
@@ -392,8 +392,9 @@ MJP插件帮助：
             return
         }
 
-        const match = e.msg.match(/^#mjc([\s\S]*)/)
-        let prompt = match[1] ? match[1].trim() : ''
+        const match = e.msg.match(/^#(mjc|nic)([\s\S]*)/)
+        let prompt = match[2] ? match[2].trim() : ''
+        const isNiji = match[1] === 'nic'  // 判断是否是 nic 命令
 
         // 添加图片解析
         await parseSourceImg(e)
@@ -450,7 +451,7 @@ MJP插件帮助：
 
             // 如果imageLink是字符串，直接使用
             if (typeof imageLink === 'string' && imageLink.startsWith('http')) {
-                prompt = `${prompt} --cref ${imageLink}`
+                prompt = `${prompt} --cref ${imageLink}${isNiji ? ' --niji' : ''}`
                 logger.info(`[MJ_Painting] Using direct string link. Final prompt: ${prompt}`)
             }
             // 如果imageLink是数组，使用最后一个元素
@@ -459,7 +460,7 @@ MJP插件帮助：
                 logger.info('[MJ_Painting] Final image link from array:', finalImageLink)
                 
                 if (typeof finalImageLink === 'string' && finalImageLink.startsWith('http')) {
-                    prompt = `${prompt} --cref ${finalImageLink}`
+                    prompt = `${prompt} --cref ${finalImageLink}${isNiji ? ' --niji' : ''}`
                     logger.info(`[MJ_Painting] Using array link. Final prompt: ${prompt}`)
                 } else {
                     logger.error('[MJ_Painting] Invalid final image link format:', finalImageLink)
@@ -473,7 +474,8 @@ MJP插件帮助：
             }
 
             await e.reply('正在生成图片，请稍候...')
-            await this.mj_send_pic(e, prompt, 'MID_JOURNEY', config_date, [])
+            const botType = isNiji ? 'NIJI_JOURNEY' : 'MID_JOURNEY'
+            await this.mj_send_pic(e, prompt, botType, config_date, [])
             return true
 
         } catch (error) {

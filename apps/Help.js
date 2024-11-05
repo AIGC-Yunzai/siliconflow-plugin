@@ -57,6 +57,11 @@ export class help extends plugin {
                         "desc": "引用一张图片,自动在提示词后添加--cref URL，可在描述中加--cw 0~100,数字越低变化越大"
                     },
                     {
+                        "icon": 2,
+                        "title": "#nic [描述]",
+                        "desc": "与mjc相同，但会自动添加--niji参数，生成二次元风格图片"
+                    },
+                    {
                         "icon": 7,
                         "title": "#sf绘图 [描述]",
                         "desc": "使用 Siliconflow 预设模型绘画"
@@ -80,6 +85,11 @@ export class help extends plugin {
                         "icon": 61,
                         "title": "#fish群号同传QQ号",
                         "desc": "设置TTS同传，例如#fish56789同传12345"
+                    },
+                    {
+                        "icon": 62,
+                        "title": "#fish查看配置",
+                        "desc": "查看当前fish同传配置信息"
                     },
                     {
                         "icon": 9,
