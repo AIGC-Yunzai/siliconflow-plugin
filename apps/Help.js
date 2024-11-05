@@ -52,6 +52,16 @@ export class help extends plugin {
                         "desc": "使用 NIJI_JOURNEY 绘画"
                     },
                     {
+                        "icon": 8,
+                        "title": "#mjc [描述]",
+                        "desc": "引用一张图片,自动在提示词后添加--cref URL，可在描述中加--cw 0~100,数字越低变化越大"
+                    },
+                    {
+                        "icon": 2,
+                        "title": "#nic [描述]",
+                        "desc": "与mjc相同，但会自动添加--niji参数，生成二次元风格图片"
+                    },
+                    {
                         "icon": 7,
                         "title": "#sf绘图 [描述]",
                         "desc": "使用 Siliconflow 预设模型绘画"
@@ -72,6 +82,36 @@ export class help extends plugin {
                     //     "desc": "设置生成提示词开关"
                     // },
                     {
+                        "icon": 61,
+                        "title": "#fish群号同传QQ号",
+                        "desc": "设置TTS同传，例如#fish56789同传12345"
+                    },
+                    {
+                        "icon": 62,
+                        "title": "#fish查看配置",
+                        "desc": "查看当前fish同传配置信息"
+                    },
+                    {
+                        "icon": 9,
+                        "title": "#直链",
+                        "desc": "获取图片的直链地址"
+                    },
+                    {
+                        "icon": 10,
+                        "title": "#删除直链[图链]",
+                        "desc": "删除已上传的图片直链"
+                    },
+                    {
+                        "icon": 12,
+                        "title": "#设置直链域名 [域名]",
+                        "desc": "设置图片直链上传服务器域名"
+                    },
+                ],
+            },
+            {
+                "group": 'SF-plugin设置（请使用Guoba-Plugin进行操作）',
+                list: [
+                    {
                         "icon": 91,
                         "title": "#mjp帮助",
                         "desc": "获取 mjp 帮助"
@@ -82,11 +122,6 @@ export class help extends plugin {
                         "desc": "获取 fish 同传帮助信息"
                     },
                     {
-                        "icon": 61,
-                        "title": "#fish群号同传QQ号",
-                        "desc": "设置TTS同传，例如#fish56789同传12345"
-                    },
-                    {
                         "icon": 3,
                         "title": "#sf设置帮助",
                         "desc": "获取 sf 设置帮助"
@@ -95,8 +130,8 @@ export class help extends plugin {
                         "icon": 38,
                         "title": "#sf更新",
                         "desc": "更新本插件"
-                    }
-                ],
+                    },
+                ]
             }
         ]
         let helpGroup = []
