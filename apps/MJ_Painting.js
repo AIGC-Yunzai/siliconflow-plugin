@@ -22,7 +22,7 @@ export class MJ_Painting extends plugin {
                     fnc: 'mj_draw'
                 },
                 {
-                   reg: '^#(mjc|nic)',
+                    reg: '^#(mjc|nic)',
                     fnc: 'mj_draw_with_link'
                 },
                 {
@@ -101,14 +101,18 @@ export class MJ_Painting extends plugin {
         const botType = match[1] === 'mjp' ? 'MID_JOURNEY' : 'NIJI_JOURNEY'
         let prompt = match[2] ? match[2].trim() : ''
 
-        // 如果是niji命令，自动添加--niji参数
-        if (match[1] === 'niji' && !prompt.includes('--niji')) {
-            prompt = `${prompt} --niji`
-        }
-
         if (prompt == "帮助") {
             this.showHelp(e)
             return true;
+        } else if (prompt.match(/^(放大|微调|重绘)(左上|右上|左下|右下)/)) {
+            e.msg = e.msg.replace(/^#(mjp|niji)/, '#')
+            this.handleAction(e, config_date)
+            return true;
+        }
+
+        // 如果是niji命令，自动添加--niji参数
+        if (match[1] === 'niji' && !prompt.includes('--niji')) {
+            prompt = `${prompt} --niji`
         }
 
         if (!prompt && !e.img) {
@@ -219,9 +223,10 @@ export class MJ_Painting extends plugin {
         return null
     }
 
-    async handleAction(e) {
+    async handleAction(e, config_date = null) {
         // 读取配置
-        let config_date = Config.getConfig()
+        if (!config_date)
+            config_date = Config.getConfig()
         if (!config_date.mj_apiKey || !config_date.mj_apiBaseUrl) {
             await e.reply('请先设置API Key和API Base URL。使用命令：\n#sfmj设置apikey [值]\n#sfmj设置apibaseurl [值]\n（仅限主人设置）')
             return
@@ -397,6 +402,16 @@ MJP插件帮助：
 
         const match = e.msg.match(/^#(mjc|nic)([\s\S]*)/)
         let prompt = match[2] ? match[2].trim() : ''
+
+        if (prompt == "帮助") {
+            this.showHelp(e)
+            return true;
+        } else if (prompt.match(/^(放大|微调|重绘)(左上|右上|左下|右下)/)) {
+            e.msg = e.msg.replace(/^#(mjc|nic)/, '#')
+            this.handleAction(e, config_date)
+            return true;
+        }
+
         const isNiji = match[1] === 'nic'  // 判断是否是 nic 命令
 
         // 添加图片解析
