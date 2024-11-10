@@ -69,6 +69,7 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 - [x] 接入MJ绘图
 - [x] 接入Fishaudio语音合成
 - [x] 支持图片直链获取
+- [ ] #ss 对话 MD 图片输出
 - [ ] 接入更多LLM推理
 - [ ] 接入更多语音合成
 - [ ] TODO...

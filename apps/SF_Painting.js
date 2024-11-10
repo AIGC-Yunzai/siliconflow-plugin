@@ -221,11 +221,11 @@ export class SF_Painting extends plugin {
                 return data.choices[0].message.content
             } else {
                 logger.error("[sf插件]LLM调用错误：\n", data)
-                return !forChat ? input : "[sf插件]LLM调用错误"
+                return !forChat ? input : "[sf插件]LLM调用错误，详情请查阅控制台。"
             }
         } catch (error) {
             logger.error("[sf插件]LLM调用失败\n", error)
-            return !forChat ? input : "[sf插件]LLM调用失败"
+            return !forChat ? input : "[sf插件]LLM调用失败，详情请查阅控制台。"
         }
     }
 
