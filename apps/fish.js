@@ -132,7 +132,7 @@ export class FishPlugin extends plugin {
 
         try {
             logger.info("[SF-FISH]正在生成音频")
-            const response = await fetch('https://api.fish.audio/v1/tts', {
+            const response = await fetch('https://fish.dwe.me/v1/tts', {
                 method: 'POST',
                 headers: {
                     Authorization: `Bearer ${config.fish_apiKey}`,
@@ -440,7 +440,7 @@ export class FishPlugin extends plugin {
 
         let optionMsg = "可用指令：#sf设置fish发音人"
         let msgArr = [`Fish发音人列表 ${keyword}：`];
-        await fetch(`https://api.fish.audio/model?tag=${encodeURIComponent(keyword)}`, options)
+        await fetch(`https://fish.dwe.me/model?tag=${encodeURIComponent(keyword)}`, options)
             .then(response => response.json())
             .then(response => {
                 for (let index = 0; index < response.total; index++) {
