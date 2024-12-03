@@ -167,6 +167,7 @@ export function supportGuoba() {
               { label: "black-forest-labs/FLUX.1-dev", value: "black-forest-labs/FLUX.1-dev" },
               { label: "black-forest-labs/FLUX.1-pro", value: "black-forest-labs/FLUX.1-pro" },
               { label: "Pro/black-forest-labs/FLUX.1-schnell", value: "Pro/black-forest-labs/FLUX.1-schnell" },
+              { label: "stabilityai/stable-diffusion-3-5-large-turbo", value: "stabilityai/stable-diffusion-3-5-large-turbo" },
               { label: "black-forest-labs/FLUX.1-schnell（免费）", value: "black-forest-labs/FLUX.1-schnell" },
               { label: "stabilityai/sd-turbo（免费）", value: "stabilityai/sd-turbo" },
               { label: "stabilityai/sdxl-turbo（免费）", value: "stabilityai/sdxl-turbo" },
