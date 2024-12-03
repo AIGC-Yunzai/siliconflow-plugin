@@ -150,6 +150,7 @@ export function supportGuoba() {
               { label: "通义千问/Qwen2.5-72B-Instruct", value: "Qwen/Qwen2.5-72B-Instruct" },
               { label: "通义千问/Qwen2.5-72B-Instruct-128K", value: "Qwen/Qwen2.5-72B-Instruct-128K" },
               { label: "通义千问/Qwen2.5-Math-72B-Instruct", value: "Qwen/Qwen2.5-Math-72B-Instruct" },
+              { label: "Qwen/QwQ-32B-Preview", value: "Qwen/QwQ-32B-Preview" },
               { label: "Pro/智谱AI/chatglm3-6b", value: "Pro/THUDM/chatglm3-6b" },
               { label: "Pro/智谱AI/glm-4-9b-chat", value: "Pro/THUDM/glm-4-9b-chat" },
               { label: "internlm/internlm2_5-20b-chat", value: "internlm/internlm2_5-20b-chat" }
