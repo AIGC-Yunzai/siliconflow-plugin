@@ -7,7 +7,7 @@ import axios from 'axios'
  * @param {*} useOrigin 是否使用原图，默认 false
  * @return {*}处理过后的e
  */
-export async function parseSourceImg(e, alsoGetAtAvatar = false, useOrigin = false) {
+export async function parseSourceImg(e, alsoGetAtAvatar = true, useOrigin = false) {
   let reply;
   if (alsoGetAtAvatar && e.at && !e.source && !e.reply_id && !e.img) {
     if (e.atBot) {
