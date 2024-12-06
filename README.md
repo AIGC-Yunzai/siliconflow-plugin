@@ -1,8 +1,8 @@
 ![](https://socialify.git.ci/AIGC-Yunzai/siliconflow-plugin/image?font=KoHo&forks=1&issues=1&language=1&name=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Auto)
 
-<img decoding="async" align=right src="resources/readme/girl.png" width="35%">
-
 # SiliconFlow-PLUGIN(SF-PLUGIN) 🍓
+
+<img decoding="async" align=right src="resources/readme/girl.png" width="35%">
 
 - 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的接入 SiliconFlow以及MJ绘图, Fishaudio语音合成等的插件（Synaptic Fusion插件——对接万物）
 - 为什么要接入？因为SiliconFlow众多免费的绘图模型,Fishaudio有很多优秀的语音合成模型~可以白嫖~
