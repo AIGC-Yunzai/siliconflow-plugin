@@ -221,6 +221,12 @@ export function supportGuoba() {
           },
         },
         {
+          field: "ss_useMarkdown",
+          label: "对话显示方式",
+          bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
+          component: "Switch",
+        },
+        {
           component: "Divider",
           label: "MJ 相关配置",
           componentProps: {
