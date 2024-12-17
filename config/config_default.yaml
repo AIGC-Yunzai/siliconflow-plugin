@@ -30,3 +30,4 @@ ss_apiBaseUrl: ""
 ss_Key: ""
 ss_model: ""
 ss_Prompt: ""
+ss_useMarkdown: false # 是否使用markdown图片展示

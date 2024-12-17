@@ -1,4 +1,3 @@
-
 import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
 import Config from '../components/Config.js'
@@ -8,6 +7,10 @@ import {
     url2Base64,
 } from '../utils/getImg.js'
 import { handleParam } from '../utils/parse.js'
+import fs from 'fs'
+import puppeteer from "../../../lib/puppeteer/puppeteer.js";
+
+const _path = process.cwd();
 
 export class SF_Painting extends plugin {
     constructor() {
@@ -22,7 +25,7 @@ export class SF_Painting extends plugin {
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人)',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|markdown开关)',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 },
@@ -63,7 +66,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人)([\s\S]*)/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|markdown开关)([\s\S]*)/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -74,13 +77,16 @@ export class SF_Painting extends plugin {
                     config_date.translateModel = value
                     break
                 case '生成提示词':
-                    config_date.generatePrompt = value.toLowerCase() === '开'
+                    config_date.generatePrompt = value === '开'
                     break
                 case '推理步数':
                     config_date.num_inference_steps = parseInt(value)
                     break
                 case 'fish发音人':
                     config_date.fish_reference_id = value
+                    break
+                case 'markdown开关':
+                    config_date.ss_useMarkdown = value === '开'
                     break
                 default:
                     return
@@ -172,7 +178,40 @@ export class SF_Painting extends plugin {
 
         const answer = await this.generatePrompt(msg, use_sf_key, config_date, true, apiBaseUrl, model)
 
-        e.reply(answer, true)
+        // 获取markdown开关配置，默认为false
+        const useMarkdown = config_date?.ss_useMarkdown ?? false
+        logger.mark(`[sf插件] markdown开关状态: ${useMarkdown}`)
+
+        try {
+            if (useMarkdown) {
+                logger.mark('[sf插件] 正在生成markdown图片...')
+                // 构建对话数据
+                const data = {
+                    _path,
+                    tplFile: './plugins/siliconflow-plugin/resources/markdownPic/index.html',
+                    content: answer,
+                    userId: e.user_id,
+                    botId: e.self_id,
+                    userMsg: msg
+                }
+
+                // 使用云崽的puppeteer截图
+                const img = await puppeteer.screenshot("markdown", data);
+                if (img) {
+                    await e.reply({ ...img, origin: true }, true)
+                    logger.mark('[sf插件] markdown图片生成完成')
+                } else {
+                    logger.error('[sf插件] markdown图片生成失败')
+                    await e.reply(answer, true)
+                }
+            } else {
+                logger.mark('[sf插件] 使用普通文本回复')
+                await e.reply(answer, true)
+            }
+        } catch (error) {
+            logger.error('[sf插件] 回复消息时发生错误：', error)
+            await e.reply('消息处理失败，请稍后再试')
+        }
     }
 
 
@@ -232,11 +271,12 @@ export class SF_Painting extends plugin {
     async sf_help(e) {
         const helpMessage = `
 SF插件设置帮助：
-1. 设置画图API Key：#flux设置画图key [值]
-2. 设置翻译模型：#flux设置翻译模型 [模型名]
-3. 开关提示词生成：#flux设置生成提示词 开/关
-4. 开关提示词生成：#flux设置推理步数 [值]
-5. 查看帮助：#sf帮助
+1. 设置画图API Key：#sf设置画图key [值]
+2. 设置翻译模型：#sf设置翻译模型 [模型名]
+3. 开关提示词生成：#sf设置生成提示词 开/关
+4. 设置推理步数：#sf设置推理步数 [值]
+5. 设置对话显示：#sf设置markdown开关 开/关
+6. 查看帮助：#sf帮助
 
 注意：设置命令仅限主人使用。
 可用别名：#flux绘画
