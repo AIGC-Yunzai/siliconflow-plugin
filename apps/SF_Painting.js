@@ -199,13 +199,11 @@ export class SF_Painting extends plugin {
                 const img = await puppeteer.screenshot("markdown", data);
                 if (img) {
                     await e.reply({ ...img, origin: true }, true)
-                    logger.mark('[sf插件] markdown图片生成完成')
                 } else {
                     logger.error('[sf插件] markdown图片生成失败')
-                    await e.reply(answer, true)
                 }
+                e.reply(await common.makeForwardMsg(e, [answer], (e.sender.card || e.sender.nickname || e.user_id) + "：" + msg));
             } else {
-                logger.mark('[sf插件] 使用普通文本回复')
                 await e.reply(answer, true)
             }
         } catch (error) {

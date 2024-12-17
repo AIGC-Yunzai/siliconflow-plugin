@@ -222,7 +222,7 @@ export function supportGuoba() {
         },
         {
           field: "ss_useMarkdown",
-          label: "对话显示方式",
+          label: "图片对话模式",
           bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
           component: "Switch",
         },

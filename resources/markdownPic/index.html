@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh">
+
 <head>
     <meta http-equiv="content-type" content="text/html;charset=utf-8" />
     <link rel="shortcut icon" href="#" />
@@ -13,14 +14,17 @@
             font-family: "NZBZ";
             src: url('{{_path}}/plugins/siliconflow-plugin/resources/common/font/NZBZ.ttf') format('truetype');
         }
+
         @font-face {
             font-family: "HYWenHei";
             src: url('{{_path}}/plugins/siliconflow-plugin/resources/common/font/HYWH-65W.ttf') format('truetype');
         }
+
         @font-face {
             font-family: "HWSong";
             src: url('{{_path}}/plugins/siliconflow-plugin/resources/common/font/华文中宋.TTF') format('truetype');
         }
+
         @font-face {
             font-family: "SpaceMono";
             src: url('{{_path}}/plugins/siliconflow-plugin/resources/common/font/SpaceMono-Regular.ttf') format('truetype');
@@ -29,6 +33,7 @@
         body {
             margin: 0;
             padding: 20px;
+            padding-bottom: 50px;
             background-color: #ffe6f0;
             font-family: "HYWenHei", "HWSong", "Microsoft YaHei", sans-serif;
             -webkit-font-smoothing: antialiased;
@@ -75,7 +80,7 @@
             height: 45px;
             border-radius: 50%;
             border: 3px solid #fff;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
             position: absolute;
             top: 0;
         }
@@ -142,8 +147,15 @@
         }
 
         @keyframes pop-in {
-            0% { transform: scale(0.8); opacity: 0; }
-            100% { transform: scale(1); opacity: 1; }
+            0% {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
         }
 
         .markdown-content {
@@ -226,12 +238,29 @@
             text-shadow: 0 1px 1px rgba(0, 0, 0, 0.1);
         }
 
-        .markdown-content h1 { font-size: 2em; }
-        .markdown-content h2 { font-size: 1.5em; }
-        .markdown-content h3 { font-size: 1.3em; }
-        .markdown-content h4 { font-size: 1.2em; }
-        .markdown-content h5 { font-size: 1.1em; }
-        .markdown-content h6 { font-size: 1em; }
+        .markdown-content h1 {
+            font-size: 2em;
+        }
+
+        .markdown-content h2 {
+            font-size: 1.5em;
+        }
+
+        .markdown-content h3 {
+            font-size: 1.3em;
+        }
+
+        .markdown-content h4 {
+            font-size: 1.2em;
+        }
+
+        .markdown-content h5 {
+            font-size: 1.1em;
+        }
+
+        .markdown-content h6 {
+            font-size: 1em;
+        }
 
         .markdown-content a {
             color: #ff69b4;
@@ -250,7 +279,7 @@
             height: auto;
             border-radius: 8px;
             margin: 10px 0;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .markdown-content table {
@@ -313,7 +342,7 @@
             background-color: #f7f7f7;
             border: 1px solid #ccc;
             border-radius: 3px;
-            box-shadow: 0 1px 0 rgba(0,0,0,0.2);
+            box-shadow: 0 1px 0 rgba(0, 0, 0, 0.2);
             color: #333;
             display: inline-block;
             font-size: 0.9em;
@@ -324,8 +353,8 @@
         .cute-girl {
             position: absolute;
             right: 10px;
-            bottom: -20px;
-            width: 120px;
+            bottom: 5px;
+            width: 150px;
             height: auto;
             z-index: 0;
             pointer-events: none;
@@ -339,14 +368,16 @@
 
         .powered-by {
             position: absolute;
-            bottom: -20px;
+            bottom: -30px;
             left: 50%;
             transform: translateX(-50%);
             font-size: 14px;
             font-weight: 700;
             color: #ffffff;
             opacity: 1;
-            font-family: "SpaceMono", monospace;
+            font-family: "NZBZ";
+            font-weight: bold;
+            font-style: italic;
             letter-spacing: 1px;
             text-align: center;
             width: 100%;
@@ -376,6 +407,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="chat-container">
         <div class="message right">
@@ -391,7 +423,7 @@
                 <div class="markdown-content">{{content}}</div>
             </div>
         </div>
-        
+
         <img class="cute-girl" src="{{_path}}/plugins/siliconflow-plugin/resources/readme/girl.png" alt="可爱的女孩">
         <div class="powered-by">Powered By SiliconFlow-Plugin</div>
     </div>
@@ -400,7 +432,7 @@
         // 配置Marked选项
         marked.setOptions({
             renderer: new marked.Renderer(),
-            highlight: function(code, lang) {
+            highlight: function (code, lang) {
                 const language = hljs.getLanguage(lang) ? lang : 'plaintext';
                 return hljs.highlight(code, { language }).value;
             },
@@ -431,4 +463,5 @@
         window.addEventListener('resize', adjustContainerHeight);
     </script>
 </body>
+
 </html>
