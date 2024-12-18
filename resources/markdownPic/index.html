@@ -33,7 +33,7 @@
         body {
             margin: 0;
             padding: 20px;
-            padding-bottom: 35px;
+            padding-bottom: 45px;
             background-color: #ffe6f0;
             font-family: "HYWenHei", "HWSong", "Microsoft YaHei", sans-serif;
             -webkit-font-smoothing: antialiased;
@@ -50,8 +50,9 @@
             background: rgba(255, 255, 255, 0.95);
             border-radius: 15px;
             padding: 20px 30px;
+            padding-bottom: 15px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-            margin-bottom: 20px;
+            margin-bottom: 45px;
             word-wrap: break-word;
             overflow-wrap: break-word;
             min-height: fit-content;
@@ -66,6 +67,7 @@
             align-items: flex-start;
             position: relative;
             padding-left: 60px;
+            min-height: 51px;
         }
 
         .message.right {
@@ -106,6 +108,7 @@
             overflow-wrap: break-word;
             height: auto;
             overflow: visible;
+            margin-top: 3px;
         }
 
         .left .message-content {
@@ -348,13 +351,13 @@
 
         .cute-girl {
             position: absolute;
-            right: 10px;
-            bottom: 5px;
+            right: 0px;
+            bottom: 10px;
             width: 150px;
             height: auto;
-            z-index: 0;
+            z-index: 1;
             pointer-events: none;
-            opacity: 0.3;
+            opacity: 0.25;
             transition: opacity 0.3s ease;
         }
 
@@ -364,22 +367,24 @@
 
         .powered-by {
             position: absolute;
-            bottom: -27px;
+            bottom: -35px;
             left: 50%;
             transform: translateX(-50%);
-            font-size: 14px;
-            font-weight: 700;
-            color: #ffffff;
-            opacity: 1;
-            font-family: "NZBZ";
-            font-weight: bold;
+            font-size: 12px;
+            font-family: "NZBZ", sans-serif;
+            font-weight: 500;
             font-style: italic;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
             text-align: center;
-            width: 100%;
-            padding: 5px 0;
-            z-index: 1;
-            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+            width: auto;
+            padding: 4px 16px;
+            z-index: 2;
+            color: #fff;
+            background: linear-gradient(to right, #ff69b4, #ffb6c1);
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(255, 105, 180, 0.15);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
         }
 
         /* 添加滚动条样式 */
