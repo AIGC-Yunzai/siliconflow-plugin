@@ -60,6 +60,8 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 
 <img decoding="async" align=right src="https://github.com/user-attachments/assets/9698e837-49e7-4c19-8dab-6aa17d1faed4" width="35%">
 
+<img decoding="async" align=right src="https://github.com/user-attachments/assets/f8d8a42f-6c5d-4fa1-a18e-ea2403f6dd6c" width="28%">
+
 请使用 `#sf帮助` 获取完整帮助
 
 <!-- - [x] 文生图 -->
@@ -69,7 +71,7 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 - [x] 接入MJ绘图
 - [x] 接入Fishaudio语音合成
 - [x] 支持图片直链获取
-- [ ] #ss 对话 MD 图片输出
+- [X] #ss 对话 MD 图片输出
 - [ ] 接入更多LLM推理
 - [ ] 接入更多语音合成
 - [ ] TODO...
