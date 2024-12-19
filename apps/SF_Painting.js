@@ -7,10 +7,7 @@ import {
     url2Base64,
 } from '../utils/getImg.js'
 import { handleParam } from '../utils/parse.js'
-import fs from 'fs'
-import puppeteer from "../../../lib/puppeteer/puppeteer.js";
-
-const _path = process.cwd();
+import { markdown_screenshot } from '../utils/markdownPic.js'
 
 export class SF_Painting extends plugin {
     constructor() {
@@ -180,29 +177,16 @@ export class SF_Painting extends plugin {
 
         // 获取markdown开关配置，默认为false
         const useMarkdown = config_date?.ss_useMarkdown ?? false
-        logger.mark(`[sf插件] markdown开关状态: ${useMarkdown}`)
 
         try {
             if (useMarkdown) {
-                logger.mark('[sf插件] 正在生成markdown图片...')
-                // 构建对话数据
-                const data = {
-                    _path,
-                    tplFile: './plugins/siliconflow-plugin/resources/markdownPic/index.html',
-                    content: answer,
-                    userId: e.user_id,
-                    botId: e.self_id,
-                    userMsg: msg
-                }
-
-                // 使用云崽的puppeteer截图
-                const img = await puppeteer.screenshot("markdown", data);
+                const img = await markdown_screenshot(e.user_id, e.self_id, msg, answer);
                 if (img) {
                     await e.reply({ ...img, origin: true }, true)
                 } else {
                     logger.error('[sf插件] markdown图片生成失败')
                 }
-                e.reply(await common.makeForwardMsg(e, [answer], (e.sender.card || e.sender.nickname || e.user_id) + "：" + msg));
+                e.reply(await common.makeForwardMsg(e, [answer], (e.sender.card || e.sender.nickname || e.user_id) + "：" + msg.substring(0, 50)));
             } else {
                 await e.reply(answer, true)
             }
@@ -211,7 +195,6 @@ export class SF_Painting extends plugin {
             await e.reply('消息处理失败，请稍后再试')
         }
     }
-
 
     /**
      * @description: 自动提示词

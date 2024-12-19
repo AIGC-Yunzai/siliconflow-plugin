@@ -21,10 +21,14 @@ git clone https://github.com/AIGC-Yunzai/siliconflow-plugin.git ./plugins/silico
 ```
 
 > [!NOTE]
-> 如果你的网络环境较差，无法连接到 Github，可以使用 [GitHub Proxy](https://cf.ghproxy.cc/) 提供的文件代理加速下载服务
+> 如果你的网络环境较差，无法连接到 Github，可以使用 [GitHub Proxy](https://cf.ghproxy.cc/) 提供的文件代理加速下载服务：
 >
-> ```
+> ```bash
 > git clone https://cf.ghproxy.cc/https://github.com/AIGC-Yunzai/siliconflow-plugin.git ./plugins/siliconflow-plugin
+> ```
+> 如果已经下载过本插件需要修改代理加速下载服务地址，在插件根目录使用：
+> ```bash
+> git remote set-url origin https://cf.ghproxy.cc/https://github.com/AIGC-Yunzai/siliconflow-plugin.git
 > ```
 
 #### 2. 安装依赖
@@ -39,8 +43,11 @@ pnpm install --filter=siliconflow-plugin
 ```
 curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 ```
-
+#### 教程
 - [SF-PULGIN配置教程](https://aigc-yunzai.dwe.me/siliconflow/%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AE) 🍈
+
+#### 绘画辅助工具
+- [AI画图Tags生产站](https://nai4-tag-select.pages.dev/) 🥭
 - [直链服务器，一键复制huggingface空间](https://huggingface.co/spaces/xiaozhian/slink/tree/main?duplicate=true) 🍉
 - [Stable Diffusion教程](https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf) 🍇
 - [Midjourney基础教程](https://waytoagi.feishu.cn/wiki/VUadwndc5iRJktkzaYPcaLEynZc) 🍊
@@ -49,7 +56,6 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 - [又一个prompt参考站](https://catjourney.life/all) 🍌
 - [Midjourney Prompt生成器](https://promptfolder.com/midjourney-prompt-helper/) 🥝
 - [MJ和SD Prompt生成器相关合集](https://waytoagi.feishu.cn/wiki/TQogw5uIziB4fykbGhSciaQfndm?table=tbl5kMFjDDdeYoAt&view=vew8AJm3cI) 🍑
-- [帮你生成NovelAI的tag](https://nai4-tag-select.pages.dev/) 🥭
 
 ## 插件配置
 
@@ -72,9 +78,8 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 - [x] 接入Fishaudio语音合成
 - [x] 支持图片直链获取
 - [X] #ss 对话 MD 图片输出
-- [ ] 接入更多LLM推理
-- [ ] 接入更多语音合成
-- [ ] TODO...
+- [ ] #gg 对话实现实时搜索功能
+- [ ] TODO..
 
 ## 支持与贡献
 
@@ -82,14 +87,10 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 
 有意见或者建议也欢迎提交 [Issues](https://github.com/AIGC-Yunzai/siliconflow-plugin/issues) 和 [Pull requests](https://github.com/AIGC-Yunzai/siliconflow-plugin/pulls)。
 
-## 相关项目
-
-- [vits-plugin](https://github.com/erzaozi/vits-plugin)：一个适用于 Yunzai 系列机器人框架 的的 AI 语音合成插件，让你能够在机器人中使用 AI 语音合成功能
-- [Fish-Audio](https://fish.audio)：Brand new TTS solution
-
 ## 感谢
-- [vits-plugin](https://github.com/erzaozi/vits-plugin)：Fishaudio语音同传的方式绝大部分参考了该项目的实现方法，Fish-Audio.json也是直接用的该项目的，很是感谢
-- 所以fishaudio发音人名称可以看[发音人名称](https://github.com/erzaozi/vits-plugin#fish-audio)
+
+- [Fish-Audio](https://fish.audio)：Brand new TTS solution
+- [vits-plugin](https://github.com/erzaozi/vits-plugin)：一个适用于 Yunzai 系列机器人框架 的的 AI 语音合成插件，让你能够在机器人中使用 AI 语音合成功能；Fishaudio语音同传的方式绝大部分参考了该项目的实现方法，Fish-Audio.json也是直接用的该项目的，很是感谢！
 
 
 ## 许可证
