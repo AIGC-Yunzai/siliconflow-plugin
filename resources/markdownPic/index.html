@@ -9,6 +9,18 @@
     <script src="{{_path}}/plugins/siliconflow-plugin/resources/markdownPic/marked.min.js"></script>
     <link rel="stylesheet" href="{{_path}}/plugins/siliconflow-plugin/resources/markdownPic/github.min.css">
     <script src="{{_path}}/plugins/siliconflow-plugin/resources/markdownPic/highlight.min.js"></script>
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: {
+                fontCache: 'global'
+            }
+        };
+    </script>
+    <script src="{{_path}}/plugins/siliconflow-plugin/resources/markdownPic/mathjax/tex-mml-chtml.js" async></script>
     <style>
         @font-face {
             font-family: "NZBZ";
@@ -443,12 +455,16 @@
             breaks: true,
             sanitize: false,
             smartypants: false,
-            xhtml: false
+            xhtml: false,
+            escape: function(html) {
+                return html.replace(/\\/g, '\\\\');
+            }
         });
 
         // 初始化Markdown
         document.querySelectorAll('.markdown-content').forEach(element => {
             element.innerHTML = marked.parse(element.textContent);
+            MathJax.typesetPromise && MathJax.typesetPromise();
         });
 
         // 确保内容完整显示
