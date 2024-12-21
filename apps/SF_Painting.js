@@ -180,7 +180,7 @@ export class SF_Painting extends plugin {
 
         try {
             if (useMarkdown) {
-                const img = await markdown_screenshot(e.user_id, e.self_id, msg, answer);
+                const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, answer);
                 if (img) {
                     await e.reply({ ...img, origin: true }, true)
                 } else {
