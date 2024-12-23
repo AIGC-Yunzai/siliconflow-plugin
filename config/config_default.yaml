@@ -31,3 +31,7 @@ ss_Key: ""
 ss_model: ""
 ss_Prompt: ""
 ss_useMarkdown: false # 是否使用markdown图片展示
+# Gemini API配置
+ggBaseUrl: "https://bright-donkey-63.deno.dev"
+ggKey: ""
+gg_useMarkdown: false # 是否使用markdown图片展示

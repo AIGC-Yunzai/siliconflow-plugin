@@ -228,6 +228,35 @@ export function supportGuoba() {
         },
         {
           component: "Divider",
+          label: "Gemini API配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "ggBaseUrl",
+          label: "Gemini API地址",
+          bottomHelpMessage: "设置#gg[对话] 的API接口地址",
+          component: "Input",
+          componentProps: {
+            placeholder: 'https://bright-donkey-63.deno.dev',
+          },
+        },
+        {
+          field: "ggKey",
+          label: "Gemini API Key",
+          bottomHelpMessage: "设置#gg 对话的API接口的Key，Key可以在https://aistudio.google.com/app/apikey获取，如果未配置Key，则使用内置Key",
+          component: 'InputPassword',
+        },
+        {
+          field: "gg_useMarkdown",
+          label: "图片对话模式",
+          bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
+          component: "Switch",
+        },
+        {
+          component: "Divider",
           label: "MJ 相关配置",
           componentProps: {
             orientation: "left",
@@ -237,7 +266,7 @@ export function supportGuoba() {
         {
           field: "mj_apiBaseUrl",
           label: "MJ接口地址",
-          bottomHelpMessage: "设置MJ接口地址，用于MJ画图；可选：https://ai.trueai.org （免费无key但每一张图片5分钟）或 https://api.ephone.ai",
+          bottomHelpMessage: "设置MJ接口地址，用于MJ画图；可选：https://ai.trueai.org （免费无key但每一张图片5分钟）",
           component: "Input",
           componentProps: {
             placeholder: 'https://ai.trueai.org',

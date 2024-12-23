@@ -22,7 +22,7 @@ export class SF_Painting extends plugin {
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|markdown开关)',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式)',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 },
@@ -34,6 +34,10 @@ export class SF_Painting extends plugin {
                 {
                     reg: '^#(ss|SS)',
                     fnc: 'sf_chat',
+                },
+                {
+                    reg: '^#(gg|GG)',
+                    fnc: 'gg_chat',
                 },
             ]
         })
@@ -63,7 +67,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|markdown开关)([\s\S]*)/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式)([\s\S]*)/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -82,8 +86,17 @@ export class SF_Painting extends plugin {
                 case 'fish发音人':
                     config_date.fish_reference_id = value
                     break
-                case 'markdown开关':
+                case 'ss图片模式':
                     config_date.ss_useMarkdown = value === '开'
+                    break
+                case 'ggkey':
+                    config_date.ggKey = value
+                    break
+                case 'ggbaseurl':
+                    config_date.ggBaseUrl = value
+                    break
+                case 'gg图片模式':
+                    config_date.gg_useMarkdown = value === '开'
                     break
                 default:
                     return
@@ -256,8 +269,11 @@ SF插件设置帮助：
 2. 设置翻译模型：#sf设置翻译模型 [模型名]
 3. 开关提示词生成：#sf设置生成提示词 开/关
 4. 设置推理步数：#sf设置推理步数 [值]
-5. 设置对话显示：#sf设置markdown开关 开/关
-6. 查看帮助：#sf帮助
+5. 设置ss图片模式：#sf设置ss图片模式 开/关
+6. 设置Gemini Key：#sf设置ggkey [值]
+7. 设置Gemini URL：#sf设置ggbaseurl [值]
+8. 设置gg图片模式：#sf设置gg图片模式 开/关
+9. 查看帮助：#sf帮助
 
 注意：设置命令仅限主人使用。
 可用别名：#flux绘画
@@ -321,6 +337,118 @@ SF插件设置帮助：
             logger.error("[sf插件]API调用失败\n", error)
             e.reply('生成图片时遇到了一个错误，请稍后再试。')
             return false;
+        }
+    }
+
+    async gg_chat(e) {
+        // 读取配置
+        const config_date = Config.getConfig()
+
+        let ggBaseUrl = config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev";
+        let ggKey = config_date.ggKey || "sk-xuanku";
+
+        let msg = e.msg.replace(/^#(gg|GG)/, '').trim()
+
+        const { answer, sources } = await this.generateGeminiPrompt(msg, ggBaseUrl, ggKey)
+
+        // 获取markdown开关配置，默认为false
+        const useMarkdown = config_date?.gg_useMarkdown ?? false
+
+        try {
+            if (useMarkdown) {
+                // 如果开启了markdown，生成图片并将回答放入转发消息
+                const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, answer);
+                if (img) {
+                    await e.reply({ ...img, origin: true }, true)
+                } else {
+                    logger.error('[sf插件] markdown图片生成失败')
+                }
+
+                // 构建转发消息，包含回答和来源
+                const forwardMsg = [answer];
+                if (sources && sources.length > 0) {
+                    forwardMsg.push('\n信息来源：');
+                    sources.forEach((source, index) => {
+                        forwardMsg.push(`${index + 1}. ${source.title}\n${source.url}`);
+                    });
+                }
+                e.reply(await common.makeForwardMsg(e, forwardMsg, `${e.sender.card || e.sender.nickname || e.user_id}的搜索结果`));
+            } else {
+                // 如果没开启markdown，直接回复答案
+                await e.reply(answer, true)
+
+                // 如果有来源，单独发送转发消息显示来源
+                if (sources && sources.length > 0) {
+                    const sourceMsg = ['信息来源：'];
+                    sources.forEach((source, index) => {
+                        sourceMsg.push(`${index + 1}. ${source.title}\n${source.url}`);
+                    });
+                    e.reply(await common.makeForwardMsg(e, sourceMsg, `${e.sender.card || e.sender.nickname || e.user_id}的搜索来源`));
+                }
+            }
+        } catch (error) {
+            logger.error('[sf插件] 回复消息时发生错误：', error)
+            await e.reply('消息处理失败，请稍后再试')
+        }
+    }
+
+    /**
+     * @description: Gemini API 调用
+     * @param {string} input 用户输入
+     * @param {string} ggBaseUrl API 基础 URL
+     * @param {string} ggKey API 密钥
+     * @return {Object} 包含答案和来源的对象
+     */
+    async generateGeminiPrompt(input, ggBaseUrl, ggKey) {
+        logger.debug("[sf插件]API调用Gemini msg：\n" + input)
+        try {
+            const response = await fetch(`${ggBaseUrl}/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${ggKey}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    "contents": [{
+                        "parts":[{
+                            "text": input
+                        }]
+                    }],
+                    "tools": [{
+                        "googleSearch": {}
+                    }]
+                })
+            })
+
+            const data = await response.json()
+
+            if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
+                // 替换URL前缀
+                let answer = data.candidates[0].content.parts[0].text;
+                
+                // 获取来源信息
+                let sources = [];
+                if (data.candidates?.[0]?.groundingMetadata?.groundingChunks) {
+                    sources = data.candidates[0].groundingMetadata.groundingChunks
+                        .filter(chunk => chunk.web) // 只保留web类型的来源
+                        .map(chunk => ({
+                            title: chunk.web.title,
+                            url: chunk.web.uri.replace(
+                                'https://vertexaisearch.cloud.google.com/grounding-api-redirect',
+                                'https://miao.news'
+                            )
+                        }))
+                        .filter((v, i, a) => a.findIndex(t => (t.title === v.title && t.url === v.url)) === i); // 去重
+                }
+
+                logger.mark("[sf插件]来源信息：" + JSON.stringify(sources))
+                return { answer, sources };
+            } else {
+                logger.error("[sf插件]gg调用错误：\n", data)
+                return { answer: "[sf插件]gg调用错误", sources: [] };
+            }
+        } catch (error) {
+            logger.error("[sf插件]gg调用失败\n", error)
+            return { answer: "[sf插件]gg调用失败", sources: [] };
         }
     }
 }
