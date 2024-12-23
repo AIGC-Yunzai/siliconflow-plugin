@@ -408,10 +408,16 @@ SF插件设置帮助：
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                    "contents": [{
-                        "parts":[{
-                            "text": input
+                    "systemInstruction": {
+                        "parts": [{
+                            "text": config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
                         }]
+                    },
+                    "contents": [{
+                        "parts": [{
+                            "text": input
+                        }],
+                        "role": "user"
                     }],
                     "tools": [{
                         "googleSearch": {}

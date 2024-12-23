@@ -256,6 +256,15 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: "gg_Prompt",
+          label: "对话API提示词",
+          bottomHelpMessage: "设置#gg 对话的API接口的系统提示词",
+          component: "InputTextArea",
+          componentProps: {
+            placeholder: '你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。',
+          },
+        },
+        {
           component: "Divider",
           label: "MJ 相关配置",
           componentProps: {

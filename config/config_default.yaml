@@ -35,3 +35,4 @@ ss_useMarkdown: false # 是否使用markdown图片展示
 ggBaseUrl: "https://bright-donkey-63.deno.dev"
 ggKey: ""
 gg_useMarkdown: false # 是否使用markdown图片展示
+gg_Prompt: "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。" # 对话API提示词
