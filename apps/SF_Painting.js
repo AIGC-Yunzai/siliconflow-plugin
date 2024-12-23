@@ -428,9 +428,11 @@ SF插件设置帮助：
 
             const data = await response.json()
 
-            if (data?.candidates?.[0]?.content?.parts?.[0]?.text) {
-                // 替换URL前缀
-                let answer = data.candidates[0].content.parts[0].text;
+            if (data?.candidates?.[0]?.content?.parts) {
+                // 合并所有text部分
+                let answer = data.candidates[0].content.parts
+                    .map(part => part.text)
+                    .join('');
                 
                 // 获取来源信息
                 let sources = [];

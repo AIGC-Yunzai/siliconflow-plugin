@@ -76,6 +76,11 @@ export class help extends plugin {
                         "title": "#ss [对话]",
                         "desc": "与LLM对话"
                     },
+                    {
+                        "icon": 55,
+                        "title": "#gg [对话]",
+                        "desc": "使用 Gemini 搜索并回答问题"
+                    },
                     // {
                     //     "icon": 86,
                     //     "title": "#sf设置生成提示词 [开|关]",
@@ -125,6 +130,11 @@ export class help extends plugin {
                         "icon": 3,
                         "title": "#sf设置帮助",
                         "desc": "获取 sf 设置帮助"
+                    },
+                    {
+                        "icon": 92,
+                        "title": "#sf设置ss图片模式 开/关或者#sf设置gg图片模式 开/关",
+                        "desc": "设置ss和gg的图片回复模式"
                     },
                     {
                         "icon": 38,
