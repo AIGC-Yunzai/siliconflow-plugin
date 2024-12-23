@@ -78,7 +78,7 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 - [x] 接入Fishaudio语音合成
 - [x] 支持图片直链获取
 - [X] #ss 对话 MD 图片输出
-- [ ] #gg 对话实现实时搜索功能
+- [X] #gg 对话实现实时搜索功能
 - [ ] TODO..
 
 ## 支持与贡献
