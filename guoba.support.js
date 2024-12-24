@@ -237,7 +237,7 @@ export function supportGuoba() {
         {
           field: "ggBaseUrl",
           label: "Gemini API地址",
-          bottomHelpMessage: "设置#gg[对话] 的API接口地址",
+          bottomHelpMessage: "设置#gg[对话] 的API接口地址；留空使用内置地址",
           component: "Input",
           componentProps: {
             placeholder: 'https://bright-donkey-63.deno.dev',

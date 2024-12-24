@@ -184,6 +184,17 @@ export class SF_Painting extends plugin {
             use_sf_key = this.get_use_sf_key(config_date);
         }
 
+        // 处理引用图片
+        await parseSourceImg(e)
+        // let souce_image_base64
+        // if (e.img) {
+        //     souce_image_base64 = await url2Base64(e.img[0])
+        //     if (!souce_image_base64) {
+        //         e.reply('引用的图片地址已失效，请重新发送图片', true)
+        //         return false
+        //     }
+        // }
+
         let msg = e.msg.replace(/^#(ss|SS)/, '').trim()
 
         const answer = await this.generatePrompt(msg, use_sf_key, config_date, true, apiBaseUrl, model)
@@ -347,9 +358,22 @@ SF插件设置帮助：
         let ggBaseUrl = config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev";
         let ggKey = config_date.ggKey || "sk-xuanku";
 
+        // 处理引用图片
+        await parseSourceImg(e)
+        let souce_image_base64 = undefined;
+        if (e.img) {
+            souce_image_base64 = await url2Base64(e.img[0])
+            if (!souce_image_base64) {
+                e.reply('引用的图片地址已失效，请重新发送图片', true)
+                return false
+            }
+        }
+
         let msg = e.msg.replace(/^#(gg|GG)/, '').trim()
 
-        const { answer, sources } = await this.generateGeminiPrompt(msg, ggBaseUrl, ggKey, config_date)
+        const opt = { imageBase64: souce_image_base64 }
+
+        const { answer, sources } = await this.generateGeminiPrompt(msg, ggBaseUrl, ggKey, config_date, opt)
 
         // 获取markdown开关配置，默认为false
         const useMarkdown = config_date?.gg_useMarkdown ?? false
@@ -367,7 +391,7 @@ SF插件设置帮助：
                 // 构建转发消息，包含回答和来源
                 const forwardMsg = [answer];
                 if (sources && sources.length > 0) {
-                    forwardMsg.push('\n信息来源：');
+                    forwardMsg.push('信息来源：');
                     sources.forEach((source, index) => {
                         forwardMsg.push(`${index + 1}. ${source.title}\n${source.url}`);
                     });
@@ -398,10 +422,18 @@ SF插件设置帮助：
      * @param {string} ggBaseUrl API 基础 URL
      * @param {string} ggKey API 密钥
      * @param {Object} config_date 配置信息
+     * @param {Object} opt 可选参数
      * @return {Object} 包含答案和来源的对象
      */
-    async generateGeminiPrompt(input, ggBaseUrl, ggKey, config_date) {
+    async generateGeminiPrompt(input, ggBaseUrl, ggKey, config_date, opt = {}) {
         logger.debug("[sf插件]API调用Gemini msg：\n" + input)
+
+        const image = opt.imageBase64 ? {
+            inline_data: {
+                mime_type: 'image/jpeg',
+                data: opt.imageBase64
+            }
+        } : undefined
         try {
             const response = await fetch(`${ggBaseUrl}/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${ggKey}`, {
                 method: 'POST',
@@ -417,7 +449,8 @@ SF插件设置帮助：
                     "contents": [{
                         "parts": [{
                             "text": input
-                        }],
+                        },
+                            image],
                         "role": "user"
                     }],
                     "tools": [{
@@ -433,7 +466,7 @@ SF插件设置帮助：
                 let answer = data.candidates[0].content.parts
                     .map(part => part.text)
                     .join('');
-                
+
                 // 获取来源信息
                 let sources = [];
                 if (data.candidates?.[0]?.groundingMetadata?.groundingChunks) {
