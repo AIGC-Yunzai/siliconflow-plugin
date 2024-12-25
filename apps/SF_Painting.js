@@ -42,6 +42,7 @@ export class SF_Painting extends plugin {
             ]
         })
         this.sf_keys_index = -1
+        this.currentKeyIndex_ggKey = 0
     }
 
     /** 轮询 sf_keys */
@@ -62,6 +63,19 @@ export class SF_Painting extends plugin {
             }
         }
         return use_sf_key
+    }
+
+    /** 轮询 ggKey */
+    get_use_ggKey(config_date) {
+        if (!config_date?.ggKey) return '';
+        const keysArr = config_date.ggKey.split(/[,，]/).map(key => key.trim()).filter(Boolean);
+        if (keysArr.length === 0) return '';
+        
+        // 获取当前key并更新索引
+        const currentKey = keysArr[this.currentKeyIndex_ggKey];
+        this.currentKeyIndex_ggKey = (this.currentKeyIndex_ggKey + 1) % keysArr.length;
+        
+        return currentKey;
     }
 
     async sf_setConfig(e) {
@@ -356,7 +370,7 @@ SF插件设置帮助：
         const config_date = Config.getConfig()
 
         let ggBaseUrl = config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev";
-        let ggKey = config_date.ggKey || "sk-xuanku";
+        let ggKey = this.get_use_ggKey(config_date) || "sk-xuanku";
 
         // 处理引用图片
         await parseSourceImg(e)
@@ -435,7 +449,7 @@ SF插件设置帮助：
             }
         } : undefined
         try {
-            const response = await fetch(`${ggBaseUrl}/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${ggKey}`, {
+            const response = await fetch(`${ggBaseUrl}/v1beta/models/${config_date.gg_model || "gemini-2.0-flash-exp"}:generateContent?key=${ggKey}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'

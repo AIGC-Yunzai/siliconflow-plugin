@@ -36,3 +36,4 @@ ggBaseUrl: ""
 ggKey: ""
 gg_useMarkdown: false # 是否使用markdown图片展示
 gg_Prompt: "" # 对话API提示词
+gg_model: "gemini-2.0-flash-exp" # 对话API模型

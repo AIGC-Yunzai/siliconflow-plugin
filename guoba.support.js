@@ -236,8 +236,8 @@ export function supportGuoba() {
         },
         {
           field: "ggBaseUrl",
-          label: "Gemini API地址",
-          bottomHelpMessage: "设置#gg[对话] 的API接口地址；留空使用内置地址",
+          label: "Gemini反代地址",
+          bottomHelpMessage: "设置#gg[对话] 的API接口地址，对https://generativelanguage.googleapis.com 反代；留空则使用内置地址",
           component: "Input",
           componentProps: {
             placeholder: 'https://bright-donkey-63.deno.dev',
@@ -246,8 +246,17 @@ export function supportGuoba() {
         {
           field: "ggKey",
           label: "Gemini API Key",
-          bottomHelpMessage: "设置#gg 对话的API接口的Key，Key可以在https://aistudio.google.com/app/apikey获取，如果未配置Key，则使用内置Key",
+          bottomHelpMessage: "设置#gg 对话的API接口的Key，Key可以在https://aistudio.google.com/app/apikey获取；如果有多个key用英文逗号隔开，key将轮替使用；留空则使用内置Key",
           component: 'InputPassword',
+        },
+        {
+          field: 'gg_model',
+          label: 'gemini模型',
+          bottomHelpMessage: '设置gemini模型',
+          component: 'Input',
+          componentProps: {
+            placeholder: 'gemini-2.0-flash-exp',
+          },
         },
         {
           field: "gg_useMarkdown",
