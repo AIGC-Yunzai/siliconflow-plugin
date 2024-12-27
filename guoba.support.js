@@ -252,7 +252,7 @@ export function supportGuoba() {
         {
           field: 'gg_model',
           label: 'gemini模型',
-          bottomHelpMessage: '设置gemini模型',
+          bottomHelpMessage: '设置gemini模型；留空则使用默认模型',
           component: 'Input',
           componentProps: {
             placeholder: 'gemini-2.0-flash-exp',
