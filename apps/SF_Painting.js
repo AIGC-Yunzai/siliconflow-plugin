@@ -12,8 +12,8 @@ import { markdown_screenshot } from '../utils/markdownPic.js'
 export class SF_Painting extends plugin {
     constructor() {
         super({
-            name: 'SF_Painting插件',
-            dsc: 'SF_Painting生成图片',
+            name: 'SF_AIGC插件',
+            dsc: 'SF_AIGC插件',
             event: 'message',
             priority: 6,
             rule: [
@@ -70,11 +70,11 @@ export class SF_Painting extends plugin {
         if (!config_date?.ggKey) return '';
         const keysArr = config_date.ggKey.split(/[,，]/).map(key => key.trim()).filter(Boolean);
         if (keysArr.length === 0) return '';
-        
+
         // 获取当前key并更新索引
         const currentKey = keysArr[this.currentKeyIndex_ggKey];
         this.currentKeyIndex_ggKey = (this.currentKeyIndex_ggKey + 1) % keysArr.length;
-        
+
         return currentKey;
     }
 
@@ -200,18 +200,20 @@ export class SF_Painting extends plugin {
 
         // 处理引用图片
         await parseSourceImg(e)
-        // let souce_image_base64
-        // if (e.img) {
-        //     souce_image_base64 = await url2Base64(e.img[0])
-        //     if (!souce_image_base64) {
-        //         e.reply('引用的图片地址已失效，请重新发送图片', true)
-        //         return false
-        //     }
-        // }
+        let souce_image_base64
+        if (e.img) {
+            souce_image_base64 = await url2Base64(e.img[0])
+            if (!souce_image_base64) {
+                e.reply('引用的图片地址已失效，请重新发送图片', true)
+                return false
+            }
+        }
 
         let msg = e.msg.replace(/^#(ss|SS)/, '').trim()
 
-        const answer = await this.generatePrompt(msg, use_sf_key, config_date, true, apiBaseUrl, model)
+        const opt = { imageBase64: souce_image_base64 }
+
+        const answer = await this.generatePrompt(msg, use_sf_key, config_date, true, apiBaseUrl, model, opt)
 
         // 获取markdown开关配置，默认为false
         const useMarkdown = config_date?.ss_useMarkdown ?? false
@@ -242,12 +244,20 @@ export class SF_Painting extends plugin {
      * @param {*} forChat 聊天调用
      * @param {*} apiBaseUrl 使用的API地址
      * @param {*} model 使用的API模型
+     * @param {*} opt 可选参数
      * @return {string}
      */
-    async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "") {
+    async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}) {
         if (config_date.sf_keys.length == 0) {
             return input
         }
+
+        const image = opt.imageBase64 ? {
+            type: "image_url",
+            image_url: {
+                url: opt.imageBase64
+            }
+        } : undefined
 
         logger.debug("[sf插件]API调用LLM msg：\n" + input)
         try {
@@ -266,7 +276,13 @@ export class SF_Painting extends plugin {
                         },
                         {
                             "role": "user",
-                            "content": input
+                            "content": image ? [
+                                {
+                                    "type": "text",
+                                    "text": input
+                                },
+                                image
+                            ] : input
                         }
                     ],
                     "stream": false
@@ -278,7 +294,7 @@ export class SF_Painting extends plugin {
             if (data?.choices?.[0]?.message?.content) {
                 return data.choices[0].message.content
             } else {
-                logger.error("[sf插件]LLM调用错误：\n", data)
+                logger.error("[sf插件]LLM调用错误：\n", JSON.stringify(data, null, 2))
                 return !forChat ? input : "[sf插件]LLM调用错误，详情请查阅控制台。"
             }
         } catch (error) {
@@ -354,7 +370,7 @@ SF插件设置帮助：
 
                 return true;
             } else {
-                logger.error("[sf插件]返回错误：\n", data)
+                logger.error("[sf插件]返回错误：\n", JSON.stringify(data, null, 2))
                 e.reply(`生成图片失败：${data.message || '未知错误'}`)
                 return false;
             }
@@ -499,7 +515,7 @@ SF插件设置帮助：
                 logger.mark("[sf插件]来源信息：" + JSON.stringify(sources))
                 return { answer, sources };
             } else {
-                logger.error("[sf插件]gg调用错误：\n", data)
+                logger.error("[sf插件]gg调用错误：\n", JSON.stringify(data, null, 2))
                 return { answer: "[sf插件]gg调用错误", sources: [] };
             }
         } catch (error) {
