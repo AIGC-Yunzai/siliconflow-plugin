@@ -4,13 +4,18 @@
 
 <img decoding="async" align=right src="resources/readme/girl.png" width="35%">
 
-- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 的接入 SiliconFlow以及MJ绘图, Fishaudio语音合成等的插件（Synaptic Fusion插件——对接万物）
-- 为什么要接入？因为SiliconFlow众多免费的绘图模型,Fishaudio有很多优秀的语音合成模型~可以白嫖~
+- 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 多功能AI集成插件，支持多种AI服务和模型：
+  - 🎨 AI绘图：支持SiliconFlow、Midjourney等多个绘图模型，支持文生图和图生图
+  - 🤖 智能对话：集成多种对话模型，支持Markdown图片输出
+  - 🔍 实时搜索：通过#gg命令实现智能搜索和信息聚合
+  - 🗣️ 语音合成：集成Fishaudio的高质量TTS服务
+  - 📊 资源管理：支持多key负载均衡，提供图片直链获取等功能
+  - 🔗 链接处理：自动提取和处理消息中的URL
 
 > [!TIP]
 > 插件官网（施工中）：[SiliconFlow-插件](https://aigc-yunzai.dwe.me/)
 > 
-> 将逐步接入更多API
+> 将逐步接入更多AI服务和功能，Synaptic Fusion插件——对接万物！
 
 ## 安装插件
 

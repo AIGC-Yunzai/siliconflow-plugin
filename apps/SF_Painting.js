@@ -8,6 +8,7 @@ import {
 } from '../utils/getImg.js'
 import { handleParam } from '../utils/parse.js'
 import { markdown_screenshot } from '../utils/markdownPic.js'
+import { processMessageWithUrls } from '../utils/extractUrl.js'
 
 export class SF_Painting extends plugin {
     constructor() {
@@ -210,10 +211,33 @@ export class SF_Painting extends plugin {
         }
 
         let msg = e.msg.replace(/^#(ss|SS)/, '').trim()
+        
+        // 处理消息中的URL
+        logger.mark(`[SF插件][URL处理]开始处理消息中的URL: ${msg}`)
+        let extractedContent = '';
+        try {
+            const originalMsg = msg;
+            // 根据是否为图片模式决定是否在消息中显示提取的内容
+            const { message: processedMsg, extractedContent: extracted } = await processMessageWithUrls(msg, !config_date.ss_useMarkdown);
+            msg = processedMsg;
+            extractedContent = extracted;
+            
+            if (originalMsg !== msg) {
+                logger.mark(`[SF插件][URL处理]URL处理成功`)
+            } else {
+                logger.mark(`[SF插件][URL处理]消息中未发现需要处理的URL`)
+            }
+        } catch (error) {
+            logger.error(`[SF插件][URL处理]处理URL时发生错误: ${error.message}`)
+            // 如果URL处理失败，使用原始消息继续
+            logger.mark(`[SF插件][URL处理]将使用原始消息继续处理`)
+        }
 
         const opt = { imageBase64: souce_image_base64 }
 
-        const answer = await this.generatePrompt(msg, use_sf_key, config_date, true, apiBaseUrl, model, opt)
+        // 如果是图片模式，在发送给AI时将提取的内容加回去
+        const aiMessage = config_date.ss_useMarkdown ? msg + extractedContent : msg;
+        const answer = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt)
 
         // 获取markdown开关配置，默认为false
         const useMarkdown = config_date?.ss_useMarkdown ?? false
@@ -400,10 +424,33 @@ SF插件设置帮助：
         }
 
         let msg = e.msg.replace(/^#(gg|GG)/, '').trim()
+        
+        // 处理消息中的URL
+        logger.mark(`[SF插件][URL处理]开始处理消息中的URL: ${msg}`)
+        let extractedContent = '';
+        try {
+            const originalMsg = msg;
+            // 根据是否为图片模式决定是否在消息中显示提取的内容
+            const { message: processedMsg, extractedContent: extracted } = await processMessageWithUrls(msg, !config_date.gg_useMarkdown);
+            msg = processedMsg;
+            extractedContent = extracted;
+            
+            if (originalMsg !== msg) {
+                logger.mark(`[SF插件][URL处理]URL处理成功`)
+            } else {
+                logger.mark(`[SF插件][URL处理]消息中未发现需要处理的URL`)
+            }
+        } catch (error) {
+            logger.error(`[SF插件][URL处理]处理URL时发生错误: ${error.message}`)
+            // 如果URL处理失败，使用原始消息继续
+            logger.mark(`[SF插件][URL处理]将使用原始消息继续处理`)
+        }
 
         const opt = { imageBase64: souce_image_base64 }
 
-        const { answer, sources } = await this.generateGeminiPrompt(msg, ggBaseUrl, ggKey, config_date, opt)
+        // 如果是图片模式，在发送给AI时将提取的内容加回去
+        const aiMessage = config_date.gg_useMarkdown ? msg + extractedContent : msg;
+        const { answer, sources } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt)
 
         // 获取markdown开关配置，默认为false
         const useMarkdown = config_date?.gg_useMarkdown ?? false
