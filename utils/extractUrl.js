@@ -111,7 +111,7 @@ export async function processMessageWithUrls(message, appendContent = true) {
         const content = await extractUrlContent(url);
         if (content) {
             logger.mark(`[URL处理]成功提取URL内容: ${url}`)
-            const urlContent = `\n\n提取的URL内容(${url}):\n标题: ${content.title}\n作者: ${content.byline || '未知'}\n内容: ${content.content}`;
+            const urlContent = `\n\n提取的URL内容(${url}):\n内容: ${content.content}`;
             extractedContent += urlContent;
             if (appendContent) {
                 processedMessage += urlContent;
