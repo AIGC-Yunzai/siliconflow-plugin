@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 /**
- * @description: 处理消息中的图片：当消息引用了图片，则将对应图片放入e.img ，优先级==> e.source.img > e.img
+ * @description: 处理引用消息：获取引用的图片和文本，图片放入e.img，优先级==> e.source.img > e.img，文本放入e.sourceMsg
  * @param {*} e
  * @param {*} alsoGetAtAvatar 开启使用At用户头像作为图片，默认 false
  * @param {*} useOrigin 是否使用原图，默认 false
@@ -35,21 +35,65 @@ export async function parseSourceImg(e, alsoGetAtAvatar = true, useOrigin = fals
   else if (e.reply_id) {
     reply = (await e.getReply(e.reply_id)).message;
   }
+
   if (reply) {
     let i = []
+    let text = [] // 用于存储文本消息
+    let senderNickname = '' // 存储发送者昵称
+
+    // 获取发送者昵称
+    if (e.source) {
+      if (e.isGroup) {
+        try {
+          const sender = await e.group.pickMember(e.source.user_id)
+          senderNickname = sender.card || sender.nickname
+        } catch (error) {
+          logger.error('[sf插件]获取群成员信息失败:', error)
+        }
+      } else {
+        try {
+          const friend = e.bot.fl.get(e.source.user_id)
+          senderNickname = friend?.nickname
+        } catch (error) {
+          logger.error('[sf插件]获取好友信息失败:', error)
+        }
+      }
+    }
+    // 添加OneBotv11适配器的处理
+    else if (e.reply_id) {
+      try {
+        const reply = await e.getReply(e.reply_id)
+        senderNickname = reply.sender?.card || reply.sender?.nickname
+      } catch (error) {
+        logger.error('[sf插件]获取回复消息发送者信息失败:', error)
+      }
+    }
+
     for (const val of reply) {
       if (val.type == 'image') {
         i.push(val.url)
+      }
+      if (val.type == 'text') {
+        text.push(val.text) // 收集文本消息
       }
       if (val.type == "file") {
         e.reply("不支持消息中的文件，请将该文件以图片发送...", true);
         return;
       }
     }
-    if (Boolean(i.length))
+    if (Boolean(i.length)) {
       e.img = i
+    }
+    if (text.length > 0) {
+      // 如果有发送者昵称,添加到引用文本前,使用markdown引用格式
+      const lines = text.join('\n').split('\n');
+      const quotedLines = lines.map(line => `> ${line}`).join('\n');
+      e.sourceMsg = senderNickname ? 
+        `> ##### ${senderNickname}：\n> ---\n${quotedLines}` : 
+        quotedLines;
+    }
   }
-  return e.img;
+  return e;
 }
 
 

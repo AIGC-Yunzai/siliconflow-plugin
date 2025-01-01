@@ -199,19 +199,27 @@ export class SF_Painting extends plugin {
             use_sf_key = this.get_use_sf_key(config_date);
         }
 
-        // 处理引用图片
+        // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
-        let souce_image_base64
-        if (e.img) {
-            souce_image_base64 = await url2Base64(e.img[0])
-            if (!souce_image_base64) {
-                e.reply('引用的图片地址已失效，请重新发送图片', true)
-                return false
+        let base64ImageUrls = [];
+        if (e.img && e.img.length > 0) {
+            // 获取所有图片数据
+            for(const imgUrl of e.img) {
+                const base64Image = await url2Base64(imgUrl);
+                if (!base64Image) {
+                    e.reply('引用的图片地址已失效，请重新发送图片', true)
+                    return false
+                }
+                base64ImageUrls.push(base64Image);
             }
         }
 
         let msg = e.msg.replace(/^#(ss|SS)/, '').trim()
         
+        // 如果有引用的文本,添加两个换行来分隔
+        const quotedText = e.sourceMsg ? e.sourceMsg + '\n\n' : ''
+        msg = quotedText + msg
+
         // 处理消息中的URL
         logger.mark(`[SF插件][URL处理]开始处理消息中的URL: ${msg}`)
         let extractedContent = '';
@@ -233,7 +241,7 @@ export class SF_Painting extends plugin {
             logger.mark(`[SF插件][URL处理]将使用原始消息继续处理`)
         }
 
-        const opt = { imageBase64: souce_image_base64 }
+        const opt = { imageBase64: base64ImageUrls.length > 0 ? base64ImageUrls : undefined }
 
         // 如果是图片模式，在发送给AI时将提取的内容加回去
         const aiMessage = config_date.ss_useMarkdown ? msg + extractedContent : msg;
@@ -276,12 +284,56 @@ export class SF_Painting extends plugin {
             return input
         }
 
-        const image = opt.imageBase64 ? {
-            type: "image_url",
-            image_url: {
-                url: opt.imageBase64
+        // 构造请求体
+        const requestBody = {
+            model: model || config_date.translateModel,
+            messages: [
+                {
+                    role: "system",
+                    content: !forChat ? config_date.sf_textToPaint_Prompt : config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
+                }
+            ],
+            stream: false
+        };
+
+        // 根据是否有图片构造不同的 user message
+        if (opt.imageBase64) {
+            try {
+                // 构造消息内容数组
+                let allContent = [{
+                    type: "text",
+                    text: input
+                }];
+
+                // 如果是字符串(单张图片),转换为数组
+                const imageBase64Array = Array.isArray(opt.imageBase64) ? opt.imageBase64 : [opt.imageBase64];
+
+                // 添加所有图片到内容数组
+                imageBase64Array.forEach(image => {
+                    allContent.push({
+                        type: "image_url",
+                        image_url: {
+                            url: `data:image/jpeg;base64,${image}`
+                        }
+                    });
+                });
+                
+                // 带图片的消息格式
+                requestBody.messages.push({
+                    role: "user",
+                    content: allContent
+                });
+            } catch (error) {
+                logger.error("[sf插件]图片处理失败\n", error);
+                return !forChat ? input : "[sf插件]图片处理失败，请稍后再试。";
             }
-        } : undefined
+        } else {
+            // 纯文本消息格式
+            requestBody.messages.push({
+                role: "user",
+                content: input
+            });
+        }
 
         logger.debug("[sf插件]API调用LLM msg：\n" + input)
         try {
@@ -291,26 +343,7 @@ export class SF_Painting extends plugin {
                     'Authorization': `Bearer ${use_sf_key}`,
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    "model": model || config_date.translateModel,
-                    "messages": [
-                        {
-                            "role": "system",
-                            "content": !forChat ? config_date.sf_textToPaint_Prompt : config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
-                        },
-                        {
-                            "role": "user",
-                            "content": image ? [
-                                {
-                                    "type": "text",
-                                    "text": input
-                                },
-                                image
-                            ] : input
-                        }
-                    ],
-                    "stream": false
-                })
+                body: JSON.stringify(requestBody)
             })
 
             const data = await response.json()
@@ -412,19 +445,27 @@ SF插件设置帮助：
         let ggBaseUrl = config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev";
         let ggKey = this.get_use_ggKey(config_date) || "sk-xuanku";
 
-        // 处理引用图片
+        // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
-        let souce_image_base64 = undefined;
-        if (e.img) {
-            souce_image_base64 = await url2Base64(e.img[0])
-            if (!souce_image_base64) {
-                e.reply('引用的图片地址已失效，请重新发送图片', true)
-                return false
+        let base64ImageUrls = [];
+        if (e.img && e.img.length > 0) {
+            // 获取所有图片数据
+            for(const imgUrl of e.img) {
+                const base64Image = await url2Base64(imgUrl);
+                if (!base64Image) {
+                    e.reply('引用的图片地址已失效，请重新发送图片', true)
+                    return false
+                }
+                base64ImageUrls.push(base64Image);
             }
         }
 
         let msg = e.msg.replace(/^#(gg|GG)/, '').trim()
         
+        // 如果有引用的文本,添加两个换行来分隔
+        const quotedText = e.sourceMsg ? e.sourceMsg + '\n\n' : ''
+        msg = quotedText + msg
+
         // 处理消息中的URL
         logger.mark(`[SF插件][URL处理]开始处理消息中的URL: ${msg}`)
         let extractedContent = '';
@@ -446,7 +487,7 @@ SF插件设置帮助：
             logger.mark(`[SF插件][URL处理]将使用原始消息继续处理`)
         }
 
-        const opt = { imageBase64: souce_image_base64 }
+        const opt = { imageBase64: base64ImageUrls.length > 0 ? base64ImageUrls : undefined }
 
         // 如果是图片模式，在发送给AI时将提取的内容加回去
         const aiMessage = config_date.gg_useMarkdown ? msg + extractedContent : msg;
@@ -505,35 +546,48 @@ SF插件设置帮助：
     async generateGeminiPrompt(input, ggBaseUrl, ggKey, config_date, opt = {}) {
         logger.debug("[sf插件]API调用Gemini msg：\n" + input)
 
-        const image = opt.imageBase64 ? {
-            inline_data: {
-                mime_type: 'image/jpeg',
-                data: opt.imageBase64
+        // 构造请求体
+        const requestBody = {
+            "systemInstruction": {
+                "parts": [{
+                    "text": config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
+                }]
+            },
+            "contents": [{
+                "parts": [
+                    {
+                        "text": input
+                    }
+                ],
+                "role": "user"
+            }],
+            "tools": [{
+                "googleSearch": {}
+            }]
+        };
+
+        // 如果有图片，添加到parts中
+        if (opt.imageBase64) {
+            const imageBase64Array = Array.isArray(opt.imageBase64) ? opt.imageBase64 : [opt.imageBase64];
+            if (imageBase64Array.length > 0) {
+                imageBase64Array.forEach(image => {
+                    requestBody.contents[0].parts.push({
+                        "inline_data": {
+                            "mime_type": "image/jpeg",
+                            "data": image
+                        }
+                    });
+                });
             }
-        } : undefined
+        }
+
         try {
             const response = await fetch(`${ggBaseUrl}/v1beta/models/${config_date.gg_model || "gemini-2.0-flash-exp"}:generateContent?key=${ggKey}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({
-                    "systemInstruction": {
-                        "parts": [{
-                            "text": config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
-                        }]
-                    },
-                    "contents": [{
-                        "parts": [{
-                            "text": input
-                        },
-                            image],
-                        "role": "user"
-                    }],
-                    "tools": [{
-                        "googleSearch": {}
-                    }]
-                })
+                body: JSON.stringify(requestBody)
             })
 
             const data = await response.json()
