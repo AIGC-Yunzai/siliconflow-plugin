@@ -599,29 +599,46 @@ SF插件设置帮助：
                     .join('');
 
                 // 获取来源信息
-                let sources = [];
-                if (data.candidates?.[0]?.groundingMetadata?.groundingChunks) {
-                    sources = data.candidates[0].groundingMetadata.groundingChunks
-                        .filter(chunk => chunk.web) // 只保留web类型的来源
-                        .map(chunk => ({
-                            title: chunk.web.title,
-                            url: chunk.web.uri.replace(
-                                'https://vertexaisearch.cloud.google.com/grounding-api-redirect',
-                                'https://miao.news'
-                            )
-                        }))
-                        .filter((v, i, a) => a.findIndex(t => (t.title === v.title && t.url === v.url)) === i); // 去重
-                }
+let sources = [];
+if (data.candidates && data.candidates.length > 0 && data.candidates[0].groundingMetadata && data.candidates[0].groundingMetadata.groundingChunks) {
+  const groundingChunks = data.candidates[0].groundingMetadata.groundingChunks;
+  logger.mark("[sf插件]原始来源数据：", JSON.stringify(groundingChunks, null, 2)); // 打印原始数据
 
-                logger.mark("[sf插件]来源信息：" + JSON.stringify(sources))
-                return { answer, sources };
-            } else {
-                logger.error("[sf插件]gg调用错误：\n", JSON.stringify(data, null, 2))
-                return { answer: "[sf插件]gg调用错误", sources: [] };
-            }
-        } catch (error) {
-            logger.error("[sf插件]gg调用失败\n", error)
-            return { answer: "[sf插件]gg调用失败", sources: [] };
-        }
-    }
+  sources = groundingChunks
+    .filter(chunk => {
+      if (chunk.web) {
+        return true;
+      } else {
+        logger.mark("[sf插件]过滤掉非web类型的来源：", JSON.stringify(chunk, null, 2));
+        return false;
+      }
+    })
+    .map(chunk => {
+      let url = chunk.web.uri;
+      if (url.includes('https://vertexaisearch.cloud.google.com/grounding-api-redirect')) {
+        url = url.replace(
+          'https://vertexaisearch.cloud.google.com/grounding-api-redirect',
+          'https://miao.news'
+        );
+      }
+      logger.mark("[sf插件]处理后的URL：", url);
+      return {
+        title: chunk.web.title || '未知标题', // 添加标题默认值
+        url: url
+      };
+    })
+    .filter((v, i, a) => {
+      const index = a.findIndex(t => (t.title === v.title && t.url === v.url));
+      if (index === i) {
+        return true;
+      } else {
+        logger.mark("[sf插件]过滤掉重复的来源：", JSON.stringify(v, null, 2));
+        return false;
+      }
+    });
+} else {
+  logger.mark("[sf插件]未找到有效的来源信息");
 }
+
+logger.mark("[sf插件]来源信息：" + JSON.stringify(sources, null, 2));
+return { answer, sources };
