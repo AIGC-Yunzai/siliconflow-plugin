@@ -181,6 +181,42 @@ export function supportGuoba() {
         },
         {
           component: "Divider",
+          label: "BOT名字触发配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "botName",
+          label: "BOT名字",
+          bottomHelpMessage: "设置BOT的名字，当消息中包含这个名字时会触发对话。留空将使用默认名字：sf-plugin-bot-name-随机数，更改名字后需要重启BOT",
+          component: "Input",
+          componentProps: {
+            placeholder: "小助手",
+            allowClear: true,
+          },
+        },
+        {
+          field: "enableBotNameTrigger",
+          label: "启用名字触发",
+          bottomHelpMessage: "是否启用BOT名字触发功能",
+          component: "Switch",
+        },
+        {
+          field: "defaultCommand",
+          label: "默认命令",
+          bottomHelpMessage: "当触发BOT名字时使用的默认命令，可选：ss 或 gg",
+          component: "Select",
+          componentProps: {
+            options: [
+              { label: "使用#ss命令", value: "ss" },
+              { label: "使用#gg命令", value: "gg" },
+            ],
+          },
+        },
+        {
+          component: "Divider",
           label: "对话相关配置",
           componentProps: {
             orientation: "left",
