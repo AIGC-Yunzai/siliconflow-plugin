@@ -9,6 +9,7 @@ import {
 import { handleParam } from '../utils/parse.js'
 import { markdown_screenshot } from '../utils/markdownPic.js'
 import { processMessageWithUrls } from '../utils/extractUrl.js'
+import { saveContext, loadContext, formatContextForGemini, clearUserContext, clearAllContext } from '../utils/context.js'
 
 export class SF_Painting extends plugin {
     constructor() {
@@ -23,7 +24,7 @@ export class SF_Painting extends plugin {
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式)',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文)',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 },
@@ -39,6 +40,15 @@ export class SF_Painting extends plugin {
                 {
                     reg: '^#(gg|GG)',
                     fnc: 'gg_chat',
+                },
+                {
+                    reg: '^#(sf|SF)结束全部对话$',
+                    fnc: 'sf_end_all_chat',
+                    permission: 'master'
+                },
+                {
+                    reg: '^#(sf|SF)结束对话$',
+                    fnc: 'sf_end_chat',
                 },
             ]
         })
@@ -82,7 +92,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式)([\s\S]*)/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文)([\s\S]*)/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -112,6 +122,9 @@ export class SF_Painting extends plugin {
                     break
                 case 'gg图片模式':
                     config_date.gg_useMarkdown = value === '开'
+                    break
+                case '上下文':
+                    config_date.gg_useContext = value === '开'
                     break
                 default:
                     return
@@ -201,8 +214,10 @@ export class SF_Painting extends plugin {
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
-        let base64ImageUrls = [];
+        let currentImages = [];
         if (e.img && e.img.length > 0) {
+            // 记录获取到的图片链接
+            logger.mark(`[SF插件][ss]获取到图片链接:\n${e.img.join('\n')}`)
             // 获取所有图片数据
             for(const imgUrl of e.img) {
                 const base64Image = await url2Base64(imgUrl);
@@ -210,7 +225,7 @@ export class SF_Painting extends plugin {
                     e.reply('引用的图片地址已失效，请重新发送图片', true)
                     return false
                 }
-                base64ImageUrls.push(base64Image);
+                currentImages.push(base64Image);
             }
         }
 
@@ -230,7 +245,7 @@ export class SF_Painting extends plugin {
             msg = processedMsg;
             extractedContent = extracted;
             
-            if (originalMsg !== msg) {
+            if (extractedContent) {
                 logger.mark(`[SF插件][URL处理]URL处理成功`)
             } else {
                 logger.mark(`[SF插件][URL处理]消息中未发现需要处理的URL`)
@@ -241,11 +256,47 @@ export class SF_Painting extends plugin {
             logger.mark(`[SF插件][URL处理]将使用原始消息继续处理`)
         }
 
-        const opt = { imageBase64: base64ImageUrls.length > 0 ? base64ImageUrls : undefined }
+        // 获取历史对话
+        let historyMessages = []
+        if (config_date.gg_useContext) {
+            historyMessages = await loadContext(e.user_id)
+            logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length} 条`)
+        }
 
         // 如果是图片模式，在发送给AI时将提取的内容加回去
         const aiMessage = config_date.ss_useMarkdown ? msg + extractedContent : msg;
-        const answer = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt)
+
+        // 收集历史图片
+        let historyImages = [];
+        // 从历史消息中收集图片
+        historyMessages.forEach(msg => {
+            if (msg.imageBase64) {
+                historyImages = historyImages.concat(msg.imageBase64);
+            }
+        });
+
+        const opt = { 
+            currentImages: currentImages.length > 0 ? currentImages : undefined,
+            historyImages: historyImages.length > 0 ? historyImages : undefined
+        }
+
+        const answer = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages)
+
+        // 保存对话记录
+        if (config_date.gg_useContext) {
+            // 保存用户消息
+            await saveContext(e.user_id, {
+                role: 'user',
+                content: aiMessage,
+                extractedContent: extractedContent,
+                imageBase64: currentImages.length > 0 ? currentImages : undefined
+            })
+            // 保存AI回复
+            await saveContext(e.user_id, {
+                role: 'assistant',
+                content: answer
+            })
+        }
 
         // 获取markdown开关配置，默认为false
         const useMarkdown = config_date?.ss_useMarkdown ?? false
@@ -258,7 +309,7 @@ export class SF_Painting extends plugin {
                 } else {
                     logger.error('[sf插件] markdown图片生成失败')
                 }
-                e.reply(await common.makeForwardMsg(e, [answer], (e.sender.card || e.sender.nickname || e.user_id) + "：" + msg.substring(0, 50)));
+                e.reply(await common.makeForwardMsg(e, [answer], `${e.sender.card || e.sender.nickname || e.user_id}的对话`));
             } else {
                 await e.reply(answer, true)
             }
@@ -279,7 +330,7 @@ export class SF_Painting extends plugin {
      * @param {*} opt 可选参数
      * @return {string}
      */
-    async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}) {
+    async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}, historyMessages = []) {
         if (config_date.sf_keys.length == 0) {
             return input
         }
@@ -296,20 +347,35 @@ export class SF_Painting extends plugin {
             stream: false
         };
 
-        // 根据是否有图片构造不同的 user message
-        if (opt.imageBase64) {
-            try {
-                // 构造消息内容数组
-                let allContent = [{
+        // 添加历史对话
+        if (historyMessages && historyMessages.length > 0) {
+            historyMessages.forEach(msg => {
+                if (msg.role === 'user') {
+                    requestBody.messages.push({
+                        role: 'user',
+                        content: msg.content
+                    });
+                } else if (msg.role === 'assistant') {
+                    requestBody.messages.push({
+                        role: 'assistant',
+                        content: msg.content
+                    });
+                }
+            });
+        }
+
+        // 构造当前消息
+        try {
+            // 构造消息内容数组
+            let allContent = [];
+
+            // 添加当前引用的图片
+            if(opt.currentImages && opt.currentImages.length > 0) {
+                allContent.push({
                     type: "text",
-                    text: input
-                }];
-
-                // 如果是字符串(单张图片),转换为数组
-                const imageBase64Array = Array.isArray(opt.imageBase64) ? opt.imageBase64 : [opt.imageBase64];
-
-                // 添加所有图片到内容数组
-                imageBase64Array.forEach(image => {
+                    text: "当前引用的图片:\n" + input
+                });
+                opt.currentImages.forEach(image => {
                     allContent.push({
                         type: "image_url",
                         image_url: {
@@ -317,18 +383,37 @@ export class SF_Painting extends plugin {
                         }
                     });
                 });
-                
-                // 带图片的消息格式
-                requestBody.messages.push({
-                    role: "user",
-                    content: allContent
+            } else {
+                allContent.push({
+                    type: "text",
+                    text: input
                 });
-            } catch (error) {
-                logger.error("[sf插件]图片处理失败\n", error);
-                return !forChat ? input : "[sf插件]图片处理失败，请稍后再试。";
             }
-        } else {
-            // 纯文本消息格式
+
+            // 添加历史图片
+            if(opt.historyImages && opt.historyImages.length > 0) {
+                allContent.push({
+                    type: "text",
+                    text: "\n历史对话中的图片:"
+                });
+                opt.historyImages.forEach(image => {
+                    allContent.push({
+                        type: "image_url",
+                        image_url: {
+                            url: `data:image/jpeg;base64,${image}`
+                        }
+                    });
+                });
+            }
+            
+            // 带图片的消息格式
+            requestBody.messages.push({
+                role: "user",
+                content: allContent
+            });
+        } catch (error) {
+            logger.error("[sf插件]消息处理失败\n", error);
+            // 如果处理失败，至少保留用户输入
             requestBody.messages.push({
                 role: "user",
                 content: input
@@ -371,9 +456,20 @@ SF插件设置帮助：
 6. 设置Gemini Key：#sf设置ggkey [值]
 7. 设置Gemini URL：#sf设置ggbaseurl [值]
 8. 设置gg图片模式：#sf设置gg图片模式 开/关
-9. 查看帮助：#sf帮助
+9. 设置上下文功能：#sf设置上下文 开/关
+10. 查看帮助：#sf帮助
 
-注意：设置命令仅限主人使用。
+对话指令：
+1. #gg [内容]：使用Gemini对话
+2. #ss [内容]：使用SF对话
+3. #sf结束对话：结束当前用户的对话
+4. #sf结束全部对话：结束所有用户的对话（仅限主人）
+
+注意：
+- 设置命令仅限主人使用
+- #gg和#ss共用历史对话记录
+- 开启上下文后两种对话都会保留历史记录
+
 可用别名：#flux绘画
         `.trim()
 
@@ -447,8 +543,10 @@ SF插件设置帮助：
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
-        let base64ImageUrls = [];
+        let currentImages = [];
         if (e.img && e.img.length > 0) {
+            // 记录获取到的图片链接
+            logger.mark(`[SF插件][gg]获取到图片链接:\n${e.img.join('\n')}`)
             // 获取所有图片数据
             for(const imgUrl of e.img) {
                 const base64Image = await url2Base64(imgUrl);
@@ -456,7 +554,7 @@ SF插件设置帮助：
                     e.reply('引用的图片地址已失效，请重新发送图片', true)
                     return false
                 }
-                base64ImageUrls.push(base64Image);
+                currentImages.push(base64Image);
             }
         }
 
@@ -476,7 +574,7 @@ SF插件设置帮助：
             msg = processedMsg;
             extractedContent = extracted;
             
-            if (originalMsg !== msg) {
+            if (extractedContent) {
                 logger.mark(`[SF插件][URL处理]URL处理成功`)
             } else {
                 logger.mark(`[SF插件][URL处理]消息中未发现需要处理的URL`)
@@ -487,11 +585,48 @@ SF插件设置帮助：
             logger.mark(`[SF插件][URL处理]将使用原始消息继续处理`)
         }
 
-        const opt = { imageBase64: base64ImageUrls.length > 0 ? base64ImageUrls : undefined }
+        // 获取历史对话
+        let historyMessages = []
+        if (config_date.gg_useContext) {
+            historyMessages = await loadContext(e.user_id)
+            logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length} 条`)
+        }
 
         // 如果是图片模式，在发送给AI时将提取的内容加回去
         const aiMessage = config_date.gg_useMarkdown ? msg + extractedContent : msg;
-        const { answer, sources } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt)
+
+        // 收集历史图片
+        let historyImages = [];
+        // 从历史消息中收集图片
+        historyMessages.forEach(msg => {
+            if (msg.imageBase64) {
+                historyImages = historyImages.concat(msg.imageBase64);
+            }
+        });
+
+        const opt = { 
+            currentImages: currentImages.length > 0 ? currentImages : undefined,
+            historyImages: historyImages.length > 0 ? historyImages : undefined
+        }
+
+        const { answer, sources } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages)
+
+        // 保存对话记录
+        if (config_date.gg_useContext) {
+            // 保存用户消息
+            await saveContext(e.user_id, {
+                role: 'user',
+                content: aiMessage,
+                extractedContent: extractedContent,
+                imageBase64: currentImages.length > 0 ? currentImages : undefined
+            })
+            // 保存AI回复
+            await saveContext(e.user_id, {
+                role: 'assistant',
+                content: answer,
+                sources: sources
+            })
+        }
 
         // 获取markdown开关配置，默认为false
         const useMarkdown = config_date?.gg_useMarkdown ?? false
@@ -541,9 +676,10 @@ SF插件设置帮助：
      * @param {string} ggKey API 密钥
      * @param {Object} config_date 配置信息
      * @param {Object} opt 可选参数
+     * @param {Array} historyMessages 历史对话记录
      * @return {Object} 包含答案和来源的对象
      */
-    async generateGeminiPrompt(input, ggBaseUrl, ggKey, config_date, opt = {}) {
+    async generateGeminiPrompt(input, ggBaseUrl, ggKey, config_date, opt = {}, historyMessages = []) {
         logger.debug("[sf插件]API调用Gemini msg：\n" + input)
 
         // 构造请求体
@@ -553,33 +689,58 @@ SF插件设置帮助：
                     "text": config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
                 }]
             },
-            "contents": [{
-                "parts": [
-                    {
-                        "text": input
-                    }
-                ],
-                "role": "user"
-            }],
+            "contents": [],
             "tools": [{
                 "googleSearch": {}
             }]
         };
 
-        // 如果有图片，添加到parts中
-        if (opt.imageBase64) {
-            const imageBase64Array = Array.isArray(opt.imageBase64) ? opt.imageBase64 : [opt.imageBase64];
-            if (imageBase64Array.length > 0) {
-                imageBase64Array.forEach(image => {
-                    requestBody.contents[0].parts.push({
-                        "inline_data": {
-                            "mime_type": "image/jpeg",
-                            "data": image
-                        }
-                    });
-                });
-            }
+        // 添加历史对话
+        if (historyMessages.length > 0) {
+            requestBody.contents = formatContextForGemini(historyMessages)
         }
+
+        // 添加当前用户输入和图片
+        const currentParts = [];
+        
+        // 添加文本和当前图片
+        if (opt.currentImages && opt.currentImages.length > 0) {
+            currentParts.push({
+                "text": "当前引用的图片:\n" + input
+            });
+            opt.currentImages.forEach(image => {
+                currentParts.push({
+                    "inline_data": {
+                        "mime_type": "image/jpeg",
+                        "data": image
+                    }
+                });
+            });
+        } else {
+            currentParts.push({
+                "text": input
+            });
+        }
+
+        // 添加历史图片
+        if (opt.historyImages && opt.historyImages.length > 0) {
+            currentParts.push({
+                "text": "\n历史对话中的图片:"
+            });
+            opt.historyImages.forEach(image => {
+                currentParts.push({
+                    "inline_data": {
+                        "mime_type": "image/jpeg",
+                        "data": image
+                    }
+                });
+            });
+        }
+
+        requestBody.contents.push({
+            "parts": currentParts,
+            "role": "user"
+        });
 
         try {
             const response = await fetch(`${ggBaseUrl}/v1beta/models/${config_date.gg_model || "gemini-2.0-flash-exp"}:generateContent?key=${ggKey}`, {
@@ -622,6 +783,34 @@ SF插件设置帮助：
         } catch (error) {
             logger.error("[sf插件]gg调用失败\n", error)
             return { answer: "[sf插件]gg调用失败", sources: [] };
+        }
+    }
+
+    async sf_end_chat(e) {
+        const config_date = Config.getConfig()
+        if (!config_date.gg_useContext) {
+            await e.reply('上下文功能未开启')
+            return
+        }
+
+        if (await clearUserContext(e.user_id)) {
+            await e.reply('已结束当前对话，历史记录已清除')
+        } else {
+            await e.reply('结束对话失败，请稍后再试')
+        }
+    }
+
+    async sf_end_all_chat(e) {
+        const config_date = Config.getConfig()
+        if (!config_date.gg_useContext) {
+            await e.reply('上下文功能未开启')
+            return
+        }
+
+        if (await clearAllContext()) {
+            await e.reply('已结束所有对话，所有历史记录已清除')
+        } else {
+            await e.reply('结束所有对话失败，请稍后再试')
         }
     }
 }

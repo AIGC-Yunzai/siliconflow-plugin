@@ -274,6 +274,23 @@ export function supportGuoba() {
           },
         },
         {
+          field: "gg_useContext",
+          label: "上下文功能",
+          bottomHelpMessage: "开启后将保留对话历史记录，该上下文与#ss的上下文共享，开启上下文后两种对话都会保留历史记录",
+          component: "Switch",
+        },
+        {
+          field: "gg_maxHistoryLength",
+          label: "历史记录条数",
+          bottomHelpMessage: "设置保留的历史记录条数，仅保留最近的N条记录",
+          component: "InputNumber",
+          componentProps: {
+            min: 1,
+            max: 50,
+            step: 1,
+          },
+        },
+        {
           component: "Divider",
           label: "MJ 相关配置",
           componentProps: {
