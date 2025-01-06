@@ -10,22 +10,10 @@ import { handleParam } from '../utils/parse.js'
 import { markdown_screenshot } from '../utils/markdownPic.js'
 import { processMessageWithUrls } from '../utils/extractUrl.js'
 import { saveContext, loadContext, formatContextForGemini, clearUserContext, clearAllContext } from '../utils/context.js'
-
-// 初始化默认机器人名字
-function initBotName() {
-    const config = Config.getConfig()
-    if (!config.botName || config.botName.trim() === '') {
-        const randomNum = Math.floor(10000 + Math.random() * 90000)
-        const defaultBotName = `sf-plugin-bot-name-${randomNum}`
-        config.botName = defaultBotName
-        Config.setConfig(config)
-        logger.mark(`[SF插件] 初始化BOT默认名字：${defaultBotName}`)
-    }
-    return config.botName
-}
+import { getUin } from '../utils/common.js'
 
 // 使机器人可以对其第一人称回应
-let reg_chatgpt_for_firstperson_call = new RegExp(initBotName(), "g");
+const reg_chatgpt_for_firstperson_call = new RegExp(Config.getConfig()?.botName ?? `sf-plugin-bot-name-${Math.floor(10000 + Math.random() * 90000)}`, "g");
 
 export class SF_Painting extends plugin {
     constructor() {
@@ -77,65 +65,36 @@ export class SF_Painting extends plugin {
         this.currentKeyIndex_ggKey = 0
     }
 
-    // 更新机器人名字正则表达式
-    updateBotNameRegex() {
-        const config = Config.getConfig()
-        let botName = config.botName
-        
-        // 如果机器人名字为空，生成默认名字
-        if (!botName || botName.trim() === '') {
-            // 生成5位随机数
-            const randomNum = Math.floor(10000 + Math.random() * 90000)
-            botName = `sf-plugin-bot-name-${randomNum}`
-            
-            // 更新配置
-            config.botName = botName
-            Config.setConfig(config)
-            logger.mark(`[SF插件] BOT名字未设置，使用默认名字：${botName}`)
-        }
-
-        // 更新全局正则表达式
-        const escapedName = botName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-        reg_chatgpt_for_firstperson_call = new RegExp(escapedName, "g")
-        this.rule[this.rule.length - 1].reg = reg_chatgpt_for_firstperson_call
-    }
-
     // 处理第一人称呼叫
     async sf_first_person_call(e) {
         // 读取配置
         const config = Config.getConfig()
-        
-        // 检查是否启用了机器人名字触发
-        if (!config.enableBotNameTrigger) {
-            return false
-        }
-
         // 检查消息内容
         let msg = e.msg
         if (!msg || msg.startsWith('#')) {
+            logger.info('消息以#开头，，不予理会')
             return false
         }
-
-        // 避免机器人自己的消息
-        if (e.user_id == Bot.uin) {
+        if (e.user_id == getUin(e)) {
+            logger.info('机器人自己发出来的消息，不予理会')
             return false
         }
 
         // 定义搜索相关的关键词
         const searchKeywords = ['搜索', '查询', '查一查', '找找', '帮我找', '查查', '搜一下', '查找']
-        
+
         // 检查消息中是否包含搜索关键词
         const hasSearchKeyword = searchKeywords.some(keyword => msg.includes(keyword))
-        
+
         // 根据配置和搜索关键词决定使用哪个命令
         let useCommand = '#gg'
         if (config.defaultCommand === 'ss' && !hasSearchKeyword) {
             useCommand = '#ss'
         }
-        
+
         // 构造新的消息内容，不再移除机器人名字
         const newMsg = useCommand + ' ' + msg.trim()
-        
+
         // 修改消息内容并调用对应的处理函数
         e.msg = newMsg
         if (useCommand === '#ss') {
@@ -308,7 +267,7 @@ export class SF_Painting extends plugin {
             // 记录获取到的图片链接
             logger.mark(`[SF插件][ss]获取到图片链接:\n${e.img.join('\n')}`)
             // 获取所有图片数据
-            for(const imgUrl of e.img) {
+            for (const imgUrl of e.img) {
                 const base64Image = await url2Base64(imgUrl);
                 if (!base64Image) {
                     e.reply('引用的图片地址已失效，请重新发送图片', true)
@@ -319,13 +278,13 @@ export class SF_Painting extends plugin {
         }
 
         let msg = e.msg.replace(/^#(ss|SS)/, '').trim()
-        
+
         // 如果有引用的文本,添加两个换行来分隔
         const quotedText = e.sourceMsg ? e.sourceMsg + '\n\n' : ''
         msg = quotedText + msg
 
         // 处理消息中的URL
-        logger.mark(`[SF插件][URL处理]开始处理消息中的URL: ${msg}`)
+        // logger.mark(`[SF插件][URL处理]开始处理消息中的URL: ${msg}`)
         let extractedContent = '';
         try {
             const originalMsg = msg;
@@ -333,16 +292,14 @@ export class SF_Painting extends plugin {
             const { message: processedMsg, extractedContent: extracted } = await processMessageWithUrls(msg, !config_date.ss_useMarkdown);
             msg = processedMsg;
             extractedContent = extracted;
-            
+
             if (extractedContent) {
-                logger.mark(`[SF插件][URL处理]URL处理成功`)
+                logger.debug(`[SF插件][URL处理]URL处理成功`)
             } else {
-                logger.mark(`[SF插件][URL处理]消息中未发现需要处理的URL`)
+                logger.debug(`[SF插件][URL处理]消息中未发现需要处理的URL`)
             }
         } catch (error) {
-            logger.error(`[SF插件][URL处理]处理URL时发生错误: ${error.message}`)
-            // 如果URL处理失败，使用原始消息继续
-            logger.mark(`[SF插件][URL处理]将使用原始消息继续处理`)
+            logger.error(`[SF插件][URL处理]处理URL时发生错误，将使用原始消息继续处理: ${error.message}`)
         }
 
         // 获取历史对话
@@ -364,7 +321,7 @@ export class SF_Painting extends plugin {
             }
         });
 
-        const opt = { 
+        const opt = {
             currentImages: currentImages.length > 0 ? currentImages : undefined,
             historyImages: historyImages.length > 0 ? historyImages : undefined
         }
@@ -459,7 +416,7 @@ export class SF_Painting extends plugin {
             let allContent = [];
 
             // 添加当前引用的图片
-            if(opt.currentImages && opt.currentImages.length > 0) {
+            if (opt.currentImages && opt.currentImages.length > 0) {
                 allContent.push({
                     type: "text",
                     text: "当前引用的图片:\n" + input
@@ -480,7 +437,7 @@ export class SF_Painting extends plugin {
             }
 
             // 添加历史图片
-            if(opt.historyImages && opt.historyImages.length > 0) {
+            if (opt.historyImages && opt.historyImages.length > 0) {
                 allContent.push({
                     type: "text",
                     text: "\n历史对话中的图片:"
@@ -494,7 +451,7 @@ export class SF_Painting extends plugin {
                     });
                 });
             }
-            
+
             // 带图片的消息格式
             requestBody.messages.push({
                 role: "user",
@@ -637,7 +594,7 @@ SF插件设置帮助：
             // 记录获取到的图片链接
             logger.mark(`[SF插件][gg]获取到图片链接:\n${e.img.join('\n')}`)
             // 获取所有图片数据
-            for(const imgUrl of e.img) {
+            for (const imgUrl of e.img) {
                 const base64Image = await url2Base64(imgUrl);
                 if (!base64Image) {
                     e.reply('引用的图片地址已失效，请重新发送图片', true)
@@ -648,7 +605,7 @@ SF插件设置帮助：
         }
 
         let msg = e.msg.replace(/^#(gg|GG)/, '').trim()
-        
+
         // 如果有引用的文本,添加两个换行来分隔
         const quotedText = e.sourceMsg ? e.sourceMsg + '\n\n' : ''
         msg = quotedText + msg
@@ -662,16 +619,14 @@ SF插件设置帮助：
             const { message: processedMsg, extractedContent: extracted } = await processMessageWithUrls(msg, !config_date.gg_useMarkdown);
             msg = processedMsg;
             extractedContent = extracted;
-            
+
             if (extractedContent) {
-                logger.mark(`[SF插件][URL处理]URL处理成功`)
+                logger.debug(`[SF插件][URL处理]URL处理成功`)
             } else {
-                logger.mark(`[SF插件][URL处理]消息中未发现需要处理的URL`)
+                logger.debug(`[SF插件][URL处理]消息中未发现需要处理的URL`)
             }
         } catch (error) {
-            logger.error(`[SF插件][URL处理]处理URL时发生错误: ${error.message}`)
-            // 如果URL处理失败，使用原始消息继续
-            logger.mark(`[SF插件][URL处理]将使用原始消息继续处理`)
+            logger.error(`[SF插件][URL处理]处理URL时发生错误，将使用原始消息继续处理: ${error.message}`)
         }
 
         // 获取历史对话
@@ -693,7 +648,7 @@ SF插件设置帮助：
             }
         });
 
-        const opt = { 
+        const opt = {
             currentImages: currentImages.length > 0 ? currentImages : undefined,
             historyImages: historyImages.length > 0 ? historyImages : undefined
         }
@@ -791,7 +746,7 @@ SF插件设置帮助：
 
         // 添加当前用户输入和图片
         const currentParts = [];
-        
+
         // 添加文本和当前图片
         if (opt.currentImages && opt.currentImages.length > 0) {
             currentParts.push({

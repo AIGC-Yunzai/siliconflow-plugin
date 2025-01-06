@@ -70,13 +70,13 @@ export async function extractUrlContent(url) {
     }
 
     try {
-        logger.mark(`[URL提取]开始从URL获取内容: ${url}`)
+        logger.debug(`[URL提取]开始从URL获取内容: ${url}`)
         const response = await fetch(`https://lbl.news/api/extract?url=${encodeURIComponent(url)}`);
         if (!response.ok) {
             throw new Error(`提取内容失败: ${response.statusText}`);
         }
         const data = await response.json();
-        logger.mark(`[URL提取]成功获取URL内容: ${url}`)
+        logger.debug(`[URL提取]成功获取URL内容: ${url}`)
         return data;
     } catch (error) {
         logger.error(`[URL提取]提取内容失败: ${error.message}, URL: ${url}`);
@@ -107,10 +107,10 @@ export async function processMessageWithUrls(message, appendContent = true) {
             continue;
         }
 
-        logger.mark(`[URL处理]开始处理URL: ${url}`)
+        logger.debug(`[URL处理]开始处理URL: ${url}`)
         const content = await extractUrlContent(url);
         if (content) {
-            logger.mark(`[URL处理]成功提取URL内容: ${url}`)
+            logger.debug(`[URL处理]成功提取URL内容: ${url}`)
             const urlContent = `\n\n提取的URL内容(${url}):\n内容: ${content.content}`;
             extractedContent += urlContent;
             if (appendContent) {

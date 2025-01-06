@@ -181,7 +181,7 @@ export function supportGuoba() {
         },
         {
           component: "Divider",
-          label: "BOT名字触发配置",
+          label: "BOT名称触发配置",
           componentProps: {
             orientation: "left",
             plain: true,
@@ -189,19 +189,13 @@ export function supportGuoba() {
         },
         {
           field: "botName",
-          label: "BOT名字",
-          bottomHelpMessage: "设置BOT的名字，当消息中包含这个名字时会触发对话。留空将使用默认名字：sf-plugin-bot-name-随机数，更改名字后需要重启BOT",
+          label: "BOT名称",
+          bottomHelpMessage: "设置BOT的名称，当消息中包含这个名称时会触发对话；留空则关闭；更改后重启生效",
           component: "Input",
           componentProps: {
             placeholder: "小助手",
             allowClear: true,
           },
-        },
-        {
-          field: "enableBotNameTrigger",
-          label: "启用名字触发",
-          bottomHelpMessage: "是否启用BOT名字触发功能",
-          component: "Switch",
         },
         {
           field: "defaultCommand",
