@@ -287,7 +287,6 @@ export class SF_Painting extends plugin {
         // logger.mark(`[SF插件][URL处理]开始处理消息中的URL: ${msg}`)
         let extractedContent = '';
         try {
-            const originalMsg = msg;
             // 根据是否为图片模式决定是否在消息中显示提取的内容
             const { message: processedMsg, extractedContent: extracted } = await processMessageWithUrls(msg, !config_date.ss_useMarkdown);
             msg = processedMsg;
@@ -611,10 +610,9 @@ SF插件设置帮助：
         msg = quotedText + msg
 
         // 处理消息中的URL
-        logger.mark(`[SF插件][URL处理]开始处理消息中的URL: ${msg}`)
+        // logger.mark(`[SF插件][URL处理]开始处理消息中的URL: ${msg}`)
         let extractedContent = '';
         try {
-            const originalMsg = msg;
             // 根据是否为图片模式决定是否在消息中显示提取的内容
             const { message: processedMsg, extractedContent: extracted } = await processMessageWithUrls(msg, !config_date.gg_useMarkdown);
             msg = processedMsg;
@@ -803,7 +801,7 @@ SF插件设置帮助：
                     .map(part => part.text)
                     .join('');
 
-                // 获取来源信息
+                // 获取信息来源（搜索结果）
                 let sources = [];
                 if (data.candidates?.[0]?.groundingMetadata?.groundingChunks) {
                     sources = data.candidates[0].groundingMetadata.groundingChunks
@@ -818,7 +816,9 @@ SF插件设置帮助：
                         .filter((v, i, a) => a.findIndex(t => (t.title === v.title && t.url === v.url)) === i); // 去重
                 }
 
-                logger.mark("[sf插件]来源信息：" + JSON.stringify(sources))
+                if (sources.length > 0)
+                    logger.debug("[sf插件]信息来源：" + JSON.stringify(sources))
+
                 return { answer, sources };
             } else {
                 logger.error("[sf插件]gg调用错误：\n", JSON.stringify(data, null, 2))
