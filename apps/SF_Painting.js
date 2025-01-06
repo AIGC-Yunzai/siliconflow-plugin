@@ -13,7 +13,7 @@ import { saveContext, loadContext, formatContextForGemini, clearUserContext, cle
 import { getUin } from '../utils/common.js'
 
 // 使机器人可以对其第一人称回应
-const reg_chatgpt_for_firstperson_call = new RegExp(Config.getConfig()?.botName ?? `sf-plugin-bot-name-${Math.floor(10000 + Math.random() * 90000)}`, "g");
+const reg_chatgpt_for_firstperson_call = new RegExp(Config.getConfig()?.botName || `sf-plugin-bot-name-${Math.floor(10000 + Math.random() * 90000)}`, "g");
 
 export class SF_Painting extends plugin {
     constructor() {
