@@ -8,24 +8,28 @@ import fetch from 'node-fetch'
 function isSkippedUrl(url) {
     // 检查常见图片后缀
     const imageExtensions = /\.(jpg|jpeg|png|gif|bmp|webp|svg|ico|tiff|tif|raw|cr2|nef|arw|dng|heif|heic|avif|jfif|psd|ai)$/i;
-    
+
     // 检查常见视频后缀
     const videoExtensions = /\.(mp4|webm|mkv|flv|avi|mov|wmv|rmvb|m4v|3gp|mpeg|mpg|ts|mts)$/i;
-    
+
     // 检查可执行文件和二进制文件
     const binaryExtensions = /\.(exe|msi|dll|sys|bin|dat|iso|img|dmg|pkg|deb|rpm|apk|ipa|jar|class|pyc|o|so|dylib)$/i;
-    
+
     // 检查压缩文件
     const archiveExtensions = /\.(zip|rar|7z|tar|gz|bz2|xz|tgz|tbz|cab|ace|arc)$/i;
-    
+
     // 检查是否包含媒体或下载相关路径关键词
     const skipKeywords = /\/(images?|photos?|pics?|videos?|medias?|downloads?|uploads?|binaries|assets)\//i;
-    
-    return imageExtensions.test(url) || 
-           videoExtensions.test(url) || 
-           binaryExtensions.test(url) || 
-           archiveExtensions.test(url) || 
-           skipKeywords.test(url);
+
+    // 不跳过的URL类型
+    const allowedExtensions = /(\.bilibili.com\/video|b23\.tv)\//i;
+
+    return !allowedExtensions.test(url) &&
+        (imageExtensions.test(url) ||
+            videoExtensions.test(url) ||
+            binaryExtensions.test(url) ||
+            archiveExtensions.test(url) ||
+            skipKeywords.test(url));
 }
 
 /**
@@ -33,11 +37,11 @@ function isSkippedUrl(url) {
  * @param {string} text 需要提取URL的文本
  * @returns {string[]} URL数组
  */
-export function extractUrls(text) {
+function extractUrls(text) {
     // 更新正则表达式以匹配包含中文和空格的URL
-    const urlRegex = /(?:https?:\/\/[^[\](){}|\\^<>]*[^\s.,!?;:，。！？、；：\u4e00-\u9fa5])/g;
+    const urlRegex = /https?:\/\/[^\s/$.?#].[^\s]*/gi;
     const matches = text.match(urlRegex) || [];
-    
+
     // 清理URL并进行解码
     return matches.map(url => {
         // 移除URL末尾的标点符号和中文字符
@@ -48,7 +52,7 @@ export function extractUrls(text) {
             cleanUrl = decodeURIComponent(cleanUrl);
             // 重新编码空格和特殊字符，但保留中文字符
             cleanUrl = cleanUrl.replace(/\s+/g, '%20')
-                             .replace(/[[\](){}|\\^<>]/g, encodeURIComponent);
+                .replace(/[[\](){}|\\^<>]/g, encodeURIComponent);
         } catch (e) {
             // 如果解码失败，说明URL可能已经是正确格式，直接返回
             return cleanUrl;
@@ -62,7 +66,7 @@ export function extractUrls(text) {
  * @param {string} url 需要提取内容的URL
  * @returns {Promise<Object>} 提取的内容
  */
-export async function extractUrlContent(url) {
+async function extractUrlContent(url) {
     // 如果是需要跳过的URL类型，直接返回null
     if (isSkippedUrl(url)) {
         logger.mark(`[URL提取]跳过不需要处理的URL类型: ${url}`)
@@ -99,7 +103,7 @@ export async function processMessageWithUrls(message, appendContent = true) {
     logger.mark(`[URL处理]从消息中提取到${urls.length}个URL`)
     let processedMessage = message;
     let extractedContent = '';
-    
+
     for (const url of urls) {
         // 跳过不需要提取内容的URL
         if (isSkippedUrl(url)) {
@@ -118,6 +122,6 @@ export async function processMessageWithUrls(message, appendContent = true) {
             }
         }
     }
-    
+
     return { message: processedMessage, extractedContent };
 } 

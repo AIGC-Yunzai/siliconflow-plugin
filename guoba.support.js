@@ -312,7 +312,7 @@ export function supportGuoba() {
         {
           field: "gg_maxHistoryLength",
           label: "历史记录条数",
-          bottomHelpMessage: "设置保留的历史记录条数，仅保留最近的N条记录",
+          bottomHelpMessage: "设置保留的历史记录条数，仅保留最近的N条记录，可用指令：#sf结束对话 #sf结束全部对话",
           component: "InputNumber",
           componentProps: {
             min: 1,
