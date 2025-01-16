@@ -29,11 +29,11 @@ git clone https://github.com/AIGC-Yunzai/siliconflow-plugin.git ./plugins/silico
 > 如果你的网络环境较差，无法连接到 Github，可以使用 [GitHub Proxy](https://github.site/) 提供的文件代理加速下载服务：
 >
 > ```bash
-> git clone https://github.site/AIGC-Yunzai/siliconflow-plugin.git ./plugins/siliconflow-plugin
+> git clone https://www.ghproxy.cn/https://github.com/AIGC-Yunzai/siliconflow-plugin.git ./plugins/siliconflow-plugin
 > ```
 > 如果已经下载过本插件需要修改代理加速下载服务地址，在插件根目录使用：
 > ```bash
-> git remote set-url origin https://github.site/AIGC-Yunzai/siliconflow-plugin.git
+> git remote set-url origin https://www.ghproxy.cn/https://github.com/AIGC-Yunzai/siliconflow-plugin.git
 > ```
 
 #### 2. 安装依赖
