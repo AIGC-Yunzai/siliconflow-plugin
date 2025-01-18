@@ -354,7 +354,9 @@ export class SF_Painting extends plugin {
                 } else {
                     logger.error('[sf插件] markdown图片生成失败')
                 }
-                e.reply(await common.makeForwardMsg(e, [answer], `${e.sender.card || e.sender.nickname || e.user_id}的对话`));
+                if (config_date.ss_forwardMessage) {
+                    e.reply(await common.makeForwardMsg(e, [answer], `${e.sender.card || e.sender.nickname || e.user_id}的对话`));
+                }
             } else {
                 await e.reply(answer, true)
             }
@@ -684,14 +686,16 @@ SF插件设置帮助：
                 }
 
                 // 构建转发消息，包含回答和来源
-                const forwardMsg = [answer];
-                if (sources && sources.length > 0) {
-                    forwardMsg.push('信息来源：');
-                    sources.forEach((source, index) => {
-                        forwardMsg.push(`${index + 1}. ${source.title}\n${source.url}`);
-                    });
+                if (config_date.gg_forwardMessage) {
+                    const forwardMsg = [answer];
+                    if (sources && sources.length > 0) {
+                        forwardMsg.push('信息来源：');
+                        sources.forEach((source, index) => {
+                            forwardMsg.push(`${index + 1}. ${source.title}\n${source.url}`);
+                        });
+                    }
+                    e.reply(await common.makeForwardMsg(e, forwardMsg, `${e.sender.card || e.sender.nickname || e.user_id}的搜索结果`));
                 }
-                e.reply(await common.makeForwardMsg(e, forwardMsg, `${e.sender.card || e.sender.nickname || e.user_id}的搜索结果`));
             } else {
                 // 如果没开启markdown，直接回复答案
                 await e.reply(answer, true)
