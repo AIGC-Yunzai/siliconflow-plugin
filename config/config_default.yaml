@@ -34,10 +34,12 @@ ss_Key: ""
 ss_model: ""
 ss_Prompt: ""
 ss_useMarkdown: false # 是否使用markdown图片展示
+ss_forwardMessage: true # 是否转发消息
 # Gemini API配置
 ggBaseUrl: ""
 ggKey: ""
 gg_useMarkdown: false # 是否使用markdown图片展示
+gg_forwardMessage: true # 是否转发消息
 gg_Prompt: "" # 对话API提示词
 gg_model: "" # 对话API模型
 gg_useContext: false # 是否启用上下文功能

@@ -257,6 +257,12 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: "ss_forwardMessage",
+          label: "转发消息",
+          bottomHelpMessage: "开启后在图片对话模式下会同时转发原始消息",
+          component: "Switch",
+        },
+        {
           component: "Divider",
           label: "Gemini API配置",
           componentProps: {
@@ -292,6 +298,12 @@ export function supportGuoba() {
           field: "gg_useMarkdown",
           label: "图片对话模式",
           bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
+          component: "Switch",
+        },
+        {
+          field: "gg_forwardMessage",
+          label: "转发消息",
+          bottomHelpMessage: "开启后在图片对话模式下会同时转发原始消息",
           component: "Switch",
         },
         {

@@ -28,7 +28,7 @@ export class SF_Painting extends plugin {
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文)',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息)',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 },
@@ -140,7 +140,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文)([\s\S]*)/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息)([\s\S]*)/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -173,6 +173,12 @@ export class SF_Painting extends plugin {
                     break
                 case '上下文':
                     config_date.gg_useContext = value === '开'
+                    break
+                case 'ss转发消息':
+                    config_date.ss_forwardMessage = value === '开'
+                    break
+                case 'gg转发消息':
+                    config_date.gg_forwardMessage = value === '开'
                     break
                 default:
                     return
@@ -354,7 +360,9 @@ export class SF_Painting extends plugin {
                 } else {
                     logger.error('[sf插件] markdown图片生成失败')
                 }
-                e.reply(await common.makeForwardMsg(e, [answer], `${e.sender.card || e.sender.nickname || e.user_id}的对话`));
+                if (config_date.ss_forwardMessage) {
+                    e.reply(await common.makeForwardMsg(e, [answer], `${e.sender.card || e.sender.nickname || e.user_id}的对话`));
+                }
             } else {
                 await e.reply(answer, true)
             }
@@ -502,7 +510,9 @@ SF插件设置帮助：
 7. 设置Gemini URL：#sf设置ggbaseurl [值]
 8. 设置gg图片模式：#sf设置gg图片模式 开/关
 9. 设置上下文功能：#sf设置上下文 开/关
-10. 查看帮助：#sf帮助
+10. 设置ss转发消息：#sf设置ss转发消息 开/关
+11. 设置gg转发消息：#sf设置gg转发消息 开/关
+12. 查看帮助：#sf帮助
 
 对话指令：
 1. #gg [内容]：使用Gemini对话
@@ -684,14 +694,16 @@ SF插件设置帮助：
                 }
 
                 // 构建转发消息，包含回答和来源
-                const forwardMsg = [answer];
-                if (sources && sources.length > 0) {
-                    forwardMsg.push('信息来源：');
-                    sources.forEach((source, index) => {
-                        forwardMsg.push(`${index + 1}. ${source.title}\n${source.url}`);
-                    });
+                if (config_date.gg_forwardMessage) {
+                    const forwardMsg = [answer];
+                    if (sources && sources.length > 0) {
+                        forwardMsg.push('信息来源：');
+                        sources.forEach((source, index) => {
+                            forwardMsg.push(`${index + 1}. ${source.title}\n${source.url}`);
+                        });
+                    }
+                    e.reply(await common.makeForwardMsg(e, forwardMsg, `${e.sender.card || e.sender.nickname || e.user_id}的搜索结果`));
                 }
-                e.reply(await common.makeForwardMsg(e, forwardMsg, `${e.sender.card || e.sender.nickname || e.user_id}的搜索结果`));
             } else {
                 // 如果没开启markdown，直接回复答案
                 await e.reply(answer, true)
