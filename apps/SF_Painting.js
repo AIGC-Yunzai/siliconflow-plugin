@@ -331,7 +331,7 @@ export class SF_Painting extends plugin {
             historyImages: historyImages.length > 0 ? historyImages : undefined
         }
 
-        const answer = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages)
+        const answer = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
 
         // 保存对话记录
         if (config_date.gg_useContext) {
@@ -383,10 +383,16 @@ export class SF_Painting extends plugin {
      * @param {*} opt 可选参数
      * @return {string}
      */
-    async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}, historyMessages = []) {
+    async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}, historyMessages = [], e) {
         if (config_date.sf_keys.length == 0) {
             return input
         }
+
+        // 获取用户名并替换prompt中的变量
+        const userName = e?.sender?.card || e?.sender?.nickname || "用户";
+        const systemPrompt = !forChat ? 
+            config_date.sf_textToPaint_Prompt : 
+            (config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese").replace(/{{user_name}}/g, userName);
 
         // 构造请求体
         const requestBody = {
@@ -394,7 +400,7 @@ export class SF_Painting extends plugin {
             messages: [
                 {
                     role: "system",
-                    content: !forChat ? config_date.sf_textToPaint_Prompt : config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
+                    content: systemPrompt
                 }
             ],
             stream: false
@@ -419,51 +425,54 @@ export class SF_Painting extends plugin {
 
         // 构造当前消息
         try {
-            // 构造消息内容数组
-            let allContent = [];
+            if (opt.currentImages?.length > 0 || opt.historyImages?.length > 0) {
+                // 有图片时使用数组格式
+                let allContent = [];
 
-            // 添加当前引用的图片
-            if (opt.currentImages && opt.currentImages.length > 0) {
-                allContent.push({
-                    type: "text",
-                    text: "当前引用的图片:\n" + input
-                });
-                opt.currentImages.forEach(image => {
+                // 添加当前引用的图片
+                if (opt.currentImages && opt.currentImages.length > 0) {
                     allContent.push({
-                        type: "image_url",
-                        image_url: {
-                            url: `data:image/jpeg;base64,${image}`
-                        }
+                        type: "text",
+                        text: "当前引用的图片:\n" + input
                     });
+                    opt.currentImages.forEach(image => {
+                        allContent.push({
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/jpeg;base64,${image}`
+                            }
+                        });
+                    });
+                }
+
+                // 添加历史图片
+                if (opt.historyImages && opt.historyImages.length > 0) {
+                    allContent.push({
+                        type: "text",
+                        text: "\n历史对话中的图片:"
+                    });
+                    opt.historyImages.forEach(image => {
+                        allContent.push({
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/jpeg;base64,${image}`
+                            }
+                        });
+                    });
+                }
+
+                // 带图片的消息格式
+                requestBody.messages.push({
+                    role: "user",
+                    content: allContent
                 });
             } else {
-                allContent.push({
-                    type: "text",
-                    text: input
+                // 纯文本消息使用简单格式
+                requestBody.messages.push({
+                    role: "user", 
+                    content: input
                 });
             }
-
-            // 添加历史图片
-            if (opt.historyImages && opt.historyImages.length > 0) {
-                allContent.push({
-                    type: "text",
-                    text: "\n历史对话中的图片:"
-                });
-                opt.historyImages.forEach(image => {
-                    allContent.push({
-                        type: "image_url",
-                        image_url: {
-                            url: `data:image/jpeg;base64,${image}`
-                        }
-                    });
-                });
-            }
-
-            // 带图片的消息格式
-            requestBody.messages.push({
-                role: "user",
-                content: allContent
-            });
         } catch (error) {
             logger.error("[sf插件]消息处理失败\n", error);
             // 如果处理失败，至少保留用户输入
@@ -661,7 +670,7 @@ SF插件设置帮助：
             historyImages: historyImages.length > 0 ? historyImages : undefined
         }
 
-        const { answer, sources } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages)
+        const { answer, sources } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
 
         // 保存对话记录
         if (config_date.gg_useContext) {
@@ -709,7 +718,7 @@ SF插件设置帮助：
                 await e.reply(answer, true)
 
                 // 如果有来源，单独发送转发消息显示来源
-                if (sources && sources.length > 0) {
+                if (sources && sources.length > 0 && config_date.gg_forwardMessage) {
                     const sourceMsg = ['信息来源：'];
                     sources.forEach((source, index) => {
                         sourceMsg.push(`${index + 1}. ${source.title}\n${source.url}`);
@@ -733,14 +742,18 @@ SF插件设置帮助：
      * @param {Array} historyMessages 历史对话记录
      * @return {Object} 包含答案和来源的对象
      */
-    async generateGeminiPrompt(input, ggBaseUrl, ggKey, config_date, opt = {}, historyMessages = []) {
+    async generateGeminiPrompt(input, ggBaseUrl, ggKey, config_date, opt = {}, historyMessages = [], e) {
         logger.debug("[sf插件]API调用Gemini msg：\n" + input)
+
+        // 获取用户名并替换prompt中的变量
+        const userName = e?.sender?.card || e?.sender?.nickname || "用户";
+        const systemPrompt = (config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。").replace(/{{user_name}}/g, userName);
 
         // 构造请求体
         const requestBody = {
             "systemInstruction": {
                 "parts": [{
-                    "text": config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
+                    "text": systemPrompt
                 }]
             },
             "contents": [],
