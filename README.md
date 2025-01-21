@@ -75,7 +75,6 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 
 请使用 `#sf帮助` 获取完整帮助
 
-<!-- - [x] 文生图 -->
 - [x] 接入多项免费画图/语言模型
 - [x] 支持图生图
 - [x] 多keys同时并发
@@ -84,6 +83,7 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 - [x] 支持图片直链获取
 - [X] #ss 对话 MD 图片输出
 - [X] #gg 对话实现实时搜索功能
+- [X] 对话支持历史记录、获取用户昵称，结合 MD 输出以获取沉浸式角色扮演体验
 - [ ] TODO..
 
 ## 支持与贡献

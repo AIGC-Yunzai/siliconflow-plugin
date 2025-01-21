@@ -4,10 +4,9 @@ import axios from 'axios'
  * @description: 处理引用消息：获取引用的图片和文本，图片放入e.img，优先级==> e.source.img > e.img，文本放入e.sourceMsg
  * @param {*} e
  * @param {*} alsoGetAtAvatar 开启使用At用户头像作为图片，默认 false
- * @param {*} useOrigin 是否使用原图，默认 false
  * @return {*}处理过后的e
  */
-export async function parseSourceImg(e, alsoGetAtAvatar = true, useOrigin = false) {
+export async function parseSourceImg(e, alsoGetAtAvatar = true) {
   let reply;
   if (alsoGetAtAvatar && e.at && !e.source && !e.reply_id && !e.img) {
     if (e.atBot) {

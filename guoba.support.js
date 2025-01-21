@@ -211,7 +211,7 @@ export function supportGuoba() {
         },
         {
           component: "Divider",
-          label: "对话相关配置",
+          label: "[#ss]对话相关配置",
           componentProps: {
             orientation: "left",
             plain: true,
@@ -219,7 +219,7 @@ export function supportGuoba() {
         },
         {
           field: "ss_apiBaseUrl",
-          label: "对话API地址",
+          label: "[#ss]对话API地址",
           bottomHelpMessage: "设置#ss[对话] 的API接口地址，兼容所有OpenAI格式的API接口，无连续对话功能；若不填则使用SF接口",
           component: "Input",
           componentProps: {
@@ -228,13 +228,13 @@ export function supportGuoba() {
         },
         {
           field: "ss_Key",
-          label: "对话API Key",
+          label: "[#ss]对话API Key",
           bottomHelpMessage: "设置#ss 对话的API接口的Key",
           component: 'InputPassword'
         },
         {
           field: "ss_model",
-          label: "对话API模型",
+          label: "[#ss]对话API模型",
           bottomHelpMessage: "设置#ss 对话的API接口模型",
           component: "Input",
           componentProps: {
@@ -243,8 +243,8 @@ export function supportGuoba() {
         },
         {
           field: "ss_Prompt",
-          label: "对话API提示词",
-          bottomHelpMessage: "设置#ss 对话的API接口的提示词/人格/扮演的角色",
+          label: "[#ss]对话API提示词",
+          bottomHelpMessage: "设置#ss 对话的API接口的提示词/人格/扮演的角色，自动将提示词中的字符串 {{user_name}} 替换为用户昵称/群昵称",
           component: "InputTextArea",
           componentProps: {
             placeholder: 'You are a helpful assistant, you prefer to speak Chinese',
@@ -252,19 +252,19 @@ export function supportGuoba() {
         },
         {
           field: "ss_useMarkdown",
-          label: "图片对话模式",
+          label: "[#ss]图片对话模式",
           bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
           component: "Switch",
         },
         {
           field: "ss_forwardMessage",
-          label: "转发消息",
+          label: "[#ss]发送合并消息",
           bottomHelpMessage: "开启后在图片对话模式下会同时转发原始消息",
           component: "Switch",
         },
         {
           component: "Divider",
-          label: "Gemini API配置",
+          label: "[#gg]Gemini API配置",
           componentProps: {
             orientation: "left",
             plain: true,
@@ -272,7 +272,7 @@ export function supportGuoba() {
         },
         {
           field: "ggBaseUrl",
-          label: "Gemini反代地址",
+          label: "[#gg]Gemini反代地址",
           bottomHelpMessage: "设置#gg[对话] 的API接口地址，对https://generativelanguage.googleapis.com 反代；留空则使用内置地址",
           component: "Input",
           componentProps: {
@@ -281,13 +281,13 @@ export function supportGuoba() {
         },
         {
           field: "ggKey",
-          label: "Gemini API Key",
+          label: "[#gg]Gemini API Key",
           bottomHelpMessage: "设置#gg 对话的API接口的Key，Key可以在https://aistudio.google.com/app/apikey获取；如果有多个key用英文逗号隔开，key将轮替使用；留空则使用内置Key",
           component: 'InputPassword',
         },
         {
           field: 'gg_model',
-          label: 'gemini模型',
+          label: '[#gg]gemini模型',
           bottomHelpMessage: '设置gemini模型；留空则使用默认模型',
           component: 'Input',
           componentProps: {
@@ -296,20 +296,20 @@ export function supportGuoba() {
         },
         {
           field: "gg_useMarkdown",
-          label: "图片对话模式",
+          label: "[#gg]图片对话模式",
           bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
           component: "Switch",
         },
         {
           field: "gg_forwardMessage",
-          label: "转发消息",
+          label: "[#gg]发送合并消息",
           bottomHelpMessage: "开启后在图片对话模式下会同时转发原始消息",
           component: "Switch",
         },
         {
           field: "gg_Prompt",
-          label: "对话API提示词",
-          bottomHelpMessage: "设置#gg 对话的API接口的系统提示词",
+          label: "[#gg]对话API提示词",
+          bottomHelpMessage: "设置#gg 对话的API接口的系统提示词，自动将提示词中的字符串 {{user_name}} 替换为用户昵称/群昵称",
           component: "InputTextArea",
           componentProps: {
             placeholder: '你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。',
@@ -317,13 +317,13 @@ export function supportGuoba() {
         },
         {
           field: "gg_useContext",
-          label: "上下文功能",
+          label: "[#gg]上下文功能",
           bottomHelpMessage: "开启后将保留对话历史记录，该上下文与#ss的上下文共享，开启上下文后两种对话都会保留历史记录",
           component: "Switch",
         },
         {
           field: "gg_maxHistoryLength",
-          label: "历史记录条数",
+          label: "[#gg]历史记录条数",
           bottomHelpMessage: "设置保留的历史记录条数，仅保留最近的N条记录，可用指令：#sf结束对话 #sf结束全部对话",
           component: "InputNumber",
           componentProps: {
