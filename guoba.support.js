@@ -318,7 +318,7 @@ export function supportGuoba() {
         {
           field: "gg_useContext",
           label: "上下文功能",
-          bottomHelpMessage: "[#ss][#gg]共用，开启后将保留对话历史记录，该上下文与#ss的上下文共享，开启上下文后两种对话都会保留历史记录",
+          bottomHelpMessage: "[#ss][#gg]共用，开启后将保留对话历史记录，上下文#gg与#ss的上下文共享",
           component: "Switch",
         },
         {
@@ -328,7 +328,6 @@ export function supportGuoba() {
           component: "InputNumber",
           componentProps: {
             min: 1,
-            max: 50,
             step: 1,
           },
         },

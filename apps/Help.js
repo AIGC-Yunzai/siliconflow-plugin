@@ -133,7 +133,7 @@ export class help extends plugin {
                     },
                     {
                         "icon": 92,
-                        "title": "#sf设置ss图片模式 开/关或者#sf设置gg图片模式 开/关",
+                        "title": "#sf设置[ss|gg]图片模式 [开|关]",
                         "desc": "设置ss和gg的图片回复模式"
                     },
                     {
