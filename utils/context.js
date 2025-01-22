@@ -36,9 +36,8 @@ export function formatContextForGemini(messages) {
 export async function saveContext(userId, message) {
     try {
         const config = Config.getConfig()
-        const maxHistory = config.gg_maxHistoryLength || 20
-        const timestamp = Date.now()
-        const key = `sfplugin:llm:${userId}:${timestamp}`
+        const maxHistory = config.gg_maxHistoryLength * 2 || 40
+        const key = `sfplugin:llm:${userId}:${Date.now()}`
 
         // 直接保存消息,不修改content结构
         await redis.set(key, JSON.stringify(message), { EX: config.gg_HistoryExTime * 60 * 60 }) // x小时过期
@@ -70,7 +69,7 @@ export async function saveContext(userId, message) {
 export async function loadContext(userId) {
     try {
         const config = Config.getConfig()
-        const maxHistory = config.gg_maxHistoryLength || 20
+        const maxHistory = config.gg_maxHistoryLength * 2 || 40
 
         // 获取该用户的所有消息
         const keys = await redis.keys(`sfplugin:llm:${userId}:*`)
@@ -110,14 +109,14 @@ export async function clearContextByCount(userId, count = 1) {
         })
 
         // 删除最近的 n 条消息
-        const keysToDelete = keys.slice(-count)
+        const keysToDelete = keys.slice(-count * 2)
         for (const key of keysToDelete) {
             await redis.del(key)
         }
 
         return {
             success: true,
-            deletedCount: keysToDelete.length
+            deletedCount: keysToDelete.length / 2
         }
     } catch (error) {
         logger.error('[Context] 清除历史对话失败:', error)

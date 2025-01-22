@@ -323,7 +323,7 @@ export class SF_Painting extends plugin {
         let historyMessages = []
         if (config_date.gg_useContext) {
             historyMessages = await loadContext(e.user_id)
-            logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length} 条`)
+            logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
         // 如果是图片模式，在发送给AI时将提取的内容加回去
@@ -663,7 +663,7 @@ SF插件设置帮助：
         let historyMessages = []
         if (config_date.gg_useContext) {
             historyMessages = await loadContext(e.user_id)
-            logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length} 条`)
+            logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
         // 如果是图片模式，在发送给AI时将提取的内容加回去
