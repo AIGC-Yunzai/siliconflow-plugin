@@ -317,18 +317,29 @@ export function supportGuoba() {
         },
         {
           field: "gg_useContext",
-          label: "[#gg]上下文功能",
-          bottomHelpMessage: "开启后将保留对话历史记录，该上下文与#ss的上下文共享，开启上下文后两种对话都会保留历史记录",
+          label: "上下文功能",
+          bottomHelpMessage: "[#ss][#gg]共用，开启后将保留对话历史记录，该上下文与#ss的上下文共享，开启上下文后两种对话都会保留历史记录",
           component: "Switch",
         },
         {
           field: "gg_maxHistoryLength",
-          label: "[#gg]历史记录条数",
-          bottomHelpMessage: "设置保留的历史记录条数，仅保留最近的N条记录，可用指令：#sf结束对话 #sf结束全部对话",
+          label: "历史记录条数",
+          bottomHelpMessage: "[#ss][#gg]共用，设置保留的历史记录条数，仅保留最近的N条记录；可用指令：#sf结束对话 #sf结束全部对话",
           component: "InputNumber",
           componentProps: {
             min: 1,
             max: 50,
+            step: 1,
+          },
+        },
+        {
+          field: "gg_HistoryExTime",
+          label: "历史记录过期时间",
+          helpMessage: '单位：小时',
+          bottomHelpMessage: "[#ss][#gg]共用，设置保留的历史记录的过期时间；可用指令：#sf结束对话 #sf结束全部对话",
+          component: "InputNumber",
+          componentProps: {
+            min: 1,
             step: 1,
           },
         },

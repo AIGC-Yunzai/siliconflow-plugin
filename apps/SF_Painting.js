@@ -9,7 +9,14 @@ import {
 import { handleParam } from '../utils/parse.js'
 import { markdown_screenshot } from '../utils/markdownPic.js'
 import { processMessageWithUrls } from '../utils/extractUrl.js'
-import { saveContext, loadContext, formatContextForGemini, clearUserContext, clearAllContext } from '../utils/context.js'
+import {
+    saveContext,
+    loadContext,
+    formatContextForGemini,
+    clearUserContext,
+    clearAllContext,
+    clearContextByCount,
+} from '../utils/context.js'
 import { getUin } from '../utils/common.js'
 
 // 使机器人可以对其第一人称回应
@@ -58,7 +65,12 @@ export class SF_Painting extends plugin {
                     reg: reg_chatgpt_for_firstperson_call,
                     fnc: 'sf_first_person_call',
                     log: false
-                }
+                },
+                {
+                    reg: '^#(sf|SF)(清除|删除)(前面?|最近的?)(\\d+)条对话$',
+                    fnc: 'sf_clearContextByCount',
+                    log: false
+                },
             ]
         })
         this.sf_keys_index = -1
@@ -390,8 +402,8 @@ export class SF_Painting extends plugin {
 
         // 获取用户名并替换prompt中的变量
         const userName = e?.sender?.card || e?.sender?.nickname || "用户";
-        const systemPrompt = !forChat ? 
-            config_date.sf_textToPaint_Prompt : 
+        const systemPrompt = !forChat ?
+            config_date.sf_textToPaint_Prompt :
             (config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese").replace(/{{user_name}}/g, userName);
 
         // 构造请求体
@@ -469,7 +481,7 @@ export class SF_Painting extends plugin {
             } else {
                 // 纯文本消息使用简单格式
                 requestBody.messages.push({
-                    role: "user", 
+                    role: "user",
                     content: input
                 });
             }
@@ -528,6 +540,7 @@ SF插件设置帮助：
 2. #ss [内容]：使用SF对话
 3. #sf结束对话：结束当前用户的对话
 4. #sf结束全部对话：结束所有用户的对话（仅限主人）
+5. #sf删除前[num]条对话
 
 注意：
 - 设置命令仅限主人使用
@@ -857,29 +870,33 @@ SF插件设置帮助：
 
     async sf_end_chat(e) {
         const config_date = Config.getConfig()
-        if (!config_date.gg_useContext) {
-            await e.reply('上下文功能未开启')
-            return
-        }
-
         if (await clearUserContext(e.user_id)) {
-            await e.reply('已结束当前对话，历史记录已清除')
+            await e.reply('已结束当前对话，历史记录已清除' + `${config_date.gg_useContext ? '' : '\n（上下文功能未开启）'}`, true)
         } else {
-            await e.reply('结束对话失败，请稍后再试')
+            await e.reply('结束对话失败，请稍后再试', true)
         }
     }
 
     async sf_end_all_chat(e) {
         const config_date = Config.getConfig()
-        if (!config_date.gg_useContext) {
-            await e.reply('上下文功能未开启')
-            return
-        }
-
         if (await clearAllContext()) {
-            await e.reply('已结束所有对话，所有历史记录已清除')
+            await e.reply('已结束所有对话，所有历史记录已清除' + `${config_date.gg_useContext ? '' : '\n（上下文功能未开启）'}`, true)
         } else {
-            await e.reply('结束所有对话失败，请稍后再试')
+            await e.reply('结束所有对话失败，请稍后再试', true)
+        }
+    }
+
+    /** ^#(sf|SF)(清除|删除)(前面?|最近的?)(\\d+)条对话$ */
+    async sf_clearContextByCount(e) {
+        const config_date = Config.getConfig()
+        const match = e.msg.trim().match(/^#(sf|SF)(清除|删除)(前面?|最近的?)(\d+)条对话$/)
+        if (match) {
+            const result = await clearContextByCount(e.user_id, parseInt(match[4]) > 0 ? parseInt(match[4]) : 1)
+            if (result.success) {
+                e.reply(`[sf插件]成功删除你的最近的 ${result.deletedCount} 条历史对话` + `${config_date.gg_useContext ? '' : '\n（上下文功能未开启）'}`, true)
+            } else {
+                e.reply('[sf插件]删除失败:\n' + result.error, true)
+            }
         }
     }
 }

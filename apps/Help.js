@@ -74,7 +74,7 @@ export class help extends plugin {
                     {
                         "icon": 54,
                         "title": "#ss [对话]",
-                        "desc": "与LLM对话，可用指令：#sf结束[全部]对话"
+                        "desc": "可用指令：#sf结束[全部]对话 #sf删除前[num]条对话"
                     },
                     {
                         "icon": 55,

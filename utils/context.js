@@ -1,6 +1,6 @@
 import Config from '../components/Config.js'
 
-// 格式化上下文消息为Gemini API格式
+/** 格式化上下文消息为Gemini API格式 */
 export function formatContextForGemini(messages) {
     return messages.map(msg => {
         // 构造基本消息结构
@@ -32,7 +32,7 @@ export function formatContextForGemini(messages) {
     })
 }
 
-// 保存对话上下文
+/** 保存对话上下文 */
 export async function saveContext(userId, message) {
     try {
         const config = Config.getConfig()
@@ -41,7 +41,7 @@ export async function saveContext(userId, message) {
         const key = `sfplugin:llm:${userId}:${timestamp}`
 
         // 直接保存消息,不修改content结构
-        await redis.set(key, JSON.stringify(message), { EX: 12 * 60 * 60 }) // 12小时过期
+        await redis.set(key, JSON.stringify(message), { EX: config.gg_HistoryExTime * 60 * 60 }) // x小时过期
 
         // 获取该用户的所有消息
         const keys = await redis.keys(`sfplugin:llm:${userId}:*`)
@@ -66,7 +66,7 @@ export async function saveContext(userId, message) {
     }
 }
 
-// 加载用户历史对话
+/** 加载用户历史对话 */
 export async function loadContext(userId) {
     try {
         const config = Config.getConfig()
@@ -98,7 +98,37 @@ export async function loadContext(userId) {
     }
 }
 
-// 清除指定用户的上下文记录
+/** 清除用户前 n 条历史对话 */
+export async function clearContextByCount(userId, count = 1) {
+    try {
+        // 获取该用户的所有消息
+        const keys = await redis.keys(`sfplugin:llm:${userId}:*`)
+        keys.sort((a, b) => {
+            const timeA = parseInt(a.split(':')[3])
+            const timeB = parseInt(b.split(':')[3])
+            return timeA - timeB // 按时间戳升序排序
+        })
+
+        // 删除最近的 n 条消息
+        const keysToDelete = keys.slice(-count)
+        for (const key of keysToDelete) {
+            await redis.del(key)
+        }
+
+        return {
+            success: true,
+            deletedCount: keysToDelete.length
+        }
+    } catch (error) {
+        logger.error('[Context] 清除历史对话失败:', error)
+        return {
+            success: false,
+            error: error.message
+        }
+    }
+}
+
+/** 清除指定用户的上下文记录 */
 export async function clearUserContext(userId) {
     try {
         const keys = await redis.keys(`sfplugin:llm:${userId}:*`)
@@ -112,7 +142,7 @@ export async function clearUserContext(userId) {
     }
 }
 
-// 清除所有用户的上下文记录
+/** 清除所有用户的上下文记录 */
 export async function clearAllContext() {
     try {
         const keys = await redis.keys('sfplugin:llm:*')
