@@ -35,7 +35,7 @@ export class SF_Painting extends plugin {
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息)',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索)',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 },
@@ -71,6 +71,14 @@ export class SF_Painting extends plugin {
                     fnc: 'sf_clearContextByCount',
                     log: false
                 },
+                {
+                    reg: '^#(sf|SF)(ss|gg)接口列表$',
+                    fnc: 'sf_list_api',
+                },
+                {
+                    reg: '^#(sf|SF)(ss|gg)使用接口(\\d+)$',
+                    fnc: 'sf_select_api',
+                }
             ]
         })
         this.sf_keys_index = -1
@@ -152,7 +160,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息)([\s\S]*)/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索)([\s\S]*)/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -191,6 +199,9 @@ export class SF_Painting extends plugin {
                     break
                 case 'gg转发消息':
                     config_date.gg_forwardMessage = value === '开'
+                    break
+                case 'gg搜索':
+                    config_date.gg_useSearch = value === '开'
                     break
                 default:
                     return
@@ -266,16 +277,29 @@ export class SF_Painting extends plugin {
         // 读取配置
         const config_date = Config.getConfig()
 
-        let use_sf_key = "", apiBaseUrl = "", model = ""
-        if (config_date.ss_apiBaseUrl) {
-            use_sf_key = config_date.ss_Key;
-            apiBaseUrl = config_date.ss_apiBaseUrl;
-            model = config_date.ss_model || "gpt-4";
+        // 获取接口配置
+        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = ""
+        if (config_date.ss_usingAPI > 0 && config_date.ss_APIList && config_date.ss_APIList[config_date.ss_usingAPI - 1]) {
+            // 使用接口列表中的配置
+            const apiConfig = config_date.ss_APIList[config_date.ss_usingAPI - 1]
+            // 只有当APIList中的字段有值时才使用该值
+            use_sf_key = apiConfig.apiKey || config_date.ss_Key || ""
+            apiBaseUrl = apiConfig.apiBaseUrl || config_date.ss_apiBaseUrl || config_date.sfBaseUrl
+            model = apiConfig.model || config_date.ss_model || config_date.translateModel
+            systemPrompt = apiConfig.prompt || config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
+        } else if (config_date.ss_apiBaseUrl) {
+            // 使用默认配置
+            use_sf_key = config_date.ss_Key
+            apiBaseUrl = config_date.ss_apiBaseUrl
+            model = config_date.ss_model
+            systemPrompt = config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
         } else if (config_date.sf_keys.length == 0) {
             await e.reply('请先设置API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
             return false
         } else {
-            use_sf_key = this.get_use_sf_key(config_date);
+            use_sf_key = this.get_use_sf_key(config_date)
+            apiBaseUrl = config_date.sfBaseUrl
+            model = config_date.translateModel
         }
 
         // 处理引用消息,获取图片和文本
@@ -340,7 +364,8 @@ export class SF_Painting extends plugin {
 
         const opt = {
             currentImages: currentImages.length > 0 ? currentImages : undefined,
-            historyImages: historyImages.length > 0 ? historyImages : undefined
+            historyImages: historyImages.length > 0 ? historyImages : undefined,
+            systemPrompt: systemPrompt
         }
 
         const answer = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
@@ -404,7 +429,7 @@ export class SF_Painting extends plugin {
         const userName = e?.sender?.card || e?.sender?.nickname || "用户";
         const systemPrompt = !forChat ?
             config_date.sf_textToPaint_Prompt :
-            (config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese").replace(/{{user_name}}/g, userName);
+            (opt.systemPrompt || config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese").replace(/{{user_name}}/g, userName);
 
         // 构造请求体
         const requestBody = {
@@ -533,7 +558,8 @@ SF插件设置帮助：
 9. 设置上下文功能：#sf设置上下文 开/关
 10. 设置ss转发消息：#sf设置ss转发消息 开/关
 11. 设置gg转发消息：#sf设置gg转发消息 开/关
-12. 查看帮助：#sf帮助
+12. 设置gg搜索功能：#sf设置gg搜索 开/关
+13. 查看帮助：#sf帮助
 
 对话指令：
 1. #gg [内容]：使用Gemini对话
@@ -542,10 +568,12 @@ SF插件设置帮助：
 4. #sf结束全部对话：结束所有用户的对话（仅限主人）
 5. #sf删除前[num]条对话
 
-注意：
-- 设置命令仅限主人使用
-- #gg和#ss共用历史对话记录
-- 开启上下文后两种对话都会保留历史记录
+接口管理：
+1. #sfss接口列表：查看ss接口列表
+2. #sfgg接口列表：查看gg接口列表
+3. #sfss使用接口[数字]：切换ss接口
+4. #sfgg使用接口[数字]：切换gg接口
+注：使用0表示使用默认配置
 
 可用别名：#flux绘画
         `.trim()
@@ -615,8 +643,23 @@ SF插件设置帮助：
         // 读取配置
         const config_date = Config.getConfig()
 
-        let ggBaseUrl = config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev";
-        let ggKey = this.get_use_ggKey(config_date) || "sk-xuanku";
+        // 获取接口配置
+        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = ""
+        if (config_date.gg_usingAPI > 0 && config_date.gg_APIList && config_date.gg_APIList[config_date.gg_usingAPI - 1]) {
+            // 使用接口列表中的配置
+            const apiConfig = config_date.gg_APIList[config_date.gg_usingAPI - 1]
+            // 只有当APIList中的字段有值时才使用该值
+            ggBaseUrl = apiConfig.apiBaseUrl || config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev"
+            ggKey = apiConfig.apiKey || this.get_use_ggKey(config_date) || "sk-xuanku"
+            model = apiConfig.model || config_date.gg_model || "gemini-2.0-flash-exp"
+            systemPrompt = apiConfig.prompt || config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
+        } else {
+            // 使用默认配置
+            ggBaseUrl = config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev"
+            ggKey = this.get_use_ggKey(config_date) || "sk-xuanku"
+            model = config_date.gg_model || "gemini-2.0-flash-exp"
+            systemPrompt = config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
+        }
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
@@ -680,7 +723,9 @@ SF插件设置帮助：
 
         const opt = {
             currentImages: currentImages.length > 0 ? currentImages : undefined,
-            historyImages: historyImages.length > 0 ? historyImages : undefined
+            historyImages: historyImages.length > 0 ? historyImages : undefined,
+            systemPrompt: systemPrompt,
+            model: model
         }
 
         const { answer, sources } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
@@ -760,7 +805,7 @@ SF插件设置帮助：
 
         // 获取用户名并替换prompt中的变量
         const userName = e?.sender?.card || e?.sender?.nickname || "用户";
-        const systemPrompt = (config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。").replace(/{{user_name}}/g, userName);
+        const systemPrompt = (opt.systemPrompt || config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。").replace(/{{user_name}}/g, userName);
 
         // 构造请求体
         const requestBody = {
@@ -770,9 +815,10 @@ SF插件设置帮助：
                 }]
             },
             "contents": [],
-            "tools": [{
+            // 只有在使用gemini-2.0-flash-exp模型且开启搜索功能时才添加搜索工具
+            "tools": (config_date.gg_useSearch && opt.model === "gemini-2.0-flash-exp") ? [{
                 "googleSearch": {}
-            }]
+            }] : []
         };
 
         // 添加历史对话
@@ -823,7 +869,7 @@ SF插件设置帮助：
         });
 
         try {
-            const response = await fetch(`${ggBaseUrl}/v1beta/models/${config_date.gg_model || "gemini-2.0-flash-exp"}:generateContent?key=${ggKey}`, {
+            const response = await fetch(`${ggBaseUrl}/v1beta/models/${opt.model}:generateContent?key=${ggKey}`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -897,6 +943,71 @@ SF插件设置帮助：
             } else {
                 e.reply('[sf插件]删除失败:\n' + result.error, true)
             }
+        }
+    }
+
+    /** 列出接口列表 */
+    async sf_list_api(e) {
+        // 读取配置
+        const config_date = Config.getConfig()
+        
+        // 判断是ss还是gg
+        const type = e.msg.match(/^#(sf|SF)(ss|gg)/)[2].toLowerCase()
+        const apiList = type === 'ss' ? config_date.ss_APIList : config_date.gg_APIList
+        const currentApi = type === 'ss' ? config_date.ss_usingAPI : config_date.gg_usingAPI
+        
+        if (!apiList || apiList.length === 0) {
+            await e.reply(`当前没有配置任何${type}接口`)
+            return
+        }
+        
+        let msg = [`当前${type}接口列表：`]
+        apiList.forEach((api, index) => {
+            const isUsing = currentApi === (index + 1)
+            msg.push(`${index + 1}. ${api.remark || `接口${index + 1}`}${isUsing ? ' [当前使用]' : ''}`)
+        })
+        
+        // 添加默认配置的状态
+        if (currentApi === 0) {
+            msg.push('\n当前使用：默认配置')
+        }
+        
+        await e.reply(msg.join('\n'))
+    }
+    
+    /** 选择使用的接口 */
+    async sf_select_api(e) {
+        // 读取配置
+        const config_date = Config.getConfig()
+        
+        // 解析命令
+        const match = e.msg.match(/^#(sf|SF)(ss|gg)使用接口(\d+)$/)
+        const type = match[2].toLowerCase()
+        const index = parseInt(match[3])
+        
+        // 验证索引
+        const apiList = type === 'ss' ? config_date.ss_APIList : config_date.gg_APIList
+        if (index < 0 || (index > 0 && (!apiList || index > apiList.length))) {
+            await e.reply(`无效的接口索引，请使用 #sf${type}接口列表 查看可用的接口`)
+            return
+        }
+        
+        // 更新配置
+        if (type === 'ss') {
+            config_date.ss_usingAPI = index
+        } else {
+            config_date.gg_usingAPI = index
+        }
+        
+        // 保存配置
+        Config.setConfig(config_date)
+        
+        // 返回结果
+        if (index === 0) {
+            await e.reply(`已切换为使用${type}默认配置`)
+        } else {
+            const api = apiList[index - 1]
+            await e.reply(`已切换为使用${type}接口：${api.remark || `接口${index}`}`)
         }
     }
 }

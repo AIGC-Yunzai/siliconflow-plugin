@@ -5,7 +5,8 @@ export function formatContextForGemini(messages) {
     return messages.map(msg => {
         // 构造基本消息结构
         const formattedMsg = {
-            role: msg.role,
+            // 将assistant转换为model,其他保持不变
+            role: msg.role === 'assistant' ? 'model' : msg.role,
             parts: []
         }
 
