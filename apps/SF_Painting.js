@@ -35,7 +35,7 @@ export class SF_Painting extends plugin {
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索)',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息)',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 },
@@ -160,7 +160,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索)([\s\S]*)/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息)([\s\S]*)/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -202,6 +202,12 @@ export class SF_Painting extends plugin {
                     break
                 case 'gg搜索':
                     config_date.gg_useSearch = value === '开'
+                    break
+                case 'ss引用原消息':
+                    config_date.ss_quoteMessage = value === '开'
+                    break
+                case 'gg引用原消息':
+                    config_date.gg_quoteMessage = value === '开'
                     break
                 default:
                     return
@@ -393,7 +399,7 @@ export class SF_Painting extends plugin {
             if (useMarkdown) {
                 const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, answer);
                 if (img) {
-                    await e.reply({ ...img, origin: true }, true)
+                    await e.reply({ ...img, origin: true }, config_date.ss_quoteMessage)
                 } else {
                     logger.error('[sf插件] markdown图片生成失败')
                 }
@@ -401,7 +407,7 @@ export class SF_Painting extends plugin {
                     e.reply(await common.makeForwardMsg(e, [answer], `${e.sender.card || e.sender.nickname || e.user_id}的对话`));
                 }
             } else {
-                await e.reply(answer, true)
+                await e.reply(answer, config_date.ss_quoteMessage)
             }
         } catch (error) {
             logger.error('[sf插件] 回复消息时发生错误：', error)
@@ -755,7 +761,7 @@ SF插件设置帮助：
                 // 如果开启了markdown，生成图片并将回答放入转发消息
                 const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, answer);
                 if (img) {
-                    await e.reply({ ...img, origin: true }, true)
+                    await e.reply({ ...img, origin: true }, config_date.gg_quoteMessage)
                 } else {
                     logger.error('[sf插件] markdown图片生成失败')
                 }
@@ -773,7 +779,7 @@ SF插件设置帮助：
                 }
             } else {
                 // 如果没开启markdown，直接回复答案
-                await e.reply(answer, true)
+                await e.reply(answer, config_date.gg_quoteMessage)
 
                 // 如果有来源，单独发送转发消息显示来源
                 if (sources && sources.length > 0 && config_date.gg_forwardMessage) {

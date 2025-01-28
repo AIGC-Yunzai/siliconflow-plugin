@@ -325,6 +325,12 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: "ss_quoteMessage",
+          label: "[#ss]引用原消息",
+          bottomHelpMessage: "开启后回复时会引用原消息",
+          component: "Switch",
+        },
+        {
           component: "Divider",
           label: "[#gg]Gemini API配置",
           componentProps: {
@@ -428,6 +434,12 @@ export function supportGuoba() {
           field: "gg_forwardMessage",
           label: "[#gg]发送合并消息",
           bottomHelpMessage: "开启后在图片对话模式下会同时转发原始消息",
+          component: "Switch",
+        },
+        {
+          field: "gg_quoteMessage",
+          label: "[#gg]引用原消息",
+          bottomHelpMessage: "开启后回复时会引用原消息",
           component: "Switch",
         },
         {
