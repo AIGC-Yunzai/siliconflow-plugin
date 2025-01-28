@@ -218,9 +218,71 @@ export function supportGuoba() {
           },
         },
         {
+          field: "ss_APIList",
+          label: "[#ss]接口列表",
+          bottomHelpMessage: "设置#ss[对话]的API接口列表，可添加多个接口配置，填写了的部分会覆盖默认配置，不填则使用默认配置，默认配置是指[#ss]对话接口地址等",
+          component: "GSubForm",
+          componentProps: {
+            multiple: true,
+            schemas: [
+              {
+                field: "apiBaseUrl",
+                label: "接口地址",
+                component: "Input",
+                bottomHelpMessage: "设置#ss[对话]的API接口地址，兼容所有OpenAI格式的API接口",
+                componentProps: {
+                  placeholder: 'https://api.siliconflow.cn/v1',
+                },
+              },
+              {
+                field: "apiKey",
+                label: "接口密钥",
+                component: "InputPassword",
+                bottomHelpMessage: "设置#ss[对话]的API接口密钥",
+              },
+              {
+                field: "model",
+                label: "接口模型",
+                component: "Input",
+                bottomHelpMessage: "设置#ss[对话]的API接口模型",
+                componentProps: {
+                  placeholder: 'gpt-4',
+                },
+              },
+              {
+                field: "prompt",
+                label: "接口提示词",
+                component: "InputTextArea",
+                bottomHelpMessage: "设置#ss[对话]的API接口提示词，自动将提示词中的字符串 {{user_name}} 替换为用户昵称/群昵称",
+                componentProps: {
+                  placeholder: 'You are a helpful assistant, you prefer to speak Chinese',
+                },
+              },
+              {
+                field: "remark",
+                label: "备注",
+                component: "Input",
+                required: true,
+                bottomHelpMessage: "接口配置的备注说明",
+              },
+            ],
+          },
+        },
+        {
+          field: 'ss_usingAPI',
+          label: '[#ss]使用接口',
+          bottomHelpMessage: "选择要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等",
+          component: 'Select',
+          componentProps: {
+            options: (Config.getConfig()?.ss_APIList || []).map((item, index) => { 
+              return { label: item.remark || `接口${index + 1}`, value: index + 1 } 
+            }).concat([{ label: "使用默认配置", value: 0 }])
+          },
+        },
+        {
           field: "ss_apiBaseUrl",
-          label: "[#ss]对话API地址",
-          bottomHelpMessage: "设置#ss[对话] 的API接口地址，兼容所有OpenAI格式的API接口，无连续对话功能；若不填则使用SF接口",
+          label: "[#ss]对话接口地址",
+          bottomHelpMessage: "设置#ss[对话] 的对话API接口地址，兼容所有OpenAI格式的API接口，默认无连续对话功能，如有需要可以打开下面的上下文开关，若不填则使用SF接口",
           component: "Input",
           componentProps: {
             placeholder: 'https://api.siliconflow.cn/v1',
@@ -263,11 +325,79 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: "ss_quoteMessage",
+          label: "[#ss]引用原消息",
+          bottomHelpMessage: "开启后回复时会引用原消息",
+          component: "Switch",
+        },
+        {
           component: "Divider",
           label: "[#gg]Gemini API配置",
           componentProps: {
             orientation: "left",
             plain: true,
+          },
+        },
+        {
+          field: "gg_APIList",
+          label: "[#gg]接口列表",
+          bottomHelpMessage: "设置#gg[对话]的API接口列表，可添加多个接口配置，填写了的部分会覆盖默认配置，不填则使用默认配置，默认配置是指[#gg]Gemini反代地址等",
+          component: "GSubForm",
+          componentProps: {
+            multiple: true,
+            schemas: [
+              {
+                field: "apiBaseUrl",
+                label: "接口地址",
+                component: "Input",
+                bottomHelpMessage: "设置#gg[对话]的API接口地址，对https://generativelanguage.googleapis.com 反代",
+                componentProps: {
+                  placeholder: 'https://bright-donkey-63.deno.dev',
+                },
+              },
+              {
+                field: "apiKey",
+                label: "接口密钥",
+                component: "InputPassword",
+                bottomHelpMessage: "设置#gg[对话]的API接口密钥，Key可以在https://aistudio.google.com/app/apikey获取",
+              },
+              {
+                field: "model",
+                label: "接口模型",
+                component: "Input",
+                bottomHelpMessage: "设置#gg[对话]的API接口模型",
+                componentProps: {
+                  placeholder: 'gemini-2.0-flash-exp',
+                },
+              },
+              {
+                field: "prompt",
+                label: "接口提示词",
+                component: "InputTextArea",
+                bottomHelpMessage: "设置#gg[对话]的API接口提示词，自动将提示词中的字符串 {{user_name}} 替换为用户昵称/群昵称",
+                componentProps: {
+                  placeholder: '你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。',
+                },
+              },
+              {
+                field: "remark",
+                label: "备注",
+                component: "Input",
+                required: true,
+                bottomHelpMessage: "接口配置的备注说明",
+              },
+            ],
+          },
+        },
+        {
+          field: 'gg_usingAPI',
+          label: '[#gg]使用接口',
+          bottomHelpMessage: "选择要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等",
+          component: 'Select',
+          componentProps: {
+            options: (Config.getConfig()?.gg_APIList || []).map((item, index) => { 
+              return { label: item.remark || `接口${index + 1}`, value: index + 1 } 
+            }).concat([{ label: "使用默认配置", value: 0 }])
           },
         },
         {
@@ -304,6 +434,18 @@ export function supportGuoba() {
           field: "gg_forwardMessage",
           label: "[#gg]发送合并消息",
           bottomHelpMessage: "开启后在图片对话模式下会同时转发原始消息",
+          component: "Switch",
+        },
+        {
+          field: "gg_quoteMessage",
+          label: "[#gg]引用原消息",
+          bottomHelpMessage: "开启后回复时会引用原消息",
+          component: "Switch",
+        },
+        {
+          field: "gg_useSearch",
+          label: "[#gg]搜索功能",
+          bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型",
           component: "Switch",
         },
         {
