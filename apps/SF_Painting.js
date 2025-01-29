@@ -25,8 +25,8 @@ const reg_chatgpt_for_firstperson_call = new RegExp(Config.getConfig()?.botName 
 export class SF_Painting extends plugin {
     constructor() {
         super({
-            name: 'SF_AIGC插件',
-            dsc: 'SF_AIGC插件',
+            name: 'SF_对话&绘图',
+            dsc: 'SF_对话&绘图',
             event: 'message',
             priority: 6,
             rule: [
@@ -284,7 +284,7 @@ export class SF_Painting extends plugin {
         const config_date = Config.getConfig()
 
         // 获取接口配置
-        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = ""
+        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true
         if (config_date.ss_usingAPI > 0 && config_date.ss_APIList && config_date.ss_APIList[config_date.ss_usingAPI - 1]) {
             // 使用接口列表中的配置
             const apiConfig = config_date.ss_APIList[config_date.ss_usingAPI - 1]
@@ -293,12 +293,18 @@ export class SF_Painting extends plugin {
             apiBaseUrl = apiConfig.apiBaseUrl || config_date.ss_apiBaseUrl || config_date.sfBaseUrl
             model = apiConfig.model || config_date.ss_model || config_date.translateModel
             systemPrompt = apiConfig.prompt || config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
+            useMarkdown = typeof apiConfig.useMarkdown !== 'undefined' ? apiConfig.useMarkdown : config_date.ss_useMarkdown
+            forwardMessage = typeof apiConfig.forwardMessage !== 'undefined' ? apiConfig.forwardMessage : config_date.ss_forwardMessage
+            quoteMessage = typeof apiConfig.quoteMessage !== 'undefined' ? apiConfig.quoteMessage : config_date.ss_quoteMessage
         } else if (config_date.ss_apiBaseUrl) {
             // 使用默认配置
             use_sf_key = config_date.ss_Key
             apiBaseUrl = config_date.ss_apiBaseUrl
             model = config_date.ss_model
             systemPrompt = config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
+            useMarkdown = config_date.ss_useMarkdown
+            forwardMessage = config_date.ss_forwardMessage
+            quoteMessage = config_date.ss_quoteMessage
         } else if (config_date.sf_keys.length == 0) {
             await e.reply('请先设置API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
             return false
@@ -306,6 +312,9 @@ export class SF_Painting extends plugin {
             use_sf_key = this.get_use_sf_key(config_date)
             apiBaseUrl = config_date.sfBaseUrl
             model = config_date.translateModel
+            useMarkdown = config_date.ss_useMarkdown
+            forwardMessage = config_date.ss_forwardMessage
+            quoteMessage = config_date.ss_quoteMessage
         }
 
         // 处理引用消息,获取图片和文本
@@ -392,22 +401,19 @@ export class SF_Painting extends plugin {
             })
         }
 
-        // 获取markdown开关配置，默认为false
-        const useMarkdown = config_date?.ss_useMarkdown ?? false
-
         try {
             if (useMarkdown) {
                 const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, answer);
                 if (img) {
-                    await e.reply({ ...img, origin: true }, config_date.ss_quoteMessage)
+                    await e.reply({ ...img, origin: true }, quoteMessage)
                 } else {
                     logger.error('[sf插件] markdown图片生成失败')
                 }
-                if (config_date.ss_forwardMessage) {
+                if (forwardMessage) {
                     e.reply(await common.makeForwardMsg(e, [answer], `${e.sender.card || e.sender.nickname || e.user_id}的对话`));
                 }
             } else {
-                await e.reply(answer, config_date.ss_quoteMessage)
+                await e.reply(answer, quoteMessage)
             }
         } catch (error) {
             logger.error('[sf插件] 回复消息时发生错误：', error)
@@ -650,7 +656,7 @@ SF插件设置帮助：
         const config_date = Config.getConfig()
 
         // 获取接口配置
-        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = ""
+        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true
         if (config_date.gg_usingAPI > 0 && config_date.gg_APIList && config_date.gg_APIList[config_date.gg_usingAPI - 1]) {
             // 使用接口列表中的配置
             const apiConfig = config_date.gg_APIList[config_date.gg_usingAPI - 1]
@@ -659,12 +665,20 @@ SF插件设置帮助：
             ggKey = apiConfig.apiKey || this.get_use_ggKey(config_date) || "sk-xuanku"
             model = apiConfig.model || config_date.gg_model || "gemini-2.0-flash-exp"
             systemPrompt = apiConfig.prompt || config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
+            useMarkdown = typeof apiConfig.useMarkdown !== 'undefined' ? apiConfig.useMarkdown : config_date.gg_useMarkdown
+            forwardMessage = typeof apiConfig.forwardMessage !== 'undefined' ? apiConfig.forwardMessage : config_date.gg_forwardMessage
+            quoteMessage = typeof apiConfig.quoteMessage !== 'undefined' ? apiConfig.quoteMessage : config_date.gg_quoteMessage
+            useSearch = typeof apiConfig.useSearch !== 'undefined' ? apiConfig.useSearch : config_date.gg_useSearch
         } else {
             // 使用默认配置
             ggBaseUrl = config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev"
             ggKey = this.get_use_ggKey(config_date) || "sk-xuanku"
             model = config_date.gg_model || "gemini-2.0-flash-exp"
             systemPrompt = config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
+            useMarkdown = config_date.gg_useMarkdown
+            forwardMessage = config_date.gg_forwardMessage
+            quoteMessage = config_date.gg_quoteMessage
+            useSearch = config_date.gg_useSearch
         }
 
         // 处理引用消息,获取图片和文本
@@ -753,21 +767,18 @@ SF插件设置帮助：
             })
         }
 
-        // 获取markdown开关配置，默认为false
-        const useMarkdown = config_date?.gg_useMarkdown ?? false
-
         try {
             if (useMarkdown) {
                 // 如果开启了markdown，生成图片并将回答放入转发消息
                 const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, answer);
                 if (img) {
-                    await e.reply({ ...img, origin: true }, config_date.gg_quoteMessage)
+                    await e.reply({ ...img, origin: true }, quoteMessage)
                 } else {
                     logger.error('[sf插件] markdown图片生成失败')
                 }
 
                 // 构建转发消息，包含回答和来源
-                if (config_date.gg_forwardMessage) {
+                if (forwardMessage) {
                     const forwardMsg = [answer];
                     if (sources && sources.length > 0) {
                         forwardMsg.push('信息来源：');
@@ -779,10 +790,10 @@ SF插件设置帮助：
                 }
             } else {
                 // 如果没开启markdown，直接回复答案
-                await e.reply(answer, config_date.gg_quoteMessage)
+                await e.reply(answer, quoteMessage)
 
                 // 如果有来源，单独发送转发消息显示来源
-                if (sources && sources.length > 0 && config_date.gg_forwardMessage) {
+                if (sources && sources.length > 0 && forwardMessage) {
                     const sourceMsg = ['信息来源：'];
                     sources.forEach((source, index) => {
                         sourceMsg.push(`${index + 1}. ${source.title}\n${source.url}`);
@@ -822,7 +833,7 @@ SF插件设置帮助：
             },
             "contents": [],
             // 只有在使用gemini-2.0-flash-exp模型且开启搜索功能时才添加搜索工具
-            "tools": (config_date.gg_useSearch && opt.model === "gemini-2.0-flash-exp") ? [{
+            "tools": (useSearch && opt.model === "gemini-2.0-flash-exp") ? [{
                 "googleSearch": {}
             }] : []
         };
