@@ -259,6 +259,24 @@ export function supportGuoba() {
                 },
               },
               {
+                field: "useMarkdown",
+                label: "图片对话模式",
+                component: "Switch",
+                bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
+              },
+              {
+                field: "forwardMessage",
+                label: "发送合并消息",
+                component: "Switch",
+                bottomHelpMessage: "开启后在图片对话模式下会同时转发原始消息",
+              },
+              {
+                field: "quoteMessage",
+                label: "引用原消息",
+                component: "Switch",
+                bottomHelpMessage: "开启后回复时会引用原消息",
+              },
+              {
                 field: "remark",
                 label: "备注",
                 component: "Input",
@@ -378,6 +396,30 @@ export function supportGuoba() {
                 componentProps: {
                   placeholder: '你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。',
                 },
+              },
+              {
+                field: "useMarkdown",
+                label: "图片对话模式",
+                component: "Switch",
+                bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
+              },
+              {
+                field: "forwardMessage",
+                label: "发送合并消息",
+                component: "Switch",
+                bottomHelpMessage: "开启后在图片对话模式下会同时转发原始消息",
+              },
+              {
+                field: "quoteMessage",
+                label: "引用原消息",
+                component: "Switch",
+                bottomHelpMessage: "开启后回复时会引用原消息",
+              },
+              {
+                field: "useSearch",
+                label: "搜索功能",
+                component: "Switch",
+                bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型",
               },
               {
                 field: "remark",

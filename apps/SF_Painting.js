@@ -25,8 +25,8 @@ const reg_chatgpt_for_firstperson_call = new RegExp(Config.getConfig()?.botName 
 export class SF_Painting extends plugin {
     constructor() {
         super({
-            name: 'SF_AIGC插件',
-            dsc: 'SF_AIGC插件',
+            name: 'SF_对话&绘图',
+            dsc: 'SF_对话&绘图',
             event: 'message',
             priority: 6,
             rule: [
@@ -58,7 +58,7 @@ export class SF_Painting extends plugin {
                     permission: 'master'
                 },
                 {
-                    reg: '^#(sf|SF)结束对话$',
+                    reg: '^#(sf|SF)结束((ss|gg)?)对话(\\d+)?.*$',
                     fnc: 'sf_end_chat',
                 },
                 {
@@ -67,7 +67,7 @@ export class SF_Painting extends plugin {
                     log: false
                 },
                 {
-                    reg: '^#(sf|SF)(清除|删除)(前面?|最近的?)(\\d+)条对话$',
+                    reg: '^#(sf|SF)(清除|删除)((ss|gg)?)?(前面?|最近的?)(\\d+)条对话$',
                     fnc: 'sf_clearContextByCount',
                     log: false
                 },
@@ -284,7 +284,7 @@ export class SF_Painting extends plugin {
         const config_date = Config.getConfig()
 
         // 获取接口配置
-        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = ""
+        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true
         if (config_date.ss_usingAPI > 0 && config_date.ss_APIList && config_date.ss_APIList[config_date.ss_usingAPI - 1]) {
             // 使用接口列表中的配置
             const apiConfig = config_date.ss_APIList[config_date.ss_usingAPI - 1]
@@ -293,12 +293,18 @@ export class SF_Painting extends plugin {
             apiBaseUrl = apiConfig.apiBaseUrl || config_date.ss_apiBaseUrl || config_date.sfBaseUrl
             model = apiConfig.model || config_date.ss_model || config_date.translateModel
             systemPrompt = apiConfig.prompt || config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
+            useMarkdown = typeof apiConfig.useMarkdown !== 'undefined' ? apiConfig.useMarkdown : config_date.ss_useMarkdown
+            forwardMessage = typeof apiConfig.forwardMessage !== 'undefined' ? apiConfig.forwardMessage : config_date.ss_forwardMessage
+            quoteMessage = typeof apiConfig.quoteMessage !== 'undefined' ? apiConfig.quoteMessage : config_date.ss_quoteMessage
         } else if (config_date.ss_apiBaseUrl) {
             // 使用默认配置
             use_sf_key = config_date.ss_Key
             apiBaseUrl = config_date.ss_apiBaseUrl
             model = config_date.ss_model
             systemPrompt = config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
+            useMarkdown = config_date.ss_useMarkdown
+            forwardMessage = config_date.ss_forwardMessage
+            quoteMessage = config_date.ss_quoteMessage
         } else if (config_date.sf_keys.length == 0) {
             await e.reply('请先设置API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
             return false
@@ -306,6 +312,9 @@ export class SF_Painting extends plugin {
             use_sf_key = this.get_use_sf_key(config_date)
             apiBaseUrl = config_date.sfBaseUrl
             model = config_date.translateModel
+            useMarkdown = config_date.ss_useMarkdown
+            forwardMessage = config_date.ss_forwardMessage
+            quoteMessage = config_date.ss_quoteMessage
         }
 
         // 处理引用消息,获取图片和文本
@@ -352,7 +361,7 @@ export class SF_Painting extends plugin {
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_useContext) {
-            historyMessages = await loadContext(e.user_id)
+            historyMessages = await loadContext(e.user_id, config_date.ss_usingAPI)
             logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -384,30 +393,27 @@ export class SF_Painting extends plugin {
                 content: aiMessage,
                 extractedContent: extractedContent,
                 imageBase64: currentImages.length > 0 ? currentImages : undefined
-            })
+            }, config_date.ss_usingAPI)
             // 保存AI回复
             await saveContext(e.user_id, {
                 role: 'assistant',
                 content: answer
-            })
+            }, config_date.ss_usingAPI)
         }
-
-        // 获取markdown开关配置，默认为false
-        const useMarkdown = config_date?.ss_useMarkdown ?? false
 
         try {
             if (useMarkdown) {
                 const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, answer);
                 if (img) {
-                    await e.reply({ ...img, origin: true }, config_date.ss_quoteMessage)
+                    await e.reply({ ...img, origin: true }, quoteMessage)
                 } else {
                     logger.error('[sf插件] markdown图片生成失败')
                 }
-                if (config_date.ss_forwardMessage) {
+                if (forwardMessage) {
                     e.reply(await common.makeForwardMsg(e, [answer], `${e.sender.card || e.sender.nickname || e.user_id}的对话`));
                 }
             } else {
-                await e.reply(answer, config_date.ss_quoteMessage)
+                await e.reply(answer, quoteMessage)
             }
         } catch (error) {
             logger.error('[sf插件] 回复消息时发生错误：', error)
@@ -565,14 +571,23 @@ SF插件设置帮助：
 10. 设置ss转发消息：#sf设置ss转发消息 开/关
 11. 设置gg转发消息：#sf设置gg转发消息 开/关
 12. 设置gg搜索功能：#sf设置gg搜索 开/关
-13. 查看帮助：#sf帮助
+13. 设置ss引用原消息：#sf设置ss引用原消息 开/关
+14. 设置gg引用原消息：#sf设置gg引用原消息 开/关
+15. 查看帮助：#sf帮助
 
 对话指令：
 1. #gg [内容]：使用Gemini对话
 2. #ss [内容]：使用SF对话
-3. #sf结束对话：结束当前用户的对话
-4. #sf结束全部对话：结束所有用户的对话（仅限主人）
-5. #sf删除前[num]条对话
+3. #sf结束对话：结束当前用户的默认配置对话，如果#ss或者#gg设置了接口，则需要指定系统类型，才能结束对应的对话
+4. #sf结束ss对话：结束当前用户的SS系统对话
+5. #sf结束gg对话：结束当前用户的GG系统对话
+6. #sf结束对话[QQ号]：结束指定用户的默认配置对话（仅限主人）
+7. #sf结束ss对话[QQ号]：结束指定用户的SS系统对话（仅限主人）
+8. #sf结束gg对话[QQ号]：结束指定用户的GG系统对话（仅限主人）
+9. #sf结束全部对话：结束所有用户的对话（仅限主人）
+10. #sf删除前n条对话：删除默认配置的最近n条对话
+11. #sf删除ss前n条对话：删除SS系统的最近n条对话
+12. #sf删除gg前n条对话：删除GG系统的最近n条对话
 
 接口管理：
 1. #sfss接口列表：查看ss接口列表
@@ -581,7 +596,17 @@ SF插件设置帮助：
 4. #sfgg使用接口[数字]：切换gg接口
 注：使用0表示使用默认配置
 
-可用别名：#flux绘画
+画图指令：
+1. #sf画图 [描述]：生成图片
+2. #flux画图 [描述]：生成图片
+3. 支持图生图功能，引用图片即可
+
+其他说明：
+1. 支持图片识别和多轮对话
+2. 支持URL内容提取和处理
+3. 支持markdown格式回复
+4. 支持搜索引擎集成（仅限GG）
+5. 支持多API接口切换
         `.trim()
 
         await e.reply(helpMessage)
@@ -650,7 +675,7 @@ SF插件设置帮助：
         const config_date = Config.getConfig()
 
         // 获取接口配置
-        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = ""
+        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true
         if (config_date.gg_usingAPI > 0 && config_date.gg_APIList && config_date.gg_APIList[config_date.gg_usingAPI - 1]) {
             // 使用接口列表中的配置
             const apiConfig = config_date.gg_APIList[config_date.gg_usingAPI - 1]
@@ -659,12 +684,20 @@ SF插件设置帮助：
             ggKey = apiConfig.apiKey || this.get_use_ggKey(config_date) || "sk-xuanku"
             model = apiConfig.model || config_date.gg_model || "gemini-2.0-flash-exp"
             systemPrompt = apiConfig.prompt || config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
+            useMarkdown = typeof apiConfig.useMarkdown !== 'undefined' ? apiConfig.useMarkdown : config_date.gg_useMarkdown
+            forwardMessage = typeof apiConfig.forwardMessage !== 'undefined' ? apiConfig.forwardMessage : config_date.gg_forwardMessage
+            quoteMessage = typeof apiConfig.quoteMessage !== 'undefined' ? apiConfig.quoteMessage : config_date.gg_quoteMessage
+            useSearch = typeof apiConfig.useSearch !== 'undefined' ? apiConfig.useSearch : config_date.gg_useSearch
         } else {
             // 使用默认配置
             ggBaseUrl = config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev"
             ggKey = this.get_use_ggKey(config_date) || "sk-xuanku"
             model = config_date.gg_model || "gemini-2.0-flash-exp"
             systemPrompt = config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
+            useMarkdown = config_date.gg_useMarkdown
+            forwardMessage = config_date.gg_forwardMessage
+            quoteMessage = config_date.gg_quoteMessage
+            useSearch = config_date.gg_useSearch
         }
 
         // 处理引用消息,获取图片和文本
@@ -711,7 +744,7 @@ SF插件设置帮助：
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_useContext) {
-            historyMessages = await loadContext(e.user_id)
+            historyMessages = await loadContext(e.user_id, config_date.gg_usingAPI)
             logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -731,7 +764,8 @@ SF插件设置帮助：
             currentImages: currentImages.length > 0 ? currentImages : undefined,
             historyImages: historyImages.length > 0 ? historyImages : undefined,
             systemPrompt: systemPrompt,
-            model: model
+            model: model,
+            useSearch: useSearch
         }
 
         const { answer, sources } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
@@ -744,30 +778,27 @@ SF插件设置帮助：
                 content: aiMessage,
                 extractedContent: extractedContent,
                 imageBase64: currentImages.length > 0 ? currentImages : undefined
-            })
+            }, config_date.gg_usingAPI)
             // 保存AI回复
             await saveContext(e.user_id, {
                 role: 'assistant',
                 content: answer,
                 sources: sources
-            })
+            }, config_date.gg_usingAPI)
         }
-
-        // 获取markdown开关配置，默认为false
-        const useMarkdown = config_date?.gg_useMarkdown ?? false
 
         try {
             if (useMarkdown) {
                 // 如果开启了markdown，生成图片并将回答放入转发消息
                 const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, answer);
                 if (img) {
-                    await e.reply({ ...img, origin: true }, config_date.gg_quoteMessage)
+                    await e.reply({ ...img, origin: true }, quoteMessage)
                 } else {
                     logger.error('[sf插件] markdown图片生成失败')
                 }
 
                 // 构建转发消息，包含回答和来源
-                if (config_date.gg_forwardMessage) {
+                if (forwardMessage) {
                     const forwardMsg = [answer];
                     if (sources && sources.length > 0) {
                         forwardMsg.push('信息来源：');
@@ -779,10 +810,10 @@ SF插件设置帮助：
                 }
             } else {
                 // 如果没开启markdown，直接回复答案
-                await e.reply(answer, config_date.gg_quoteMessage)
+                await e.reply(answer, quoteMessage)
 
                 // 如果有来源，单独发送转发消息显示来源
-                if (sources && sources.length > 0 && config_date.gg_forwardMessage) {
+                if (sources && sources.length > 0 && forwardMessage) {
                     const sourceMsg = ['信息来源：'];
                     sources.forEach((source, index) => {
                         sourceMsg.push(`${index + 1}. ${source.title}\n${source.url}`);
@@ -813,6 +844,9 @@ SF插件设置帮助：
         const userName = e?.sender?.card || e?.sender?.nickname || "用户";
         const systemPrompt = (opt.systemPrompt || config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。").replace(/{{user_name}}/g, userName);
 
+        // 从opt中获取useSearch，如果未定义则从config_date中获取
+        const useSearch = typeof opt.useSearch !== 'undefined' ? opt.useSearch : config_date.gg_useSearch;
+
         // 构造请求体
         const requestBody = {
             "systemInstruction": {
@@ -822,7 +856,7 @@ SF插件设置帮助：
             },
             "contents": [],
             // 只有在使用gemini-2.0-flash-exp模型且开启搜索功能时才添加搜索工具
-            "tools": (config_date.gg_useSearch && opt.model === "gemini-2.0-flash-exp") ? [{
+            "tools": (useSearch && opt.model === "gemini-2.0-flash-exp") ? [{
                 "googleSearch": {}
             }] : []
         };
@@ -922,8 +956,65 @@ SF插件设置帮助：
 
     async sf_end_chat(e) {
         const config_date = Config.getConfig()
-        if (await clearUserContext(e.user_id)) {
-            await e.reply('已结束当前对话，历史记录已清除' + `${config_date.gg_useContext ? '' : '\n（上下文功能未开启）'}`, true)
+        
+        // 获取目标用户ID和系统类型
+        const match = e.msg.match(/^#(sf|SF)结束((ss|gg)?)对话(?:(\d+))?$/)
+        if (!match) return false
+        
+        const systemType = match[2]?.toLowerCase() // ss或gg或undefined
+        let targetId = e.at  // 优先获取@的用户
+        let targetName = ''
+        
+        // 如果没有@用户，尝试从消息中提取QQ号
+        if (!targetId && match[4]) {
+            targetId = match[4]
+        }
+        
+        // 如果有目标用户（通过@或QQ号指定）
+        if (targetId) {
+            // 检查权限
+            if (!e.isMaster) {
+                e.reply('只有主人才能结束其他用户的对话', true)
+                return
+            }
+            
+            // 获取目标用户的昵称
+            if (e.isGroup) {
+                try {
+                    const member = await e.group.pickMember(Number(targetId))
+                    targetName = member.card || member.nickname
+                } catch (error) {
+                    logger.mark(`[sf插件]获取群成员信息失败: ${error}`)
+                    targetName = targetId
+                }
+            } else {
+                targetName = targetId
+            }
+        } else {
+            // 如果没有指定目标用户，则结束自己的对话
+            targetId = e.user_id
+            targetName = e.sender.card || e.sender.nickname
+        }
+
+        // 设置对应的promptNum
+        let promptNum = 0
+        if (systemType === 'ss') {
+            promptNum = config_date.ss_usingAPI
+        } else if (systemType === 'gg') {
+            promptNum = config_date.gg_usingAPI
+        }
+        // 如果未指定系统类型，则使用默认配置(promptNum=0)
+        
+        // 清除对话记录
+        const success = await clearUserContext(targetId, promptNum)
+        if (success) {
+            const contextStatus = config_date.gg_useContext ? '' : '\n（上下文功能未开启）'
+            const systemName = systemType ? systemType.toUpperCase() : '默认'
+            if (targetId === e.user_id) {
+                await e.reply(`已结束当前${systemName}系统对话，历史记录已清除${contextStatus}`, true)
+            } else {
+                await e.reply(`已结束${targetName}的${systemName}系统对话，历史记录已清除${contextStatus}`, true)
+            }
         } else {
             await e.reply('结束对话失败，请稍后再试', true)
         }
@@ -938,14 +1029,25 @@ SF插件设置帮助：
         }
     }
 
-    /** ^#(sf|SF)(清除|删除)(前面?|最近的?)(\\d+)条对话$ */
+    /** ^#(sf|SF)(清除|删除)((ss|gg)?)?(前面?|最近的?)(\\d+)条对话$ */
     async sf_clearContextByCount(e) {
         const config_date = Config.getConfig()
-        const match = e.msg.trim().match(/^#(sf|SF)(清除|删除)(前面?|最近的?)(\d+)条对话$/)
+        const match = e.msg.trim().match(/^#(sf|SF)(清除|删除)((ss|gg)?)?(前面?|最近的?)(\d+)条对话$/)
         if (match) {
-            const result = await clearContextByCount(e.user_id, parseInt(match[4]) > 0 ? parseInt(match[4]) : 1)
+            // 获取系统类型和对应的promptNum
+            const systemType = match[4]?.toLowerCase() // ss或gg或undefined
+            let promptNum = 0
+            if (systemType === 'ss') {
+                promptNum = config_date.ss_usingAPI
+            } else if (systemType === 'gg') {
+                promptNum = config_date.gg_usingAPI
+            }
+            // 如果未指定系统类型，则使用默认配置(promptNum=0)
+
+            const result = await clearContextByCount(e.user_id, parseInt(match[6]) > 0 ? parseInt(match[6]) : 1, promptNum)
             if (result.success) {
-                e.reply(`[sf插件]成功删除你的最近的 ${result.deletedCount} 条历史对话` + `${config_date.gg_useContext ? '' : '\n（上下文功能未开启）'}`, true)
+                const systemName = systemType ? systemType.toUpperCase() : '默认'
+                e.reply(`[sf插件]成功删除你的${systemName}系统最近的 ${result.deletedCount} 条历史对话` + `${config_date.gg_useContext ? '' : '\n（上下文功能未开启）'}`, true)
             } else {
                 e.reply('[sf插件]删除失败:\n' + result.error, true)
             }
