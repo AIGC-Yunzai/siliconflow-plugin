@@ -449,10 +449,6 @@ export class SF_Painting extends plugin {
      * @return {string}
      */
     async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}, historyMessages = [], e) {
-        if (config_date.sf_keys.length == 0) {
-            return input
-        }
-
         // 获取用户名并替换prompt中的变量
         const userName = e?.sender?.card || e?.sender?.nickname || "用户";
         const systemPrompt = !forChat ?
