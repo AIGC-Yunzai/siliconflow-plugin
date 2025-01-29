@@ -78,6 +78,22 @@ export class SF_Painting extends plugin {
                 {
                     reg: '^#(sf|SF)(ss|gg)使用接口(\\d+)$',
                     fnc: 'sf_select_api',
+                },
+                {
+                    reg: '^#(s|S)(?!f|F)(.+?)结束对话(\\d+)?.*$',
+                    fnc: 'sf_select_and_end_chat',
+                },
+                {
+                    reg: '^#(g|G)(?!g|G)(.+?)结束对话(\\d+)?.*$',
+                    fnc: 'gg_select_and_end_chat',
+                },
+                {
+                    reg: '^#(s|S)(?!f|F|s|S)(.+?).*$',
+                    fnc: 'sf_select_and_chat',
+                },
+                {
+                    reg: '^#(g|G)(?!g|G)(.+?).*$',
+                    fnc: 'gg_select_and_chat',
                 }
             ]
         })
@@ -433,10 +449,6 @@ export class SF_Painting extends plugin {
      * @return {string}
      */
     async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}, historyMessages = [], e) {
-        if (config_date.sf_keys.length == 0) {
-            return input
-        }
-
         // 获取用户名并替换prompt中的变量
         const userName = e?.sender?.card || e?.sender?.nickname || "用户";
         const systemPrompt = !forChat ?
@@ -578,16 +590,19 @@ SF插件设置帮助：
 对话指令：
 1. #gg [内容]：使用Gemini对话
 2. #ss [内容]：使用SF对话
-3. #sf结束对话：结束当前用户的默认配置对话，如果#ss或者#gg设置了接口，则需要指定系统类型，才能结束对应的对话
-4. #sf结束ss对话：结束当前用户的SS系统对话
-5. #sf结束gg对话：结束当前用户的GG系统对话
-6. #sf结束对话[QQ号]：结束指定用户的默认配置对话（仅限主人）
-7. #sf结束ss对话[QQ号]：结束指定用户的SS系统对话（仅限主人）
-8. #sf结束gg对话[QQ号]：结束指定用户的GG系统对话（仅限主人）
-9. #sf结束全部对话：结束所有用户的对话（仅限主人）
-10. #sf删除前n条对话：删除默认配置的最近n条对话
-11. #sf删除ss前n条对话：删除SS系统的最近n条对话
-12. #sf删除gg前n条对话：删除GG系统的最近n条对话
+3. #s[数字/命令] [内容]：临时使用指定的ss接口对话，如#s1 #s2 #stest，使用#s0表示使用默认配置
+4. #g[数字/命令] [内容]：临时使用指定的gg接口对话，如#g1 #g2 #gtest，使用#g0表示使用默认配置
+5. #s[数字/命令]结束对话：结束指定ss接口的对话，如#s1结束对话 #stest结束对话
+6. #g[数字/命令]结束对话：结束指定gg接口的对话，如#g1结束对话 #gtest结束对话
+7. #s[数字/命令]结束对话[QQ号]：结束指定用户的指定ss接口对话（仅限主人）
+8. #g[数字/命令]结束对话[QQ号]：结束指定用户的指定gg接口对话（仅限主人）
+9. #sf结束对话：结束当前用户的默认配置对话
+10. #sf结束ss对话：结束当前用户的SS系统对话
+11. #sf结束gg对话：结束当前用户的GG系统对话
+12. #sf结束全部对话：结束所有用户的对话（仅限主人）
+13. #sf删除前n条对话：删除默认配置的最近n条对话
+14. #sf删除ss前n条对话：删除SS系统的最近n条对话
+15. #sf删除gg前n条对话：删除GG系统的最近n条对话
 
 接口管理：
 1. #sfss接口列表：查看ss接口列表
@@ -1072,7 +1087,9 @@ SF插件设置帮助：
         let msg = [`当前${type}接口列表：`]
         apiList.forEach((api, index) => {
             const isUsing = currentApi === (index + 1)
-            msg.push(`${index + 1}. ${api.remark || `接口${index + 1}`}${isUsing ? ' [当前使用]' : ''}`)
+            const customCmd = api.customCommand ? ` (#${type}${api.customCommand})` : ''
+            const remark = api.remark ? ` - ${api.remark}` : ''
+            msg.push(`${index + 1}. 接口${index + 1}${remark}${customCmd}${isUsing ? ' [当前使用]' : ''}`)
         })
         
         // 添加默认配置的状态
@@ -1117,5 +1134,557 @@ SF插件设置帮助：
             const api = apiList[index - 1]
             await e.reply(`已切换为使用${type}接口：${api.remark || `接口${index}`}`)
         }
+    }
+
+    async sf_select_and_chat(e) {
+        // 读取配置
+        const config_date = Config.getConfig()
+        
+        // 获取完整消息内容
+        const fullMsg = e.msg.trim()
+        
+        // 移除开头的 #s 或 #S
+        const withoutPrefix = fullMsg.substring(2)
+        
+        // 尝试在配置中找到所有匹配的命令
+        let matchedCmds = []
+        
+        if (config_date.ss_APIList) {
+            // 收集所有匹配的自定义命令
+            for (const api of config_date.ss_APIList) {
+                if (api.customCommand && withoutPrefix.startsWith(api.customCommand)) {
+                    matchedCmds.push({
+                        cmd: api.customCommand,
+                        content: withoutPrefix.substring(api.customCommand.length).trim()
+                    })
+                }
+            }
+            
+            // 按命令长度降序排序，选择最长的匹配
+            if (matchedCmds.length > 0) {
+                matchedCmds.sort((a, b) => b.cmd.length - a.cmd.length)
+                const { cmd: matchedCmd, content: remainingContent } = matchedCmds[0]
+                
+                // 如果没有内容
+                if (!remainingContent) {
+                    await e.reply('请输入要发送的内容')
+                    return false
+                }
+                
+                // 查找对应的接口索引
+                const apiIndex = config_date.ss_APIList.findIndex(api => api.customCommand === matchedCmd)
+                if (apiIndex === -1) {
+                    await e.reply(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
+                    return false
+                }
+                
+                // 保存原来的设置
+                const originalUsingAPI = config_date.ss_usingAPI
+                
+                // 临时设置当前使用的接口
+                config_date.ss_usingAPI = apiIndex + 1
+                Config.setConfig(config_date)
+                
+                try {
+                    // 修改消息内容并调用ss对话
+                    e.msg = '#ss ' + remainingContent
+                    await this.sf_chat(e)
+                } finally {
+                    // 还原设置
+                    config_date.ss_usingAPI = originalUsingAPI
+                    Config.setConfig(config_date)
+                }
+                
+                return true
+            }
+        }
+        
+        // 如果没找到自定义命令，尝试解析数字
+        const numberMatch = withoutPrefix.match(/^(\d+)/)
+        if (numberMatch) {
+            const matchedCmd = numberMatch[1]
+            const remainingContent = withoutPrefix.substring(numberMatch[1].length).trim()
+            
+            // 如果没有内容
+            if (!remainingContent) {
+                await e.reply('请输入要发送的内容')
+                return false
+            }
+            
+            // 验证数字是否有效
+            const index = parseInt(matchedCmd)
+            if (!config_date.ss_APIList || index < 0 || (index > 0 && index > config_date.ss_APIList.length)) {
+                await e.reply(`无效的接口索引，请使用 #sfss接口列表 查看可用的接口`)
+                return false
+            }
+            
+            // 保存原来的设置
+            const originalUsingAPI = config_date.ss_usingAPI
+            
+            // 临时设置当前使用的接口
+            config_date.ss_usingAPI = index
+            Config.setConfig(config_date)
+            
+            try {
+                // 修改消息内容并调用ss对话
+                e.msg = '#ss ' + remainingContent
+                await this.sf_chat(e)
+            } finally {
+                // 还原设置
+                config_date.ss_usingAPI = originalUsingAPI
+                Config.setConfig(config_date)
+            }
+            
+            return true
+        }
+        
+        // 如果没找到任何匹配，提取第一个空格前的内容作为命令
+        const spaceIndex = withoutPrefix.indexOf(' ')
+        if (spaceIndex === -1) {
+            await e.reply('请输入要发送的内容')
+            return false
+        }
+        
+        const matchedCmd = withoutPrefix.substring(0, spaceIndex)
+        const remainingContent = withoutPrefix.substring(spaceIndex + 1).trim()
+        
+        // 如果没有内容
+        if (!remainingContent) {
+            await e.reply('请输入要发送的内容')
+            return false
+        }
+        
+        // 如果不是数字，查找自定义命令
+        if (!config_date.ss_APIList) {
+            await e.reply(`未配置任何ss接口，请先配置接口`)
+            return false
+        }
+        const apiIndex = config_date.ss_APIList.findIndex(api => api.customCommand === matchedCmd)
+        if (apiIndex === -1) {
+            await e.reply(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
+            return false
+        }
+        
+        // 保存原来的设置
+        const originalUsingAPI = config_date.ss_usingAPI
+        
+        // 临时设置当前使用的接口
+        config_date.ss_usingAPI = apiIndex + 1
+        Config.setConfig(config_date)
+        
+        try {
+            // 修改消息内容并调用ss对话
+            e.msg = '#ss ' + remainingContent
+            await this.sf_chat(e)
+        } finally {
+            // 还原设置
+            config_date.ss_usingAPI = originalUsingAPI
+            Config.setConfig(config_date)
+        }
+        
+        return true
+    }
+
+    async gg_select_and_chat(e) {
+        // 读取配置
+        const config_date = Config.getConfig()
+        
+        // 获取完整消息内容
+        const fullMsg = e.msg.trim()
+        
+        // 移除开头的 #g 或 #G
+        const withoutPrefix = fullMsg.substring(2)
+        
+        // 尝试在配置中找到所有匹配的命令
+        let matchedCmds = []
+        
+        if (config_date.gg_APIList) {
+            // 收集所有匹配的自定义命令
+            for (const api of config_date.gg_APIList) {
+                if (api.customCommand && withoutPrefix.startsWith(api.customCommand)) {
+                    matchedCmds.push({
+                        cmd: api.customCommand,
+                        content: withoutPrefix.substring(api.customCommand.length).trim()
+                    })
+                }
+            }
+            
+            // 按命令长度降序排序，选择最长的匹配
+            if (matchedCmds.length > 0) {
+                matchedCmds.sort((a, b) => b.cmd.length - a.cmd.length)
+                const { cmd: matchedCmd, content: remainingContent } = matchedCmds[0]
+                
+                // 如果没有内容
+                if (!remainingContent) {
+                    await e.reply('请输入要发送的内容')
+                    return false
+                }
+                
+                // 查找对应的接口索引
+                const apiIndex = config_date.gg_APIList.findIndex(api => api.customCommand === matchedCmd)
+                if (apiIndex === -1) {
+                    await e.reply(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
+                    return false
+                }
+                
+                // 保存原来的设置
+                const originalUsingAPI = config_date.gg_usingAPI
+                
+                // 临时设置当前使用的接口
+                config_date.gg_usingAPI = apiIndex + 1
+                Config.setConfig(config_date)
+                
+                try {
+                    // 修改消息内容并调用gg对话
+                    e.msg = '#gg ' + remainingContent
+                    await this.gg_chat(e)
+                } finally {
+                    // 还原设置
+                    config_date.gg_usingAPI = originalUsingAPI
+                    Config.setConfig(config_date)
+                }
+                
+                return true
+            }
+        }
+        
+        // 如果没找到自定义命令，尝试解析数字
+        const numberMatch = withoutPrefix.match(/^(\d+)/)
+        if (numberMatch) {
+            const matchedCmd = numberMatch[1]
+            const remainingContent = withoutPrefix.substring(numberMatch[1].length).trim()
+            
+            // 如果没有内容
+            if (!remainingContent) {
+                await e.reply('请输入要发送的内容')
+                return false
+            }
+            
+            // 验证数字是否有效
+            const index = parseInt(matchedCmd)
+            if (!config_date.gg_APIList || index < 0 || (index > 0 && index > config_date.gg_APIList.length)) {
+                await e.reply(`无效的接口索引，请使用 #sfgg接口列表 查看可用的接口`)
+                return false
+            }
+            
+            // 保存原来的设置
+            const originalUsingAPI = config_date.gg_usingAPI
+            
+            // 临时设置当前使用的接口
+            config_date.gg_usingAPI = index
+            Config.setConfig(config_date)
+            
+            try {
+                // 修改消息内容并调用gg对话
+                e.msg = '#gg ' + remainingContent
+                await this.gg_chat(e)
+            } finally {
+                // 还原设置
+                config_date.gg_usingAPI = originalUsingAPI
+                Config.setConfig(config_date)
+            }
+            
+            return true
+        }
+        
+        // 如果没找到任何匹配，提取第一个空格前的内容作为命令
+        const spaceIndex = withoutPrefix.indexOf(' ')
+        if (spaceIndex === -1) {
+            await e.reply('请输入要发送的内容')
+            return false
+        }
+        
+        const matchedCmd = withoutPrefix.substring(0, spaceIndex)
+        const remainingContent = withoutPrefix.substring(spaceIndex + 1).trim()
+        
+        // 如果没有内容
+        if (!remainingContent) {
+            await e.reply('请输入要发送的内容')
+            return false
+        }
+        
+        // 如果不是数字，查找自定义命令
+        if (!config_date.gg_APIList) {
+            await e.reply(`未配置任何gg接口，请先配置接口`)
+            return false
+        }
+        const apiIndex = config_date.gg_APIList.findIndex(api => api.customCommand === matchedCmd)
+        if (apiIndex === -1) {
+            await e.reply(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
+            return false
+        }
+        
+        // 保存原来的设置
+        const originalUsingAPI = config_date.gg_usingAPI
+        
+        // 临时设置当前使用的接口
+        config_date.gg_usingAPI = apiIndex + 1
+        Config.setConfig(config_date)
+        
+        try {
+            // 修改消息内容并调用gg对话
+            e.msg = '#gg ' + remainingContent
+            await this.gg_chat(e)
+        } finally {
+            // 还原设置
+            config_date.gg_usingAPI = originalUsingAPI
+            Config.setConfig(config_date)
+        }
+        
+        return true
+    }
+
+    async sf_select_and_end_chat(e) {
+        // 读取配置
+        const config_date = Config.getConfig()
+        
+        // 获取完整消息内容
+        const fullMsg = e.msg.trim()
+        
+        // 移除开头的 #s 或 #S
+        const withoutPrefix = fullMsg.substring(2)
+        
+        // 移除结尾的 "结束对话" 和可能的数字
+        const endChatIndex = withoutPrefix.indexOf('结束对话')
+        if (endChatIndex === -1) {
+            logger.error('[sf插件] 命令格式错误')
+            return false
+        }
+        
+        // 提取命令部分和可能的数字
+        const cmdPart = withoutPrefix.substring(0, endChatIndex).trim()
+        const afterEndChat = withoutPrefix.substring(endChatIndex + 4)
+        const numberMatch = afterEndChat.match(/(\d+)/)
+        const number = numberMatch ? numberMatch[1] : ''
+        
+        // 尝试在配置中找到所有匹配的命令
+        let matchedCmds = []
+        
+        if (config_date.ss_APIList) {
+            // 收集所有匹配的自定义命令
+            for (const api of config_date.ss_APIList) {
+                if (api.customCommand && cmdPart === api.customCommand) {
+                    matchedCmds.push(api.customCommand)
+                }
+            }
+            
+            // 按命令长度降序排序，选择最长的匹配
+            if (matchedCmds.length > 0) {
+                matchedCmds.sort((a, b) => b.length - a.length)
+                const matchedCmd = matchedCmds[0]
+                
+                // 查找对应的接口索引
+                const apiIndex = config_date.ss_APIList.findIndex(api => api.customCommand === matchedCmd)
+                if (apiIndex === -1) {
+                    await e.reply(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
+                    return false
+                }
+                
+                // 保存原来的设置
+                const originalUsingAPI = config_date.ss_usingAPI
+                
+                // 临时设置当前使用的接口
+                config_date.ss_usingAPI = apiIndex + 1
+                Config.setConfig(config_date)
+                
+                try {
+                    // 修改消息内容并调用结束对话
+                    e.msg = '#sf结束ss对话' + (number ? number : '')
+                    await this.sf_end_chat(e)
+                } finally {
+                    // 还原设置
+                    config_date.ss_usingAPI = originalUsingAPI
+                    Config.setConfig(config_date)
+                }
+                
+                return true
+            }
+        }
+        
+        // 如果没找到自定义命令，尝试解析数字
+        const index = parseInt(cmdPart)
+        if (!isNaN(index)) {
+            // 如果是数字，使用原来的逻辑
+            if (!config_date.ss_APIList || index < 0 || (index > 0 && index > config_date.ss_APIList.length)) {
+                await e.reply(`无效的接口索引，请使用 #sfss接口列表 查看可用的接口`)
+                return false
+            }
+            
+            // 保存原来的设置
+            const originalUsingAPI = config_date.ss_usingAPI
+            
+            // 临时设置当前使用的接口
+            config_date.ss_usingAPI = index
+            Config.setConfig(config_date)
+            
+            try {
+                // 修改消息内容并调用结束对话
+                e.msg = '#sf结束ss对话' + (number ? number : '')
+                await this.sf_end_chat(e)
+            } finally {
+                // 还原设置
+                config_date.ss_usingAPI = originalUsingAPI
+                Config.setConfig(config_date)
+            }
+            
+            return true
+        }
+        
+        // 如果不是数字，查找自定义命令
+        if (!config_date.ss_APIList) {
+            await e.reply(`未配置任何ss接口，请先配置接口`)
+            return false
+        }
+        const apiIndex = config_date.ss_APIList.findIndex(api => api.customCommand === cmdPart)
+        if (apiIndex === -1) {
+            await e.reply(`未找到命令 ${cmdPart} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
+            return false
+        }
+        
+        // 保存原来的设置
+        const originalUsingAPI = config_date.ss_usingAPI
+        
+        // 临时设置当前使用的接口
+        config_date.ss_usingAPI = apiIndex + 1
+        Config.setConfig(config_date)
+        
+        try {
+            // 修改消息内容并调用结束对话
+            e.msg = '#sf结束ss对话' + (number ? number : '')
+            await this.sf_end_chat(e)
+        } finally {
+            // 还原设置
+            config_date.ss_usingAPI = originalUsingAPI
+            Config.setConfig(config_date)
+        }
+        
+        return true
+    }
+
+    async gg_select_and_end_chat(e) {
+        // 读取配置
+        const config_date = Config.getConfig()
+        
+        // 获取完整消息内容
+        const fullMsg = e.msg.trim()
+        
+        // 移除开头的 #g 或 #G
+        const withoutPrefix = fullMsg.substring(2)
+        
+        // 移除结尾的 "结束对话" 和可能的数字
+        const endChatIndex = withoutPrefix.indexOf('结束对话')
+        if (endChatIndex === -1) {
+            logger.error('[sf插件] 命令格式错误')
+            return false
+        }
+        
+        // 提取命令部分和可能的数字
+        const cmdPart = withoutPrefix.substring(0, endChatIndex).trim()
+        const afterEndChat = withoutPrefix.substring(endChatIndex + 4)
+        const numberMatch = afterEndChat.match(/(\d+)/)
+        const number = numberMatch ? numberMatch[1] : ''
+        
+        // 尝试在配置中找到所有匹配的命令
+        let matchedCmds = []
+        
+        if (config_date.gg_APIList) {
+            // 收集所有匹配的自定义命令
+            for (const api of config_date.gg_APIList) {
+                if (api.customCommand && cmdPart === api.customCommand) {
+                    matchedCmds.push(api.customCommand)
+                }
+            }
+            
+            // 按命令长度降序排序，选择最长的匹配
+            if (matchedCmds.length > 0) {
+                matchedCmds.sort((a, b) => b.length - a.length)
+                const matchedCmd = matchedCmds[0]
+                
+                // 查找对应的接口索引
+                const apiIndex = config_date.gg_APIList.findIndex(api => api.customCommand === matchedCmd)
+                if (apiIndex === -1) {
+                    await e.reply(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
+                    return false
+                }
+                
+                // 保存原来的设置
+                const originalUsingAPI = config_date.gg_usingAPI
+                
+                // 临时设置当前使用的接口
+                config_date.gg_usingAPI = apiIndex + 1
+                Config.setConfig(config_date)
+                
+                try {
+                    // 修改消息内容并调用结束对话
+                    e.msg = '#sf结束gg对话' + (number ? number : '')
+                    await this.sf_end_chat(e)
+                } finally {
+                    // 还原设置
+                    config_date.gg_usingAPI = originalUsingAPI
+                    Config.setConfig(config_date)
+                }
+                
+                return true
+            }
+        }
+        
+        // 如果没找到自定义命令，尝试解析数字
+        const index = parseInt(cmdPart)
+        if (!isNaN(index)) {
+            // 如果是数字，使用原来的逻辑
+            if (!config_date.gg_APIList || index < 0 || (index > 0 && index > config_date.gg_APIList.length)) {
+                await e.reply(`无效的接口索引，请使用 #sfgg接口列表 查看可用的接口`)
+                return false
+            }
+            
+            // 保存原来的设置
+            const originalUsingAPI = config_date.gg_usingAPI
+            
+            // 临时设置当前使用的接口
+            config_date.gg_usingAPI = index
+            Config.setConfig(config_date)
+            
+            try {
+                // 修改消息内容并调用结束对话
+                e.msg = '#sf结束gg对话' + (number ? number : '')
+                await this.sf_end_chat(e)
+            } finally {
+                // 还原设置
+                config_date.gg_usingAPI = originalUsingAPI
+                Config.setConfig(config_date)
+            }
+            
+            return true
+        }
+        
+        // 如果不是数字，查找自定义命令
+        if (!config_date.gg_APIList) {
+            await e.reply(`未配置任何gg接口，请先配置接口`)
+            return false
+        }
+        const apiIndex = config_date.gg_APIList.findIndex(api => api.customCommand === cmdPart)
+        if (apiIndex === -1) {
+            await e.reply(`未找到命令 ${cmdPart} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
+            return false
+        }
+        
+        // 保存原来的设置
+        const originalUsingAPI = config_date.gg_usingAPI
+        
+        // 临时设置当前使用的接口
+        config_date.gg_usingAPI = apiIndex + 1
+        Config.setConfig(config_date)
+        
+        try {
+            // 修改消息内容并调用结束对话
+            e.msg = '#sf结束gg对话' + (number ? number : '')
+            await this.sf_end_chat(e)
+        } finally {
+            // 还原设置
+            config_date.gg_usingAPI = originalUsingAPI
+            Config.setConfig(config_date)
+        }
+        
+        return true
     }
 }

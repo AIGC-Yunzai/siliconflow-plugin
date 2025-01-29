@@ -313,7 +313,7 @@ export function supportGuoba() {
         {
           field: "ss_APIList",
           label: "[#ss]接口列表",
-          bottomHelpMessage: "设置#ss[对话]的API接口列表，可添加多个接口配置，填写了的部分会覆盖默认配置，不填则使用默认配置，默认配置是指[#ss]对话接口地址等",
+          bottomHelpMessage: "设置#ss[对话]的API接口列表，可添加多个接口配置，填写了的部分会覆盖默认配置，不填则使用默认配置，默认配置是指[#ss]对话接口地址等，每个接口是独立的上下文，只有#ss和#gg的默认配置是共享的上下文",
           component: "GSubForm",
           componentProps: {
             multiple: true,
@@ -376,6 +376,13 @@ export function supportGuoba() {
                 required: true,
                 bottomHelpMessage: "接口配置的备注说明",
               },
+              {
+                field: "customCommand",
+                label: "自定义命令",
+                component: "Input",
+                required: false,
+                bottomHelpMessage: "可选，设置后可用 #s命令名 来使用此接口，如设置为test则可用#stest，也可以使用#stest结束对话来结束此接口的对话",
+              }
             ],
           },
         },
@@ -452,7 +459,7 @@ export function supportGuoba() {
         {
           field: "gg_APIList",
           label: "[#gg]接口列表",
-          bottomHelpMessage: "设置#gg[对话]的API接口列表，可添加多个接口配置，填写了的部分会覆盖默认配置，不填则使用默认配置，默认配置是指[#gg]Gemini反代地址等",
+          bottomHelpMessage: "设置#gg[对话]的API接口列表，可添加多个接口配置，填写了的部分会覆盖默认配置，不填则使用默认配置，默认配置是指[#gg]Gemini反代地址等，每个接口是独立的上下文，只有#ss和#gg的默认配置是共享的上下文",
           component: "GSubForm",
           componentProps: {
             multiple: true,
@@ -521,6 +528,13 @@ export function supportGuoba() {
                 required: true,
                 bottomHelpMessage: "接口配置的备注说明",
               },
+              {
+                field: "customCommand",
+                label: "自定义命令",
+                component: "Input",
+                required: false,
+                bottomHelpMessage: "可选，设置后可用 #g命令名 来使用此接口，如设置为test则可用#gtest，也可以使用#gtest结束对话来结束此接口的对话",
+              }
             ],
           },
         },
