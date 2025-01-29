@@ -26,6 +26,10 @@ export function supportGuoba() {
     configInfo: {
       schemas: [
         {
+          label: '绘画功能',
+          component: 'SOFT_GROUP_BEGIN'
+        },
+        {
           component: "Divider",
           label: "Siliconflow 相关配置",
           componentProps: {
@@ -178,6 +182,95 @@ export function supportGuoba() {
               // 添加图生图模型后，还需要添加正则表达式： SF_Painting.js 处理图生图模型 match(/.../)
             ],
           },
+        },
+        {
+          component: "Divider",
+          label: "MJ 相关配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "mj_apiBaseUrl",
+          label: "MJ接口地址",
+          bottomHelpMessage: "设置MJ接口地址，用于MJ画图；可选：https://ai.trueai.org （免费无key但每一张图片5分钟）",
+          component: "Input",
+          componentProps: {
+            placeholder: 'https://ai.trueai.org',
+          },
+        },
+        {
+          field: "mj_apiKey",
+          label: "MJ接口Key",
+          bottomHelpMessage: "你的账户的API Key",
+          component: "Input",
+          componentProps: {
+            placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
+          },
+        },
+        {
+          field: "mj_mode",
+          label: "MJ绘画模式",
+          bottomHelpMessage: "MJ绘画模式",
+          component: "Select",
+          componentProps: {
+            options: [
+              { label: "fast", value: "fast" },
+              { label: "slow", value: "slow" },
+            ],
+          },
+        },
+        {
+          field: "mj_translationEnabled",
+          label: "MJ自动提示词",
+          bottomHelpMessage: "启用自动提示词；在画图时根据文本自动使用提示词模型生成英文提示词",
+          component: "Switch",
+        },
+        {
+          field: "mj_translationBaseUrl",
+          label: "MJ提示词接口地址",
+          bottomHelpMessage: "填写提供标准openAI API的接口地址",
+          component: "Input",
+          componentProps: {
+            placeholder: 'https://',
+          },
+        },
+        {
+          field: "mj_translationKey",
+          label: "MJ提示词接口Key",
+          bottomHelpMessage: "填写提供标准openAI API的接口Key",
+          component: "Input",
+          componentProps: {
+            placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
+          },
+        },
+        {
+          field: "mj_translationModel",
+          label: "MJ提示词模型",
+          bottomHelpMessage: "填写提供标准openAI API的接口的模型",
+          component: "Input",
+          componentProps: {
+            placeholder: 'gpt-4o',
+          },
+        },
+        {
+          component: "Divider",
+          label: "直链功能配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "link_domain",
+          label: "直链服务器域名",
+          bottomHelpMessage: "设置直链服务器域名，用于图片上传和删除，复制并打开这个链接https://huggingface.co/spaces/xiaozhian/slink/tree/main?duplicate=true，可以复制huggingface空间",
+          component: "Input",
+        },
+        {
+          label: '对话功能',
+          component: 'SOFT_GROUP_BEGIN'
         },
         {
           component: "Divider",
@@ -527,75 +620,8 @@ export function supportGuoba() {
           },
         },
         {
-          component: "Divider",
-          label: "MJ 相关配置",
-          componentProps: {
-            orientation: "left",
-            plain: true,
-          },
-        },
-        {
-          field: "mj_apiBaseUrl",
-          label: "MJ接口地址",
-          bottomHelpMessage: "设置MJ接口地址，用于MJ画图；可选：https://ai.trueai.org （免费无key但每一张图片5分钟）",
-          component: "Input",
-          componentProps: {
-            placeholder: 'https://ai.trueai.org',
-          },
-        },
-        {
-          field: "mj_apiKey",
-          label: "MJ接口Key",
-          bottomHelpMessage: "你的账户的API Key",
-          component: "Input",
-          componentProps: {
-            placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
-          },
-        },
-        {
-          field: "mj_mode",
-          label: "MJ绘画模式",
-          bottomHelpMessage: "MJ绘画模式",
-          component: "Select",
-          componentProps: {
-            options: [
-              { label: "fast", value: "fast" },
-              { label: "slow", value: "slow" },
-            ],
-          },
-        },
-        {
-          field: "mj_translationEnabled",
-          label: "MJ自动提示词",
-          bottomHelpMessage: "启用自动提示词；在画图时根据文本自动使用提示词模型生成英文提示词",
-          component: "Switch",
-        },
-        {
-          field: "mj_translationBaseUrl",
-          label: "MJ提示词接口地址",
-          bottomHelpMessage: "填写提供标准openAI API的接口地址",
-          component: "Input",
-          componentProps: {
-            placeholder: 'https://',
-          },
-        },
-        {
-          field: "mj_translationKey",
-          label: "MJ提示词接口Key",
-          bottomHelpMessage: "填写提供标准openAI API的接口Key",
-          component: "Input",
-          componentProps: {
-            placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
-          },
-        },
-        {
-          field: "mj_translationModel",
-          label: "MJ提示词模型",
-          bottomHelpMessage: "填写提供标准openAI API的接口的模型",
-          component: "Input",
-          componentProps: {
-            placeholder: 'gpt-4o',
-          },
+          label: '语音功能',
+          component: 'SOFT_GROUP_BEGIN'
         },
         {
           label: 'Fish.audio的设置',
@@ -652,18 +678,123 @@ export function supportGuoba() {
           },
         },
         {
-          component: "Divider",
-          label: "直链功能配置",
+          label: '常见问题',
+          component: 'SOFT_GROUP_BEGIN'
+        },
+        {
+          component: 'Divider',
+          label: '注意事项',
           componentProps: {
-            orientation: "left",
+            orientation: 'left',
             plain: true,
           },
         },
         {
-          field: "link_domain",
-          label: "直链服务器域名",
-          bottomHelpMessage: "设置直链服务器域名，用于图片上传和删除，复制并打开这个链接https://huggingface.co/spaces/xiaozhian/slink/tree/main?duplicate=true，可以复制huggingface空间",
-          component: "Input",
+          field: 'update_note',
+          label: '如果显示未知的组件',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: '请使用 #锅巴更新'
+          }
+        },
+        {
+          component: 'Divider',
+          label: '配置教程',
+          componentProps: {
+            orientation: 'left',
+            plain: true,
+          },
+        },
+        {
+          field: 'tutorial_link',
+          label: 'SF-PLUGIN配置教程 🍈',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: 'https://aigc-yunzai.dwe.me/siliconflow/%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AE'
+          }
+        },
+        {
+          field: 'tags_link',
+          label: 'AI画图Tags生产站 🥭',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: 'https://nai4-tag-select.pages.dev/'
+          }
+        },
+        {
+          field: 'slink_link',
+          label: '直链服务器 🍉',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: 'https://huggingface.co/spaces/xiaozhian/slink/tree/main?duplicate=true'
+          }
+        },
+        {
+          field: 'sd_tutorial',
+          label: 'Stable Diffusion教程🍇',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: 'https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf'
+          }
+        },
+        {
+          field: 'mj_tutorial',
+          label: 'Midjourney基础教程🍊',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: 'https://waytoagi.feishu.cn/wiki/VUadwndc5iRJktkzaYPcaLEynZc'
+          }
+        },
+        {
+          field: 'mj_prompt',
+          label: 'MJ prompt参考 🍎',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: 'https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf'
+          }
+        },
+        {
+          field: 'mj_v6_prompt',
+          label: 'Mj V6 prompt参考🍐',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: 'https://aituts.com/midjourney-v6/'
+          }
+        },
+        {
+          field: 'prompt_ref',
+          label: '又一个prompt参考站🍌',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: 'https://catjourney.life/all'
+          }
+        },
+        {
+          field: 'mj_helper',
+          label: 'Mj Prompt生成器🥝',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: 'https://promptfolder.com/midjourney-prompt-helper/'
+          }
+        },
+        {
+          field: 'prompt_collection',
+          label: 'MJ和SD Prompt合集🍑',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: 'https://waytoagi.feishu.cn/wiki/TQogw5uIziB4fykbGhSciaQfndm?table=tbl5kMFjDDdeYoAt&view=vew8AJm3cI'
+          }
         },
       ],
       getConfigData() {
