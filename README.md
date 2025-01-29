@@ -6,7 +6,7 @@
 
 - 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 多功能AI集成插件，支持多种AI服务和模型：
   - 🎨 AI绘图：支持SiliconFlow、Midjourney等多个绘图模型，支持文生图和图生图
-  - 🤖 智能对话：集成多种对话模型，支持Markdown图片输出
+  - 🤖 智能对话：集成多种对话模型，支持历史记录、用户昵称获取、预设列表快速切换，预设拥有独立上下文，结合Markdown图片输出以获得沉浸式角色扮演体验
   - 🔍 实时搜索：通过#gg命令实现智能搜索和信息聚合
   - 🗣️ 语音合成：集成Fishaudio的高质量TTS服务
   - 📊 资源管理：支持多key负载均衡，提供图片直链获取等功能
@@ -83,7 +83,7 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 - [x] 支持图片直链获取
 - [X] #ss 对话 MD 图片输出
 - [X] #gg 对话实现实时搜索功能
-- [X] 对话支持历史记录、获取用户昵称，结合 MD 输出以获取沉浸式角色扮演体验
+- [X] 对话支持历史记录、获取用户昵称，支持接口列表，方便快速切换预设，预设具有独立的上下文，结合 MD 输出以获取沉浸式角色扮演体验
 - [ ] TODO..
 
 ## 支持与贡献
@@ -96,7 +96,7 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 
 - [Fish-Audio](https://fish.audio)：Brand new TTS solution
 - [vits-plugin](https://github.com/erzaozi/vits-plugin)：一个适用于 Yunzai 系列机器人框架 的的 AI 语音合成插件，让你能够在机器人中使用 AI 语音合成功能；Fishaudio语音同传的方式绝大部分参考了该项目的实现方法，Fish-Audio.json也是直接用的该项目的，很是感谢！
-
+- [midjourney-proxy](https://github.com/trueai-org/midjourney-proxy)：一个开源的MJ代理项目，同时提供了免费的公益API站点，让更多人能够体验AI绘画的乐趣！
 
 ## 许可证
 
