@@ -34,17 +34,18 @@ export function formatContextForGemini(messages) {
 }
 
 /** 保存对话上下文 */
-export async function saveContext(userId, message) {
+export async function saveContext(userId, message, promptNum = 0) {
     try {
         const config = Config.getConfig()
         const maxHistory = config.gg_maxHistoryLength * 2 || 40
-        const key = `sfplugin:llm:${userId}:${Date.now()}`
+        // 添加promptNum到key中
+        const key = `sfplugin:llm:${userId}:${Date.now()}${promptNum > 0 ? `:promptNum${promptNum}` : ''}`
 
         // 直接保存消息,不修改content结构
         await redis.set(key, JSON.stringify(message), { EX: config.gg_HistoryExTime * 60 * 60 }) // x小时过期
 
         // 获取该用户的所有消息
-        const keys = await redis.keys(`sfplugin:llm:${userId}:*`)
+        const keys = await redis.keys(`sfplugin:llm:${userId}:*${promptNum > 0 ? `:promptNum${promptNum}` : ''}`)
         keys.sort((a, b) => {
             const timeA = parseInt(a.split(':')[3])
             const timeB = parseInt(b.split(':')[3])
@@ -67,13 +68,13 @@ export async function saveContext(userId, message) {
 }
 
 /** 加载用户历史对话 */
-export async function loadContext(userId) {
+export async function loadContext(userId, promptNum = 0) {
     try {
         const config = Config.getConfig()
         const maxHistory = config.gg_maxHistoryLength * 2 || 40
 
         // 获取该用户的所有消息
-        const keys = await redis.keys(`sfplugin:llm:${userId}:*`)
+        const keys = await redis.keys(`sfplugin:llm:${userId}:*${promptNum > 0 ? `:promptNum${promptNum}` : ''}`)
         keys.sort((a, b) => {
             const timeA = parseInt(a.split(':')[3])
             const timeB = parseInt(b.split(':')[3])
@@ -99,10 +100,10 @@ export async function loadContext(userId) {
 }
 
 /** 清除用户前 n 条历史对话 */
-export async function clearContextByCount(userId, count = 1) {
+export async function clearContextByCount(userId, count = 1, promptNum = 0) {
     try {
         // 获取该用户的所有消息
-        const keys = await redis.keys(`sfplugin:llm:${userId}:*`)
+        const keys = await redis.keys(`sfplugin:llm:${userId}:*${promptNum > 0 ? `:promptNum${promptNum}` : ''}`)
         keys.sort((a, b) => {
             const timeA = parseInt(a.split(':')[3])
             const timeB = parseInt(b.split(':')[3])
@@ -129,9 +130,9 @@ export async function clearContextByCount(userId, count = 1) {
 }
 
 /** 清除指定用户的上下文记录 */
-export async function clearUserContext(userId) {
+export async function clearUserContext(userId, promptNum = 0) {
     try {
-        const keys = await redis.keys(`sfplugin:llm:${userId}:*`)
+        const keys = await redis.keys(`sfplugin:llm:${userId}:*${promptNum > 0 ? `:promptNum${promptNum}` : ''}`)
         for (const key of keys) {
             await redis.del(key)
         }
