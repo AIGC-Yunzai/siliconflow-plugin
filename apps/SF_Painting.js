@@ -309,9 +309,9 @@ export class SF_Painting extends plugin {
             apiBaseUrl = apiConfig.apiBaseUrl || config_date.ss_apiBaseUrl || config_date.sfBaseUrl
             model = apiConfig.model || config_date.ss_model || config_date.translateModel
             systemPrompt = apiConfig.prompt || config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
-            useMarkdown = typeof apiConfig.useMarkdown !== 'undefined' ? apiConfig.useMarkdown : config_date.ss_useMarkdown
-            forwardMessage = typeof apiConfig.forwardMessage !== 'undefined' ? apiConfig.forwardMessage : config_date.ss_forwardMessage
-            quoteMessage = typeof apiConfig.quoteMessage !== 'undefined' ? apiConfig.quoteMessage : config_date.ss_quoteMessage
+            useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
+            forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
+            quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
         } else if (config_date.ss_apiBaseUrl) {
             // 使用默认配置
             use_sf_key = config_date.ss_Key
@@ -560,11 +560,11 @@ export class SF_Painting extends plugin {
                 return data.choices[0].message.content
             } else {
                 logger.error("[sf插件]LLM调用错误：\n", JSON.stringify(data, null, 2))
-                return !forChat ? input : "[sf插件]LLM调用错误，详情请查阅控制台。"
+                return !forChat ? input : data.error?.message || data.message || "[sf插件]LLM调用错误，详情请查阅控制台。"
             }
         } catch (error) {
             logger.error("[sf插件]LLM调用失败\n", error)
-            return !forChat ? input : "[sf插件]LLM调用失败，详情请查阅控制台。"
+            return !forChat ? input : error.message || "[sf插件]LLM调用失败，详情请查阅控制台。"
         }
     }
 
@@ -699,10 +699,10 @@ SF插件设置帮助：
             ggKey = apiConfig.apiKey || this.get_use_ggKey(config_date) || "sk-xuanku"
             model = apiConfig.model || config_date.gg_model || "gemini-2.0-flash-exp"
             systemPrompt = apiConfig.prompt || config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
-            useMarkdown = typeof apiConfig.useMarkdown !== 'undefined' ? apiConfig.useMarkdown : config_date.gg_useMarkdown
-            forwardMessage = typeof apiConfig.forwardMessage !== 'undefined' ? apiConfig.forwardMessage : config_date.gg_forwardMessage
-            quoteMessage = typeof apiConfig.quoteMessage !== 'undefined' ? apiConfig.quoteMessage : config_date.gg_quoteMessage
-            useSearch = typeof apiConfig.useSearch !== 'undefined' ? apiConfig.useSearch : config_date.gg_useSearch
+            useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
+            forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
+            quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
+            useSearch = (typeof apiConfig.useSearch !== 'undefined') ? apiConfig.useSearch : false
         } else {
             // 使用默认配置
             ggBaseUrl = config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev"
@@ -961,11 +961,17 @@ SF插件设置帮助：
                 return { answer, sources };
             } else {
                 logger.error("[sf插件]gg调用错误：\n", JSON.stringify(data, null, 2))
-                return { answer: "[sf插件]gg调用错误", sources: [] };
+                return { 
+                    answer: data.error?.message || data.message || "[sf插件]gg调用错误，详情请查阅控制台。",
+                    sources: []
+                };
             }
         } catch (error) {
             logger.error("[sf插件]gg调用失败\n", error)
-            return { answer: "[sf插件]gg调用失败", sources: [] };
+            return { 
+                answer: error.message || "[sf插件]gg调用失败，详情请查阅控制台。",
+                sources: []
+            };
         }
     }
 
@@ -1087,7 +1093,7 @@ SF插件设置帮助：
         let msg = [`当前${type}接口列表：`]
         apiList.forEach((api, index) => {
             const isUsing = currentApi === (index + 1)
-            const customCmd = api.customCommand ? ` (#${type}${api.customCommand})` : ''
+            const customCmd = api.customCommand ? ` (#${type === 'ss' ? 's' : 'g'}${api.customCommand})` : ''
             const remark = api.remark ? ` - ${api.remark}` : ''
             msg.push(`${index + 1}. 接口${index + 1}${remark}${customCmd}${isUsing ? ' [当前使用]' : ''}`)
         })
