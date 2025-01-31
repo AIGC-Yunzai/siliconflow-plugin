@@ -1173,14 +1173,14 @@ SF插件设置帮助：
                 
                 // 如果没有内容
                 if (!remainingContent) {
-                    await e.reply('请输入要发送的内容')
+                    logger.error('请输入要发送的内容')
                     return false
                 }
                 
                 // 查找对应的接口索引
                 const apiIndex = config_date.ss_APIList.findIndex(api => api.customCommand === matchedCmd)
                 if (apiIndex === -1) {
-                    await e.reply(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
+                    logger.error(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
                     return false
                 }
                 
@@ -1213,14 +1213,14 @@ SF插件设置帮助：
             
             // 如果没有内容
             if (!remainingContent) {
-                await e.reply('请输入要发送的内容')
+                logger.error('请输入要发送的内容')
                 return false
             }
             
             // 验证数字是否有效
             const index = parseInt(matchedCmd)
             if (!config_date.ss_APIList || index < 0 || (index > 0 && index > config_date.ss_APIList.length)) {
-                await e.reply(`无效的接口索引，请使用 #sfss接口列表 查看可用的接口`)
+                logger.error(`无效的接口索引，请使用 #sfss接口列表 查看可用的接口`)
                 return false
             }
             
@@ -1247,7 +1247,7 @@ SF插件设置帮助：
         // 如果没找到任何匹配，提取第一个空格前的内容作为命令
         const spaceIndex = withoutPrefix.indexOf(' ')
         if (spaceIndex === -1) {
-            await e.reply('请输入要发送的内容')
+            logger.error('请输入要发送的内容')
             return false
         }
         
@@ -1256,18 +1256,18 @@ SF插件设置帮助：
         
         // 如果没有内容
         if (!remainingContent) {
-            await e.reply('请输入要发送的内容')
+            logger.error('请输入要发送的内容')
             return false
         }
         
         // 如果不是数字，查找自定义命令
         if (!config_date.ss_APIList) {
-            await e.reply(`未配置任何ss接口，请先配置接口`)
+            logger.error(`未配置任何ss接口，请先配置接口`)
             return false
         }
         const apiIndex = config_date.ss_APIList.findIndex(api => api.customCommand === matchedCmd)
         if (apiIndex === -1) {
-            await e.reply(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
+            logger.error(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
             return false
         }
         
@@ -1322,14 +1322,14 @@ SF插件设置帮助：
                 
                 // 如果没有内容
                 if (!remainingContent) {
-                    await e.reply('请输入要发送的内容')
+                    logger.error('请输入要发送的内容')
                     return false
                 }
                 
                 // 查找对应的接口索引
                 const apiIndex = config_date.gg_APIList.findIndex(api => api.customCommand === matchedCmd)
                 if (apiIndex === -1) {
-                    await e.reply(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
+                    logger.error(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
                     return false
                 }
                 
@@ -1362,14 +1362,14 @@ SF插件设置帮助：
             
             // 如果没有内容
             if (!remainingContent) {
-                await e.reply('请输入要发送的内容')
+                logger.error('请输入要发送的内容')
                 return false
             }
             
             // 验证数字是否有效
             const index = parseInt(matchedCmd)
             if (!config_date.gg_APIList || index < 0 || (index > 0 && index > config_date.gg_APIList.length)) {
-                await e.reply(`无效的接口索引，请使用 #sfgg接口列表 查看可用的接口`)
+                logger.error(`无效的接口索引，请使用 #sfgg接口列表 查看可用的接口`)
                 return false
             }
             
@@ -1396,7 +1396,7 @@ SF插件设置帮助：
         // 如果没找到任何匹配，提取第一个空格前的内容作为命令
         const spaceIndex = withoutPrefix.indexOf(' ')
         if (spaceIndex === -1) {
-            await e.reply('请输入要发送的内容')
+            logger.error('请输入要发送的内容')
             return false
         }
         
@@ -1405,18 +1405,18 @@ SF插件设置帮助：
         
         // 如果没有内容
         if (!remainingContent) {
-            await e.reply('请输入要发送的内容')
+            logger.error('请输入要发送的内容')
             return false
         }
         
         // 如果不是数字，查找自定义命令
         if (!config_date.gg_APIList) {
-            await e.reply(`未配置任何gg接口，请先配置接口`)
+            logger.error(`未配置任何gg接口，请先配置接口`)
             return false
         }
         const apiIndex = config_date.gg_APIList.findIndex(api => api.customCommand === matchedCmd)
         if (apiIndex === -1) {
-            await e.reply(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
+            logger.error(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
             return false
         }
         
@@ -1482,7 +1482,7 @@ SF插件设置帮助：
                 // 查找对应的接口索引
                 const apiIndex = config_date.ss_APIList.findIndex(api => api.customCommand === matchedCmd)
                 if (apiIndex === -1) {
-                    await e.reply(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
+                    logger.error(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
                     return false
                 }
                 
@@ -1538,12 +1538,12 @@ SF插件设置帮助：
         
         // 如果不是数字，查找自定义命令
         if (!config_date.ss_APIList) {
-            await e.reply(`未配置任何ss接口，请先配置接口`)
+            logger.error(`未配置任何ss接口，请先配置接口`)
             return false
         }
         const apiIndex = config_date.ss_APIList.findIndex(api => api.customCommand === cmdPart)
         if (apiIndex === -1) {
-            await e.reply(`未找到命令 ${cmdPart} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
+            logger.error(`未找到命令 ${cmdPart} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
             return false
         }
         
@@ -1609,7 +1609,7 @@ SF插件设置帮助：
                 // 查找对应的接口索引
                 const apiIndex = config_date.gg_APIList.findIndex(api => api.customCommand === matchedCmd)
                 if (apiIndex === -1) {
-                    await e.reply(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
+                    logger.error(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
                     return false
                 }
                 
@@ -1665,12 +1665,12 @@ SF插件设置帮助：
         
         // 如果不是数字，查找自定义命令
         if (!config_date.gg_APIList) {
-            await e.reply(`未配置任何gg接口，请先配置接口`)
+            logger.error(`未配置任何gg接口，请先配置接口`)
             return false
         }
         const apiIndex = config_date.gg_APIList.findIndex(api => api.customCommand === cmdPart)
         if (apiIndex === -1) {
-            await e.reply(`未找到命令 ${cmdPart} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
+            logger.error(`未找到命令 ${cmdPart} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
             return false
         }
         
