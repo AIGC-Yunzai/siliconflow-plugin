@@ -18,6 +18,8 @@ import {
     clearContextByCount,
 } from '../utils/context.js'
 import { getUin } from '../utils/common.js'
+import WebSocket from 'ws';
+import { createServer } from 'http';
 
 // 使机器人可以对其第一人称回应
 const reg_chatgpt_for_firstperson_call = new RegExp(Config.getConfig()?.botName || `sf-plugin-bot-name-${Math.floor(10000 + Math.random() * 90000)}`, "g");
@@ -99,6 +101,161 @@ export class SF_Painting extends plugin {
         })
         this.sf_keys_index = -1
         this.currentKeyIndex_ggKey = 0
+        this.wsServer = null;
+        this.init();
+    }
+
+    init() {
+        // 创建HTTP服务器
+        const server = createServer();
+        
+        // 创建WebSocket服务器
+        this.wsServer = new WebSocket.Server({ server });
+        
+        // WebSocket连接处理
+        this.wsServer.on('connection', (ws) => {
+            console.log('新的WebSocket连接');
+            
+            ws.on('message', async (message) => {
+                try {
+                    const msgObj = JSON.parse(message);
+                    const { type, content, images } = msgObj;
+                    
+                    // 根据类型处理消息
+                    switch(type) {
+                        case 'ss':
+                            await this.handleSSMessage(ws, content, images);
+                            break;
+                        case 'gg':
+                            await this.handleGGMessage(ws, content, images);
+                            break;
+                        default:
+                            this.sendError(ws, '未知的消息类型');
+                    }
+                } catch (error) {
+                    console.error('处理消息错误:', error);
+                    this.sendError(ws, error.message);
+                }
+            });
+            
+            ws.on('close', () => {
+                console.log('WebSocket连接关闭');
+            });
+            
+            ws.on('error', (error) => {
+                console.error('WebSocket错误:', error);
+            });
+        });
+        
+        // 启动服务器
+        const port = process.env.WS_PORT || 8080;
+        server.listen(port, () => {
+            console.log(`WebSocket服务器运行在端口 ${port}`);
+        });
+    }
+    
+    // 处理SS模式消息
+    async handleSSMessage(ws, content, images) {
+        try {
+            let msg = content;
+            let currentImages = [];
+
+            // 处理图片数据
+            if (images && images.length > 0) {
+                for (const base64Image of images) {
+                    currentImages.push(base64Image);
+                }
+            }
+
+            // 构造模拟的e对象
+            const e = {
+                msg: `#ss ${msg}`,
+                img: currentImages,
+                reply: (content, quote = false) => {
+                    this.sendMessage(ws, 'ss', content);
+                },
+                user_id: 'web_user',
+                self_id: 'web_bot',
+                sender: {
+                    card: 'Web用户',
+                    nickname: 'Web用户'
+                }
+            };
+
+            // 调用原有的sf_chat方法
+            await this.sf_chat(e);
+        } catch (error) {
+            this.sendError(ws, error.message);
+        }
+    }
+    
+    // 处理GG模式消息
+    async handleGGMessage(ws, content, images) {
+        try {
+            let msg = content;
+            let currentImages = [];
+
+            // 处理图片数据
+            if (images && images.length > 0) {
+                for (const base64Image of images) {
+                    currentImages.push(base64Image);
+                }
+            }
+
+            // 构造模拟的e对象
+            const e = {
+                msg: `#gg ${msg}`,
+                img: currentImages,
+                reply: (content, quote = false) => {
+                    this.sendMessage(ws, 'gg', content);
+                },
+                user_id: 'web_user',
+                self_id: 'web_bot',
+                sender: {
+                    card: 'Web用户',
+                    nickname: 'Web用户'
+                }
+            };
+
+            // 调用原有的gg_chat方法
+            await this.gg_chat(e);
+        } catch (error) {
+            this.sendError(ws, error.message);
+        }
+    }
+    
+    // 发送消息
+    sendMessage(ws, type, content) {
+      const message = {
+        type,
+        content,
+        timestamp: new Date().getTime()
+      };
+      
+      ws.send(JSON.stringify(message));
+    }
+    
+    // 发送错误消息
+    sendError(ws, errorMessage) {
+      const message = {
+        type: 'error',
+        content: errorMessage,
+        timestamp: new Date().getTime()
+      };
+      
+      ws.send(JSON.stringify(message));
+    }
+    
+    // 处理SS命令
+    async processSSCommand(content) {
+      // 在这里实现SS模式的具体逻辑
+      return `SS模式回复: ${content}`;
+    }
+    
+    // 处理GG命令
+    async processGGCommand(content) {
+      // 在这里实现GG模式的具体逻辑
+      return `GG模式回复: ${content}`;
     }
 
     // 处理第一人称呼叫
