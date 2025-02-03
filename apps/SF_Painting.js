@@ -97,8 +97,6 @@ export class SF_Painting extends plugin {
                 }
             ]
         })
-        this.sf_keys_index = -1
-        this.currentKeyIndex_ggKey = 0
     }
 
     // 处理第一人称呼叫
@@ -140,37 +138,15 @@ export class SF_Painting extends plugin {
         }
     }
 
-    /** 轮询 sf_keys */
-    get_use_sf_key(config_date) {
-        let use_sf_key = null
-        let count = 0;
-        while (!use_sf_key && count < config_date.sf_keys.length) {
-            count++
-            if (this.sf_keys_index < config_date.sf_keys.length - 1) {
-                this.sf_keys_index++
-            } else
-                this.sf_keys_index = 0
-
-            if (config_date.sf_keys[this.sf_keys_index].isDisable)
-                continue
-            else {
-                use_sf_key = config_date.sf_keys[this.sf_keys_index].sf_key
-            }
-        }
-        return use_sf_key
-    }
-
-    /** 轮询 ggKey */
-    get_use_ggKey(config_date) {
-        if (!config_date?.ggKey) return '';
-        const keysArr = config_date.ggKey.split(/[,，]/).map(key => key.trim()).filter(Boolean);
+    /** 随机轮询字符串中英文逗号分割 */
+    get_random_key(apiKeys) {
+        if (!apiKeys) return '';
+        const keysArr = apiKeys.split(/[,，]/).map(key => key.trim()).filter(Boolean);
         if (keysArr.length === 0) return '';
 
-        // 获取当前key并更新索引
-        const currentKey = keysArr[this.currentKeyIndex_ggKey];
-        this.currentKeyIndex_ggKey = (this.currentKeyIndex_ggKey + 1) % keysArr.length;
-
-        return currentKey;
+        // 随机选择一个key
+        const randomIndex = Math.floor(Math.random() * keysArr.length);
+        return keysArr[randomIndex];
     }
 
     async sf_setConfig(e) {
@@ -273,7 +249,7 @@ export class SF_Painting extends plugin {
 
         let finalPrompt = userPrompt
         let onleReplyOnce = 0;
-        const use_sf_key = this.get_use_sf_key(config_date);
+        const use_sf_key = this.get_random_key(config_date.sf_keys)
         if (config_date.generatePrompt) {
             if (!onleReplyOnce && !config_date.simpleMode) {
                 e.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成提示词并绘图...`)
@@ -305,7 +281,7 @@ export class SF_Painting extends plugin {
             // 使用接口列表中的配置
             const apiConfig = config_date.ss_APIList[config_date.ss_usingAPI - 1]
             // 只有当APIList中的字段有值时才使用该值
-            use_sf_key = apiConfig.apiKey || config_date.ss_Key || ""
+            use_sf_key = this.get_random_key(apiConfig.apiKey) || this.get_random_key(config_date.ss_Key) || ""
             apiBaseUrl = apiConfig.apiBaseUrl || config_date.ss_apiBaseUrl || config_date.sfBaseUrl
             model = apiConfig.model || config_date.ss_model || config_date.translateModel
             systemPrompt = apiConfig.prompt || config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
@@ -314,7 +290,7 @@ export class SF_Painting extends plugin {
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
         } else if (config_date.ss_apiBaseUrl) {
             // 使用默认配置
-            use_sf_key = config_date.ss_Key
+            use_sf_key = this.get_random_key(config_date.ss_Key)
             apiBaseUrl = config_date.ss_apiBaseUrl
             model = config_date.ss_model
             systemPrompt = config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
@@ -325,7 +301,7 @@ export class SF_Painting extends plugin {
             await e.reply('请先设置API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
             return false
         } else {
-            use_sf_key = this.get_use_sf_key(config_date)
+            use_sf_key = this.get_random_key(config_date.sf_keys)
             apiBaseUrl = config_date.sfBaseUrl
             model = config_date.translateModel
             useMarkdown = config_date.ss_useMarkdown
@@ -696,7 +672,7 @@ SF插件设置帮助：
             const apiConfig = config_date.gg_APIList[config_date.gg_usingAPI - 1]
             // 只有当APIList中的字段有值时才使用该值
             ggBaseUrl = apiConfig.apiBaseUrl || config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev"
-            ggKey = apiConfig.apiKey || this.get_use_ggKey(config_date) || "sk-xuanku"
+            ggKey = this.get_random_key(apiConfig.apiKey) || this.get_random_key(config_date.ggKey) || "sk-xuanku"
             model = apiConfig.model || config_date.gg_model || "gemini-2.0-flash-exp"
             systemPrompt = apiConfig.prompt || config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
             useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
@@ -706,7 +682,7 @@ SF插件设置帮助：
         } else {
             // 使用默认配置
             ggBaseUrl = config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev"
-            ggKey = this.get_use_ggKey(config_date) || "sk-xuanku"
+            ggKey = this.get_random_key(config_date.ggKey) || "sk-xuanku"
             model = config_date.gg_model || "gemini-2.0-flash-exp"
             systemPrompt = config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
             useMarkdown = config_date.gg_useMarkdown

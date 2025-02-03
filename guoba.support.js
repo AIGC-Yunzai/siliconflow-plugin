@@ -344,7 +344,7 @@ export function supportGuoba() {
                 field: "apiKey",
                 label: "接口密钥",
                 component: "InputPassword",
-                bottomHelpMessage: "设置#ss[对话]的API接口密钥",
+                bottomHelpMessage: "设置#ss[对话]的API接口密钥，多个密钥使用英文逗号分割，自动轮询。",
               },
               {
                 field: "model",
@@ -422,7 +422,7 @@ export function supportGuoba() {
         {
           field: "ss_Key",
           label: "[#ss]对话API Key",
-          bottomHelpMessage: "设置#ss 对话的API接口的Key",
+          bottomHelpMessage: "设置#ss 对话的API接口的Key，多个密钥使用英文逗号分割，自动轮询。",
           component: 'InputPassword'
         },
         {
@@ -490,7 +490,7 @@ export function supportGuoba() {
                 field: "apiKey",
                 label: "接口密钥",
                 component: "InputPassword",
-                bottomHelpMessage: "设置#gg[对话]的API接口密钥，Key可以在https://aistudio.google.com/app/apikey获取",
+                bottomHelpMessage: "设置#gg[对话]的API接口密钥，Key可以在https://aistudio.google.com/app/apikey获取，多个密钥使用英文逗号分割，自动轮询。",
               },
               {
                 field: "model",
@@ -574,7 +574,7 @@ export function supportGuoba() {
         {
           field: "ggKey",
           label: "[#gg]Gemini API Key",
-          bottomHelpMessage: "设置#gg 对话的API接口的Key，Key可以在https://aistudio.google.com/app/apikey获取；如果有多个key用英文逗号隔开，key将轮替使用；留空则使用内置Key",
+          bottomHelpMessage: "设置#gg 对话的API接口的Key，Key可以在https://aistudio.google.com/app/apikey获取；，多个密钥使用英文逗号分割，自动轮询；留空则使用内置Key",
           component: 'InputPassword',
         },
         {
