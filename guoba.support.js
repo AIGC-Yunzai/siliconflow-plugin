@@ -574,7 +574,7 @@ export function supportGuoba() {
         {
           field: "ggKey",
           label: "[#gg]Gemini API Key",
-          bottomHelpMessage: "设置#gg 对话的API接口的Key，Key可以在https://aistudio.google.com/app/apikey获取；，多个密钥使用英文逗号分割，自动轮询；留空则使用内置Key",
+          bottomHelpMessage: "设置#gg 对话的API接口的Key，Key可以在https://aistudio.google.com/app/apikey获取；留空则使用内置Key，多个密钥使用英文逗号分割，自动轮询。",
           component: 'InputPassword',
         },
         {
