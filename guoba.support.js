@@ -122,7 +122,7 @@ export function supportGuoba() {
         {
           field: "translateModel",
           label: "SF提示词模型",
-          bottomHelpMessage: "在画图时输入的提示词是中文的时候自动使用提示词模型",
+          bottomHelpMessage: "在画图时输入的提示词是中文的时候自动使用提示词模型，同步自 https://cloud.siliconflow.cn/models?types=chat ",
           component: "Select",
           componentProps: {
             options: [
@@ -136,9 +136,15 @@ export function supportGuoba() {
               { label: "智谱AI/chatglm3-6b（免费）", value: "THUDM/chatglm3-6b" },
               { label: "智谱AI/glm-4-9b-chat（免费）", value: "THUDM/glm-4-9b-chat" },
               { label: "internlm/internlm2_5-7b-chat（免费）", value: "internlm/internlm2_5-7b-chat" },
+              { label: "meta-llama/Meta-Llama-3.1-8B-Instruct（免费）", value: "meta-llama/Meta-Llama-3.1-8B-Instruct" },
+              { label: "google/gemma-2-9b-it（免费）", value: "google/gemma-2-9b-it" },
+              { label: "AIDC-AI/Marco-o1（免费）", value: "AIDC-AI/Marco-o1" },
+              { label: "深度求索/Deepseek-ai/DeepSeek-V3", value: "deepseek-ai/DeepSeek-V3" },
+              { label: "深度求索/Deepseek-ai/DeepSeek-R1", value: "deepseek-ai/DeepSeek-R1" },
               { label: "深度求索/DeepSeek-V2-Chat", value: "deepseek-ai/DeepSeek-V2-Chat" },
               { label: "深度求索/DeepSeek-Coder-V2-Instruct", value: "deepseek-ai/DeepSeek-Coder-V2-Instruct" },
               { label: "深度求索/DeepSeek-V2.5", value: "deepseek-ai/DeepSeek-V2.5" },
+              { label: "深度求索/deepseek-ai/deepseek-vl2（视觉）", value: "deepseek-ai/deepseek-vl2" },
               { label: "零一万物/Yi-1.5-34B-Chat-16K", value: "01-ai/Yi-1.5-34B-Chat-16K" },
               { label: "中国电信/DianXin-V1-Chat", value: "DianXin/DianXin-V1-Chat" },
               { label: "Pro/零一万物/Yi-1.5-6B-Chat", value: "Pro/01-ai/Yi-1.5-6B-Chat" },
@@ -154,10 +160,17 @@ export function supportGuoba() {
               { label: "通义千问/Qwen2.5-72B-Instruct", value: "Qwen/Qwen2.5-72B-Instruct" },
               { label: "通义千问/Qwen2.5-72B-Instruct-128K", value: "Qwen/Qwen2.5-72B-Instruct-128K" },
               { label: "通义千问/Qwen2.5-Math-72B-Instruct", value: "Qwen/Qwen2.5-Math-72B-Instruct" },
-              { label: "Qwen/QwQ-32B-Preview", value: "Qwen/QwQ-32B-Preview" },
+              { label: "通义千问/Qwen/QwQ-32B-Preview", value: "Qwen/QwQ-32B-Preview" },
+              { label: "通义千问/Qwen/QVQ-72B-Preview（视觉）", value: "Qwen/QVQ-72B-Preview" },
+              { label: "通义千问/Qwen/Qwen2.5-Coder-32B-Instruct", value: "Qwen/Qwen2.5-Coder-32B-Instruct" },
+              { label: "通义千问/Qwen/Qwen2-VL-72B-Instruct（视觉）", value: "Qwen/Qwen2-VL-72B-Instruct" },
+              { label: "通义千问/Pro/Qwen/Qwen2-VL-7B-Instruct（视觉）", value: "Pro/Qwen/Qwen2-VL-7B-Instruct" },
               { label: "Pro/智谱AI/chatglm3-6b", value: "Pro/THUDM/chatglm3-6b" },
               { label: "Pro/智谱AI/glm-4-9b-chat", value: "Pro/THUDM/glm-4-9b-chat" },
-              { label: "internlm/internlm2_5-20b-chat", value: "internlm/internlm2_5-20b-chat" }
+              { label: "internlm/internlm2_5-20b-chat", value: "internlm/internlm2_5-20b-chat" },
+              { label: "OpenGVLab/InternVL2-26B（视觉）", value: "OpenGVLab/InternVL2-26B" },
+              { label: "Pro/OpenGVLab/InternVL2-8B（视觉）", value: "Pro/OpenGVLab/InternVL2-8B" },
+              { label: "meta-llama/Llama-3.3-70B-Instruct", value: "meta-llama/Llama-3.3-70B-Instruct" },
             ],
           },
         },
@@ -331,7 +344,7 @@ export function supportGuoba() {
                 field: "apiKey",
                 label: "接口密钥",
                 component: "InputPassword",
-                bottomHelpMessage: "设置#ss[对话]的API接口密钥",
+                bottomHelpMessage: "设置#ss[对话]的API接口密钥，多个密钥使用英文逗号分割，自动轮询。",
               },
               {
                 field: "model",
@@ -409,7 +422,7 @@ export function supportGuoba() {
         {
           field: "ss_Key",
           label: "[#ss]对话API Key",
-          bottomHelpMessage: "设置#ss 对话的API接口的Key",
+          bottomHelpMessage: "设置#ss 对话的API接口的Key，多个密钥使用英文逗号分割，自动轮询。",
           component: 'InputPassword'
         },
         {
@@ -477,7 +490,7 @@ export function supportGuoba() {
                 field: "apiKey",
                 label: "接口密钥",
                 component: "InputPassword",
-                bottomHelpMessage: "设置#gg[对话]的API接口密钥，Key可以在https://aistudio.google.com/app/apikey获取",
+                bottomHelpMessage: "设置#gg[对话]的API接口密钥，Key可以在https://aistudio.google.com/app/apikey获取，多个密钥使用英文逗号分割，自动轮询。",
               },
               {
                 field: "model",
@@ -561,7 +574,7 @@ export function supportGuoba() {
         {
           field: "ggKey",
           label: "[#gg]Gemini API Key",
-          bottomHelpMessage: "设置#gg 对话的API接口的Key，Key可以在https://aistudio.google.com/app/apikey获取；如果有多个key用英文逗号隔开，key将轮替使用；留空则使用内置Key",
+          bottomHelpMessage: "设置#gg 对话的API接口的Key，Key可以在https://aistudio.google.com/app/apikey获取；留空则使用内置Key，多个密钥使用英文逗号分割，自动轮询。",
           component: 'InputPassword',
         },
         {
