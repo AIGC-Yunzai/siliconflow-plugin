@@ -34,39 +34,41 @@ export function formatContextForGemini(messages) {
 }
 
 /** 构造Redis key */
-function buildRedisKey(userId, timestamp, promptNum = 0) {
+function buildRedisKey(userId, timestamp, promptNum = 0, type = '') {
     // 如果是默认配置(promptNum=0),使用share01后缀
     if (promptNum === 0) {
         return `sfplugin:llm:${userId}:${timestamp}:share01`
     }
-    // 其他情况保持不变
-    return `sfplugin:llm:${userId}:${timestamp}:promptNum${promptNum}`
+    // 其他情况加入type前缀
+    const typePrefix = type ? `${type}:` : ''
+    return `sfplugin:llm:${userId}:${timestamp}:${typePrefix}promptNum${promptNum}`
 }
 
 /** 构造Redis key pattern用于搜索 */
-function buildRedisPattern(userId, promptNum = 0) {
+function buildRedisPattern(userId, promptNum = 0, type = '') {
     // 如果是默认配置(promptNum=0),使用share01后缀
     if (promptNum === 0) {
         return `sfplugin:llm:${userId}:*:share01`
     }
-    // 其他情况保持不变
-    return `sfplugin:llm:${userId}:*:promptNum${promptNum}`
+    // 其他情况加入type前缀
+    const typePrefix = type ? `${type}:` : ''
+    return `sfplugin:llm:${userId}:*:${typePrefix}promptNum${promptNum}`
 }
 
 /** 保存对话上下文 */
-export async function saveContext(userId, message, promptNum = 0) {
+export async function saveContext(userId, message, promptNum = 0, type = '') {
     try {
         const config = Config.getConfig()
         const maxHistory = config.gg_maxHistoryLength * 2 || 40
         
-        // 使用新的key构造函数
-        const key = buildRedisKey(userId, Date.now(), promptNum)
+        // 使用新的key构造函数,传入type参数
+        const key = buildRedisKey(userId, Date.now(), promptNum, type)
 
         // 直接保存消息,不修改content结构
         await redis.set(key, JSON.stringify(message), { EX: config.gg_HistoryExTime * 60 * 60 }) // x小时过期
 
         // 获取该用户的所有消息
-        const pattern = buildRedisPattern(userId, promptNum)
+        const pattern = buildRedisPattern(userId, promptNum, type)
         const keys = await redis.keys(pattern)
         keys.sort((a, b) => {
             const timeA = parseInt(a.split(':')[3])
@@ -90,13 +92,16 @@ export async function saveContext(userId, message, promptNum = 0) {
 }
 
 /** 加载用户历史对话 */
-export async function loadContext(userId, promptNum = 0) {
+export async function loadContext(userId, promptNum = 0, type = '') {
     try {
         const config = Config.getConfig()
         const maxHistory = config.gg_maxHistoryLength * 2 || 40
 
-        // 使用新的pattern构造函数
-        const pattern = buildRedisPattern(userId, promptNum)
+        // 添加日志
+        logger.mark(`[Context] 加载上下文 - userId: ${userId}, promptNum: ${promptNum}, type: ${type}`);
+
+        // 使用新的pattern构造函数,传入type参数
+        const pattern = buildRedisPattern(userId, promptNum, type)
         const keys = await redis.keys(pattern)
         keys.sort((a, b) => {
             const timeA = parseInt(a.split(':')[3])
@@ -115,6 +120,9 @@ export async function loadContext(userId, promptNum = 0) {
             }
         }
 
+        // 添加日志
+        logger.mark(`[Context] 成功加载上下文 - 消息数: ${messages.length}`);
+
         return messages
     } catch (error) {
         logger.error('[Context] 加载上下文失败:', error)
@@ -123,10 +131,10 @@ export async function loadContext(userId, promptNum = 0) {
 }
 
 /** 清除用户前 n 条历史对话 */
-export async function clearContextByCount(userId, count = 1, promptNum = 0) {
+export async function clearContextByCount(userId, count = 1, promptNum = 0, type = '') {
     try {
-        // 使用新的pattern构造函数
-        const pattern = buildRedisPattern(userId, promptNum)
+        // 使用新的pattern构造函数,传入type参数
+        const pattern = buildRedisPattern(userId, promptNum, type)
         const keys = await redis.keys(pattern)
         keys.sort((a, b) => {
             const timeA = parseInt(a.split(':')[3])
@@ -154,9 +162,9 @@ export async function clearContextByCount(userId, count = 1, promptNum = 0) {
 }
 
 /** 清除指定用户的上下文记录 */
-export async function clearUserContext(userId, promptNum = 0) {
+export async function clearUserContext(userId, promptNum = 0, type = '') {
     try {
-        const pattern = buildRedisPattern(userId, promptNum)
+        const pattern = buildRedisPattern(userId, promptNum, type)
         const keys = await redis.keys(pattern)
         for (const key of keys) {
             await redis.del(key)

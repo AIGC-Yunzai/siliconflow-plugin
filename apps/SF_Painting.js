@@ -224,6 +224,9 @@ export class SF_Painting extends plugin {
                 if (result) return; // 如果是命令且已处理,直接返回
             }
 
+            // 获取配置
+            const config = Config.getConfig();
+
             // 构造模拟的e对象
             const e = {
                 msg: `#ss ${msg}`,
@@ -256,6 +259,9 @@ export class SF_Painting extends plugin {
                 const result = await this.handleCommands(ws, msg, userQQ);
                 if (result) return; // 如果是命令且已处理,直接返回
             }
+
+            // 获取配置
+            const config = Config.getConfig();
 
             // 构造模拟的e对象
             const e = {
@@ -311,12 +317,26 @@ export class SF_Painting extends plugin {
             timestamp: new Date().getTime()
         };
         
-        const config = Config.getConfig();
-        const logLevel = config.wsLogLevel || 'info';
-        if (logLevel === 'debug') {
-            logger.mark(`[sf插件] 发送错误消息给前端: ${JSON.stringify(message)}`);
+        try {
+            const config = Config.getConfig();
+            const logLevel = config.wsLogLevel || 'info';
+            if (logLevel === 'debug') {
+                logger.mark(`[sf插件] 发送错误消息给前端: ${JSON.stringify(message)}`);
+            }
+            ws.send(JSON.stringify(message));
+        } catch (error) {
+            logger.error('发送错误消息失败:', error);
+            // 这里不能再调用sendError，避免无限递归
+            try {
+                ws.send(JSON.stringify({
+                    type: 'error',
+                    content: '发送错误消息失败: ' + error.message,
+                    timestamp: new Date().getTime()
+                }));
+            } catch (e) {
+                logger.error('发送最终错误消息失败:', e);
+            }
         }
-        ws.send(JSON.stringify(message));
     }
     
     // 处理SS命令
@@ -646,7 +666,7 @@ export class SF_Painting extends plugin {
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_useContext) {
-            historyMessages = await loadContext(e.user_id, config_date.ss_usingAPI)
+            historyMessages = await loadContext(e.user_id, config_date.ss_usingAPI, 'ss')
             logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -678,12 +698,12 @@ export class SF_Painting extends plugin {
                 content: aiMessage,
                 extractedContent: extractedContent,
                 imageBase64: currentImages.length > 0 ? currentImages : undefined
-            }, config_date.ss_usingAPI)
+            }, config_date.ss_usingAPI, 'ss')
             // 保存AI回复
             await saveContext(e.user_id, {
                 role: 'assistant',
                 content: answer
-            }, config_date.ss_usingAPI)
+            }, config_date.ss_usingAPI, 'ss')
         }
 
         try {
@@ -1050,7 +1070,7 @@ SF插件设置帮助：
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_useContext) {
-            historyMessages = await loadContext(e.user_id, config_date.gg_usingAPI)
+            historyMessages = await loadContext(e.user_id, config_date.gg_usingAPI, 'gg')
             logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -1084,13 +1104,13 @@ SF插件设置帮助：
                 content: aiMessage,
                 extractedContent: extractedContent,
                 imageBase64: currentImages.length > 0 ? currentImages : undefined
-            }, config_date.gg_usingAPI)
+            }, config_date.gg_usingAPI, 'gg')
             // 保存AI回复
             await saveContext(e.user_id, {
                 role: 'assistant',
                 content: answer,
                 sources: sources
-            }, config_date.gg_usingAPI)
+            }, config_date.gg_usingAPI, 'gg')
         }
 
         try {
@@ -1318,7 +1338,7 @@ SF插件设置帮助：
         // 如果未指定系统类型，则使用默认配置(promptNum=0)
 
         // 清除对话记录
-        const success = await clearUserContext(targetId, promptNum)
+        const success = await clearUserContext(targetId, promptNum, systemType)
         if (success) {
             const contextStatus = config_date.gg_useContext ? '' : '\n（上下文功能未开启）'
             const systemName = systemType ? systemType.toUpperCase() : '默认'
@@ -1356,7 +1376,7 @@ SF插件设置帮助：
             }
             // 如果未指定系统类型，则使用默认配置(promptNum=0)
 
-            const result = await clearContextByCount(e.user_id, parseInt(match[6]) > 0 ? parseInt(match[6]) : 1, promptNum)
+            const result = await clearContextByCount(e.user_id, parseInt(match[6]) > 0 ? parseInt(match[6]) : 1, promptNum, systemType)
             if (result.success) {
                 const systemName = systemType ? systemType.toUpperCase() : '默认'
                 e.reply(`[sf插件]成功删除你的${systemName}系统最近的 ${result.deletedCount} 条历史对话` + `${config_date.gg_useContext ? '' : '\n（上下文功能未开启）'}`, true)
@@ -1593,6 +1613,9 @@ SF插件设置帮助：
 
     // 处理命令
     async handleCommands(ws, msg, userQQ = 'web_user') {
+        // 读取配置
+        const config = Config.getConfig();
+        
         // 构造模拟的e对象
         const e = {
             msg: msg,
@@ -1644,17 +1667,17 @@ SF插件设置帮助：
             }
 
             // 根据模式确定promptNum
-            const config_date = Config.getConfig();
+            const config = Config.getConfig();
             let promptNum = 0;
             if (mode === 'ss') {
-                promptNum = config_date.ss_usingAPI;
+                promptNum = config.ss_usingAPI;
             } else if (mode === 'gg') {
-                promptNum = config_date.gg_usingAPI;
+                promptNum = config.gg_usingAPI;
             }
             logger.mark(`[sf插件] 加载历史记录: userQQ=${userQQ}, mode=${mode}, promptNum=${promptNum}`);
 
             // 从Redis加载历史记录
-            const messages = await loadContext(userQQ, promptNum);
+            const messages = await loadContext(userQQ, promptNum, mode);
             logger.mark(`[sf插件] 成功加载历史记录: ${messages.length}条消息`);
 
             // 发送历史记录给客户端

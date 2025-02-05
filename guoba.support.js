@@ -719,13 +719,13 @@ export function supportGuoba() {
         {
           field: "enableWS",
           label: "启用WebSocket服务",
-          bottomHelpMessage: "是否启用WebSocket服务，用于网页端对话等功能",
+          bottomHelpMessage: "是否启用WebSocket服务，用于在网页端https://sf.maliya.top/，进行对话",
           component: "Switch",
         },
         {
           field: "wsPort",
           label: "服务端口",
-          bottomHelpMessage: "WebSocket服务监听的端口号，默认8081",
+          bottomHelpMessage: "WebSocket服务监听的端口号，默认8081，请确保服务器防火墙开放此端口",
           component: "InputNumber",
           componentProps: {
             min: 1,
