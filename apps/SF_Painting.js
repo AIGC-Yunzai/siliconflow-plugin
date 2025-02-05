@@ -97,6 +97,7 @@ export class SF_Painting extends plugin {
                 }
             ]
         })
+        this.sf_keys_index = -1;
     }
 
     // 处理第一人称呼叫
@@ -136,6 +137,26 @@ export class SF_Painting extends plugin {
         } else {
             return await this.gg_chat(e)
         }
+    }
+
+    /** 轮询 sf_keys，可禁用key */
+    get_use_sf_key(sf_keys) {
+        let use_sf_key = null
+        let count = 0;
+        while (!use_sf_key && count < sf_keys.length) {
+            count++
+            if (this.sf_keys_index < sf_keys.length - 1) {
+                this.sf_keys_index++
+            } else
+                this.sf_keys_index = 0
+
+            if (sf_keys[this.sf_keys_index].isDisable)
+                continue
+            else {
+                use_sf_key = sf_keys[this.sf_keys_index].sf_key
+            }
+        }
+        return use_sf_key
     }
 
     /** 随机轮询字符串中英文逗号分割 */
@@ -250,7 +271,7 @@ export class SF_Painting extends plugin {
 
         let finalPrompt = userPrompt
         let onleReplyOnce = 0;
-        const use_sf_key = this.get_random_key(config_date.sf_keys)
+        const use_sf_key = this.get_use_sf_key(config_date.sf_keys)
         if (config_date.generatePrompt) {
             if (!onleReplyOnce && !config_date.simpleMode) {
                 e.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成提示词并绘图...`)
@@ -302,7 +323,7 @@ export class SF_Painting extends plugin {
             await e.reply('请先设置API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
             return false
         } else {
-            use_sf_key = this.get_random_key(config_date.sf_keys)
+            use_sf_key = this.get_use_sf_key(config_date.sf_keys)
             apiBaseUrl = config_date.sfBaseUrl
             model = config_date.translateModel
             useMarkdown = config_date.ss_useMarkdown
