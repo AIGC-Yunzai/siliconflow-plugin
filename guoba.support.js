@@ -692,6 +692,58 @@ export function supportGuoba() {
           },
         },
         {
+          label: 'WebSocket服务',
+          component: 'SOFT_GROUP_BEGIN'
+        },
+        {
+          component: "Divider",
+          label: "WebSocket服务配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "enableWS",
+          label: "启用WebSocket服务",
+          bottomHelpMessage: "是否启用WebSocket服务，用于网页端对话等功能",
+          component: "Switch",
+        },
+        {
+          field: "wsPort",
+          label: "服务端口",
+          bottomHelpMessage: "WebSocket服务监听的端口号，默认8081",
+          component: "InputNumber",
+          componentProps: {
+            min: 1,
+            max: 65535,
+            step: 1,
+          },
+        },
+        {
+          field: "wsLogLevel",
+          label: "日志级别",
+          bottomHelpMessage: "WebSocket服务的日志记录级别",
+          component: "Select",
+          componentProps: {
+            options: [
+              { label: "调试", value: "debug" },
+              { label: "信息", value: "info" },
+              { label: "警告", value: "warn" },
+              { label: "错误", value: "error" },
+            ],
+          },
+        },
+        {
+          field: "wsDefaultUser",
+          label: "Web端默认用户名",
+          bottomHelpMessage: "设置Web端用户的默认昵称，提示词中的字符串 {{user_name}} 会被替换为该用户名",
+          component: "Input",
+          componentProps: {
+            placeholder: "小白",
+          },
+        },
+        {
           label: '常见问题',
           component: 'SOFT_GROUP_BEGIN'
         },

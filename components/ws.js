@@ -1,15 +1,35 @@
 // WebSocket连接类
 class WSConnection {
+  static instance = null;
+
+  static getInstance() {
+    if (!WSConnection.instance) {
+      WSConnection.instance = new WSConnection();
+    }
+    return WSConnection.instance;
+  }
+
   constructor() {
+    if (WSConnection.instance) {
+      return WSConnection.instance;
+    }
+    
     this.ws = null;
     this.isConnected = false;
     this.reconnectAttempts = 0;
     this.maxReconnectAttempts = 5;
     this.reconnectInterval = 3000;
+    
+    WSConnection.instance = this;
   }
 
   // 连接WebSocket服务器
   connect(ip, port) {
+    if (this.isConnected) {
+      console.log('WebSocket已经连接');
+      return Promise.resolve(true);
+    }
+
     return new Promise((resolve, reject) => {
       try {
         this.ws = new WebSocket(`ws://${ip}:${port}`);
@@ -120,4 +140,4 @@ class WSConnection {
 }
 
 // 导出WebSocket连接实例
-export const wsConnection = new WSConnection(); 
+export const wsConnection = WSConnection.getInstance(); 
