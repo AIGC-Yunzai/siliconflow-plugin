@@ -18,6 +18,8 @@ import {
     clearContextByCount,
 } from '../utils/context.js'
 import { getUin } from '../utils/common.js'
+import { WebSocketServer } from 'ws';
+import { createServer } from 'http';
 
 // 使机器人可以对其第一人称回应
 const reg_chatgpt_for_firstperson_call = new RegExp(Config.getConfig()?.botName || `sf-plugin-bot-name-${Math.floor(10000 + Math.random() * 90000)}`, "g");
@@ -35,7 +37,7 @@ export class SF_Painting extends plugin {
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息)',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务)',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 },
@@ -97,7 +99,256 @@ export class SF_Painting extends plugin {
                 }
             ]
         })
-        this.sf_keys_index = -1;
+        this.sf_keys_index = -1
+        this.currentKeyIndex_ggKey = 0
+        
+        // 读取配置,检查是否启用ws服务
+        const config = Config.getConfig();
+        if (config.enableWS) {
+            this.init();
+        }
+    }
+
+    init() {
+        // 检查配置是否启用ws服务
+        const config = Config.getConfig();
+        if (!config.enableWS) {
+            return;
+        }
+
+        // 使用全局对象存储服务器实例
+        if (!global.sfPluginServer) {
+            // 创建HTTP服务器
+            global.sfPluginServer = createServer();
+            
+            // 创建WebSocket服务器
+            const wsOptions = {
+                server: global.sfPluginServer,
+                maxPayload: 50 * 1024 * 1024, // 50MB
+            };
+            
+            global.sfPluginWSServer = new WebSocketServer(wsOptions);
+            
+            // 启动服务器
+            const port = config.wsPort || 8081;
+            global.sfPluginServer.on('error', (error) => {
+                if (error.code === 'EADDRINUSE') {
+                    // 如果端口被占用，尝试使用其他端口
+                    logger.mark(`[sf插件] 端口 ${port} 已被占用，尝试使用随机端口`);
+                    global.sfPluginServer.listen(0);
+                } else {
+                    logger.error('[sf插件] WebSocket服务器错误:', error);
+                }
+            });
+
+            global.sfPluginServer.listen(port, () => {
+                const address = global.sfPluginServer.address();
+                logger.mark(`[sf插件] WebSocket服务器运行在端口 ${address.port}`);
+            });
+
+            // WebSocket连接处理
+            global.sfPluginWSServer.on('connection', (ws, req) => {
+                // 根据日志级别记录
+                const logLevel = config.wsLogLevel || 'info';
+                if (logLevel === 'debug') {
+                    logger.mark(`[sf插件] 新的WebSocket连接 来自: ${req.socket.remoteAddress}`);
+                } else if (logLevel === 'info') {
+                    logger.mark('[sf插件] 新的WebSocket连接');
+                }
+                
+                ws.on('message', async (message) => {
+                    try {
+                        const msgObj = JSON.parse(message);
+                        if (logLevel === 'debug') {
+                            logger.mark(`[sf插件] 收到WebSocket消息: ${JSON.stringify(msgObj)}`);
+                        }
+                        const { type, content, images, userQQ } = msgObj;
+                        
+                        // 根据类型处理消息
+                        switch(type) {
+                            case 'loadHistory':
+                                if (logLevel === 'debug' || logLevel === 'info') {
+                                    logger.mark(`[sf插件] 处理加载历史记录请求: userQQ=${msgObj.userQQ}, mode=${msgObj.mode}`);
+                                }
+                                await this.handleLoadHistory(ws, msgObj);
+                                break;
+                            case 'ss':
+                                if (logLevel === 'debug' || logLevel === 'info') {
+                                    logger.mark(`[sf插件] 处理SS消息: ${content}`);
+                                }
+                                await this.handleSSMessage(ws, content, images, userQQ);
+                                break;
+                            case 'gg':
+                                if (logLevel === 'debug' || logLevel === 'info') {
+                                    logger.mark(`[sf插件] 处理GG消息: ${content}`);
+                                }
+                                await this.handleGGMessage(ws, content, images, userQQ);
+                                break;
+                            default:
+                                if (logLevel !== 'error') {
+                                    logger.warn(`[sf插件] 未知的消息类型: ${type}`);
+                                }
+                                this.sendError(ws, '未知的消息类型');
+                        }
+                    } catch (error) {
+                        if (logLevel !== 'error') {
+                            logger.error('[sf插件] 处理WebSocket消息错误:', error);
+                        }
+                        this.sendError(ws, error.message);
+                    }
+                });
+                
+                ws.on('close', () => {
+                    if (logLevel === 'debug' || logLevel === 'info') {
+                        logger.mark('[sf插件] WebSocket连接关闭');
+                    }
+                });
+                
+                ws.on('error', (error) => {
+                    if (logLevel !== 'error') {
+                        logger.error('[sf插件] WebSocket错误:', error);
+                    }
+                });
+            });
+        }
+    }
+    
+    // 处理SS模式消息
+    async handleSSMessage(ws, content, images, userQQ = 'web_user') {
+        try {
+            let msg = content;
+            
+            // 处理命令
+            if (msg.startsWith('#')) {
+                const result = await this.handleCommands(ws, msg, userQQ);
+                if (result) return; // 如果是命令且已处理,直接返回
+            }
+
+            // 获取配置
+            const config = Config.getConfig();
+
+            // 构造模拟的e对象
+            const e = {
+                msg: `#ss ${msg}`,
+                img: images, // 直接使用传入的base64图片数组
+                reply: (content, quote = false) => {
+                    this.sendMessage(ws, 'ss', content);
+                },
+                user_id: userQQ,
+                self_id: this.e?.self_id || Bot.uin,
+                sender: this.e?.sender || {
+                    card: config.wsDefaultUser || '小白',
+                    nickname: config.wsDefaultUser || '小白'
+                }
+            };
+
+            // 调用原有的sf_chat方法
+            await this.sf_chat(e);
+        } catch (error) {
+            this.sendError(ws, error.message);
+        }
+    }
+    
+    // 处理GG模式消息
+    async handleGGMessage(ws, content, images, userQQ = 'web_user') {
+        try {
+            let msg = content;
+            
+            // 处理命令
+            if (msg.startsWith('#')) {
+                const result = await this.handleCommands(ws, msg, userQQ);
+                if (result) return; // 如果是命令且已处理,直接返回
+            }
+
+            // 获取配置
+            const config = Config.getConfig();
+
+            // 构造模拟的e对象
+            const e = {
+                msg: `#gg ${msg}`,
+                img: images, // 直接使用传入的base64图片数组
+                reply: (content, quote = false) => {
+                    this.sendMessage(ws, 'gg', content);
+                },
+                user_id: userQQ,
+                self_id: this.e?.self_id || Bot.uin,
+                sender: this.e?.sender || {
+                    card: config.wsDefaultUser || '小白',
+                    nickname: config.wsDefaultUser || '小白'
+                }
+            };
+
+            // 调用原有的gg_chat方法
+            await this.gg_chat(e);
+        } catch (error) {
+            this.sendError(ws, error.message);
+        }
+    }
+    
+    // 发送消息
+    sendMessage(ws, type, content) {
+        // 确保content是字符串类型
+        const messageContent = String(content);
+        
+        const message = {
+            type,
+            content: messageContent,
+            timestamp: new Date().getTime()
+        };
+        
+        try {
+            const config = Config.getConfig();
+            const logLevel = config.wsLogLevel || 'info';
+            if (logLevel === 'debug') {
+                logger.mark(`[sf插件] 发送消息给前端: ${JSON.stringify(message)}`);
+            }
+            ws.send(JSON.stringify(message));
+        } catch (error) {
+            logger.error('发送消息失败:', error);
+            this.sendError(ws, '发送消息失败: ' + error.message);
+        }
+    }
+    
+    // 发送错误消息
+    sendError(ws, errorMessage) {
+        const message = {
+            type: 'error',
+            content: errorMessage,
+            timestamp: new Date().getTime()
+        };
+        
+        try {
+            const config = Config.getConfig();
+            const logLevel = config.wsLogLevel || 'info';
+            if (logLevel === 'debug') {
+                logger.mark(`[sf插件] 发送错误消息给前端: ${JSON.stringify(message)}`);
+            }
+            ws.send(JSON.stringify(message));
+        } catch (error) {
+            logger.error('发送错误消息失败:', error);
+            // 这里不能再调用sendError，避免无限递归
+            try {
+                ws.send(JSON.stringify({
+                    type: 'error',
+                    content: '发送错误消息失败: ' + error.message,
+                    timestamp: new Date().getTime()
+                }));
+            } catch (e) {
+                logger.error('发送最终错误消息失败:', e);
+            }
+        }
+    }
+    
+    // 处理SS命令
+    async processSSCommand(content) {
+      // 在这里实现SS模式的具体逻辑
+      return `SS模式回复: ${content}`;
+    }
+    
+    // 处理GG命令
+    async processGGCommand(content) {
+      // 在这里实现GG模式的具体逻辑
+      return `GG模式回复: ${content}`;
     }
 
     // 处理第一人称呼叫
@@ -174,7 +425,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息)([\s\S]*)/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务)([\s\S]*)/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -222,6 +473,26 @@ export class SF_Painting extends plugin {
                     break
                 case 'gg引用原消息':
                     config_date.gg_quoteMessage = value === '开'
+                    break
+                case 'ws服务':
+                    const isEnable = value === '开';
+                    config_date.enableWS = isEnable;
+                    // 根据设置启动或关闭服务
+                    if (isEnable) {
+                        this.init();
+                    } else {
+                        // 关闭WebSocket服务器
+                        if (global.sfPluginWSServer) {
+                            global.sfPluginWSServer.close();
+                            global.sfPluginWSServer = null;
+                        }
+                        // 关闭HTTP服务器
+                        if (global.sfPluginServer) {
+                            global.sfPluginServer.close();
+                            global.sfPluginServer = null;
+                        }
+                        logger.mark('[sf插件] WebSocket服务已关闭');
+                    }
                     break
                 default:
                     return
@@ -339,12 +610,32 @@ export class SF_Painting extends plugin {
             logger.mark(`[SF插件][ss]获取到图片链接:\n${e.img.join('\n')}`)
             // 获取所有图片数据
             for (const imgUrl of e.img) {
-                const base64Image = await url2Base64(imgUrl);
-                if (!base64Image) {
-                    e.reply('引用的图片地址已失效，请重新发送图片', true)
-                    return false
+                try {
+                    // 如果已经是base64格式，直接使用
+                    if (typeof imgUrl === 'string' && (imgUrl.startsWith('data:image') || imgUrl.match(/^[A-Za-z0-9+/=]+$/))) {
+                        // 如果是完整的data URL，提取base64部分
+                        const base64Data = imgUrl.startsWith('data:image') ? imgUrl.split(',')[1] : imgUrl;
+                        currentImages.push(base64Data);
+                        continue;
+                    }
+                    
+                    // 尝试转换为base64
+                    const base64Image = await url2Base64(imgUrl);
+                    if (!base64Image) {
+                        logger.error(`[SF插件][ss]图片处理失败: ${imgUrl}`);
+                        continue;
+                    }
+                    currentImages.push(base64Image);
+                } catch (error) {
+                    logger.error(`[SF插件][ss]处理图片时出错: ${error.message}`);
+                    continue;
                 }
-                currentImages.push(base64Image);
+            }
+            
+            // 如果所有图片都处理失败
+            if (currentImages.length === 0 && e.img.length > 0) {
+                e.reply('处理图片失败，请重新发送', true);
+                return false;
             }
         }
 
@@ -375,7 +666,7 @@ export class SF_Painting extends plugin {
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_useContext) {
-            historyMessages = await loadContext(e.user_id, config_date.ss_usingAPI)
+            historyMessages = await loadContext(e.user_id, config_date.ss_usingAPI, 'ss')
             logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -407,12 +698,12 @@ export class SF_Painting extends plugin {
                 content: aiMessage,
                 extractedContent: extractedContent,
                 imageBase64: currentImages.length > 0 ? currentImages : undefined
-            }, config_date.ss_usingAPI)
+            }, config_date.ss_usingAPI, 'ss')
             // 保存AI回复
             await saveContext(e.user_id, {
                 role: 'assistant',
                 content: answer
-            }, config_date.ss_usingAPI)
+            }, config_date.ss_usingAPI, 'ss')
         }
 
         try {
@@ -583,7 +874,8 @@ SF插件设置帮助：
 12. 设置gg搜索功能：#sf设置gg搜索 开/关
 13. 设置ss引用原消息：#sf设置ss引用原消息 开/关
 14. 设置gg引用原消息：#sf设置gg引用原消息 开/关
-15. 查看帮助：#sf帮助
+15. 设置WebSocket服务：#sf设置ws服务 开/关
+16. 查看帮助：#sf帮助
 
 对话指令：
 1. #gg [内容]：使用Gemini对话
@@ -620,6 +912,7 @@ SF插件设置帮助：
 3. 支持markdown格式回复
 4. 支持搜索引擎集成（仅限GG）
 5. 支持多API接口切换
+6. 支持WebSocket服务（可选）
         `.trim()
 
         await e.reply(helpMessage)
@@ -721,12 +1014,32 @@ SF插件设置帮助：
             logger.mark(`[SF插件][gg]获取到图片链接:\n${e.img.join('\n')}`)
             // 获取所有图片数据
             for (const imgUrl of e.img) {
-                const base64Image = await url2Base64(imgUrl);
-                if (!base64Image) {
-                    e.reply('引用的图片地址已失效，请重新发送图片', true)
-                    return false
+                try {
+                    // 如果已经是base64格式，直接使用
+                    if (typeof imgUrl === 'string' && (imgUrl.startsWith('data:image') || imgUrl.match(/^[A-Za-z0-9+/=]+$/))) {
+                        // 如果是完整的data URL，提取base64部分
+                        const base64Data = imgUrl.startsWith('data:image') ? imgUrl.split(',')[1] : imgUrl;
+                        currentImages.push(base64Data);
+                        continue;
+                    }
+                    
+                    // 尝试转换为base64
+                    const base64Image = await url2Base64(imgUrl);
+                    if (!base64Image) {
+                        logger.error(`[SF插件][gg]图片处理失败: ${imgUrl}`);
+                        continue;
+                    }
+                    currentImages.push(base64Image);
+                } catch (error) {
+                    logger.error(`[SF插件][gg]处理图片时出错: ${error.message}`);
+                    continue;
                 }
-                currentImages.push(base64Image);
+            }
+            
+            // 如果所有图片都处理失败
+            if (currentImages.length === 0 && e.img.length > 0) {
+                e.reply('处理图片失败，请重新发送', true);
+                return false;
             }
         }
 
@@ -757,7 +1070,7 @@ SF插件设置帮助：
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_useContext) {
-            historyMessages = await loadContext(e.user_id, config_date.gg_usingAPI)
+            historyMessages = await loadContext(e.user_id, config_date.gg_usingAPI, 'gg')
             logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -791,13 +1104,13 @@ SF插件设置帮助：
                 content: aiMessage,
                 extractedContent: extractedContent,
                 imageBase64: currentImages.length > 0 ? currentImages : undefined
-            }, config_date.gg_usingAPI)
+            }, config_date.gg_usingAPI, 'gg')
             // 保存AI回复
             await saveContext(e.user_id, {
                 role: 'assistant',
                 content: answer,
                 sources: sources
-            }, config_date.gg_usingAPI)
+            }, config_date.gg_usingAPI, 'gg')
         }
 
         try {
@@ -1025,7 +1338,7 @@ SF插件设置帮助：
         // 如果未指定系统类型，则使用默认配置(promptNum=0)
 
         // 清除对话记录
-        const success = await clearUserContext(targetId, promptNum)
+        const success = await clearUserContext(targetId, promptNum, systemType)
         if (success) {
             const contextStatus = config_date.gg_useContext ? '' : '\n（上下文功能未开启）'
             const systemName = systemType ? systemType.toUpperCase() : '默认'
@@ -1048,7 +1361,7 @@ SF插件设置帮助：
         }
     }
 
-    /** ^#(sf|SF)(清除|删除)((ss|gg)?)?(前面?|最近的?)(\\d+)条对话$ */
+    /** ^#(sf|SF)(清除|删除)((ss|gg)?)?(前面?|最近的?)(\d+)条对话$ */
     async sf_clearContextByCount(e) {
         const config_date = Config.getConfig()
         const match = e.msg.trim().match(/^#(sf|SF)(清除|删除)((ss|gg)?)?(前面?|最近的?)(\d+)条对话$/)
@@ -1063,7 +1376,7 @@ SF插件设置帮助：
             }
             // 如果未指定系统类型，则使用默认配置(promptNum=0)
 
-            const result = await clearContextByCount(e.user_id, parseInt(match[6]) > 0 ? parseInt(match[6]) : 1, promptNum)
+            const result = await clearContextByCount(e.user_id, parseInt(match[6]) > 0 ? parseInt(match[6]) : 1, promptNum, systemType)
             if (result.success) {
                 const systemName = systemType ? systemType.toUpperCase() : '默认'
                 e.reply(`[sf插件]成功删除你的${systemName}系统最近的 ${result.deletedCount} 条历史对话` + `${config_date.gg_useContext ? '' : '\n（上下文功能未开启）'}`, true)
@@ -1140,555 +1453,243 @@ SF插件设置帮助：
         }
     }
 
-    async sf_select_and_chat(e) {
-        // 读取配置
-        const config_date = Config.getConfig()
-
-        // 获取完整消息内容
-        const fullMsg = e.msg.trim()
-
-        // 移除开头的 #s 或 #S
-        const withoutPrefix = fullMsg.substring(2)
-
-        // 尝试在配置中找到所有匹配的命令
-        let matchedCmds = []
-
-        if (config_date.ss_APIList) {
-            // 收集所有匹配的自定义命令
-            for (const api of config_date.ss_APIList) {
-                if (api.customCommand && withoutPrefix.startsWith(api.customCommand)) {
-                    matchedCmds.push({
-                        cmd: api.customCommand,
-                        content: withoutPrefix.substring(api.customCommand.length).trim()
-                    })
-                }
-            }
-
-            // 按命令长度降序排序，选择最长的匹配
-            if (matchedCmds.length > 0) {
-                matchedCmds.sort((a, b) => b.cmd.length - a.cmd.length)
-                const { cmd: matchedCmd, content: remainingContent } = matchedCmds[0]
-
-                // 如果没有内容
-                if (!remainingContent) {
-                    logger.error('请输入要发送的内容')
-                    return false
+    /** 通用选择处理器工厂函数 */
+    createSelectHandler(options) {
+        const { type, chatMethod } = options;
+        
+        return async (e) => {
+            const config_date = Config.getConfig();
+            const fullMsg = e.msg.trim();
+            const withoutPrefix = fullMsg.substring(2);
+            
+            // 处理命令和内容
+            const processCommand = async (cmd, content) => {
+                if (!content) {
+                    logger.error('请输入要发送的内容');
+                    return false;
                 }
 
-                // 查找对应的接口索引
-                const apiIndex = config_date.ss_APIList.findIndex(api => api.customCommand === matchedCmd)
-                if (apiIndex === -1) {
-                    logger.error(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
-                    return false
+                const apiList = config_date[`${type}_APIList`];
+                let apiIndex = -1;
+
+                // 处理数字索引
+                if (!isNaN(cmd)) {
+                    const index = parseInt(cmd);
+                    if (!apiList || index < 0 || (index > 0 && index > apiList.length)) {
+                        logger.error(`无效的接口索引，请使用 #sf${type}接口列表 查看可用的接口`);
+                        return false;
+                    }
+                    apiIndex = index - 1;
+                } else {
+                    // 处理自定义命令
+                    apiIndex = apiList?.findIndex(api => api.customCommand === cmd) ?? -1;
+                    if (apiIndex === -1) {
+                        logger.error(`未找到命令 ${cmd} 对应的接口`);
+                        return false;
+                    }
                 }
 
-                // 保存原来的设置
-                const originalUsingAPI = config_date.ss_usingAPI
-
-                // 临时设置当前使用的接口
-                config_date.ss_usingAPI = apiIndex + 1
-                Config.setConfig(config_date)
+                // 临时切换接口并执行操作
+                const originalUsingAPI = config_date[`${type}_usingAPI`];
+                config_date[`${type}_usingAPI`] = apiIndex + 1;
+                Config.setConfig(config_date);
 
                 try {
-                    // 修改消息内容并调用ss对话
-                    e.msg = '#ss ' + remainingContent
-                    await this.sf_chat(e)
+                    e.msg = `#${type} ${content}`;
+                    await this[chatMethod](e);
+                    return true;
                 } finally {
-                    // 还原设置
-                    config_date.ss_usingAPI = originalUsingAPI
-                    Config.setConfig(config_date)
+                    config_date[`${type}_usingAPI`] = originalUsingAPI;
+                    Config.setConfig(config_date);
                 }
+            };
 
-                return true
-            }
-        }
+            // 尝试匹配自定义命令
+            const apiList = config_date[`${type}_APIList`];
+            if (apiList) {
+                const matchedCmd = apiList
+                    .filter(api => api.customCommand && withoutPrefix.startsWith(api.customCommand))
+                    .sort((a, b) => b.customCommand.length - a.customCommand.length)[0];
 
-        // 如果没找到自定义命令，尝试解析数字
-        const numberMatch = withoutPrefix.match(/^(\d+)/)
-        if (numberMatch) {
-            const matchedCmd = numberMatch[1]
-            const remainingContent = withoutPrefix.substring(numberMatch[1].length).trim()
-
-            // 如果没有内容
-            if (!remainingContent) {
-                logger.error('请输入要发送的内容')
-                return false
+                if (matchedCmd) {
+                    const content = withoutPrefix.substring(matchedCmd.customCommand.length).trim();
+                    return await processCommand(matchedCmd.customCommand, content);
+                }
             }
 
-            // 验证数字是否有效
-            const index = parseInt(matchedCmd)
-            if (!config_date.ss_APIList || index < 0 || (index > 0 && index > config_date.ss_APIList.length)) {
-                logger.error(`无效的接口索引，请使用 #sfss接口列表 查看可用的接口`)
-                return false
+            // 尝试匹配数字命令
+            const numberMatch = withoutPrefix.match(/^(\d+)\s+(.*)/);
+            if (numberMatch) {
+                return await processCommand(numberMatch[1], numberMatch[2]);
             }
 
-            // 保存原来的设置
-            const originalUsingAPI = config_date.ss_usingAPI
-
-            // 临时设置当前使用的接口
-            config_date.ss_usingAPI = index
-            Config.setConfig(config_date)
-
-            try {
-                // 修改消息内容并调用ss对话
-                e.msg = '#ss ' + remainingContent
-                await this.sf_chat(e)
-            } finally {
-                // 还原设置
-                config_date.ss_usingAPI = originalUsingAPI
-                Config.setConfig(config_date)
+            // 尝试匹配空格分隔的命令
+            const [cmd, ...contentParts] = withoutPrefix.split(/\s+/);
+            if (cmd && contentParts.length > 0) {
+                return await processCommand(cmd, contentParts.join(' '));
             }
 
-            return true
-        }
-
-        // 如果没找到任何匹配，提取第一个空格前的内容作为命令
-        const spaceIndex = withoutPrefix.indexOf(' ')
-        if (spaceIndex === -1) {
-            logger.error('请输入要发送的内容')
-            return false
-        }
-
-        const matchedCmd = withoutPrefix.substring(0, spaceIndex)
-        const remainingContent = withoutPrefix.substring(spaceIndex + 1).trim()
-
-        // 如果没有内容
-        if (!remainingContent) {
-            logger.error('请输入要发送的内容')
-            return false
-        }
-
-        // 如果不是数字，查找自定义命令
-        if (!config_date.ss_APIList) {
-            logger.error(`未配置任何ss接口，请先配置接口`)
-            return false
-        }
-        const apiIndex = config_date.ss_APIList.findIndex(api => api.customCommand === matchedCmd)
-        if (apiIndex === -1) {
-            logger.error(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
-            return false
-        }
-
-        // 保存原来的设置
-        const originalUsingAPI = config_date.ss_usingAPI
-
-        // 临时设置当前使用的接口
-        config_date.ss_usingAPI = apiIndex + 1
-        Config.setConfig(config_date)
-
-        try {
-            // 修改消息内容并调用ss对话
-            e.msg = '#ss ' + remainingContent
-            await this.sf_chat(e)
-        } finally {
-            // 还原设置
-            config_date.ss_usingAPI = originalUsingAPI
-            Config.setConfig(config_date)
-        }
-
-        return true
+            logger.error('命令格式错误');
+            return false;
+        };
     }
 
-    async gg_select_and_chat(e) {
-        // 读取配置
-        const config_date = Config.getConfig()
-
-        // 获取完整消息内容
-        const fullMsg = e.msg.trim()
-
-        // 移除开头的 #g 或 #G
-        const withoutPrefix = fullMsg.substring(2)
-
-        // 尝试在配置中找到所有匹配的命令
-        let matchedCmds = []
-
-        if (config_date.gg_APIList) {
-            // 收集所有匹配的自定义命令
-            for (const api of config_date.gg_APIList) {
-                if (api.customCommand && withoutPrefix.startsWith(api.customCommand)) {
-                    matchedCmds.push({
-                        cmd: api.customCommand,
-                        content: withoutPrefix.substring(api.customCommand.length).trim()
-                    })
-                }
+    /** 通用结束对话处理器工厂函数 */
+    createEndChatHandler(options) {
+        const { type } = options;
+        
+        return async (e) => {
+            const config_date = Config.getConfig();
+            const fullMsg = e.msg.trim();
+            const withoutPrefix = fullMsg.substring(2);
+            
+            const endChatIndex = withoutPrefix.indexOf('结束对话');
+            if (endChatIndex === -1) {
+                logger.error('[sf插件] 命令格式错误');
+                return false;
             }
 
-            // 按命令长度降序排序，选择最长的匹配
-            if (matchedCmds.length > 0) {
-                matchedCmds.sort((a, b) => b.cmd.length - a.cmd.length)
-                const { cmd: matchedCmd, content: remainingContent } = matchedCmds[0]
+            const cmdPart = withoutPrefix.substring(0, endChatIndex).trim();
+            const afterEndChat = withoutPrefix.substring(endChatIndex + 4);
+            const number = afterEndChat.match(/(\d+)/)?.[1] || '';
 
-                // 如果没有内容
-                if (!remainingContent) {
-                    logger.error('请输入要发送的内容')
-                    return false
-                }
-
-                // 查找对应的接口索引
-                const apiIndex = config_date.gg_APIList.findIndex(api => api.customCommand === matchedCmd)
-                if (apiIndex === -1) {
-                    logger.error(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
-                    return false
-                }
-
-                // 保存原来的设置
-                const originalUsingAPI = config_date.gg_usingAPI
-
-                // 临时设置当前使用的接口
-                config_date.gg_usingAPI = apiIndex + 1
-                Config.setConfig(config_date)
+            const processEndChat = async (apiIndex) => {
+                const originalUsingAPI = config_date[`${type}_usingAPI`];
+                config_date[`${type}_usingAPI`] = apiIndex;
+                Config.setConfig(config_date);
 
                 try {
-                    // 修改消息内容并调用gg对话
-                    e.msg = '#gg ' + remainingContent
-                    await this.gg_chat(e)
+                    e.msg = `#sf结束${type}对话${number}`;
+                    await this.sf_end_chat(e);
+                    return true;
                 } finally {
-                    // 还原设置
-                    config_date.gg_usingAPI = originalUsingAPI
-                    Config.setConfig(config_date)
+                    config_date[`${type}_usingAPI`] = originalUsingAPI;
+                    Config.setConfig(config_date);
                 }
+            };
 
-                return true
-            }
-        }
-
-        // 如果没找到自定义命令，尝试解析数字
-        const numberMatch = withoutPrefix.match(/^(\d+)/)
-        if (numberMatch) {
-            const matchedCmd = numberMatch[1]
-            const remainingContent = withoutPrefix.substring(numberMatch[1].length).trim()
-
-            // 如果没有内容
-            if (!remainingContent) {
-                logger.error('请输入要发送的内容')
-                return false
+            // 尝试匹配自定义命令
+            const apiList = config_date[`${type}_APIList`];
+            if (apiList) {
+                const apiIndex = apiList.findIndex(api => api.customCommand === cmdPart);
+                if (apiIndex !== -1) {
+                    return await processEndChat(apiIndex + 1);
+                }
             }
 
-            // 验证数字是否有效
-            const index = parseInt(matchedCmd)
-            if (!config_date.gg_APIList || index < 0 || (index > 0 && index > config_date.gg_APIList.length)) {
-                logger.error(`无效的接口索引，请使用 #sfgg接口列表 查看可用的接口`)
-                return false
+            // 尝试匹配数字
+            const index = parseInt(cmdPart);
+            if (!isNaN(index)) {
+                if (!apiList || index < 0 || (index > 0 && index > apiList.length)) {
+                    await e.reply(`无效的接口索引，请使用 #sf${type}接口列表 查看可用的接口`);
+                    return false;
+                }
+                return await processEndChat(index);
             }
 
-            // 保存原来的设置
-            const originalUsingAPI = config_date.gg_usingAPI
-
-            // 临时设置当前使用的接口
-            config_date.gg_usingAPI = index
-            Config.setConfig(config_date)
-
-            try {
-                // 修改消息内容并调用gg对话
-                e.msg = '#gg ' + remainingContent
-                await this.gg_chat(e)
-            } finally {
-                // 还原设置
-                config_date.gg_usingAPI = originalUsingAPI
-                Config.setConfig(config_date)
-            }
-
-            return true
-        }
-
-        // 如果没找到任何匹配，提取第一个空格前的内容作为命令
-        const spaceIndex = withoutPrefix.indexOf(' ')
-        if (spaceIndex === -1) {
-            logger.error('请输入要发送的内容')
-            return false
-        }
-
-        const matchedCmd = withoutPrefix.substring(0, spaceIndex)
-        const remainingContent = withoutPrefix.substring(spaceIndex + 1).trim()
-
-        // 如果没有内容
-        if (!remainingContent) {
-            logger.error('请输入要发送的内容')
-            return false
-        }
-
-        // 如果不是数字，查找自定义命令
-        if (!config_date.gg_APIList) {
-            logger.error(`未配置任何gg接口，请先配置接口`)
-            return false
-        }
-        const apiIndex = config_date.gg_APIList.findIndex(api => api.customCommand === matchedCmd)
-        if (apiIndex === -1) {
-            logger.error(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
-            return false
-        }
-
-        // 保存原来的设置
-        const originalUsingAPI = config_date.gg_usingAPI
-
-        // 临时设置当前使用的接口
-        config_date.gg_usingAPI = apiIndex + 1
-        Config.setConfig(config_date)
-
-        try {
-            // 修改消息内容并调用gg对话
-            e.msg = '#gg ' + remainingContent
-            await this.gg_chat(e)
-        } finally {
-            // 还原设置
-            config_date.gg_usingAPI = originalUsingAPI
-            Config.setConfig(config_date)
-        }
-
-        return true
+            logger.error(`未找到命令 ${cmdPart} 对应的接口`);
+            return false;
+        };
     }
 
-    async sf_select_and_end_chat(e) {
+    // 使用工厂函数创建处理器
+    sf_select_and_chat = this.createSelectHandler({
+        type: 'ss',
+        chatMethod: 'sf_chat'
+    });
+
+    gg_select_and_chat = this.createSelectHandler({
+        type: 'gg',
+        chatMethod: 'gg_chat'
+    });
+
+    sf_select_and_end_chat = this.createEndChatHandler({
+        type: 'ss'
+    });
+
+    gg_select_and_end_chat = this.createEndChatHandler({
+        type: 'gg'
+    });
+
+    // 处理命令
+    async handleCommands(ws, msg, userQQ = 'web_user') {
         // 读取配置
-        const config_date = Config.getConfig()
-
-        // 获取完整消息内容
-        const fullMsg = e.msg.trim()
-
-        // 移除开头的 #s 或 #S
-        const withoutPrefix = fullMsg.substring(2)
-
-        // 移除结尾的 "结束对话" 和可能的数字
-        const endChatIndex = withoutPrefix.indexOf('结束对话')
-        if (endChatIndex === -1) {
-            logger.error('[sf插件] 命令格式错误')
-            return false
-        }
-
-        // 提取命令部分和可能的数字
-        const cmdPart = withoutPrefix.substring(0, endChatIndex).trim()
-        const afterEndChat = withoutPrefix.substring(endChatIndex + 4)
-        const numberMatch = afterEndChat.match(/(\d+)/)
-        const number = numberMatch ? numberMatch[1] : ''
-
-        // 尝试在配置中找到所有匹配的命令
-        let matchedCmds = []
-
-        if (config_date.ss_APIList) {
-            // 收集所有匹配的自定义命令
-            for (const api of config_date.ss_APIList) {
-                if (api.customCommand && cmdPart === api.customCommand) {
-                    matchedCmds.push(api.customCommand)
-                }
+        const config = Config.getConfig();
+        
+        // 构造模拟的e对象
+        const e = {
+            msg: msg,
+            reply: (content, quote = false) => {
+                this.sendMessage(ws, 'system', content);
+            },
+            user_id: userQQ,
+            self_id: this.e?.self_id || Bot.uin,
+            sender: this.e?.sender || {
+                card: config.wsDefaultUser || '小白',
+                nickname: config.wsDefaultUser || '小白'
             }
-
-            // 按命令长度降序排序，选择最长的匹配
-            if (matchedCmds.length > 0) {
-                matchedCmds.sort((a, b) => b.length - a.length)
-                const matchedCmd = matchedCmds[0]
-
-                // 查找对应的接口索引
-                const apiIndex = config_date.ss_APIList.findIndex(api => api.customCommand === matchedCmd)
-                if (apiIndex === -1) {
-                    logger.error(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
-                    return false
-                }
-
-                // 保存原来的设置
-                const originalUsingAPI = config_date.ss_usingAPI
-
-                // 临时设置当前使用的接口
-                config_date.ss_usingAPI = apiIndex + 1
-                Config.setConfig(config_date)
-
-                try {
-                    // 修改消息内容并调用结束对话
-                    e.msg = '#sf结束ss对话' + (number ? number : '')
-                    await this.sf_end_chat(e)
-                } finally {
-                    // 还原设置
-                    config_date.ss_usingAPI = originalUsingAPI
-                    Config.setConfig(config_date)
-                }
-
-                return true
-            }
-        }
-
-        // 如果没找到自定义命令，尝试解析数字
-        const index = parseInt(cmdPart)
-        if (!isNaN(index)) {
-            // 如果是数字，使用原来的逻辑
-            if (!config_date.ss_APIList || index < 0 || (index > 0 && index > config_date.ss_APIList.length)) {
-                await e.reply(`无效的接口索引，请使用 #sfss接口列表 查看可用的接口`)
-                return false
-            }
-
-            // 保存原来的设置
-            const originalUsingAPI = config_date.ss_usingAPI
-
-            // 临时设置当前使用的接口
-            config_date.ss_usingAPI = index
-            Config.setConfig(config_date)
-
-            try {
-                // 修改消息内容并调用结束对话
-                e.msg = '#sf结束ss对话' + (number ? number : '')
-                await this.sf_end_chat(e)
-            } finally {
-                // 还原设置
-                config_date.ss_usingAPI = originalUsingAPI
-                Config.setConfig(config_date)
-            }
-
-            return true
-        }
-
-        // 如果不是数字，查找自定义命令
-        if (!config_date.ss_APIList) {
-            logger.error(`未配置任何ss接口，请先配置接口`)
-            return false
-        }
-        const apiIndex = config_date.ss_APIList.findIndex(api => api.customCommand === cmdPart)
-        if (apiIndex === -1) {
-            logger.error(`未找到命令 ${cmdPart} 对应的接口，请使用 #sfss接口列表 查看可用的接口`)
-            return false
-        }
-
-        // 保存原来的设置
-        const originalUsingAPI = config_date.ss_usingAPI
-
-        // 临时设置当前使用的接口
-        config_date.ss_usingAPI = apiIndex + 1
-        Config.setConfig(config_date)
+        };
 
         try {
-            // 修改消息内容并调用结束对话
-            e.msg = '#sf结束ss对话' + (number ? number : '')
-            await this.sf_end_chat(e)
-        } finally {
-            // 还原设置
-            config_date.ss_usingAPI = originalUsingAPI
-            Config.setConfig(config_date)
+            // 匹配 #sf结束全部对话
+            if (msg.match(/^#(sf|SF)结束全部对话$/)) {
+                await this.sf_end_all_chat(e);
+                return true;
+            }
+
+            // 匹配 #sf结束对话
+            if (msg.match(/^#(sf|SF)结束((ss|gg)?)对话(?:(\d+))?$/)) {
+                await this.sf_end_chat(e);
+                return true;
+            }
+
+            // 匹配 #sf清除/删除前n条对话
+            if (msg.match(/^#(sf|SF)(清除|删除)((ss|gg)?)?(前面?|最近的?)(\d+)条对话$/)) {
+                await this.sf_clearContextByCount(e);
+                return true;
+            }
+        } catch (error) {
+            this.sendError(ws, error.message);
+            return true;
         }
 
-        return true
+        return false; // 不是支持的命令
     }
 
-    async gg_select_and_end_chat(e) {
-        // 读取配置
-        const config_date = Config.getConfig()
-
-        // 获取完整消息内容
-        const fullMsg = e.msg.trim()
-
-        // 移除开头的 #g 或 #G
-        const withoutPrefix = fullMsg.substring(2)
-
-        // 移除结尾的 "结束对话" 和可能的数字
-        const endChatIndex = withoutPrefix.indexOf('结束对话')
-        if (endChatIndex === -1) {
-            logger.error('[sf插件] 命令格式错误')
-            return false
-        }
-
-        // 提取命令部分和可能的数字
-        const cmdPart = withoutPrefix.substring(0, endChatIndex).trim()
-        const afterEndChat = withoutPrefix.substring(endChatIndex + 4)
-        const numberMatch = afterEndChat.match(/(\d+)/)
-        const number = numberMatch ? numberMatch[1] : ''
-
-        // 尝试在配置中找到所有匹配的命令
-        let matchedCmds = []
-
-        if (config_date.gg_APIList) {
-            // 收集所有匹配的自定义命令
-            for (const api of config_date.gg_APIList) {
-                if (api.customCommand && cmdPart === api.customCommand) {
-                    matchedCmds.push(api.customCommand)
-                }
-            }
-
-            // 按命令长度降序排序，选择最长的匹配
-            if (matchedCmds.length > 0) {
-                matchedCmds.sort((a, b) => b.length - a.length)
-                const matchedCmd = matchedCmds[0]
-
-                // 查找对应的接口索引
-                const apiIndex = config_date.gg_APIList.findIndex(api => api.customCommand === matchedCmd)
-                if (apiIndex === -1) {
-                    logger.error(`未找到命令 ${matchedCmd} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
-                    return false
-                }
-
-                // 保存原来的设置
-                const originalUsingAPI = config_date.gg_usingAPI
-
-                // 临时设置当前使用的接口
-                config_date.gg_usingAPI = apiIndex + 1
-                Config.setConfig(config_date)
-
-                try {
-                    // 修改消息内容并调用结束对话
-                    e.msg = '#sf结束gg对话' + (number ? number : '')
-                    await this.sf_end_chat(e)
-                } finally {
-                    // 还原设置
-                    config_date.gg_usingAPI = originalUsingAPI
-                    Config.setConfig(config_date)
-                }
-
-                return true
-            }
-        }
-
-        // 如果没找到自定义命令，尝试解析数字
-        const index = parseInt(cmdPart)
-        if (!isNaN(index)) {
-            // 如果是数字，使用原来的逻辑
-            if (!config_date.gg_APIList || index < 0 || (index > 0 && index > config_date.gg_APIList.length)) {
-                await e.reply(`无效的接口索引，请使用 #sfgg接口列表 查看可用的接口`)
-                return false
-            }
-
-            // 保存原来的设置
-            const originalUsingAPI = config_date.gg_usingAPI
-
-            // 临时设置当前使用的接口
-            config_date.gg_usingAPI = index
-            Config.setConfig(config_date)
-
-            try {
-                // 修改消息内容并调用结束对话
-                e.msg = '#sf结束gg对话' + (number ? number : '')
-                await this.sf_end_chat(e)
-            } finally {
-                // 还原设置
-                config_date.gg_usingAPI = originalUsingAPI
-                Config.setConfig(config_date)
-            }
-
-            return true
-        }
-
-        // 如果不是数字，查找自定义命令
-        if (!config_date.gg_APIList) {
-            logger.error(`未配置任何gg接口，请先配置接口`)
-            return false
-        }
-        const apiIndex = config_date.gg_APIList.findIndex(api => api.customCommand === cmdPart)
-        if (apiIndex === -1) {
-            logger.error(`未找到命令 ${cmdPart} 对应的接口，请使用 #sfgg接口列表 查看可用的接口`)
-            return false
-        }
-
-        // 保存原来的设置
-        const originalUsingAPI = config_date.gg_usingAPI
-
-        // 临时设置当前使用的接口
-        config_date.gg_usingAPI = apiIndex + 1
-        Config.setConfig(config_date)
-
+    // 添加处理加载历史记录的方法
+    async handleLoadHistory(ws, msgObj) {
         try {
-            // 修改消息内容并调用结束对话
-            e.msg = '#sf结束gg对话' + (number ? number : '')
-            await this.sf_end_chat(e)
-        } finally {
-            // 还原设置
-            config_date.gg_usingAPI = originalUsingAPI
-            Config.setConfig(config_date)
-        }
+            const { userQQ, mode } = msgObj;
+            if (!userQQ) {
+                logger.warn('[sf插件] 加载历史记录失败: 未提供用户QQ');
+                this.sendError(ws, '未提供用户QQ');
+                return;
+            }
 
-        return true
+            // 根据模式确定promptNum
+            const config = Config.getConfig();
+            let promptNum = 0;
+            if (mode === 'ss') {
+                promptNum = config.ss_usingAPI;
+            } else if (mode === 'gg') {
+                promptNum = config.gg_usingAPI;
+            }
+            logger.mark(`[sf插件] 加载历史记录: userQQ=${userQQ}, mode=${mode}, promptNum=${promptNum}`);
+
+            // 从Redis加载历史记录
+            const messages = await loadContext(userQQ, promptNum, mode);
+            logger.mark(`[sf插件] 成功加载历史记录: ${messages.length}条消息`);
+
+            // 发送历史记录给客户端
+            const response = {
+                type: 'history',
+                messages: messages
+            };
+            ws.send(JSON.stringify(response));
+            logger.mark('[sf插件] 历史记录已发送给客户端');
+        } catch (error) {
+            logger.error('[sf插件] 加载历史记录失败:', error);
+            this.sendError(ws, '加载历史记录失败: ' + error.message);
+        }
     }
 }
