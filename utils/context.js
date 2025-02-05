@@ -33,19 +33,41 @@ export function formatContextForGemini(messages) {
     })
 }
 
+/** 构造Redis key */
+function buildRedisKey(userId, timestamp, promptNum = 0) {
+    // 如果是默认配置(promptNum=0),使用share01后缀
+    if (promptNum === 0) {
+        return `sfplugin:llm:${userId}:${timestamp}:share01`
+    }
+    // 其他情况保持不变
+    return `sfplugin:llm:${userId}:${timestamp}:promptNum${promptNum}`
+}
+
+/** 构造Redis key pattern用于搜索 */
+function buildRedisPattern(userId, promptNum = 0) {
+    // 如果是默认配置(promptNum=0),使用share01后缀
+    if (promptNum === 0) {
+        return `sfplugin:llm:${userId}:*:share01`
+    }
+    // 其他情况保持不变
+    return `sfplugin:llm:${userId}:*:promptNum${promptNum}`
+}
+
 /** 保存对话上下文 */
 export async function saveContext(userId, message, promptNum = 0) {
     try {
         const config = Config.getConfig()
         const maxHistory = config.gg_maxHistoryLength * 2 || 40
-        // 添加promptNum到key中
-        const key = `sfplugin:llm:${userId}:${Date.now()}${promptNum > 0 ? `:promptNum${promptNum}` : ''}`
+        
+        // 使用新的key构造函数
+        const key = buildRedisKey(userId, Date.now(), promptNum)
 
         // 直接保存消息,不修改content结构
         await redis.set(key, JSON.stringify(message), { EX: config.gg_HistoryExTime * 60 * 60 }) // x小时过期
 
         // 获取该用户的所有消息
-        const keys = await redis.keys(`sfplugin:llm:${userId}:*${promptNum > 0 ? `:promptNum${promptNum}` : ''}`)
+        const pattern = buildRedisPattern(userId, promptNum)
+        const keys = await redis.keys(pattern)
         keys.sort((a, b) => {
             const timeA = parseInt(a.split(':')[3])
             const timeB = parseInt(b.split(':')[3])
@@ -73,8 +95,9 @@ export async function loadContext(userId, promptNum = 0) {
         const config = Config.getConfig()
         const maxHistory = config.gg_maxHistoryLength * 2 || 40
 
-        // 获取该用户的所有消息
-        const keys = await redis.keys(`sfplugin:llm:${userId}:*${promptNum > 0 ? `:promptNum${promptNum}` : ''}`)
+        // 使用新的pattern构造函数
+        const pattern = buildRedisPattern(userId, promptNum)
+        const keys = await redis.keys(pattern)
         keys.sort((a, b) => {
             const timeA = parseInt(a.split(':')[3])
             const timeB = parseInt(b.split(':')[3])
@@ -102,8 +125,9 @@ export async function loadContext(userId, promptNum = 0) {
 /** 清除用户前 n 条历史对话 */
 export async function clearContextByCount(userId, count = 1, promptNum = 0) {
     try {
-        // 获取该用户的所有消息
-        const keys = await redis.keys(`sfplugin:llm:${userId}:*${promptNum > 0 ? `:promptNum${promptNum}` : ''}`)
+        // 使用新的pattern构造函数
+        const pattern = buildRedisPattern(userId, promptNum)
+        const keys = await redis.keys(pattern)
         keys.sort((a, b) => {
             const timeA = parseInt(a.split(':')[3])
             const timeB = parseInt(b.split(':')[3])
@@ -132,7 +156,8 @@ export async function clearContextByCount(userId, count = 1, promptNum = 0) {
 /** 清除指定用户的上下文记录 */
 export async function clearUserContext(userId, promptNum = 0) {
     try {
-        const keys = await redis.keys(`sfplugin:llm:${userId}:*${promptNum > 0 ? `:promptNum${promptNum}` : ''}`)
+        const pattern = buildRedisPattern(userId, promptNum)
+        const keys = await redis.keys(pattern)
         for (const key of keys) {
             await redis.del(key)
         }
