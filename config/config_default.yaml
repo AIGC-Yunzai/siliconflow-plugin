@@ -13,6 +13,7 @@ enableWS: false # 是否启用WebSocket服务
 wsPort: 8081 # WebSocket服务端口
 wsLogLevel: "info" # 日志级别：debug/info/warn/error
 wsDefaultUser: "小白" # web端默认用户名，用于替换提示词中的{{user_name}}
+wsPassword: "sf_plugin_2024" # WebSocket服务密码,默认密码
 # 机器人名字触发配置
 botName: "" # 机器人的名字
 defaultCommand: "gg" # 默认使用的命令，可选 ss 或 gg

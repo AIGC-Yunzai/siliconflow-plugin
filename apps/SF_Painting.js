@@ -156,9 +156,42 @@ export class SF_Painting extends plugin {
                     logger.mark('[sf插件] 新的WebSocket连接');
                 }
                 
+                // 添加密码验证处理
+                ws.isAuthenticated = false;
+                
                 ws.on('message', async (message) => {
                     try {
                         const msgObj = JSON.parse(message);
+                        
+                        // 处理密码验证
+                        if (msgObj.type === 'auth') {
+                            const config = Config.getConfig();
+                            if (msgObj.password === config.wsPassword) {
+                                ws.isAuthenticated = true;
+                                ws.send(JSON.stringify({
+                                    type: 'auth',
+                                    success: true
+                                }));
+                                return;
+                            } else {
+                                ws.send(JSON.stringify({
+                                    type: 'auth', 
+                                    success: false,
+                                    message: '密码错误'
+                                }));
+                                return;
+                            }
+                        }
+                        
+                        // 验证是否已认证
+                        if (!ws.isAuthenticated) {
+                            ws.send(JSON.stringify({
+                                type: 'error',
+                                message: '请先进行密码验证'
+                            }));
+                            return;
+                        }
+                        
                         if (logLevel === 'debug') {
                             logger.mark(`[sf插件] 收到WebSocket消息: ${JSON.stringify(msgObj)}`);
                         }
