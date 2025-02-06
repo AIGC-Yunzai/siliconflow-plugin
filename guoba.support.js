@@ -897,11 +897,20 @@ export function supportGuoba() {
           lodash.set(config, keyPath, value)
         }
         config = lodash.merge({}, Config.getConfig(), config)
+        
+        // 直接赋值所有数组类型的配置项
         config.sf_keys = data['sf_keys']
+        config.ss_APIList = data['ss_APIList']
+        config.gg_APIList = data['gg_APIList']
         config.fish_text_blacklist = data['fish_text_blacklist']
+        config.ss_Key = data['ss_Key']    // 修正为ss_Key
+        config.ggKey = data['ggKey']      // 修正为ggKey
+        
+        // 其他处理保持不变
         config.sfBaseUrl = config.sfBaseUrl.replace(/\/$/, '')
         config.mj_apiBaseUrl = config.mj_apiBaseUrl.replace(/\/$/, '')
         config.mj_translationBaseUrl = config.mj_translationBaseUrl.replace(/\/$/, '')
+        
         Config.setConfig(config)
         return Result.ok({}, '保存成功~')
       },
