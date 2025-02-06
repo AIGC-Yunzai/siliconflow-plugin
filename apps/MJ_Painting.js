@@ -93,8 +93,13 @@ export class MJ_Painting extends plugin {
         // 读取配置
         let config_date = Config.getConfig()
         if (!config_date.mj_apiKey || !config_date.mj_apiBaseUrl) {
-            await e.reply('请先设置API Key和API Base URL。使用命令：\n#sfmj设置apikey [值]\n#sfmj设置apibaseurl [值]\n（仅限主人设置）')
-            return
+            const errorMsg = '请先设置API Key和API Base URL。使用命令：\n#mjp设置apikey [值]\n#mjp设置apibaseurl [值]\n（仅限主人设置）';
+            if (e.ws) {
+                this.sendMessage(e.ws, 'error', errorMsg);
+            } else {
+                await e.reply(errorMsg);
+            }
+            return;
         }
 
         const match = e.msg.match(/^#(mjp|niji)([\s\S]*)/)
@@ -228,8 +233,13 @@ export class MJ_Painting extends plugin {
         if (!config_date)
             config_date = Config.getConfig()
         if (!config_date.mj_apiKey || !config_date.mj_apiBaseUrl) {
-            await e.reply('请先设置API Key和API Base URL。使用命令：\n#sfmj设置apikey [值]\n#sfmj设置apibaseurl [值]\n（仅限主人设置）')
-            return
+            const errorMsg = '请先设置API Key和API Base URL。使用命令：\n#sfmj设置apikey [值]\n#sfmj设置apibaseurl [值]\n（仅限主人设置）';
+            if (e.ws) {
+                this.sendMessage(e.ws, 'error', errorMsg);
+            } else {
+                await e.reply(errorMsg);
+            }
+            return;
         }
 
         const match = e.msg.match(/^#(放大|微调|重绘)(左上|右上|左下|右下)([\s\S]*)/)
@@ -238,17 +248,31 @@ export class MJ_Painting extends plugin {
             let useTaskId = taskId.trim() || await redis.get(`sf_plugin:MJ_Painting:lastTaskId:${e.user_id}`)
 
             if (!useTaskId) {
-                await e.reply('请提供任务ID或先生成一张图片。')
-                return
+                const errorMsg = '请提供任务ID或先生成一张图片。';
+                if (e.ws) {
+                    this.sendMessage(e.ws, 'error', errorMsg);
+                } else {
+                    await e.reply(errorMsg);
+                }
+                return;
             }
 
-            await e.reply('正在处理，请稍候...')
+            if (e.ws) {
+                this.sendMessage(e.ws, 'mj', '正在处理，请稍候...');
+            } else {
+                await e.reply('正在处理，请稍候...');
+            }
 
             try {
                 const originalTask = await this.fetchTaskDetails(useTaskId, config_date)
                 if (!originalTask) {
-                    await e.reply('获取原始任务信息失败，请确保任务ID正确。')
-                    return
+                    const errorMsg = '获取原始任务信息失败，请确保任务ID正确。';
+                    if (e.ws) {
+                        this.sendMessage(e.ws, 'error', errorMsg);
+                    } else {
+                        await e.reply(errorMsg);
+                    }
+                    return;
                 }
 
                 const positionMap = { '左上': 1, '右上': 2, '左下': 3, '右下': 4 }
@@ -264,21 +288,65 @@ export class MJ_Painting extends plugin {
 
                 const newTaskId = await this.submitAction(customId, useTaskId, config_date)
                 if (!newTaskId) {
-                    await e.reply('提交操作失败，请稍后重试。')
-                    return
+                    const errorMsg = '提交操作失败，请稍后重试。';
+                    if (e.ws) {
+                        this.sendMessage(e.ws, 'error', errorMsg);
+                    } else {
+                        await e.reply(errorMsg);
+                    }
+                    return;
                 }
 
                 const result = await this.pollTaskResult(newTaskId, config_date)
                 if (result) {
-                    await e.reply(`操作完成！\n操作类型：${action}${position}\n新任务ID：${newTaskId}\n图片链接：${result.imageUrl}`)
-                    await e.reply({ ...segment.image(result.imageUrl), origin: true })
+                    const replyMsg = `操作完成！\n操作类型：${action}${position}\n新任务ID：${newTaskId}\n图片链接：${result.imageUrl}`;
+                    
+                    if (e.ws) {
+                        this.sendMessage(e.ws, 'mj', replyMsg);
+                        this.sendMessage(e.ws, 'image', {
+                            type: 'image',
+                            file: result.imageUrl
+                        });
+
+                        // 保存绘画记录到Redis
+                        const userQQ = e.user_id || 'web_user';
+                        const historyKey = `CHATBOT:HISTORY:${userQQ}:dd`;
+                        const cmdPrefix = botType === 'NIJI_JOURNEY' ? '#niji' : '#mjp';
+                        const messages = [
+                            {
+                                role: 'user',
+                                content: `${cmdPrefix} ${prompt}`
+                            },
+                            {
+                                role: 'assistant',
+                                content: `![生成的图片](${result.imageUrl})\n\n${replyMsg}`
+                            }
+                        ];
+                        redis.lPush(historyKey, JSON.stringify(messages));
+                        // 限制历史记录长度为50条对话(100条消息)
+                        redis.lTrim(historyKey, 0, 99);
+                    } else {
+                        await e.reply(replyMsg);
+                        await e.reply({ ...segment.image(result.imageUrl), origin: true });
+                    }
+                    
                     redis.set(`sf_plugin:MJ_Painting:lastTaskId:${e.user_id}`, newTaskId, { EX: 7 * 24 * 60 * 60 }); // 写入redis，有效期7天
                 } else {
-                    await e.reply('操作失败，请稍后重试。')
+                    const errorMsg = '操作失败，请稍后重试。';
+                    if (e.ws) {
+                        this.sendMessage(e.ws, 'error', errorMsg);
+                    } else {
+                        await e.reply(errorMsg);
+                    }
                 }
             } catch (error) {
-                console.error("操作失败", error)
-                await e.reply('处理时遇到了一个错误，请稍后再试。')
+                logger.error("操作失败", error);
+                const errorMsg = '处理时遇到了一个错误，请稍后再试。';
+                if (e.ws) {
+                    this.sendMessage(e.ws, 'error', errorMsg);
+                } else {
+                    await e.reply(errorMsg);
+                }
             }
         }
     }
@@ -368,25 +436,184 @@ MJP插件帮助：
                 const translatedPrompt = await this.translatePrompt(prompt, config_date)
                 if (translatedPrompt) {
                     prompt = translatedPrompt
-                    await e.reply(`翻译后的提示词：${prompt}`)
+                    if (e.ws) {
+                        this.sendMessage(e.ws, 'mj', `翻译后的提示词：${prompt}`);
+                    } else {
+                        await e.reply(`翻译后的提示词：${prompt}`);
+                    }
                 }
             }
 
-            // 修改submitTask方法调用，添加base64Array参数
             const taskId = await this.submitTask(prompt, botType, config_date, base64Array)
             if (!taskId) {
-                await e.reply('提交任务失败，请稍后重试。')
-                return
+                const errorMsg = '提交任务失败，请稍后重试。';
+                if (e.ws) {
+                    this.sendMessage(e.ws, 'error', errorMsg);
+                } else {
+                    await e.reply(errorMsg);
+                }
+                return;
             }
 
             const result = await this.pollTaskResult(taskId, config_date)
             if (result) {
-                await e.reply(`图片生成完成！\n原始提示词：${prompt}\n任务ID：${taskId}\n图片链接：${result.imageUrl}`)
-                e.reply({ ...segment.image(result.imageUrl), origin: true })
+                const replyMsg = `@${e.sender?.card || e.sender?.nickname || 'User'} ${e.user_id}您的图片已生成完成：\n\n原始提示词：${prompt}\n任务ID：${taskId}\n图片链接：${result.imageUrl}`;
+                
+                if (e.ws) {
+                    // WebSocket连接，发送消息和图片
+                    this.sendMessage(e.ws, 'mj', replyMsg);
+                    this.sendMessage(e.ws, 'image', {
+                        type: 'image',
+                        file: result.imageUrl
+                    });
+
+                    // 保存绘画记录到Redis
+                    const userQQ = e.user_id || 'web_user';
+                    const historyKey = `CHATBOT:HISTORY:${userQQ}:dd`;
+                    const cmdPrefix = botType === 'NIJI_JOURNEY' ? '#niji' : '#mjp';
+                    const messages = [
+                        {
+                            role: 'user',
+                            content: `${cmdPrefix} ${prompt}`
+                        },
+                        {
+                            role: 'assistant',
+                            content: `![生成的图片](${result.imageUrl})\n\n${replyMsg}`
+                        }
+                    ];
+                    redis.lPush(historyKey, JSON.stringify(messages));
+                    // 限制历史记录长度为50条对话(100条消息)
+                    redis.lTrim(historyKey, 0, 99);
+                } else {
+                    // 普通聊天
+                    await e.reply(replyMsg);
+                    e.reply({ ...segment.image(result.imageUrl), origin: true });
+                }
+                
                 redis.set(`sf_plugin:MJ_Painting:lastTaskId:${e.user_id}`, taskId, { EX: 7 * 24 * 60 * 60 }); // 写入redis，有效期7天
             } else {
-                e.reply('生成图片失败，请稍后重试。')
+                const errorMsg = '生成图片失败，请稍后重试。';
+                if (e.ws) {
+                    this.sendMessage(e.ws, 'error', errorMsg);
+                } else {
+                    e.reply(errorMsg);
+                }
             }
+        } catch (error) {
+            logger.error("图片生成失败", error);
+            const errorMsg = '生成图片时遇到了一个错误，请稍后再试。';
+            if (e.ws) {
+                this.sendMessage(e.ws, 'error', errorMsg);
+            } else {
+                e.reply(errorMsg);
+            }
+        }
+    }
+
+    // 添加sendMessage方法用于WebSocket通信
+    sendMessage(ws, type, content) {
+        // 确保content是字符串类型
+        let messageContent = String(content);
+        let imageUrl = null;
+        
+        // 处理图片消息
+        if (content.type === 'image') {
+            // 如果是 Buffer 或 base64，直接使用
+            if (content.file && (Buffer.isBuffer(content.file) || content.file.startsWith('data:image'))) {
+                const base64Data = Buffer.isBuffer(content.file) ? 
+                    `data:image/jpeg;base64,${content.file.toString('base64')}` :
+                    content.file;
+                messageContent = content.text || '';
+                imageUrl = base64Data;
+            }
+            // 如果是本地文件路径，读取并转换为base64
+            else if (content.file && typeof content.file === 'string' && !content.file.startsWith('http')) {
+                try {
+                    const fs = require('fs');
+                    const imageBuffer = fs.readFileSync(content.file);
+                    const base64Data = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
+                    messageContent = content.text || '';
+                    imageUrl = base64Data;
+                } catch (error) {
+                    logger.error('[MJ插件] 读取本地图片失败:', error);
+                    messageContent = '[图片发送失败]';
+                }
+            }
+            // 如果是网络URL，直接传递URL
+            else if (content.file && content.file.startsWith('http')) {
+                messageContent = content.text || '';
+                imageUrl = content.file;
+            }
+        }
+        // 处理合并转发消息中的图片
+        else if (typeof content === 'string') {
+            messageContent = content.replace(/\[图片\]|\[CQ:image,file=([^\]]+)\]/g, (match, url) => {
+                if (url) {
+                    // 如果是base64或者http链接，直接使用
+                    if (url.startsWith('data:image') || url.startsWith('http')) {
+                        if (url.startsWith('http')) {
+                            imageUrl = url;
+                        }
+                        return '';
+                    }
+                    // 如果是本地文件，转换为base64
+                    try {
+                        const fs = require('fs');
+                        const imageBuffer = fs.readFileSync(url);
+                        const base64Data = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
+                        imageUrl = base64Data;
+                        return '';
+                    } catch (error) {
+                        logger.error('[MJ插件] 读取本地图片失败:', error);
+                        return '[图片发送失败]';
+                    }
+                }
+                return match;
+            });
+        }
+
+        const message = {
+            type,
+            content: messageContent,
+            timestamp: new Date().getTime()
+        };
+
+        // 如果有图片URL，添加到消息中
+        if (imageUrl) {
+            message.imageUrl = imageUrl;
+            // 如果是图片类型消息，将图片URL转换为markdown格式
+            if (type === 'image') {
+                message.content = `![图片](${imageUrl})`;
+            }
+        }
+
+        try {
+            // 添加日志记录
+            const config = Config.getConfig();
+            const logLevel = config.wsLogLevel || 'info';
+            if (logLevel === 'debug') {
+                logger.mark(`[MJ插件][WebSocket] 发送消息: ${JSON.stringify(message, null, 2)}`);
+            } else if (logLevel === 'info') {
+                logger.mark(`[MJ插件][WebSocket] 发送${type}类型消息: ${messageContent}`);
+            }
+
+            ws.send(JSON.stringify(message));
+        } catch (error) {
+            logger.error('[MJ插件] 发送消息失败:', error);
+            this.sendError(ws, '发送消息失败: ' + error.message);
+        }
+    }
+
+    // 添加sendError方法用于发送错误消息
+    sendError(ws, errorMessage) {
+        const message = {
+            type: 'error',
+            content: errorMessage,
+            timestamp: new Date().getTime()
+        };
+        
+        try {
+            ws.send(JSON.stringify(message));
         } catch (error) {
             logger.error("图片生成失败", error)
             e.reply('生成图片时遇到了一个错误，请稍后再试。')

@@ -20,6 +20,7 @@ import {
 import { getUin } from '../utils/common.js'
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
+import { MJ_Painting } from './MJ_Painting.js'
 
 // 使机器人可以对其第一人称回应
 const reg_chatgpt_for_firstperson_call = new RegExp(Config.getConfig()?.botName || `sf-plugin-bot-name-${Math.floor(10000 + Math.random() * 90000)}`, "g");
@@ -60,7 +61,7 @@ export class SF_Painting extends plugin {
                     permission: 'master'
                 },
                 {
-                    reg: '^#(sf|SF)结束((ss|gg)?)对话(\\d+)?.*$',
+                    reg: '^#(sf|SF)结束((ss|gg|dd)?)对话(\\d+)?.*$',
                     fnc: 'sf_end_chat',
                 },
                 {
@@ -217,6 +218,12 @@ export class SF_Painting extends plugin {
                                 }
                                 await this.handleGGMessage(ws, content, images, userQQ);
                                 break;
+                            case 'dd':
+                                if (logLevel === 'debug' || logLevel === 'info') {
+                                    logger.mark(`[sf插件] 处理DD消息: ${content}`);
+                                }
+                                await this.handleCommands(ws, content, userQQ);
+                                break;
                             default:
                                 if (logLevel !== 'error') {
                                     logger.warn(`[sf插件] 未知的消息类型: ${type}`);
@@ -321,13 +328,72 @@ export class SF_Painting extends plugin {
     // 发送消息
     sendMessage(ws, type, content) {
         // 确保content是字符串类型
-        const messageContent = String(content);
+        let messageContent = String(content);
+        let imageUrl = null;
         
+        // 处理图片消息
+        if (content.type === 'image') {
+            // 如果是 Buffer 或 base64，直接使用
+            if (content.file && (Buffer.isBuffer(content.file) || content.file.startsWith('data:image'))) {
+                const base64Data = Buffer.isBuffer(content.file) ? 
+                    `data:image/jpeg;base64,${content.file.toString('base64')}` :
+                    content.file;
+                messageContent = `![图片](${base64Data})`;
+            }
+            // 如果是本地文件路径，读取并转换为base64
+            else if (content.file && typeof content.file === 'string' && !content.file.startsWith('http')) {
+                try {
+                    const fs = require('fs');
+                    const imageBuffer = fs.readFileSync(content.file);
+                    const base64Data = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
+                    messageContent = `![图片](${base64Data})`;
+                } catch (error) {
+                    logger.error('[sf插件] 读取本地图片失败:', error);
+                    messageContent = '[图片发送失败]';
+                }
+            }
+            // 如果是网络URL，直接传递URL
+            else if (content.file && content.file.startsWith('http')) {
+                imageUrl = content.file;
+                messageContent = `![图片](${content.file})`;
+            }
+        }
+        // 处理合并转发消息中的图片
+        else if (typeof content === 'string') {
+            messageContent = content.replace(/\[图片\]|\[CQ:image,file=([^\]]+)\]/g, (match, url) => {
+                if (url) {
+                    // 如果是base64或者http链接，直接使用
+                    if (url.startsWith('data:image') || url.startsWith('http')) {
+                        if (url.startsWith('http')) {
+                            imageUrl = url;
+                        }
+                        return `![图片](${url})`;
+                    }
+                    // 如果是本地文件，转换为base64
+                    try {
+                        const fs = require('fs');
+                        const imageBuffer = fs.readFileSync(url);
+                        const base64Data = `data:image/jpeg;base64,${imageBuffer.toString('base64')}`;
+                        return `![图片](${base64Data})`;
+                    } catch (error) {
+                        logger.error('[sf插件] 读取本地图片失败:', error);
+                        return '[图片发送失败]';
+                    }
+                }
+                return match;
+            });
+        }
+
         const message = {
             type,
             content: messageContent,
             timestamp: new Date().getTime()
         };
+
+        // 如果有图片URL，添加到消息中
+        if (imageUrl) {
+            message.imageUrl = imageUrl;
+        }
         
         try {
             const config = Config.getConfig();
@@ -922,10 +988,11 @@ SF插件设置帮助：
 9. #sf结束对话：结束当前用户的默认配置对话
 10. #sf结束ss对话：结束当前用户的SS系统对话
 11. #sf结束gg对话：结束当前用户的GG系统对话
-12. #sf结束全部对话：结束所有用户的对话（仅限主人）
-13. #sf删除前n条对话：删除默认配置的最近n条对话
-14. #sf删除ss前n条对话：删除SS系统的最近n条对话
-15. #sf删除gg前n条对话：删除GG系统的最近n条对话
+12. #sf结束dd对话：结束当前用户的DD系统对话（绘图历史）
+13. #sf结束全部对话：结束所有用户的对话（仅限主人）
+14. #sf删除前n条对话：删除默认配置的最近n条对话
+15. #sf删除ss前n条对话：删除SS系统的最近n条对话
+16. #sf删除gg前n条对话：删除GG系统的最近n条对话
 
 接口管理：
 1. #sfss接口列表：查看ss接口列表
@@ -946,6 +1013,7 @@ SF插件设置帮助：
 4. 支持搜索引擎集成（仅限GG）
 5. 支持多API接口切换
 6. 支持WebSocket服务（可选）
+7. 支持绘图历史记录（DD模式）
         `.trim()
 
         await e.reply(helpMessage)
@@ -987,24 +1055,60 @@ SF插件设置帮助：
                 const str_3 = `图片URL：${imageUrl}`
 
                 // 发送图片
-                if (config_date.simpleMode) {
-                    const msgx = await common.makeForwardMsg(e, [str_1, { ...segment.image(imageUrl), origin: true }, str_2, str_3], `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
-                    e.reply(msgx)
+                if (e.ws) {
+                    // WebSocket连接，直接发送图片URL
+                    const msgx = [str_1, str_2, str_3].join('\n\n');
+                    this.sendMessage(e.ws, 'sf', {
+                        type: 'image',
+                        file: imageUrl,
+                        text: msgx
+                    });
+
+                    // 保存绘画记录到Redis
+                    const userQQ = e.user_id || 'web_user';
+                    const historyKey = `CHATBOT:HISTORY:${userQQ}:dd`;
+                    const messages = [
+                        {
+                            role: 'user',
+                            content: userPrompt || finalPrompt
+                        },
+                        {
+                            role: 'assistant',
+                            content: `![生成的图片](${imageUrl})\n\n${msgx}`
+                        }
+                    ];
+                    redis.lPush(historyKey, JSON.stringify(messages));
+                    // 限制历史记录长度为50条对话(100条消息)
+                    redis.lTrim(historyKey, 0, 99);
                 } else {
-                    const msgx = await common.makeForwardMsg(e, [str_1, str_2, str_3], `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
-                    e.reply(msgx)
-                    e.reply({ ...segment.image(imageUrl), origin: true })
+                    // 普通聊天，使用原有的转发消息方式
+                    if (config_date.simpleMode) {
+                        const msgx = await common.makeForwardMsg(e, [str_1, { ...segment.image(imageUrl), origin: true }, str_2, str_3], `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
+                        e.reply(msgx)
+                    } else {
+                        const msgx = await common.makeForwardMsg(e, [str_1, str_2, str_3], `${e.sender.card || e.sender.nickname} 的${canImg2Img ? "图生图" : "文生图"}`)
+                        e.reply(msgx)
+                        e.reply({ ...segment.image(imageUrl), origin: true })
+                    }
                 }
 
                 return true;
             } else {
                 logger.error("[sf插件]返回错误：\n", JSON.stringify(data, null, 2))
-                e.reply(`生成图片失败：${data.message || '未知错误'}`)
+                if (e.ws) {
+                    this.sendError(e.ws, `生成图片失败：${data.message || '未知错误'}`);
+                } else {
+                    e.reply(`生成图片失败：${data.message || '未知错误'}`);
+                }
                 return false;
             }
         } catch (error) {
             logger.error("[sf插件]API调用失败\n", error)
-            e.reply('生成图片时遇到了一个错误，请稍后再试。')
+            if (e.ws) {
+                this.sendError(e.ws, '生成图片时遇到了一个错误，请稍后再试。');
+            } else {
+                e.reply('生成图片时遇到了一个错误，请稍后再试。');
+            }
             return false;
         }
     }
@@ -1323,10 +1427,10 @@ SF插件设置帮助：
         const config_date = Config.getConfig()
 
         // 获取目标用户ID和系统类型
-        const match = e.msg.match(/^#(sf|SF)结束((ss|gg)?)对话(?:(\d+))?$/)
+        const match = e.msg.match(/^#(sf|SF)结束((ss|gg|dd)?)对话(?:(\d+))?$/)
         if (!match) return false
 
-        const systemType = match[2]?.toLowerCase() // ss或gg或undefined
+        const systemType = match[2]?.toLowerCase() // ss或gg或dd或undefined
         let targetId = e.at  // 优先获取@的用户
         let targetName = ''
 
@@ -1359,6 +1463,25 @@ SF插件设置帮助：
             // 如果没有指定目标用户，则结束自己的对话
             targetId = e.user_id
             targetName = e.sender.card || e.sender.nickname
+        }
+
+        // 如果是dd模式，直接清除Redis中的历史记录
+        if (systemType === 'dd') {
+            try {
+                const historyKey = `CHATBOT:HISTORY:${targetId}:dd`;
+                await redis.del(historyKey);
+                const systemName = 'DD';
+                if (targetId === e.user_id) {
+                    await e.reply(`已结束当前${systemName}系统对话，历史记录已清除`, true)
+                } else {
+                    await e.reply(`已结束${targetName}的${systemName}系统对话，历史记录已清除`, true)
+                }
+                return true;
+            } catch (error) {
+                logger.error(`[sf插件]清除DD历史记录失败: ${error}`);
+                await e.reply('结束对话失败，请稍后再试', true)
+                return false;
+            }
         }
 
         // 设置对应的promptNum
@@ -1660,28 +1783,44 @@ SF插件设置帮助：
             sender: this.e?.sender || {
                 card: config.wsDefaultUser || '小白',
                 nickname: config.wsDefaultUser || '小白'
-            }
+            },
+            isMaster: true, // WebSocket连接默认有管理权限
+            ws: ws // 添加ws属性以支持WebSocket通信
         };
 
         try {
-            // 匹配 #sf结束全部对话
-            if (msg.match(/^#(sf|SF)结束全部对话$/)) {
-                await this.sf_end_all_chat(e);
-                return true;
-            }
+            // 创建MJ实例
+            const mjPainting = new MJ_Painting();
+            
+            // 合并SF和MJ的规则
+            const allRules = [
+                ...this.rule.map(rule => ({ ...rule, instance: this })),
+                ...mjPainting.rule.map(rule => ({ ...rule, instance: mjPainting }))
+            ];
 
-            // 匹配 #sf结束对话
-            if (msg.match(/^#(sf|SF)结束((ss|gg)?)对话(?:(\d+))?$/)) {
-                await this.sf_end_chat(e);
-                return true;
-            }
-
-            // 匹配 #sf清除/删除前n条对话
-            if (msg.match(/^#(sf|SF)(清除|删除)((ss|gg)?)?(前面?|最近的?)(\d+)条对话$/)) {
-                await this.sf_clearContextByCount(e);
-                return true;
+            // 遍历所有规则并尝试匹配
+            for (const rule of allRules) {
+                const reg = rule.reg;
+                const fnc = rule.fnc;
+                
+                // 如果是字符串，转换为正则
+                const regex = typeof reg === 'string' ? new RegExp(reg) : reg;
+                
+                // 尝试匹配命令
+                if (regex.test(msg)) {
+                    // 检查权限
+                    if (rule.permission === 'master' && !e.isMaster) {
+                        this.sendError(ws, '该命令仅限管理员使用');
+                        return true;
+                    }
+                    
+                    // 调用对应实例的处理函数
+                    await rule.instance[fnc](e);
+                    return true;
+                }
             }
         } catch (error) {
+            logger.error('[sf插件] 处理命令时出错:', error);
             this.sendError(ws, error.message);
             return true;
         }
@@ -1699,19 +1838,26 @@ SF插件设置帮助：
                 return;
             }
 
-            // 根据模式确定promptNum
-            const config = Config.getConfig();
-            let promptNum = 0;
-            if (mode === 'ss') {
-                promptNum = config.ss_usingAPI;
-            } else if (mode === 'gg') {
-                promptNum = config.gg_usingAPI;
+            let messages = [];
+            if (mode === 'dd') {
+                // 从Redis加载绘画历史记录
+                const historyKey = `CHATBOT:HISTORY:${userQQ}:dd`;
+                const historyData = await redis.lRange(historyKey, 0, -1);
+                messages = historyData.map(item => JSON.parse(item)).flat();
+                logger.mark(`[sf插件] 成功加载绘画历史记录: ${messages.length}条消息`);
+            } else {
+                // 原有的SS和GG模式历史记录加载逻辑
+                const config = Config.getConfig();
+                let promptNum = 0;
+                if (mode === 'ss') {
+                    promptNum = config.ss_usingAPI;
+                } else if (mode === 'gg') {
+                    promptNum = config.gg_usingAPI;
+                }
+                logger.mark(`[sf插件] 加载历史记录: userQQ=${userQQ}, mode=${mode}, promptNum=${promptNum}`);
+                messages = await loadContext(userQQ, promptNum, mode);
+                logger.mark(`[sf插件] 成功加载历史记录: ${messages.length}条消息`);
             }
-            logger.mark(`[sf插件] 加载历史记录: userQQ=${userQQ}, mode=${mode}, promptNum=${promptNum}`);
-
-            // 从Redis加载历史记录
-            const messages = await loadContext(userQQ, promptNum, mode);
-            logger.mark(`[sf插件] 成功加载历史记录: ${messages.length}条消息`);
 
             // 发送历史记录给客户端
             const response = {

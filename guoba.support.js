@@ -719,7 +719,7 @@ export function supportGuoba() {
         {
           field: "enableWS",
           label: "启用WebSocket服务",
-          bottomHelpMessage: "是否启用WebSocket服务，用于在网页端https://sf.maliya.top/，进行对话",
+          bottomHelpMessage: "是否启用WebSocket服务，用于在网页端https://sf.maliya.top/，进行对话，如果是从没有ws的版本更新过来的，请重新安装依赖，在崽的根目录执行pnpm install --filter=siliconflow-plugin",
           component: "Switch",
         },
         {

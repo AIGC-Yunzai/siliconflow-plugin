@@ -11,6 +11,7 @@
   - 🗣️ 语音合成：集成Fishaudio的高质量TTS服务
   - 📊 资源管理：支持多key负载均衡，提供图片直链获取等功能
   - 🔗 链接处理：自动提取和处理消息中的URL
+  - ⚡ WebSocket：支持WebSocket与前端通信实现实时对话与绘图，详情看[前端地址](https://sf.maliya.top)，[部署教程](https://github.com/AIGC-Yunzai/SF-WEB)
 
 > [!TIP]
 > 插件官网（施工中）：[SiliconFlow-插件](https://aigc-yunzai.dwe.me/)
@@ -85,7 +86,7 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 - [X] #gg 对话实现实时搜索功能
 - [X] 对话支持历史记录、获取用户昵称，结合 MD 输出以获取沉浸式角色扮演体验
 - [X] 支持接口列表，方便快速切换预设，预设具有独立的上下文
-- [X] 支持 WebSocket 与前端通信实现实时对话与绘图，详情看[部署教程](https://抱歉还没有开始写，诶嘿)
+- [X] 支持 WebSocket 与前端通信实现实时对话与绘图，详情看[前端地址](https://sf.maliya.top)，[部署教程](https://github.com/AIGC-Yunzai/SF-WEB)
 - [ ] TODO..
 
 ## 支持与贡献
