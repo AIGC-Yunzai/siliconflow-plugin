@@ -25,6 +25,9 @@ import { MJ_Painting } from './MJ_Painting.js'
 // 使机器人可以对其第一人称回应
 const reg_chatgpt_for_firstperson_call = new RegExp(Config.getConfig()?.botName || `sf-plugin-bot-name-${Math.floor(10000 + Math.random() * 90000)}`, "g");
 
+var Ws_Server = {};
+init_server();
+
 export class SF_Painting extends plugin {
     constructor() {
         super({
@@ -101,178 +104,29 @@ export class SF_Painting extends plugin {
             ]
         })
         this.sf_keys_index = -1
-        this.currentKeyIndex_ggKey = 0
-        
-        // 读取配置,检查是否启用ws服务
-        const config = Config.getConfig();
-        if (config.enableWS) {
-            this.init();
-        }
+
     }
 
-    init() {
-        // 检查配置是否启用ws服务
-        const config = Config.getConfig();
-        if (!config.enableWS) {
-            return;
-        }
-
-        // 使用全局对象存储服务器实例
-        if (!global.sfPluginServer) {
-            // 创建HTTP服务器
-            global.sfPluginServer = createServer();
-            
-            // 创建WebSocket服务器
-            const wsOptions = {
-                server: global.sfPluginServer,
-                maxPayload: 50 * 1024 * 1024, // 50MB
-            };
-            
-            global.sfPluginWSServer = new WebSocketServer(wsOptions);
-            
-            // 启动服务器
-            const port = config.wsPort || 8081;
-            global.sfPluginServer.on('error', (error) => {
-                if (error.code === 'EADDRINUSE') {
-                    // 如果端口被占用，尝试使用其他端口
-                    logger.mark(`[sf插件] 端口 ${port} 已被占用，尝试使用随机端口`);
-                    global.sfPluginServer.listen(0);
-                } else {
-                    logger.error('[sf插件] WebSocket服务器错误:', error);
-                }
-            });
-
-            global.sfPluginServer.listen(port, () => {
-                const address = global.sfPluginServer.address();
-                logger.mark(`[sf插件] WebSocket服务器运行在端口 ${address.port}`);
-            });
-
-            // WebSocket连接处理
-            global.sfPluginWSServer.on('connection', (ws, req) => {
-                // 根据日志级别记录
-                const logLevel = config.wsLogLevel || 'info';
-                if (logLevel === 'debug') {
-                    logger.mark(`[sf插件] 新的WebSocket连接 来自: ${req.socket.remoteAddress}`);
-                } else if (logLevel === 'info') {
-                    logger.mark('[sf插件] 新的WebSocket连接');
-                }
-                
-                // 添加密码验证处理
-                ws.isAuthenticated = false;
-                
-                ws.on('message', async (message) => {
-                    try {
-                        const msgObj = JSON.parse(message);
-                        
-                        // 处理密码验证
-                        if (msgObj.type === 'auth') {
-                            const config = Config.getConfig();
-                            if (msgObj.password === config.wsPassword) {
-                                ws.isAuthenticated = true;
-                                ws.send(JSON.stringify({
-                                    type: 'auth',
-                                    success: true
-                                }));
-                                return;
-                            } else {
-                                ws.send(JSON.stringify({
-                                    type: 'auth', 
-                                    success: false,
-                                    message: '密码错误'
-                                }));
-                                return;
-                            }
-                        }
-                        
-                        // 验证是否已认证
-                        if (!ws.isAuthenticated) {
-                            ws.send(JSON.stringify({
-                                type: 'error',
-                                message: '请先进行密码验证'
-                            }));
-                            return;
-                        }
-                        
-                        if (logLevel === 'debug') {
-                            logger.mark(`[sf插件] 收到WebSocket消息: ${JSON.stringify(msgObj)}`);
-                        }
-                        const { type, content, images, userQQ } = msgObj;
-                        
-                        // 根据类型处理消息
-                        switch(type) {
-                            case 'loadHistory':
-                                if (logLevel === 'debug' || logLevel === 'info') {
-                                    logger.mark(`[sf插件] 处理加载历史记录请求: userQQ=${msgObj.userQQ}, mode=${msgObj.mode}`);
-                                }
-                                await this.handleLoadHistory(ws, msgObj);
-                                break;
-                            case 'ss':
-                                if (logLevel === 'debug' || logLevel === 'info') {
-                                    logger.mark(`[sf插件] 处理SS消息: ${content}`);
-                                }
-                                await this.handleSSMessage(ws, content, images, userQQ);
-                                break;
-                            case 'gg':
-                                if (logLevel === 'debug' || logLevel === 'info') {
-                                    logger.mark(`[sf插件] 处理GG消息: ${content}`);
-                                }
-                                await this.handleGGMessage(ws, content, images, userQQ);
-                                break;
-                            case 'dd':
-                                if (logLevel === 'debug' || logLevel === 'info') {
-                                    logger.mark(`[sf插件] 处理DD消息: ${content}`);
-                                }
-                                await this.handleCommands(ws, content, userQQ);
-                                break;
-                            default:
-                                if (logLevel !== 'error') {
-                                    logger.warn(`[sf插件] 未知的消息类型: ${type}`);
-                                }
-                                this.sendError(ws, '未知的消息类型');
-                        }
-                    } catch (error) {
-                        if (logLevel !== 'error') {
-                            logger.error('[sf插件] 处理WebSocket消息错误:', error);
-                        }
-                        this.sendError(ws, error.message);
-                    }
-                });
-                
-                ws.on('close', () => {
-                    if (logLevel === 'debug' || logLevel === 'info') {
-                        logger.mark('[sf插件] WebSocket连接关闭');
-                    }
-                });
-                
-                ws.on('error', (error) => {
-                    if (logLevel !== 'error') {
-                        logger.error('[sf插件] WebSocket错误:', error);
-                    }
-                });
-            });
-        }
-    }
-    
     // 处理SS模式消息
     async handleSSMessage(ws, content, images, userQQ = 'web_user') {
         try {
             let msg = content;
-            
-            // 处理命令
-            if (msg.startsWith('#')) {
-                const result = await this.handleCommands(ws, msg, userQQ);
-                if (result) return; // 如果是命令且已处理,直接返回
-            }
 
             // 获取配置
             const config = Config.getConfig();
+
+            // 处理命令
+            if (msg.startsWith('#')) {
+                const result = await this.handleCommands(ws, msg, userQQ, config);
+                if (result) return; // 如果是命令且已处理,直接返回
+            }
 
             // 构造模拟的e对象
             const e = {
                 msg: `#ss ${msg}`,
                 img: images, // 直接使用传入的base64图片数组
                 reply: (content, quote = false) => {
-                    this.sendMessage(ws, 'ss', content);
+                    this.sendMessage(ws, 'ss', content, config);
                 },
                 user_id: userQQ,
                 self_id: this.e?.self_id || Bot.uin,
@@ -283,32 +137,32 @@ export class SF_Painting extends plugin {
             };
 
             // 调用原有的sf_chat方法
-            await this.sf_chat(e);
+            await this.sf_chat(e, config);
         } catch (error) {
             this.sendError(ws, error.message);
         }
     }
-    
+
     // 处理GG模式消息
     async handleGGMessage(ws, content, images, userQQ = 'web_user') {
         try {
             let msg = content;
-            
-            // 处理命令
-            if (msg.startsWith('#')) {
-                const result = await this.handleCommands(ws, msg, userQQ);
-                if (result) return; // 如果是命令且已处理,直接返回
-            }
 
             // 获取配置
             const config = Config.getConfig();
+
+            // 处理命令
+            if (msg.startsWith('#')) {
+                const result = await this.handleCommands(ws, msg, userQQ, config);
+                if (result) return; // 如果是命令且已处理,直接返回
+            }
 
             // 构造模拟的e对象
             const e = {
                 msg: `#gg ${msg}`,
                 img: images, // 直接使用传入的base64图片数组
                 reply: (content, quote = false) => {
-                    this.sendMessage(ws, 'gg', content);
+                    this.sendMessage(ws, 'gg', content, config);
                 },
                 user_id: userQQ,
                 self_id: this.e?.self_id || Bot.uin,
@@ -319,23 +173,23 @@ export class SF_Painting extends plugin {
             };
 
             // 调用原有的gg_chat方法
-            await this.gg_chat(e);
+            await this.gg_chat(e, config);
         } catch (error) {
             this.sendError(ws, error.message);
         }
     }
-    
+
     // 发送消息
-    sendMessage(ws, type, content) {
+    sendMessage(ws, type, content, config = undefined) {
         // 确保content是字符串类型
         let messageContent = String(content);
         let imageUrl = null;
-        
+
         // 处理图片消息
         if (content.type === 'image') {
             // 如果是 Buffer 或 base64，直接使用
             if (content.file && (Buffer.isBuffer(content.file) || content.file.startsWith('data:image'))) {
-                const base64Data = Buffer.isBuffer(content.file) ? 
+                const base64Data = Buffer.isBuffer(content.file) ?
                     `data:image/jpeg;base64,${content.file.toString('base64')}` :
                     content.file;
                 messageContent = `![图片](${base64Data})`;
@@ -394,9 +248,8 @@ export class SF_Painting extends plugin {
         if (imageUrl) {
             message.imageUrl = imageUrl;
         }
-        
+
         try {
-            const config = Config.getConfig();
             const logLevel = config.wsLogLevel || 'info';
             if (logLevel === 'debug') {
                 logger.mark(`[sf插件] 发送消息给前端: ${JSON.stringify(message)}`);
@@ -407,7 +260,7 @@ export class SF_Painting extends plugin {
             this.sendError(ws, '发送消息失败: ' + error.message);
         }
     }
-    
+
     // 发送错误消息
     sendError(ws, errorMessage) {
         const message = {
@@ -415,13 +268,9 @@ export class SF_Painting extends plugin {
             content: errorMessage,
             timestamp: new Date().getTime()
         };
-        
+
         try {
-            const config = Config.getConfig();
-            const logLevel = config.wsLogLevel || 'info';
-            if (logLevel === 'debug') {
-                logger.mark(`[sf插件] 发送错误消息给前端: ${JSON.stringify(message)}`);
-            }
+            logger.mark(`[sf插件] 发送错误消息给前端: ${JSON.stringify(message)}`);
             ws.send(JSON.stringify(message));
         } catch (error) {
             logger.error('发送错误消息失败:', error);
@@ -437,18 +286,18 @@ export class SF_Painting extends plugin {
             }
         }
     }
-    
-    // 处理SS命令
-    async processSSCommand(content) {
-      // 在这里实现SS模式的具体逻辑
-      return `SS模式回复: ${content}`;
-    }
-    
-    // 处理GG命令
-    async processGGCommand(content) {
-      // 在这里实现GG模式的具体逻辑
-      return `GG模式回复: ${content}`;
-    }
+
+    // // 处理SS命令
+    // async processSSCommand(content) {
+    //     // 在这里实现SS模式的具体逻辑
+    //     return `SS模式回复: ${content}`;
+    // }
+
+    // // 处理GG命令
+    // async processGGCommand(content) {
+    //     // 在这里实现GG模式的具体逻辑
+    //     return `GG模式回复: ${content}`;
+    // }
 
     // 处理第一人称呼叫
     async sf_first_person_call(e) {
@@ -578,17 +427,17 @@ export class SF_Painting extends plugin {
                     config_date.enableWS = isEnable;
                     // 根据设置启动或关闭服务
                     if (isEnable) {
-                        this.init();
+                        this.init_server();
                     } else {
                         // 关闭WebSocket服务器
-                        if (global.sfPluginWSServer) {
-                            global.sfPluginWSServer.close();
-                            global.sfPluginWSServer = null;
+                        if (Ws_Server.sfPluginWSServer) {
+                            Ws_Server.sfPluginWSServer.close();
+                            Ws_Server.sfPluginWSServer = null;
                         }
                         // 关闭HTTP服务器
-                        if (global.sfPluginServer) {
-                            global.sfPluginServer.close();
-                            global.sfPluginServer = null;
+                        if (Ws_Server.sfPluginServer) {
+                            Ws_Server.sfPluginServer.close();
+                            Ws_Server.sfPluginServer = null;
                         }
                         logger.mark('[sf插件] WebSocket服务已关闭');
                     }
@@ -663,9 +512,10 @@ export class SF_Painting extends plugin {
         return true;
     }
 
-    async sf_chat(e) {
+    async sf_chat(e, config_date = undefined) {
         // 读取配置
-        const config_date = Config.getConfig()
+        if (!config_date)
+            config_date = Config.getConfig()
 
         // 获取接口配置
         let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true
@@ -717,7 +567,7 @@ export class SF_Painting extends plugin {
                         currentImages.push(base64Data);
                         continue;
                     }
-                    
+
                     // 尝试转换为base64
                     const base64Image = await url2Base64(imgUrl);
                     if (!base64Image) {
@@ -730,7 +580,7 @@ export class SF_Painting extends plugin {
                     continue;
                 }
             }
-            
+
             // 如果所有图片都处理失败
             if (currentImages.length === 0 && e.img.length > 0) {
                 e.reply('处理图片失败，请重新发送', true);
@@ -1062,7 +912,8 @@ SF插件设置帮助：
                         type: 'image',
                         file: imageUrl,
                         text: msgx
-                    });
+                    },
+                        config_date);
 
                     // 保存绘画记录到Redis
                     const userQQ = e.user_id || 'web_user';
@@ -1113,9 +964,10 @@ SF插件设置帮助：
         }
     }
 
-    async gg_chat(e) {
+    async gg_chat(e, config_date = undefined) {
         // 读取配置
-        const config_date = Config.getConfig()
+        if (!config_date)
+            config_date = Config.getConfig()
 
         // 获取接口配置
         let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true
@@ -1159,7 +1011,7 @@ SF插件设置帮助：
                         currentImages.push(base64Data);
                         continue;
                     }
-                    
+
                     // 尝试转换为base64
                     const base64Image = await url2Base64(imgUrl);
                     if (!base64Image) {
@@ -1172,7 +1024,7 @@ SF插件设置帮助：
                     continue;
                 }
             }
-            
+
             // 如果所有图片都处理失败
             if (currentImages.length === 0 && e.img.length > 0) {
                 e.reply('处理图片失败，请重新发送', true);
@@ -1612,12 +1464,12 @@ SF插件设置帮助：
     /** 通用选择处理器工厂函数 */
     createSelectHandler(options) {
         const { type, chatMethod } = options;
-        
+
         return async (e) => {
             const config_date = Config.getConfig();
             const fullMsg = e.msg.trim();
             const withoutPrefix = fullMsg.substring(2);
-            
+
             // 处理命令和内容
             const processCommand = async (cmd, content) => {
                 if (!content) {
@@ -1693,12 +1545,12 @@ SF插件设置帮助：
     /** 通用结束对话处理器工厂函数 */
     createEndChatHandler(options) {
         const { type } = options;
-        
+
         return async (e) => {
             const config_date = Config.getConfig();
             const fullMsg = e.msg.trim();
             const withoutPrefix = fullMsg.substring(2);
-            
+
             const endChatIndex = withoutPrefix.indexOf('结束对话');
             if (endChatIndex === -1) {
                 logger.error('[sf插件] 命令格式错误');
@@ -1768,15 +1620,16 @@ SF插件设置帮助：
     });
 
     // 处理命令
-    async handleCommands(ws, msg, userQQ = 'web_user') {
+    async handleCommands(ws, msg, userQQ = 'web_user', config = undefined) {
         // 读取配置
-        const config = Config.getConfig();
-        
+        if (!config)
+            config = Config.getConfig();
+
         // 构造模拟的e对象
         const e = {
             msg: msg,
             reply: (content, quote = false) => {
-                this.sendMessage(ws, 'system', content);
+                this.sendMessage(ws, 'system', content, config);
             },
             user_id: userQQ,
             self_id: this.e?.self_id || Bot.uin,
@@ -1791,7 +1644,7 @@ SF插件设置帮助：
         try {
             // 创建MJ实例
             const mjPainting = new MJ_Painting();
-            
+
             // 合并SF和MJ的规则
             const allRules = [
                 ...this.rule.map(rule => ({ ...rule, instance: this })),
@@ -1802,10 +1655,10 @@ SF插件设置帮助：
             for (const rule of allRules) {
                 const reg = rule.reg;
                 const fnc = rule.fnc;
-                
+
                 // 如果是字符串，转换为正则
                 const regex = typeof reg === 'string' ? new RegExp(reg) : reg;
-                
+
                 // 尝试匹配命令
                 if (regex.test(msg)) {
                     // 检查权限
@@ -1813,7 +1666,7 @@ SF插件设置帮助：
                         this.sendError(ws, '该命令仅限管理员使用');
                         return true;
                     }
-                    
+
                     // 调用对应实例的处理函数
                     await rule.instance[fnc](e);
                     return true;
@@ -1870,5 +1723,149 @@ SF插件设置帮助：
             logger.error('[sf插件] 加载历史记录失败:', error);
             this.sendError(ws, '加载历史记录失败: ' + error.message);
         }
+    }
+}
+
+/** 初始化 ws 服务端 */
+async function init_server() {
+    // 检查配置是否启用ws服务
+    const config = Config.getConfig();
+    if (!config.enableWS) {
+        return;
+    }
+
+    // 使用全局对象存储服务器实例
+    if (!Ws_Server.sfPluginServer) {
+        // 创建HTTP服务器
+        Ws_Server.sfPluginServer = createServer();
+
+        // 创建WebSocket服务器
+        const wsOptions = {
+            server: Ws_Server.sfPluginServer,
+            maxPayload: 50 * 1024 * 1024, // 50MB
+        };
+
+        Ws_Server.sfPluginWSServer = new WebSocketServer(wsOptions);
+
+        // 启动服务器
+        const port = config.wsPort || 8081;
+        Ws_Server.sfPluginServer.on('error', (error) => {
+            if (error.code === 'EADDRINUSE') {
+                // 如果端口被占用，尝试使用其他端口
+                logger.mark(`[sf插件] 端口 ${port} 已被占用，尝试使用随机端口`);
+                Ws_Server.sfPluginServer.listen(0);
+            } else {
+                logger.error('[sf插件] WebSocket服务器错误:', error);
+            }
+        });
+
+        Ws_Server.sfPluginServer.listen(port, () => {
+            const address = Ws_Server.sfPluginServer.address();
+            logger.mark(`[sf插件] WebSocket服务器运行在端口 ${address.port}`);
+        });
+
+        // WebSocket连接处理
+        Ws_Server.sfPluginWSServer.on('connection', (ws, req) => {
+            // 根据日志级别记录
+            const logLevel = config.wsLogLevel || 'info';
+            if (logLevel === 'debug') {
+                logger.mark(`[sf插件] 新的WebSocket连接 来自: ${req.socket.remoteAddress}`);
+            } else if (logLevel === 'info') {
+                logger.mark('[sf插件] 新的WebSocket连接');
+            }
+
+            // 添加密码验证处理
+            ws.isAuthenticated = false;
+
+            ws.on('message', async (message) => {
+                try {
+                    const msgObj = JSON.parse(message);
+
+                    // 处理密码验证
+                    if (msgObj.type === 'auth') {
+                        if (msgObj.password === config.wsPassword) {
+                            ws.isAuthenticated = true;
+                            ws.send(JSON.stringify({
+                                type: 'auth',
+                                success: true
+                            }));
+                            return;
+                        } else {
+                            ws.send(JSON.stringify({
+                                type: 'auth',
+                                success: false,
+                                message: '密码错误'
+                            }));
+                            return;
+                        }
+                    }
+
+                    // 验证是否已认证
+                    if (!ws.isAuthenticated) {
+                        ws.send(JSON.stringify({
+                            type: 'error',
+                            message: '请先进行密码验证'
+                        }));
+                        return;
+                    }
+
+                    if (logLevel === 'debug') {
+                        logger.mark(`[sf插件] 收到WebSocket消息: ${JSON.stringify(msgObj)}`);
+                    }
+                    const { type, content, images, userQQ } = msgObj;
+                    const sfPainting = new SF_Painting();
+
+                    // 根据类型处理消息
+                    switch (type) {
+                        case 'loadHistory':
+                            if (logLevel === 'debug' || logLevel === 'info') {
+                                logger.mark(`[sf插件] 处理加载历史记录请求: userQQ=${msgObj.userQQ}, mode=${msgObj.mode}`);
+                            }
+                            await sfPainting.handleLoadHistory(ws, msgObj);
+                            break;
+                        case 'ss':
+                            if (logLevel === 'debug' || logLevel === 'info') {
+                                logger.mark(`[sf插件] 处理SS消息: ${content}`);
+                            }
+                            await sfPainting.handleSSMessage(ws, content, images, userQQ);
+                            break;
+                        case 'gg':
+                            if (logLevel === 'debug' || logLevel === 'info') {
+                                logger.mark(`[sf插件] 处理GG消息: ${content}`);
+                            }
+                            await sfPainting.handleGGMessage(ws, content, images, userQQ);
+                            break;
+                        case 'dd':
+                            if (logLevel === 'debug' || logLevel === 'info') {
+                                logger.mark(`[sf插件] 处理DD消息: ${content}`);
+                            }
+                            await sfPainting.handleCommands(ws, content, userQQ);
+                            break;
+                        default:
+                            if (logLevel !== 'error') {
+                                logger.warn(`[sf插件] 未知的消息类型: ${type}`);
+                            }
+                            sfPainting.sendError(ws, '未知的消息类型');
+                    }
+                } catch (error) {
+                    if (logLevel !== 'error') {
+                        logger.error('[sf插件] 处理WebSocket消息错误:', error);
+                    }
+                    sfPainting.sendError(ws, error.message);
+                }
+            });
+
+            ws.on('close', () => {
+                if (logLevel === 'debug' || logLevel === 'info') {
+                    logger.mark('[sf插件] WebSocket连接关闭');
+                }
+            });
+
+            ws.on('error', (error) => {
+                if (logLevel !== 'error') {
+                    logger.error('[sf插件] WebSocket错误:', error);
+                }
+            });
+        });
     }
 }

@@ -719,13 +719,13 @@ export function supportGuoba() {
         {
           field: "enableWS",
           label: "启用WebSocket服务",
-          bottomHelpMessage: "是否启用WebSocket服务，用于在网页端https://sf.maliya.top/，进行对话，如果是从没有ws的版本更新过来的，请重新安装依赖，在崽的根目录执行pnpm install --filter=siliconflow-plugin",
+          bottomHelpMessage: "是否启用WebSocket服务，用于在网页端 https://sf.maliya.top/ ，进行对话&绘图；如果是从没有ws的版本更新过来的，请重新安装依赖；重启生效",
           component: "Switch",
         },
         {
           field: "wsPort",
           label: "服务端口",
-          bottomHelpMessage: "WebSocket服务监听的端口号，默认8081，请确保服务器防火墙开放此端口",
+          bottomHelpMessage: "WebSocket服务监听的端口号，默认8081，请确保服务器防火墙开放此端口；重启生效",
           component: "InputNumber",
           componentProps: {
             min: 1,
@@ -736,7 +736,7 @@ export function supportGuoba() {
         {
           field: "wsLogLevel",
           label: "日志级别",
-          bottomHelpMessage: "WebSocket服务的日志记录级别",
+          bottomHelpMessage: "WebSocket服务的日志记录级别；重启生效",
           component: "Select",
           componentProps: {
             options: [
@@ -750,7 +750,7 @@ export function supportGuoba() {
         {
           field: "wsDefaultUser",
           label: "Web端默认用户名",
-          bottomHelpMessage: "设置Web端用户的默认昵称，提示词中的字符串 {{user_name}} 会被替换为该用户名",
+          bottomHelpMessage: "设置Web端用户的默认昵称，提示词中的字符串 {{user_name}} 会被替换为该用户名；重启生效",
           component: "Input",
           componentProps: {
             placeholder: "小白",
@@ -759,7 +759,7 @@ export function supportGuoba() {
         {
           field: "wsPassword", 
           label: "WebSocket密码",
-          bottomHelpMessage: "设置WebSocket服务的访问密码,建议修改默认密码",
+          bottomHelpMessage: "设置WebSocket服务的访问密码，建议修改默认密码；重启生效",
           component: "Input",
           componentProps: {
             type: "password",

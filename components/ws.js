@@ -1,4 +1,4 @@
-// WebSocket连接类
+// WebSocket连接类，未使用
 class WSConnection {
   static instance = null;
 
@@ -140,4 +140,4 @@ class WSConnection {
 }
 
 // 导出WebSocket连接实例
-export const wsConnection = WSConnection.getInstance(); 
+// export const wsConnection = WSConnection.getInstance(); 
