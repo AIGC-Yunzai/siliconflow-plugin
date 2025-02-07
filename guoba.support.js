@@ -760,9 +760,8 @@ export function supportGuoba() {
           field: "wsPassword", 
           label: "WebSocket密码",
           bottomHelpMessage: "设置WebSocket服务的访问密码，建议修改默认密码；重启生效",
-          component: "Input",
+          component: "InputPassword",
           componentProps: {
-            type: "InputPassword",
             placeholder: "请输入访问密码",
           },
         },
