@@ -41,7 +41,7 @@ export class SF_Painting extends plugin {
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务)',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考)',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 },
@@ -373,7 +373,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务)([\s\S]*)/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考)([\s\S]*)/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -441,6 +441,9 @@ export class SF_Painting extends plugin {
                         }
                         logger.mark('[sf插件] WebSocket服务已关闭');
                     }
+                    break
+                case 'ss转发思考':
+                    config_date.ss_forwardThinking = value === '开'
                     break
                 default:
                     return
@@ -518,7 +521,7 @@ export class SF_Painting extends plugin {
             config_date = Config.getConfig()
 
         // 获取接口配置
-        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true
+        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false
         if (config_date.ss_usingAPI > 0 && config_date.ss_APIList && config_date.ss_APIList[config_date.ss_usingAPI - 1]) {
             // 使用接口列表中的配置
             const apiConfig = config_date.ss_APIList[config_date.ss_usingAPI - 1]
@@ -530,6 +533,7 @@ export class SF_Painting extends plugin {
             useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
             forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
+            forwardThinking = (typeof apiConfig.forwardThinking !== 'undefined') ? apiConfig.forwardThinking : false
         } else if (config_date.ss_apiBaseUrl) {
             // 使用默认配置
             use_sf_key = this.get_random_key(config_date.ss_Key)
@@ -539,6 +543,7 @@ export class SF_Painting extends plugin {
             useMarkdown = config_date.ss_useMarkdown
             forwardMessage = config_date.ss_forwardMessage
             quoteMessage = config_date.ss_quoteMessage
+            forwardThinking = config_date.ss_forwardThinking
         } else if (config_date.sf_keys.length == 0) {
             await e.reply('请先设置API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
             return false
@@ -549,6 +554,7 @@ export class SF_Painting extends plugin {
             useMarkdown = config_date.ss_useMarkdown
             forwardMessage = config_date.ss_forwardMessage
             quoteMessage = config_date.ss_quoteMessage
+            forwardThinking = config_date.ss_forwardThinking
         }
 
         // 处理引用消息,获取图片和文本
@@ -639,6 +645,23 @@ export class SF_Painting extends plugin {
 
         const answer = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
 
+        // 处理思考过程
+        let thinkingContent = '';
+        let cleanedAnswer = answer;
+
+        // 尝试从reasoning_content中获取思考过程
+        if (answer.reasoning_content) {
+            thinkingContent = answer.reasoning_content;
+            cleanedAnswer = answer.content;
+        } else {
+            // 尝试从<think>标签中获取思考过程
+            const thinkMatch = answer.match(/<think>([\s\S]*?)<\/think>/);
+            if (thinkMatch) {
+                thinkingContent = thinkMatch[1].trim();
+                cleanedAnswer = answer.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+            }
+        }
+
         // 保存对话记录
         if (config_date.gg_useContext) {
             // 保存用户消息
@@ -651,23 +674,33 @@ export class SF_Painting extends plugin {
             // 保存AI回复
             await saveContext(e.user_id, {
                 role: 'assistant',
-                content: answer
+                content: cleanedAnswer
             }, config_date.ss_usingAPI, 'ss')
         }
 
         try {
             if (useMarkdown) {
-                const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, answer);
+                const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, cleanedAnswer);
                 if (img) {
                     await e.reply({ ...img, origin: true }, quoteMessage)
                 } else {
                     logger.error('[sf插件] markdown图片生成失败')
                 }
                 if (forwardMessage) {
-                    e.reply(await common.makeForwardMsg(e, [answer], `${e.sender.card || e.sender.nickname || e.user_id}的对话`));
+                    const forwardMsg = [cleanedAnswer];
+                    // 如果有思考过程且开启了转发思考
+                    if (thinkingContent && forwardThinking) {
+                        forwardMsg.unshift('[thinking]', thinkingContent);
+                    }
+                    e.reply(await common.makeForwardMsg(e, forwardMsg, `${e.sender.card || e.sender.nickname || e.user_id}的对话`));
                 }
             } else {
-                await e.reply(answer, quoteMessage)
+                await e.reply(cleanedAnswer, quoteMessage)
+                // 如果有思考过程且开启了转发思考，单独发送转发消息
+                if (thinkingContent && forwardThinking) {
+                    const forwardMsg = ['[thinking]', thinkingContent];
+                    e.reply(await common.makeForwardMsg(e, forwardMsg, `思考过程`));
+                }
             }
         } catch (error) {
             logger.error('[sf插件] 回复消息时发生错误：', error)
@@ -823,7 +856,8 @@ export class SF_Painting extends plugin {
 13. 设置ss引用原消息：#sf设置ss引用原消息 开/关
 14. 设置gg引用原消息：#sf设置gg引用原消息 开/关
 15. 设置WebSocket服务：#sf设置ws服务 开/关
-16. 查看帮助：#sf帮助`,
+16. 设置思考过程转发：#sf设置ss转发思考 开/关
+17. 查看帮助：#sf帮助`,
 
             `对话指令：
 1. #gg [内容]：使用Gemini对话

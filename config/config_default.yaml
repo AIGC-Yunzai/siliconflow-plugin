@@ -42,6 +42,7 @@ ss_Prompt: ""
 ss_useMarkdown: false # 是否使用markdown图片展示
 ss_forwardMessage: true # 是否转发消息
 ss_quoteMessage: true # 是否引用原消息
+ss_forwardThinking: false # 是否转发思考过程
 ss_APIList: [] # ss接口列表
 ss_usingAPI: 0 # 当前使用的ss接口索引
 # Gemini API配置
