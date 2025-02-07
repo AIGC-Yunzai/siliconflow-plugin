@@ -383,6 +383,12 @@ export function supportGuoba() {
                 bottomHelpMessage: "开启后回复时会引用原消息",
               },
               {
+                field: "forwardThinking",
+                label: "转发思考",
+                component: "Switch",
+                bottomHelpMessage: "开启后会转发思考过程",
+              },
+              {
                 field: "remark",
                 label: "备注",
                 component: "Input",
@@ -458,7 +464,13 @@ export function supportGuoba() {
         {
           field: "ss_quoteMessage",
           label: "[#ss]引用原消息",
-          bottomHelpMessage: "开启后回复时会引用原消息",
+          bottomHelpMessage: "是否引用原消息",
+          component: "Switch",
+        },
+        {
+          field: "ss_forwardThinking",
+          label: "SS转发思考",
+          bottomHelpMessage: "是否转发思考过程",
           component: "Switch",
         },
         {
