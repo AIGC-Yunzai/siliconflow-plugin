@@ -74,18 +74,18 @@ export class help extends plugin {
                     {
                         "icon": 54,
                         "title": "#ss [对话]",
-                        "desc": "可用指令：#sf结束[全部]对话 #sf删除前[num]条对话"
+                        "desc": "使用配置的LLM；可用指令：#sf结束[全部|ss|gg|dd]对话"
                     },
                     {
                         "icon": 55,
                         "title": "#gg [对话]",
                         "desc": "使用 Gemini 搜索并回答问题"
                     },
-                    // {
-                    //     "icon": 86,
-                    //     "title": "#sf设置生成提示词 [开|关]",
-                    //     "desc": "设置生成提示词开关"
-                    // },
+                    {
+                        "icon": 86,
+                        "title": "#sf删除[ss|gg]前[num]条对话",
+                        "desc": "设置生成提示词开关"
+                    },
                     {
                         "icon": 61,
                         "title": "#fish群号同传QQ号",
@@ -117,6 +117,11 @@ export class help extends plugin {
                 "group": 'SF-plugin设置（请使用Guoba-Plugin进行操作）',
                 list: [
                     {
+                        "icon": 3,
+                        "title": "#sf管理帮助",
+                        "desc": "获取 sf 管理员帮助，必看"
+                    },
+                    {
                         "icon": 91,
                         "title": "#mjp帮助",
                         "desc": "获取 mjp 帮助"
@@ -125,11 +130,6 @@ export class help extends plugin {
                         "icon": 60,
                         "title": "#(fish)同传帮助",
                         "desc": "获取 fish 同传帮助信息"
-                    },
-                    {
-                        "icon": 3,
-                        "title": "#sf设置帮助",
-                        "desc": "获取 sf 设置帮助"
                     },
                     {
                         "icon": 92,

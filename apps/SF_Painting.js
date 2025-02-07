@@ -46,7 +46,7 @@ export class SF_Painting extends plugin {
                     permission: 'master'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置帮助$',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)(设置|管理)帮助$',
                     fnc: 'sf_help',
                     permission: 'master'
                 },
@@ -807,8 +807,7 @@ export class SF_Painting extends plugin {
     }
 
     async sf_help(e) {
-        const helpMessage = `
-SF插件设置帮助：
+        const helpMessage = [`SF插件设置帮助：
 1. 设置画图API Key：#sf设置画图key [值]
 2. 设置翻译模型：#sf设置翻译模型 [模型名]
 3. 开关提示词生成：#sf设置生成提示词 开/关
@@ -824,9 +823,9 @@ SF插件设置帮助：
 13. 设置ss引用原消息：#sf设置ss引用原消息 开/关
 14. 设置gg引用原消息：#sf设置gg引用原消息 开/关
 15. 设置WebSocket服务：#sf设置ws服务 开/关
-16. 查看帮助：#sf帮助
+16. 查看帮助：#sf帮助`,
 
-对话指令：
+            `对话指令：
 1. #gg [内容]：使用Gemini对话
 2. #ss [内容]：使用SF对话
 3. #s[数字/命令] [内容]：临时使用指定的ss接口对话，如#s1 #s2 #stest，使用#s0表示使用默认配置
@@ -842,21 +841,21 @@ SF插件设置帮助：
 13. #sf结束全部对话：结束所有用户的对话（仅限主人）
 14. #sf删除前n条对话：删除默认配置的最近n条对话
 15. #sf删除ss前n条对话：删除SS系统的最近n条对话
-16. #sf删除gg前n条对话：删除GG系统的最近n条对话
+16. #sf删除gg前n条对话：删除GG系统的最近n条对话`,
 
-接口管理：
+            `接口管理：
 1. #sfss接口列表：查看ss接口列表
 2. #sfgg接口列表：查看gg接口列表
 3. #sfss使用接口[数字]：切换ss接口
 4. #sfgg使用接口[数字]：切换gg接口
-注：使用0表示使用默认配置
+注：使用0表示使用默认配置`,
 
-画图指令：
+            `画图指令：
 1. #sf画图 [描述]：生成图片
 2. #flux画图 [描述]：生成图片
-3. 支持图生图功能，引用图片即可
+3. 支持图生图功能，引用图片即可`,
 
-其他说明：
+            `其他说明：
 1. 支持图片识别和多轮对话
 2. 支持URL内容提取和处理
 3. 支持markdown格式回复
@@ -864,9 +863,9 @@ SF插件设置帮助：
 5. 支持多API接口切换
 6. 支持WebSocket服务（可选）
 7. 支持绘图历史记录（DD模式）
-        `.trim()
+`]
 
-        await e.reply(helpMessage)
+        await e.reply(await common.makeForwardMsg(e, helpMessage, e.msg))
     }
 
     async sf_send_pic(e, finalPrompt, use_sf_key, config_date, param, canImg2Img, souce_image_base64, userPrompt) {
