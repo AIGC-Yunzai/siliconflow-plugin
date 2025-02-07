@@ -762,7 +762,7 @@ export function supportGuoba() {
           bottomHelpMessage: "设置WebSocket服务的访问密码，建议修改默认密码；重启生效",
           component: "Input",
           componentProps: {
-            type: "password",
+            type: "InputPassword",
             placeholder: "请输入访问密码",
           },
         },
