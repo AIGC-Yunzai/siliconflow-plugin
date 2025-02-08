@@ -1681,7 +1681,7 @@ export class SF_Painting extends plugin {
     }
 
     // 添加处理加载历史记录的方法
-    async handleLoadHistory(ws, msgObj) {
+    async handleLoadHistory(ws, msgObj, logLevel = 'debug') {
         try {
             const { userQQ, mode } = msgObj;
             if (!userQQ) {
@@ -1696,7 +1696,8 @@ export class SF_Painting extends plugin {
                 const historyKey = `CHATBOT:HISTORY:${userQQ}:dd`;
                 const historyData = await redis.lRange(historyKey, 0, -1);
                 messages = historyData.map(item => JSON.parse(item)).flat();
-                logger.mark(`[sf插件] 成功加载绘画历史记录: ${messages.length}条消息`);
+                if (logLevel === 'debug' || logLevel === 'info')
+                    logger.mark(`[sf插件] 成功加载绘画历史记录: ${messages.length}条消息`);
             } else {
                 // 原有的SS和GG模式历史记录加载逻辑
                 const config = Config.getConfig();
@@ -1706,9 +1707,11 @@ export class SF_Painting extends plugin {
                 } else if (mode === 'gg') {
                     promptNum = config.gg_usingAPI;
                 }
-                logger.mark(`[sf插件] 加载历史记录: userQQ=${userQQ}, mode=${mode}, promptNum=${promptNum}`);
+                if (logLevel === 'debug' || logLevel === 'info')
+                    logger.mark(`[sf插件] 加载历史记录: userQQ=${userQQ}, mode=${mode}, promptNum=${promptNum}`);
                 messages = await loadContext(userQQ, promptNum, mode);
-                logger.mark(`[sf插件] 成功加载历史记录: ${messages.length}条消息`);
+                if (logLevel === 'debug' || logLevel === 'info')
+                    logger.mark(`[sf插件] 成功加载历史记录: ${messages.length}条消息`);
             }
 
             // 发送历史记录给客户端
@@ -1717,7 +1720,7 @@ export class SF_Painting extends plugin {
                 messages: messages
             };
             ws.send(JSON.stringify(response));
-            logger.mark('[sf插件] 历史记录已发送给客户端');
+            logger.mark(`[sf插件] ${messages.length}条历史记录已发送给客户端`);
         } catch (error) {
             logger.error('[sf插件] 加载历史记录失败:', error);
             this.sendError(ws, '加载历史记录失败: ' + error.message);
@@ -1820,7 +1823,7 @@ async function init_server() {
                             if (logLevel === 'debug' || logLevel === 'info') {
                                 logger.mark(`[sf插件] 处理加载历史记录请求: userQQ=${msgObj.userQQ}, mode=${msgObj.mode}`);
                             }
-                            await sfPainting.handleLoadHistory(ws, msgObj);
+                            await sfPainting.handleLoadHistory(ws, msgObj, logLevel);
                             break;
                         case 'ss':
                             if (logLevel === 'debug' || logLevel === 'info') {
