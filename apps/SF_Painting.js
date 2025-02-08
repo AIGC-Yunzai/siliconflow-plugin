@@ -1203,8 +1203,8 @@ export class SF_Painting extends plugin {
                 }]
             },
             "contents": [],
-            // 只有在使用gemini-2.0-flash-exp模型且开启搜索功能时才添加搜索工具
-            "tools": (useSearch && opt.model === "gemini-2.0-flash-exp") ? [{
+            // 只要开启了搜索功能就添加搜索工具，不再限制模型，需要模型支持才可以联网
+            "tools": useSearch ? [{
                 "googleSearch": {}
             }] : []
         };
