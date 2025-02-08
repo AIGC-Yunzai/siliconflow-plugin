@@ -74,7 +74,7 @@ export class help extends plugin {
                     {
                         "icon": 54,
                         "title": "#ss [对话]",
-                        "desc": "使用配置的LLM；可用指令：#sf结束[全部|ss|gg|dd]对话"
+                        "desc": "可用指令：#sf结束[全部|ss|gg|dd]对话"
                     },
                     {
                         "icon": 55,
@@ -119,7 +119,7 @@ export class help extends plugin {
                     {
                         "icon": 3,
                         "title": "#sf管理帮助",
-                        "desc": "获取 sf 管理员帮助，必看"
+                        "desc": "获取 sf 管理员帮助 必看"
                     },
                     {
                         "icon": 91,
