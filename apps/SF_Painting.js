@@ -94,11 +94,11 @@ export class SF_Painting extends plugin {
                     fnc: 'gg_select_and_end_chat',
                 },
                 {
-                    reg: '^#(s|S)(?!f|F|s|S)(.+?).*$',
+                    reg: '^#(s|S)(?!f|F|s|S)(.+)',
                     fnc: 'sf_select_and_chat',
                 },
                 {
-                    reg: '^#(g|G)(?!g|G)(.+?).*$',
+                    reg: '^#(g|G)(?!g|G)(.+)',
                     fnc: 'gg_select_and_chat',
                 }
             ]
@@ -1294,15 +1294,49 @@ export class SF_Painting extends plugin {
                 return { answer, sources };
             } else {
                 logger.error("[sf插件]gg调用错误：\n", JSON.stringify(data, null, 2))
+                
+                // 构造详细的错误消息
+                let errorMessage = "[sf插件]";
+                
+                // 处理API返回的错误信息
+                if (data.error?.message) {
+                    errorMessage += data.error.message;
+                } else if (data.message) {
+                    errorMessage += data.message;
+                } else if (data.promptFeedback?.blockReason) {
+                    // 处理promptFeedback中的错误
+                    const blockReason = data.promptFeedback.blockReason;
+                    switch(blockReason) {
+                        case "SAFETY":
+                            errorMessage += "内容被安全系统拦截。\n原始错误：" + JSON.stringify(data);
+                            break;
+                        case "OTHER":
+                            errorMessage += "请求被拦截，可能是由于内容不合规。\n原始错误：" + JSON.stringify(data);
+                            break;
+                    }
+                } else {
+                    errorMessage += "gg调用错误，详情请查阅控制台。\n原始错误：" + JSON.stringify(data);
+                }
+
+                // 隐藏错误信息中的key
+                if (ggKey && errorMessage.includes(ggKey)) {
+                    errorMessage = errorMessage.replace(new RegExp(ggKey, 'g'), '****');
+                }
+                
                 return {
-                    answer: data.error?.message || data.message || "[sf插件]gg调用错误，详情请查阅控制台。",
+                    answer: errorMessage,
                     sources: []
                 };
             }
         } catch (error) {
             logger.error("[sf插件]gg调用失败\n", error)
+            // 隐藏错误信息中的key
+            let errorMsg = error.message || "[sf插件]gg调用失败，详情请查阅控制台。";
+            if (ggKey && errorMsg.includes(ggKey)) {
+                errorMsg = errorMsg.replace(new RegExp(ggKey, 'g'), '****');
+            }
             return {
-                answer: error.message || "[sf插件]gg调用失败，详情请查阅控制台。",
+                answer: errorMsg,
                 sources: []
             };
         }
@@ -1505,7 +1539,8 @@ export class SF_Painting extends plugin {
 
             // 处理命令和内容
             const processCommand = async (cmd, content) => {
-                if (!content) {
+                // 确保内容不是纯空白字符
+                if (!content || content.trim().length === 0) {
                     logger.error('请输入要发送的内容');
                     return false;
                 }
@@ -1548,26 +1583,62 @@ export class SF_Painting extends plugin {
             // 尝试匹配自定义命令
             const apiList = config_date[`${type}_APIList`];
             if (apiList) {
+                // 获取第一行内容用于命令匹配
+                const firstLine = withoutPrefix.split('\n')[0].trim();
                 const matchedCmd = apiList
-                    .filter(api => api.customCommand && withoutPrefix.startsWith(api.customCommand))
+                    .filter(api => api.customCommand && firstLine.startsWith(api.customCommand))
                     .sort((a, b) => b.customCommand.length - a.customCommand.length)[0];
 
                 if (matchedCmd) {
-                    const content = withoutPrefix.substring(matchedCmd.customCommand.length).trim();
+                    // 提取内容并保持格式
+                    const cmdLength = matchedCmd.customCommand.length;
+                    let content;
+                    
+                    // 如果命令在第一行，需要特殊处理第一行的内容
+                    const lines = withoutPrefix.split('\n');
+                    if (lines[0].trim().startsWith(matchedCmd.customCommand)) {
+                        // 保留第一行命令后的内容（处理有空格和无空格的情况）
+                        const firstLineContent = lines[0].substring(cmdLength).trimLeft();
+                        // 如果第一行除了命令还有其他内容，或者只有一行
+                        if (firstLineContent || lines.length === 1) {
+                            content = firstLineContent + (lines.length > 1 ? '\n' + lines.slice(1).join('\n') : '');
+                        } else {
+                            // 如果第一行只有命令，从第二行开始
+                            content = lines.slice(1).join('\n');
+                        }
+                    } else {
+                        // 处理命令和内容在同一行且无空格分隔的情况
+                        content = withoutPrefix.substring(cmdLength).trimLeft();
+                    }
+                    
+                    // 如果提取的内容为空，尝试获取下一行
+                    if (!content.trim() && lines.length > 1) {
+                        content = lines.slice(1).join('\n');
+                    }
+                    
                     return await processCommand(matchedCmd.customCommand, content);
                 }
             }
 
-            // 尝试匹配数字命令
-            const numberMatch = withoutPrefix.match(/^(\d+)\s+(.*)/);
+            // 尝试匹配数字命令（支持无空格情况）
+            const numberMatch = withoutPrefix.match(/^(\d+)(?:\s+|\n)?([\s\S]*)/);
             if (numberMatch) {
-                return await processCommand(numberMatch[1], numberMatch[2]);
+                const [, cmd, content] = numberMatch;
+                // 确保内容部分不是空的
+                if (content && content.trim()) {
+                    return await processCommand(cmd, content);
+                }
             }
 
             // 尝试匹配空格分隔的命令
-            const [cmd, ...contentParts] = withoutPrefix.split(/\s+/);
-            if (cmd && contentParts.length > 0) {
-                return await processCommand(cmd, contentParts.join(' '));
+            const firstSpaceIndex = withoutPrefix.search(/\s/);
+            if (firstSpaceIndex !== -1) {
+                const cmd = withoutPrefix.substring(0, firstSpaceIndex);
+                const content = withoutPrefix.substring(firstSpaceIndex + 1);
+                // 确保内容部分不是空的
+                if (content && content.trim()) {
+                    return await processCommand(cmd, content);
+                }
             }
 
             logger.error('命令格式错误');
