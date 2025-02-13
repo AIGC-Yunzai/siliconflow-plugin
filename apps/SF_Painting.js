@@ -1505,7 +1505,8 @@ export class SF_Painting extends plugin {
 
             // 处理命令和内容
             const processCommand = async (cmd, content) => {
-                if (!content) {
+                // 确保内容不是纯空白字符
+                if (!content || content.trim().length === 0) {
                     logger.error('请输入要发送的内容');
                     return false;
                 }
@@ -1548,26 +1549,62 @@ export class SF_Painting extends plugin {
             // 尝试匹配自定义命令
             const apiList = config_date[`${type}_APIList`];
             if (apiList) {
+                // 获取第一行内容用于命令匹配
+                const firstLine = withoutPrefix.split('\n')[0].trim();
                 const matchedCmd = apiList
-                    .filter(api => api.customCommand && withoutPrefix.startsWith(api.customCommand))
+                    .filter(api => api.customCommand && firstLine.startsWith(api.customCommand))
                     .sort((a, b) => b.customCommand.length - a.customCommand.length)[0];
 
                 if (matchedCmd) {
-                    const content = withoutPrefix.substring(matchedCmd.customCommand.length).trim();
+                    // 提取内容并保持格式
+                    const cmdLength = matchedCmd.customCommand.length;
+                    let content;
+                    
+                    // 如果命令在第一行，需要特殊处理第一行的内容
+                    const lines = withoutPrefix.split('\n');
+                    if (lines[0].trim().startsWith(matchedCmd.customCommand)) {
+                        // 保留第一行命令后的内容（处理有空格和无空格的情况）
+                        const firstLineContent = lines[0].substring(cmdLength).trimLeft();
+                        // 如果第一行除了命令还有其他内容，或者只有一行
+                        if (firstLineContent || lines.length === 1) {
+                            content = firstLineContent + (lines.length > 1 ? '\n' + lines.slice(1).join('\n') : '');
+                        } else {
+                            // 如果第一行只有命令，从第二行开始
+                            content = lines.slice(1).join('\n');
+                        }
+                    } else {
+                        // 处理命令和内容在同一行且无空格分隔的情况
+                        content = withoutPrefix.substring(cmdLength).trimLeft();
+                    }
+                    
+                    // 如果提取的内容为空，尝试获取下一行
+                    if (!content.trim() && lines.length > 1) {
+                        content = lines.slice(1).join('\n');
+                    }
+                    
                     return await processCommand(matchedCmd.customCommand, content);
                 }
             }
 
-            // 尝试匹配数字命令
-            const numberMatch = withoutPrefix.match(/^(\d+)\s+(.*)/);
+            // 尝试匹配数字命令（支持无空格情况）
+            const numberMatch = withoutPrefix.match(/^(\d+)(?:\s+|\n)?([\s\S]*)/);
             if (numberMatch) {
-                return await processCommand(numberMatch[1], numberMatch[2]);
+                const [, cmd, content] = numberMatch;
+                // 确保内容部分不是空的
+                if (content && content.trim()) {
+                    return await processCommand(cmd, content);
+                }
             }
 
             // 尝试匹配空格分隔的命令
-            const [cmd, ...contentParts] = withoutPrefix.split(/\s+/);
-            if (cmd && contentParts.length > 0) {
-                return await processCommand(cmd, contentParts.join(' '));
+            const firstSpaceIndex = withoutPrefix.search(/\s/);
+            if (firstSpaceIndex !== -1) {
+                const cmd = withoutPrefix.substring(0, firstSpaceIndex);
+                const content = withoutPrefix.substring(firstSpaceIndex + 1);
+                // 确保内容部分不是空的
+                if (content && content.trim()) {
+                    return await processCommand(cmd, content);
+                }
             }
 
             logger.error('命令格式错误');
