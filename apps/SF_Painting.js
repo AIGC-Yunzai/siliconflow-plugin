@@ -94,11 +94,11 @@ export class SF_Painting extends plugin {
                     fnc: 'gg_select_and_end_chat',
                 },
                 {
-                    reg: '^#(s|S)(?!f|F|s|S)(.+?).*$',
+                    reg: '^#(s|S)(?!f|F|s|S)(.+)',
                     fnc: 'sf_select_and_chat',
                 },
                 {
-                    reg: '^#(g|G)(?!g|G)(.+?).*$',
+                    reg: '^#(g|G)(?!g|G)(.+)',
                     fnc: 'gg_select_and_chat',
                 }
             ]
