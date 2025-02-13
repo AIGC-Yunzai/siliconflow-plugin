@@ -1294,15 +1294,49 @@ export class SF_Painting extends plugin {
                 return { answer, sources };
             } else {
                 logger.error("[sf插件]gg调用错误：\n", JSON.stringify(data, null, 2))
+                
+                // 构造详细的错误消息
+                let errorMessage = "[sf插件]";
+                
+                // 处理API返回的错误信息
+                if (data.error?.message) {
+                    errorMessage += data.error.message;
+                } else if (data.message) {
+                    errorMessage += data.message;
+                } else if (data.promptFeedback?.blockReason) {
+                    // 处理promptFeedback中的错误
+                    const blockReason = data.promptFeedback.blockReason;
+                    switch(blockReason) {
+                        case "SAFETY":
+                            errorMessage += "内容被安全系统拦截。\n原始错误：" + JSON.stringify(data);
+                            break;
+                        case "OTHER":
+                            errorMessage += "请求被拦截，可能是由于内容不合规。\n原始错误：" + JSON.stringify(data);
+                            break;
+                    }
+                } else {
+                    errorMessage += "gg调用错误，详情请查阅控制台。\n原始错误：" + JSON.stringify(data);
+                }
+
+                // 隐藏错误信息中的key
+                if (ggKey && errorMessage.includes(ggKey)) {
+                    errorMessage = errorMessage.replace(new RegExp(ggKey, 'g'), '****');
+                }
+                
                 return {
-                    answer: data.error?.message || data.message || "[sf插件]gg调用错误，详情请查阅控制台。",
+                    answer: errorMessage,
                     sources: []
                 };
             }
         } catch (error) {
             logger.error("[sf插件]gg调用失败\n", error)
+            // 隐藏错误信息中的key
+            let errorMsg = error.message || "[sf插件]gg调用失败，详情请查阅控制台。";
+            if (ggKey && errorMsg.includes(ggKey)) {
+                errorMsg = errorMsg.replace(new RegExp(ggKey, 'g'), '****');
+            }
             return {
-                answer: error.message || "[sf插件]gg调用失败，详情请查阅控制台。",
+                answer: errorMsg,
                 sources: []
             };
         }
