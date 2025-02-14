@@ -154,10 +154,10 @@ class Config {
       // 保存ss接口prompt
       if (newConfig.ss_APIList) {
         newConfig.ss_APIList.forEach(api => {
-          if (api.remark && api.prompt) {
+          if (api.remark) {
             fs.writeFileSync(
               path.join(promptDir, `ss_${api.remark}.yaml`),
-              YAML.stringify({ prompt: api.prompt })
+              YAML.stringify({ prompt: api.prompt ?? '' })
             )
             delete api.prompt
           }
@@ -167,10 +167,10 @@ class Config {
       // 保存gg接口prompt
       if (newConfig.gg_APIList) {
         newConfig.gg_APIList.forEach(api => {
-          if (api.remark && api.prompt) {
+          if (api.remark) {
             fs.writeFileSync(
               path.join(promptDir, `gg_${api.remark}.yaml`),
-              YAML.stringify({ prompt: api.prompt })
+              YAML.stringify({ prompt: api.prompt ?? '' })
             )
             delete api.prompt
           }
