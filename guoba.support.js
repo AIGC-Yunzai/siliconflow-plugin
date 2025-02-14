@@ -392,7 +392,7 @@ export function supportGuoba() {
                 field: "forwardThinking",
                 label: "转发思考",
                 component: "Switch",
-                bottomHelpMessage: "开启后会转发思考过程",
+                bottomHelpMessage: "开启后会转发思考过程，如果开启图片对话模式，则需要开启发送合并消息",
               },
               {
                 field: "remark",
@@ -407,14 +407,31 @@ export function supportGuoba() {
                 component: "Input",
                 required: false,
                 bottomHelpMessage: "可选，设置后可用 #s命令名 来使用此接口，如设置为test则可用#stest，也可以使用#stest结束对话来结束此接口的对话",
+              },
+              {
+                field: "isOnlyMaster",
+                label: "仅限主人使用",
+                component: "Switch",
+                bottomHelpMessage: "开启后仅限主人使用此接口",
               }
             ],
           },
         },
         {
+          field: 'ss_userAPI',
+          label: '[#ss]用户使用接口',
+          bottomHelpMessage: "选择用户要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等",
+          component: 'Select',
+          componentProps: {
+            options: (Config.getConfig()?.ss_APIList || []).filter(item => !item.isOnlyMaster).map((item, index) => { 
+              return { label: item.remark || `接口${index + 1}`, value: index + 1 } 
+            }).concat([{ label: "使用默认配置", value: 0 }])
+          },
+        },
+        {
           field: 'ss_usingAPI',
-          label: '[#ss]使用接口',
-          bottomHelpMessage: "选择要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等",
+          label: '[#ss]主人使用接口',
+          bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.ss_APIList || []).map((item, index) => { 
@@ -475,8 +492,14 @@ export function supportGuoba() {
         },
         {
           field: "ss_forwardThinking",
-          label: "SS转发思考",
+          label: "[#ss]转发思考",
           bottomHelpMessage: "是否转发思考过程",
+          component: "Switch",
+        },
+        {
+          field: "ss_isOnlyMaster",
+          label: "[#ss]仅限主人使用",
+          bottomHelpMessage: "开启后默认配置仅限主人使用",
           component: "Switch",
         },
         {
@@ -565,14 +588,31 @@ export function supportGuoba() {
                 component: "Input",
                 required: false,
                 bottomHelpMessage: "可选，设置后可用 #g命令名 来使用此接口，如设置为test则可用#gtest，也可以使用#gtest结束对话来结束此接口的对话",
+              },
+              {
+                field: "isOnlyMaster",
+                label: "仅限主人使用",
+                component: "Switch",
+                bottomHelpMessage: "开启后仅限主人使用此接口",
               }
             ],
           },
         },
         {
+          field: 'gg_userAPI',
+          label: '[#gg]用户使用接口',
+          bottomHelpMessage: "选择用户要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等",
+          component: 'Select',
+          componentProps: {
+            options: (Config.getConfig()?.gg_APIList || []).filter(item => !item.isOnlyMaster).map((item, index) => { 
+              return { label: item.remark || `接口${index + 1}`, value: index + 1 } 
+            }).concat([{ label: "使用默认配置", value: 0 }])
+          },
+        },
+        {
           field: 'gg_usingAPI',
-          label: '[#gg]使用接口',
-          bottomHelpMessage: "选择要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等",
+          label: '[#gg]主人使用接口',
+          bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.gg_APIList || []).map((item, index) => { 
@@ -605,6 +645,15 @@ export function supportGuoba() {
           },
         },
         {
+          field: "gg_Prompt",
+          label: "[#gg]对话API提示词",
+          bottomHelpMessage: "设置#gg 对话的API接口的系统提示词，自动将提示词中的字符串 {{user_name}} 替换为用户昵称/群昵称",
+          component: "InputTextArea",
+          componentProps: {
+            placeholder: '你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。',
+          },
+        },
+        {
           field: "gg_useMarkdown",
           label: "[#gg]图片对话模式",
           bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
@@ -629,13 +678,10 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
-          field: "gg_Prompt",
-          label: "[#gg]对话API提示词",
-          bottomHelpMessage: "设置#gg 对话的API接口的系统提示词，自动将提示词中的字符串 {{user_name}} 替换为用户昵称/群昵称",
-          component: "InputTextArea",
-          componentProps: {
-            placeholder: '你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。',
-          },
+          field: "gg_isOnlyMaster",
+          label: "[#gg]仅限主人使用",
+          bottomHelpMessage: "开启后默认配置仅限主人使用",
+          component: "Switch",
         },
         {
           field: "gg_useContext",
@@ -922,14 +968,28 @@ export function supportGuoba() {
         config.fish_text_blacklist = data['fish_text_blacklist']
         config.ss_Key = data['ss_Key']    // 修正为ss_Key
         config.ggKey = data['ggKey']      // 修正为ggKey
+
+        // 验证配置
+        try {
+          Config.validateConfig(config)
+        } catch (err) {
+          return Result.ok({}, '配置验证失败: ' + err.message)
+        }
         
         // 其他处理保持不变
         config.sfBaseUrl = config.sfBaseUrl.replace(/\/$/, '')
         config.mj_apiBaseUrl = config.mj_apiBaseUrl.replace(/\/$/, '')
         config.mj_translationBaseUrl = config.mj_translationBaseUrl.replace(/\/$/, '')
         
-        Config.setConfig(config)
-        return Result.ok({}, '保存成功~')
+        try {
+          const saved = Config.setConfig(config)
+          if (!saved) {
+            return Result.ok({}, '保存失败')
+          }
+          return Result.ok({}, '保存成功~')
+        } catch (err) {
+          return Result.ok({}, '保存失败: ' + err.message)
+        }
       },
     },
   }
