@@ -78,7 +78,7 @@ export class SF_Painting extends plugin {
                     log: false
                 },
                 {
-                    reg: '^#(sf|SF)(ss|gg)接口列表$',
+                    reg: '^#(sf|SF)(s|g)(.*)接口列表$',
                     fnc: 'sf_list_api',
                 },
                 {
@@ -1467,26 +1467,56 @@ export class SF_Painting extends plugin {
         const config_date = Config.getConfig()
 
         // 判断是ss还是gg
-        const type = e.msg.match(/^#(sf|SF)(ss|gg)/)[2].toLowerCase()
-        const apiList = type === 'ss' ? config_date.ss_APIList : config_date.gg_APIList
-        const currentApi = type === 'ss' ? config_date.ss_usingAPI : config_date.gg_usingAPI
+        const match = e.msg.match(/^#(sf|SF)(s|g)(.*)接口列表$/)
+        if (!match) return false
+
+        const baseType = match[2] === 's' ? 'ss' : 'gg'
+        const filterStr = match[3] || ''
+        const apiList = baseType === 'ss' ? config_date.ss_APIList : config_date.gg_APIList
+        const currentApi = baseType === 'ss' ? config_date.ss_usingAPI : config_date.gg_usingAPI
 
         if (!apiList || apiList.length === 0) {
-            await e.reply(`当前没有配置任何${type}接口`)
+            await e.reply(`当前没有配置任何${baseType}接口`)
             return
         }
 
-        let msg = [`当前${type}接口列表：`]
-        apiList.forEach((api, index) => {
-            const isUsing = currentApi === (index + 1)
-            const customCmd = api.customCommand ? ` (#${type === 'ss' ? 's' : 'g'}${api.customCommand})` : ''
-            const remark = api.remark ? ` - ${api.remark}` : ''
-            msg.push(`${index + 1}. 接口${index + 1}${remark}${customCmd}${isUsing ? ' [当前使用]' : ''}`)
-        })
+        let msg = []
+        
+        // 如果是完整的ss或gg，显示所有接口
+        if (filterStr === baseType[1]) {
+            msg.push(`当前${baseType}接口列表：`)
+            apiList.forEach((api, index) => {
+                const isUsing = currentApi === (index + 1)
+                const customCmd = api.customCommand ? ` (#${baseType[0]}${api.customCommand})` : ''
+                const remark = api.remark ? ` - ${api.remark}` : ''
+                msg.push(`${index + 1}. 接口${index + 1}${remark}${customCmd}${isUsing ? ' [当前使用]' : ''}`)
+            })
 
-        // 添加默认配置的状态
-        if (currentApi === 0) {
-            msg.push('\n当前使用：默认配置')
+            // 添加默认配置的状态
+            if (currentApi === 0) {
+                msg.push('\n当前使用：默认配置')
+            }
+        } else {
+            // 根据filterStr筛选接口
+            const filteredApis = apiList.filter((api, index) => {
+                const customCmd = api.customCommand || ''
+                const remark = api.remark || ''
+                return customCmd.includes(filterStr) || remark.includes(filterStr)
+            })
+
+            if (filteredApis.length === 0) {
+                await e.reply(`未找到包含 "${filterStr}" 的接口`)
+                return
+            }
+
+            msg.push(`筛选结果 "${filterStr}"：`)
+            filteredApis.forEach((api, index) => {
+                const originalIndex = apiList.indexOf(api) + 1
+                const isUsing = currentApi === originalIndex
+                const customCmd = api.customCommand ? ` (#${baseType[0]}${api.customCommand})` : ''
+                const remark = api.remark ? ` - ${api.remark}` : ''
+                msg.push(`${originalIndex}. 接口${originalIndex}${remark}${customCmd}${isUsing ? ' [当前使用]' : ''}`)
+            })
         }
 
         await e.reply(msg.join('\n'))
