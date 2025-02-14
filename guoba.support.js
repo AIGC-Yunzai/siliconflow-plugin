@@ -922,14 +922,28 @@ export function supportGuoba() {
         config.fish_text_blacklist = data['fish_text_blacklist']
         config.ss_Key = data['ss_Key']    // 修正为ss_Key
         config.ggKey = data['ggKey']      // 修正为ggKey
+
+        // 验证配置
+        try {
+          Config.validateConfig(config)
+        } catch (err) {
+          return Result.ok({}, '配置验证失败: ' + err.message)
+        }
         
         // 其他处理保持不变
         config.sfBaseUrl = config.sfBaseUrl.replace(/\/$/, '')
         config.mj_apiBaseUrl = config.mj_apiBaseUrl.replace(/\/$/, '')
         config.mj_translationBaseUrl = config.mj_translationBaseUrl.replace(/\/$/, '')
         
-        Config.setConfig(config)
-        return Result.ok({}, '保存成功~')
+        try {
+          const saved = Config.setConfig(config)
+          if (!saved) {
+            return Result.ok({}, '保存失败')
+          }
+          return Result.ok({}, '保存成功~')
+        } catch (err) {
+          return Result.ok({}, '保存失败: ' + err.message)
+        }
       },
     },
   }
