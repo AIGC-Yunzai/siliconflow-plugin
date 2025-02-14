@@ -133,7 +133,8 @@ export class SF_Painting extends plugin {
                 sender: this.e?.sender || {
                     card: config.wsDefaultUser || '小白',
                     nickname: config.wsDefaultUser || '小白'
-                }
+                },
+                isMaster: true  // WebSocket用户默认为主人权限
             };
 
             // 调用原有的sf_chat方法
@@ -169,7 +170,8 @@ export class SF_Painting extends plugin {
                 sender: this.e?.sender || {
                     card: config.wsDefaultUser || '小白',
                     nickname: config.wsDefaultUser || '小白'
-                }
+                },
+                isMaster: true  // WebSocket用户默认为主人权限
             };
 
             // 调用原有的gg_chat方法
@@ -527,7 +529,7 @@ export class SF_Painting extends plugin {
         let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false
         
         // 根据用户身份选择使用的接口索引
-        const usingApiIndex = isMaster ? config_date.ss_usingAPI_master : config_date.ss_usingAPI
+        const usingApiIndex = isMaster ? config_date.ss_usingAPI : config_date.ss_userAPI
 
         if (usingApiIndex > 0 && config_date.ss_APIList && config_date.ss_APIList[usingApiIndex - 1]) {
             // 使用接口列表中的配置
@@ -641,7 +643,7 @@ export class SF_Painting extends plugin {
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_useContext) {
-            historyMessages = await loadContext(e.user_id, config_date.ss_usingAPI, 'ss')
+            historyMessages = await loadContext(e.user_id, isMaster ? config_date.ss_usingAPI : config_date.ss_userAPI, 'ss')
             logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -690,12 +692,12 @@ export class SF_Painting extends plugin {
                 content: aiMessage,
                 extractedContent: extractedContent,
                 imageBase64: currentImages.length > 0 ? currentImages : undefined
-            }, config_date.ss_usingAPI, 'ss')
+            }, isMaster ? config_date.ss_usingAPI : config_date.ss_userAPI, 'ss')
             // 保存AI回复
             await saveContext(e.user_id, {
                 role: 'assistant',
                 content: cleanedAnswer
-            }, config_date.ss_usingAPI, 'ss')
+            }, isMaster ? config_date.ss_usingAPI : config_date.ss_userAPI, 'ss')
         }
 
         try {
@@ -904,6 +906,22 @@ export class SF_Painting extends plugin {
 4. #sfgg使用接口[数字]：切换gg接口
 注：使用0表示使用默认配置`,
 
+            `接口列表命令说明：
+1. 基本格式：
+   - #sfss接口列表：查看所有ss接口
+   - #sfgg接口列表：查看所有gg接口
+2. 筛选功能：
+   - #sfs[关键词]接口列表：筛选ss接口(匹配自定义命令或备注)
+   - #sfg[关键词]接口列表：筛选gg接口(匹配自定义命令或备注)
+3. 显示信息：
+   - 接口编号和备注
+   - 自定义命令(如果有)
+   - 是否为主人专属
+   - 是否为当前使用的接口
+4. 权限说明：
+   - 主人可以看到所有接口
+   - 普通用户只能看到非主人专属接口`,
+
             `画图指令：
 1. #sf画图 [描述]：生成图片
 2. #flux画图 [描述]：生成图片
@@ -1029,7 +1047,7 @@ export class SF_Painting extends plugin {
         let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true
         
         // 根据用户身份选择使用的接口索引
-        const usingApiIndex = isMaster ? config_date.gg_usingAPI_master : config_date.gg_usingAPI
+        const usingApiIndex = isMaster ? config_date.gg_usingAPI : config_date.gg_userAPI
 
         if (usingApiIndex > 0 && config_date.gg_APIList && config_date.gg_APIList[usingApiIndex - 1]) {
             // 使用接口列表中的配置
@@ -1132,7 +1150,7 @@ export class SF_Painting extends plugin {
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_useContext) {
-            historyMessages = await loadContext(e.user_id, config_date.gg_usingAPI, 'gg')
+            historyMessages = await loadContext(e.user_id, isMaster ? config_date.gg_usingAPI : config_date.gg_userAPI, 'gg')
             logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -1166,13 +1184,13 @@ export class SF_Painting extends plugin {
                 content: aiMessage,
                 extractedContent: extractedContent,
                 imageBase64: currentImages.length > 0 ? currentImages : undefined
-            }, config_date.gg_usingAPI, 'gg')
+            }, isMaster ? config_date.gg_usingAPI : config_date.gg_userAPI, 'gg')
             // 保存AI回复
             await saveContext(e.user_id, {
                 role: 'assistant',
                 content: answer,
                 sources: sources
-            }, config_date.gg_usingAPI, 'gg')
+            }, isMaster ? config_date.gg_usingAPI : config_date.gg_userAPI, 'gg')
         }
 
         try {
@@ -1385,6 +1403,9 @@ export class SF_Painting extends plugin {
     async sf_end_chat(e) {
         const config_date = Config.getConfig()
 
+        // 判断用户身份
+        const isMaster = e.isMaster
+
         // 获取目标用户ID和系统类型
         const match = e.msg.match(/^#(sf|SF)结束((ss|gg|dd)?)对话(?:(\d+))?$/)
         if (!match) return false
@@ -1446,9 +1467,9 @@ export class SF_Painting extends plugin {
         // 设置对应的promptNum
         let promptNum = 0
         if (systemType === 'ss') {
-            promptNum = config_date.ss_usingAPI
+            promptNum = isMaster ? config_date.ss_usingAPI : config_date.ss_userAPI
         } else if (systemType === 'gg') {
-            promptNum = config_date.gg_usingAPI
+            promptNum = isMaster ? config_date.gg_usingAPI : config_date.gg_userAPI
         }
         // 如果未指定系统类型，则使用默认配置(promptNum=0)
 
@@ -1479,15 +1500,18 @@ export class SF_Painting extends plugin {
     /** ^#(sf|SF)(清除|删除)((ss|gg)?)?(前面?|最近的?)(\d+)条对话$ */
     async sf_clearContextByCount(e) {
         const config_date = Config.getConfig()
+        // 判断用户身份
+        const isMaster = e.isMaster
+
         const match = e.msg.trim().match(/^#(sf|SF)(清除|删除)((ss|gg)?)?(前面?|最近的?)(\d+)条对话$/)
         if (match) {
             // 获取系统类型和对应的promptNum
             const systemType = match[4]?.toLowerCase() // ss或gg或undefined
             let promptNum = 0
             if (systemType === 'ss') {
-                promptNum = config_date.ss_usingAPI
+                promptNum = isMaster ? config_date.ss_usingAPI : config_date.ss_userAPI
             } else if (systemType === 'gg') {
-                promptNum = config_date.gg_usingAPI
+                promptNum = isMaster ? config_date.gg_usingAPI : config_date.gg_userAPI
             }
             // 如果未指定系统类型，则使用默认配置(promptNum=0)
 
@@ -1513,39 +1537,61 @@ export class SF_Painting extends plugin {
         const baseType = match[2] === 's' ? 'ss' : 'gg'
         const filterStr = match[3] || ''
         const apiList = baseType === 'ss' ? config_date.ss_APIList : config_date.gg_APIList
-        const currentApi = baseType === 'ss' ? config_date.ss_usingAPI : config_date.gg_usingAPI
+        const currentApi = baseType === 'ss' ? (e.isMaster ? config_date.ss_usingAPI : config_date.ss_userAPI) : (e.isMaster ? config_date.gg_usingAPI : config_date.gg_userAPI)
 
         if (!apiList || apiList.length === 0) {
             await e.reply(`当前没有配置任何${baseType}接口`)
             return
         }
 
+        // 过滤出用户可以使用的接口
+        const availableApis = e.isMaster ? 
+            apiList : // 主人可以看到所有接口
+            apiList.filter(api => !api.isOnlyMaster) // 普通用户只能看到非主人专属接口
+
+        // 检查默认配置是否可用
+        const defaultConfigAvailable = e.isMaster || 
+            !((baseType === 'ss' && config_date.ss_isOnlyMaster) || 
+              (baseType === 'gg' && config_date.gg_isOnlyMaster))
+
+        if (!defaultConfigAvailable && availableApis.length === 0) {
+            await e.reply('当前没有可用的接口')
+            return
+        }
+
         let msg = []
         
-        // 如果是完整的ss或gg，显示所有接口
+        // 如果是完整的ss或gg，显示所有可用接口
         if (filterStr === baseType[1]) {
             msg.push(`当前${baseType}接口列表：`)
-            apiList.forEach((api, index) => {
-                const isUsing = currentApi === (index + 1)
+            availableApis.forEach((api, index) => {
+                const originalIndex = apiList.indexOf(api) + 1
+                const isUsing = currentApi === originalIndex
                 const customCmd = api.customCommand ? ` (#${baseType[0]}${api.customCommand})` : ''
                 const remark = api.remark ? ` - ${api.remark}` : ''
-                msg.push(`${index + 1}. 接口${index + 1}${remark}${customCmd}${isUsing ? ' [当前使用]' : ''}`)
+                const masterOnly = api.isOnlyMaster ? ' [主人专属]' : ''
+                msg.push(`${originalIndex}. 接口${originalIndex}${remark}${customCmd}${masterOnly}${isUsing ? ' [当前使用]' : ''}`)
             })
 
             // 添加默认配置的状态
-            if (currentApi === 0) {
-                msg.push('\n当前使用：默认配置')
+            if (defaultConfigAvailable) {
+                const isUsingDefault = currentApi === 0
+                const defaultMasterOnly = (baseType === 'ss' && config_date.ss_isOnlyMaster) || 
+                                       (baseType === 'gg' && config_date.gg_isOnlyMaster) ? 
+                                       ' [主人专属]' : ''
+                if (msg.length > 1) msg.push('') // 如果有其他接口，添加空行
+                msg.push(`默认配置${defaultMasterOnly}${isUsingDefault ? ' [当前使用]' : ''}`)
             }
         } else {
             // 根据filterStr筛选接口
-            const filteredApis = apiList.filter((api, index) => {
+            const filteredApis = availableApis.filter((api, index) => {
                 const customCmd = api.customCommand || ''
                 const remark = api.remark || ''
                 return customCmd.includes(filterStr) || remark.includes(filterStr)
             })
 
             if (filteredApis.length === 0) {
-                await e.reply(`未找到包含 "${filterStr}" 的接口`)
+                await e.reply(`未找到包含 "${filterStr}" 的可用接口`)
                 return
             }
 
@@ -1555,7 +1601,8 @@ export class SF_Painting extends plugin {
                 const isUsing = currentApi === originalIndex
                 const customCmd = api.customCommand ? ` (#${baseType[0]}${api.customCommand})` : ''
                 const remark = api.remark ? ` - ${api.remark}` : ''
-                msg.push(`${originalIndex}. 接口${originalIndex}${remark}${customCmd}${isUsing ? ' [当前使用]' : ''}`)
+                const masterOnly = api.isOnlyMaster ? ' [主人专属]' : ''
+                msg.push(`${originalIndex}. 接口${originalIndex}${remark}${customCmd}${masterOnly}${isUsing ? ' [当前使用]' : ''}`)
             })
         }
 
@@ -1603,15 +1650,15 @@ export class SF_Painting extends plugin {
         // 根据用户身份更新配置
         if (type === 'ss') {
             if (isMaster) {
-                config_date.ss_usingAPI_master = index
-            } else {
                 config_date.ss_usingAPI = index
+            } else {
+                config_date.ss_userAPI = index
             }
         } else {
             if (isMaster) {
-                config_date.gg_usingAPI_master = index
-            } else {
                 config_date.gg_usingAPI = index
+            } else {
+                config_date.gg_userAPI = index
             }
         }
 
@@ -1664,9 +1711,32 @@ export class SF_Painting extends plugin {
                     }
                 }
 
+                // 检查接口权限
+                if (apiIndex >= 0 && !e.isMaster && apiList[apiIndex].isOnlyMaster) {
+                    await e.reply('该接口仅限主人使用');
+                    return false;
+                }
+
+                // 检查默认配置权限
+                if (apiIndex === -1 && !e.isMaster) {
+                    if ((type === 'ss' && config_date.ss_isOnlyMaster) || 
+                        (type === 'gg' && config_date.gg_isOnlyMaster)) {
+                        await e.reply('默认配置仅限主人使用');
+                        return false;
+                    }
+                }
+
                 // 临时切换接口并执行操作
                 const originalUsingAPI = config_date[`${type}_usingAPI`];
-                config_date[`${type}_usingAPI`] = apiIndex + 1;
+                const originalUserAPI = config_date[`${type}_userAPI`];
+                
+                // 根据用户身份设置对应的API
+                if (e.isMaster) {
+                    config_date[`${type}_usingAPI`] = apiIndex + 1;
+                } else {
+                    config_date[`${type}_userAPI`] = apiIndex + 1;
+                }
+                
                 Config.setConfig(config_date);
 
                 try {
@@ -1674,7 +1744,12 @@ export class SF_Painting extends plugin {
                     await this[chatMethod](e);
                     return true;
                 } finally {
-                    config_date[`${type}_usingAPI`] = originalUsingAPI;
+                    // 恢复原始配置
+                    if (e.isMaster) {
+                        config_date[`${type}_usingAPI`] = originalUsingAPI;
+                    } else {
+                        config_date[`${type}_userAPI`] = originalUserAPI;
+                    }
                     Config.setConfig(config_date);
                 }
             };
@@ -1765,8 +1840,34 @@ export class SF_Painting extends plugin {
             const number = afterEndChat.match(/(\d+)/)?.[1] || '';
 
             const processEndChat = async (apiIndex) => {
+                // 检查接口权限
+                if (apiIndex > 0 && !e.isMaster) {
+                    const apiList = config_date[`${type}_APIList`];
+                    if (apiList[apiIndex - 1].isOnlyMaster) {
+                        await e.reply('该接口仅限主人使用');
+                        return false;
+                    }
+                }
+
+                // 检查默认配置权限
+                if (apiIndex === 0 && !e.isMaster) {
+                    if ((type === 'ss' && config_date.ss_isOnlyMaster) || 
+                        (type === 'gg' && config_date.gg_isOnlyMaster)) {
+                        await e.reply('默认配置仅限主人使用');
+                        return false;
+                    }
+                }
+
                 const originalUsingAPI = config_date[`${type}_usingAPI`];
-                config_date[`${type}_usingAPI`] = apiIndex;
+                const originalUserAPI = config_date[`${type}_userAPI`];
+
+                // 根据用户身份设置对应的API
+                if (e.isMaster) {
+                    config_date[`${type}_usingAPI`] = apiIndex;
+                } else {
+                    config_date[`${type}_userAPI`] = apiIndex;
+                }
+                
                 Config.setConfig(config_date);
 
                 try {
@@ -1774,7 +1875,12 @@ export class SF_Painting extends plugin {
                     await this.sf_end_chat(e);
                     return true;
                 } finally {
-                    config_date[`${type}_usingAPI`] = originalUsingAPI;
+                    // 恢复原始配置
+                    if (e.isMaster) {
+                        config_date[`${type}_usingAPI`] = originalUsingAPI;
+                    } else {
+                        config_date[`${type}_userAPI`] = originalUserAPI;
+                    }
                     Config.setConfig(config_date);
                 }
             };

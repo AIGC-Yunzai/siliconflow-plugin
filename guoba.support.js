@@ -418,7 +418,7 @@ export function supportGuoba() {
           },
         },
         {
-          field: 'ss_usingAPI',
+          field: 'ss_userAPI',
           label: '[#ss]用户使用接口',
           bottomHelpMessage: "选择用户要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等",
           component: 'Select',
@@ -429,7 +429,7 @@ export function supportGuoba() {
           },
         },
         {
-          field: 'ss_usingAPI_master',
+          field: 'ss_usingAPI',
           label: '[#ss]主人使用接口',
           bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等",
           component: 'Select',
@@ -599,7 +599,7 @@ export function supportGuoba() {
           },
         },
         {
-          field: 'gg_usingAPI',
+          field: 'gg_userAPI',
           label: '[#gg]用户使用接口',
           bottomHelpMessage: "选择用户要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等",
           component: 'Select',
@@ -610,7 +610,7 @@ export function supportGuoba() {
           },
         },
         {
-          field: 'gg_usingAPI_master',
+          field: 'gg_usingAPI',
           label: '[#gg]主人使用接口',
           bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等",
           component: 'Select',

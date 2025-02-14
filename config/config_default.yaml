@@ -45,8 +45,8 @@ ss_quoteMessage: true # 是否引用原消息
 ss_forwardThinking: false # 是否转发思考过程
 ss_isOnlyMaster: false # 默认配置是否仅限主人使用
 ss_APIList: [] # ss接口列表
-ss_usingAPI: 0 # 当前用户使用的ss接口索引
-ss_usingAPI_master: 0 # 当前主人使用的ss接口索引
+ss_usingAPI: 0 # 当前主人使用的ss接口索引
+ss_userAPI: 0 # 当前用户使用的ss接口索引
 # Gemini API配置
 ggBaseUrl: ""
 ggKey: ""
@@ -61,5 +61,5 @@ gg_useSearch: true # 是否启用搜索功能
 gg_HistoryExTime: 12
 gg_isOnlyMaster: false # 默认配置是否仅限主人使用
 gg_APIList: [] # gg接口列表
-gg_usingAPI: 0 # 当前用户使用的gg接口索引
-gg_usingAPI_master: 0 # 当前主人使用的gg接口索引
+gg_usingAPI: 0 # 当前主人使用的gg接口索引
+gg_userAPI: 0 # 当前用户使用的gg接口索引
