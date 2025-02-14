@@ -520,11 +520,25 @@ export class SF_Painting extends plugin {
         if (!config_date)
             config_date = Config.getConfig()
 
+        // 判断用户身份
+        const isMaster = e.isMaster
+
         // 获取接口配置
         let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false
-        if (config_date.ss_usingAPI > 0 && config_date.ss_APIList && config_date.ss_APIList[config_date.ss_usingAPI - 1]) {
+        
+        // 根据用户身份选择使用的接口索引
+        const usingApiIndex = isMaster ? config_date.ss_usingAPI_master : config_date.ss_usingAPI
+
+        if (usingApiIndex > 0 && config_date.ss_APIList && config_date.ss_APIList[usingApiIndex - 1]) {
             // 使用接口列表中的配置
-            const apiConfig = config_date.ss_APIList[config_date.ss_usingAPI - 1]
+            const apiConfig = config_date.ss_APIList[usingApiIndex - 1]
+            
+            // 检查接口是否仅限主人使用
+            if (!isMaster && apiConfig.isOnlyMaster) {
+                await e.reply('该接口仅限主人使用')
+                return false
+            }
+            
             // 只有当APIList中的字段有值时才使用该值
             use_sf_key = this.get_random_key(apiConfig.apiKey) || this.get_random_key(config_date.ss_Key) || ""
             apiBaseUrl = apiConfig.apiBaseUrl || config_date.ss_apiBaseUrl || config_date.sfBaseUrl
@@ -535,6 +549,12 @@ export class SF_Painting extends plugin {
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             forwardThinking = (typeof apiConfig.forwardThinking !== 'undefined') ? apiConfig.forwardThinking : false
         } else if (config_date.ss_apiBaseUrl) {
+            // 检查默认配置是否仅限主人使用
+            if (!isMaster && config_date.ss_isOnlyMaster) {
+                await e.reply('默认配置仅限主人使用')
+                return false
+            }
+            
             // 使用默认配置
             use_sf_key = this.get_random_key(config_date.ss_Key)
             apiBaseUrl = config_date.ss_apiBaseUrl
@@ -1002,11 +1022,25 @@ export class SF_Painting extends plugin {
         if (!config_date)
             config_date = Config.getConfig()
 
+        // 判断用户身份
+        const isMaster = e.isMaster
+
         // 获取接口配置
         let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true
-        if (config_date.gg_usingAPI > 0 && config_date.gg_APIList && config_date.gg_APIList[config_date.gg_usingAPI - 1]) {
+        
+        // 根据用户身份选择使用的接口索引
+        const usingApiIndex = isMaster ? config_date.gg_usingAPI_master : config_date.gg_usingAPI
+
+        if (usingApiIndex > 0 && config_date.gg_APIList && config_date.gg_APIList[usingApiIndex - 1]) {
             // 使用接口列表中的配置
-            const apiConfig = config_date.gg_APIList[config_date.gg_usingAPI - 1]
+            const apiConfig = config_date.gg_APIList[usingApiIndex - 1]
+            
+            // 检查接口是否仅限主人使用
+            if (!isMaster && apiConfig.isOnlyMaster) {
+                await e.reply('该接口仅限主人使用')
+                return false
+            }
+            
             // 只有当APIList中的字段有值时才使用该值
             ggBaseUrl = apiConfig.apiBaseUrl || config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev"
             ggKey = this.get_random_key(apiConfig.apiKey) || this.get_random_key(config_date.ggKey) || "sk-xuanku"
@@ -1017,6 +1051,12 @@ export class SF_Painting extends plugin {
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             useSearch = (typeof apiConfig.useSearch !== 'undefined') ? apiConfig.useSearch : false
         } else {
+            // 检查默认配置是否仅限主人使用
+            if (!isMaster && config_date.gg_isOnlyMaster) {
+                await e.reply('默认配置仅限主人使用')
+                return false
+            }
+            
             // 使用默认配置
             ggBaseUrl = config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev"
             ggKey = this.get_random_key(config_date.ggKey) || "sk-xuanku"
@@ -1527,6 +1567,9 @@ export class SF_Painting extends plugin {
         // 读取配置
         const config_date = Config.getConfig()
 
+        // 判断用户身份
+        const isMaster = e.isMaster
+
         // 解析命令
         const match = e.msg.match(/^#(sf|SF)(ss|gg)使用接口(\d+)$/)
         const type = match[2].toLowerCase()
@@ -1539,11 +1582,37 @@ export class SF_Painting extends plugin {
             return
         }
 
-        // 更新配置
+        // 如果是非主人用户,检查接口是否可用
+        if (!isMaster && index > 0) {
+            const api = apiList[index - 1]
+            if (api.isOnlyMaster) {
+                await e.reply('该接口仅限主人使用')
+                return
+            }
+        }
+
+        // 如果是非主人用户,检查默认配置是否可用
+        if (!isMaster && index === 0) {
+            if ((type === 'ss' && config_date.ss_isOnlyMaster) || 
+                (type === 'gg' && config_date.gg_isOnlyMaster)) {
+                await e.reply('默认配置仅限主人使用')
+                return
+            }
+        }
+
+        // 根据用户身份更新配置
         if (type === 'ss') {
-            config_date.ss_usingAPI = index
+            if (isMaster) {
+                config_date.ss_usingAPI_master = index
+            } else {
+                config_date.ss_usingAPI = index
+            }
         } else {
-            config_date.gg_usingAPI = index
+            if (isMaster) {
+                config_date.gg_usingAPI_master = index
+            } else {
+                config_date.gg_usingAPI = index
+            }
         }
 
         // 保存配置
