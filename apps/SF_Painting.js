@@ -1583,15 +1583,14 @@ export class SF_Painting extends plugin {
                 msg.push(`默认配置${defaultMasterOnly}${isUsingDefault ? ' [当前使用]' : ''}`)
             }
         } else {
-            // 根据filterStr筛选接口
-            const filteredApis = availableApis.filter((api, index) => {
+            // 只根据自定义命令筛选接口
+            const filteredApis = availableApis.filter(api => {
                 const customCmd = api.customCommand || ''
-                const remark = api.remark || ''
-                return customCmd.includes(filterStr) || remark.includes(filterStr)
+                return customCmd.includes(filterStr)
             })
 
             if (filteredApis.length === 0) {
-                await e.reply(`未找到包含 "${filterStr}" 的可用接口`)
+                await e.reply(`未找到自定义命令包含 "${filterStr}" 的可用接口`)
                 return
             }
 
@@ -1606,7 +1605,12 @@ export class SF_Painting extends plugin {
             })
         }
 
-        await e.reply(msg.join('\n'))
+        // 如果接口数量超过10个，使用转发消息
+        if (msg.length > 12) { // 标题占一行，默认配置占1行，所以是12
+            await e.reply(await common.makeForwardMsg(e, msg, `${baseType}接口列表`))
+        } else {
+            await e.reply(msg.join('\n'))
+        }
     }
 
     /** 选择使用的接口 */
