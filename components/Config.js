@@ -52,7 +52,7 @@ class Config {
         // 处理ss接口配置
         else if (fileName.startsWith('ss_') && config.ss_APIList) {
           const remark = fileName.slice(3) // 去掉'ss_'前缀
-          const ssApi = config.ss_APIList.find(api => api.remark === remark)
+          const ssApi = config.ss_APIList.find(api => api.remark.replace(/\//g, '_') === remark)
           if (ssApi) {
             ssApi.prompt = content.prompt
           }
@@ -60,7 +60,7 @@ class Config {
         // 处理gg接口配置
         else if (fileName.startsWith('gg_') && config.gg_APIList) {
           const remark = fileName.slice(3) // 去掉'gg_'前缀
-          const ggApi = config.gg_APIList.find(api => api.remark === remark)
+          const ggApi = config.gg_APIList.find(api => api.remark.replace(/\//g, '_') === remark)
           if (ggApi) {
             ggApi.prompt = content.prompt
           }
@@ -97,7 +97,7 @@ class Config {
         if (!api.remark) {
           throw new Error('SS接口配置缺少必填的备注(remark)字段')
         }
-        const fileName = `ss_${api.remark}`
+        const fileName = `ss_${api.remark.replace(/\//g, '_')}`
         if (existingRemarks.has(fileName)) {
           throw new Error(`SS接口配置的备注"${api.remark}"重复`)
         }
@@ -111,7 +111,7 @@ class Config {
         if (!api.remark) {
           throw new Error('GG接口配置缺少必填的备注(remark)字段')
         }
-        const fileName = `gg_${api.remark}`
+        const fileName = `gg_${api.remark.replace(/\//g, '_')}`
         if (existingRemarks.has(fileName)) {
           throw new Error(`GG接口配置的备注"${api.remark}"重复`)
         }
@@ -156,7 +156,7 @@ class Config {
         newConfig.ss_APIList.forEach(api => {
           if (api.remark) {
             fs.writeFileSync(
-              path.join(promptDir, `ss_${api.remark}.yaml`),
+              path.join(promptDir, `ss_${api.remark.replace(/\//g, '_')}.yaml`),
               YAML.stringify({ prompt: api.prompt ?? '' })
             )
             delete api.prompt
@@ -169,7 +169,7 @@ class Config {
         newConfig.gg_APIList.forEach(api => {
           if (api.remark) {
             fs.writeFileSync(
-              path.join(promptDir, `gg_${api.remark}.yaml`),
+              path.join(promptDir, `gg_${api.remark.replace(/\//g, '_')}.yaml`),
               YAML.stringify({ prompt: api.prompt ?? '' })
             )
             delete api.prompt
@@ -187,7 +187,7 @@ class Config {
         // 处理ss接口文件
         if (fileName.startsWith('ss_')) {
           const remark = fileName.slice(3)
-          const exists = newConfig.ss_APIList?.some(api => api.remark === remark)
+          const exists = newConfig.ss_APIList?.some(api => api.remark.replace(/\//g, '_') === remark)
           if (!exists) {
             fs.unlinkSync(file)
           }
@@ -195,7 +195,7 @@ class Config {
         // 处理gg接口文件
         else if (fileName.startsWith('gg_')) {
           const remark = fileName.slice(3)
-          const exists = newConfig.gg_APIList?.some(api => api.remark === remark)
+          const exists = newConfig.gg_APIList?.some(api => api.remark.replace(/\//g, '_') === remark)
           if (!exists) {
             fs.unlinkSync(file)
           }

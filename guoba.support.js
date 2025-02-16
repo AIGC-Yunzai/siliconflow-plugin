@@ -396,10 +396,10 @@ export function supportGuoba() {
               },
               {
                 field: "remark",
-                label: "备注",
+                label: "文件名",
                 component: "Input",
                 required: true,
-                bottomHelpMessage: "接口配置的备注说明",
+                bottomHelpMessage: "接口配置的储存的文件名",
               },
               {
                 field: "customCommand",
