@@ -36,7 +36,7 @@ class Config {
       }
 
       const files = getAllFiles(configDir).filter(f => f.endsWith('.yaml'))
-      
+
       files.forEach(file => {
         const fileName = path.basename(file, '.yaml')
         const content = YAML.parse(fs.readFileSync(file, 'utf-8'))
@@ -90,7 +90,7 @@ class Config {
   // 添加新的检查方法
   validateConfig(config) {
     const existingRemarks = new Set(['ss_default', 'gg_default']) // 预置的默认文件名
-      
+
     // 检查ss_APIList
     if (config.ss_APIList && Array.isArray(config.ss_APIList)) {
       for (const api of config.ss_APIList) {
@@ -124,7 +124,7 @@ class Config {
     try {
       // 创建新对象避免引用问题
       const newConfig = JSON.parse(JSON.stringify(config_data))
-      
+
       const promptDir = `${pluginRoot}/config/config/prompts`
       if (!fs.existsSync(promptDir)) {
         fs.mkdirSync(promptDir, { recursive: true })
@@ -145,7 +145,7 @@ class Config {
       // 检查是否需要更新gg默认prompt
       if ('gg_Prompt' in newConfig) {
         fs.writeFileSync(
-          path.join(promptDir, 'gg_default.yaml'), 
+          path.join(promptDir, 'gg_default.yaml'),
           YAML.stringify({ prompt: newConfig.gg_Prompt ?? '' })
         )
       }
