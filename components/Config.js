@@ -35,26 +35,31 @@ class Config {
         fs.mkdirSync(configDir, { recursive: true })
       }
 
-      const files = getAllFiles(configDir).filter(f => f.endsWith('.yaml'))
+      const files = getAllFiles(configDir).filter(f => f.endsWith('.yaml') || f.endsWith('.txt')) // 匹配旧版本的yaml格式的prompt
 
       files.forEach(file => {
-        const fileName = path.basename(file, '.yaml')
-        const content = YAML.parse(fs.readFileSync(file, 'utf-8'))
+        const fileName = path.basename(file, path.extname(file))
+        let content
+        if (file.endsWith('.yaml')) { // 匹配旧版本的yaml格式的prompt
+          content = YAML.parse(fs.readFileSync(file, 'utf-8'))?.prompt
+        } else if (file.endsWith('.txt')) {
+          content = fs.readFileSync(file, 'utf-8')
+        }
 
         // 处理ss默认配置
         if (fileName === 'ss_default') {
-          config.ss_Prompt = content.prompt
+          config.ss_Prompt = content
         }
         // 处理gg默认配置  
         else if (fileName === 'gg_default') {
-          config.gg_Prompt = content.prompt
+          config.gg_Prompt = content
         }
         // 处理ss接口配置
         else if (fileName.startsWith('ss_') && config.ss_APIList) {
           const remark = fileName.slice(3) // 去掉'ss_'前缀
           const ssApi = config.ss_APIList.find(api => api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_') === remark)
           if (ssApi) {
-            ssApi.prompt = content.prompt
+            ssApi.prompt = content
           }
         }
         // 处理gg接口配置
@@ -62,7 +67,7 @@ class Config {
           const remark = fileName.slice(3) // 去掉'gg_'前缀
           const ggApi = config.gg_APIList.find(api => api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_') === remark)
           if (ggApi) {
-            ggApi.prompt = content.prompt
+            ggApi.prompt = content
           }
         }
       })
@@ -136,18 +141,28 @@ class Config {
       // 检查是否需要更新ss默认prompt
       if ('ss_Prompt' in newConfig) {
         fs.writeFileSync(
-          path.join(promptDir, 'ss_default.yaml'),
-          YAML.stringify({ prompt: newConfig.ss_Prompt ?? '' })
+          path.join(promptDir, 'ss_default.txt'),
+          newConfig.ss_Prompt ?? ''
         )
+        // 删除旧的ss_default.yaml文件
+        const ssDefaultYamlPath = path.join(promptDir, 'ss_default.yaml') // 匹配旧版本的yaml格式的prompt
+        if (fs.existsSync(ssDefaultYamlPath)) {
+          fs.unlinkSync(ssDefaultYamlPath)
+        }
       }
       delete newConfig.ss_Prompt
 
       // 检查是否需要更新gg默认prompt
       if ('gg_Prompt' in newConfig) {
         fs.writeFileSync(
-          path.join(promptDir, 'gg_default.yaml'),
-          YAML.stringify({ prompt: newConfig.gg_Prompt ?? '' })
+          path.join(promptDir, 'gg_default.txt'),
+          newConfig.gg_Prompt ?? ''
         )
+        // 删除旧的gg_default.yaml文件
+        const ggDefaultYamlPath = path.join(promptDir, 'gg_default.yaml') // 匹配旧版本的yaml格式的prompt
+        if (fs.existsSync(ggDefaultYamlPath)) {
+          fs.unlinkSync(ggDefaultYamlPath)
+        }
       }
       delete newConfig.gg_Prompt
 
@@ -156,9 +171,14 @@ class Config {
         newConfig.ss_APIList.forEach(api => {
           if (api.remark) {
             fs.writeFileSync(
-              path.join(promptDir, `ss_${api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_')}.yaml`),
-              YAML.stringify({ prompt: api.prompt ?? '' })
+              path.join(promptDir, `ss_${api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_')}.txt`),
+              api.prompt ?? ''
             )
+            // 删除旧的ss接口yaml文件
+            const ssApiYamlPath = path.join(promptDir, `ss_${api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_')}.yaml`) // 匹配旧版本的yaml格式的prompt
+            if (fs.existsSync(ssApiYamlPath)) {
+              fs.unlinkSync(ssApiYamlPath)
+            }
             delete api.prompt
           }
         })
@@ -169,18 +189,23 @@ class Config {
         newConfig.gg_APIList.forEach(api => {
           if (api.remark) {
             fs.writeFileSync(
-              path.join(promptDir, `gg_${api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_')}.yaml`),
-              YAML.stringify({ prompt: api.prompt ?? '' })
+              path.join(promptDir, `gg_${api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_')}.txt`),
+              api.prompt ?? ''
             )
+            // 删除旧的gg接口yaml文件
+            const ggApiYamlPath = path.join(promptDir, `gg_${api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_')}.yaml`) // 匹配旧版本的yaml格式的prompt
+            if (fs.existsSync(ggApiYamlPath)) {
+              fs.unlinkSync(ggApiYamlPath)
+            }
             delete api.prompt
           }
         })
       }
 
       // 清理已删除接口的prompt文件
-      const files = getAllFiles(promptDir).filter(f => f.endsWith('.yaml'))
+      const files = getAllFiles(promptDir).filter(f => f.endsWith('.yaml') || f.endsWith('.txt')) // 匹配旧版本的yaml格式的prompt
       files.forEach(file => {
-        const fileName = path.basename(file, '.yaml')
+        const fileName = path.basename(file, path.extname(file))
         if (fileName === 'ss_default' || fileName === 'gg_default') {
           return
         }
