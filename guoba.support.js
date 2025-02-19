@@ -310,6 +310,12 @@ export function supportGuoba() {
           },
         },
         {
+          field: "toggleAtMode",
+          label: "At模式",
+          bottomHelpMessage: "开启At模式后，可以直接At Bot使用默认命令对话；更改后重启生效",
+          component: "Switch",
+        },
+        {
           field: "defaultCommand",
           label: "默认命令",
           bottomHelpMessage: "当触发BOT名字时使用的默认命令，可选：ss 或 gg",
@@ -423,8 +429,8 @@ export function supportGuoba() {
           bottomHelpMessage: "选择用户要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等",
           component: 'Select',
           componentProps: {
-            options: (Config.getConfig()?.ss_APIList || []).filter(item => !item.isOnlyMaster).map((item, index) => { 
-              return { label: item.remark || `接口${index + 1}`, value: index + 1 } 
+            options: (Config.getConfig()?.ss_APIList || []).filter(item => !item.isOnlyMaster).map((item, index) => {
+              return { label: item.remark || `接口${index + 1}`, value: index + 1 }
             }).concat([{ label: "使用默认配置", value: 0 }])
           },
         },
@@ -434,8 +440,8 @@ export function supportGuoba() {
           bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等",
           component: 'Select',
           componentProps: {
-            options: (Config.getConfig()?.ss_APIList || []).map((item, index) => { 
-              return { label: item.remark || `接口${index + 1}`, value: index + 1 } 
+            options: (Config.getConfig()?.ss_APIList || []).map((item, index) => {
+              return { label: item.remark || `接口${index + 1}`, value: index + 1 }
             }).concat([{ label: "使用默认配置", value: 0 }])
           },
         },
@@ -604,8 +610,8 @@ export function supportGuoba() {
           bottomHelpMessage: "选择用户要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等",
           component: 'Select',
           componentProps: {
-            options: (Config.getConfig()?.gg_APIList || []).filter(item => !item.isOnlyMaster).map((item, index) => { 
-              return { label: item.remark || `接口${index + 1}`, value: index + 1 } 
+            options: (Config.getConfig()?.gg_APIList || []).filter(item => !item.isOnlyMaster).map((item, index) => {
+              return { label: item.remark || `接口${index + 1}`, value: index + 1 }
             }).concat([{ label: "使用默认配置", value: 0 }])
           },
         },
@@ -615,8 +621,8 @@ export function supportGuoba() {
           bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等",
           component: 'Select',
           componentProps: {
-            options: (Config.getConfig()?.gg_APIList || []).map((item, index) => { 
-              return { label: item.remark || `接口${index + 1}`, value: index + 1 } 
+            options: (Config.getConfig()?.gg_APIList || []).map((item, index) => {
+              return { label: item.remark || `接口${index + 1}`, value: index + 1 }
             }).concat([{ label: "使用默认配置", value: 0 }])
           },
         },
@@ -821,7 +827,7 @@ export function supportGuoba() {
           },
         },
         {
-          field: "wsPassword", 
+          field: "wsPassword",
           label: "WebSocket密码",
           bottomHelpMessage: "设置WebSocket服务的访问密码，建议修改默认密码；重启生效",
           component: "InputPassword",
@@ -960,7 +966,7 @@ export function supportGuoba() {
           lodash.set(config, keyPath, value)
         }
         config = lodash.merge({}, Config.getConfig(), config)
-        
+
         // 直接赋值所有数组类型的配置项
         config.sf_keys = data['sf_keys']
         config.ss_APIList = data['ss_APIList']
@@ -975,12 +981,12 @@ export function supportGuoba() {
         } catch (err) {
           return Result.ok({}, '配置验证失败: ' + err.message)
         }
-        
+
         // 其他处理保持不变
         config.sfBaseUrl = config.sfBaseUrl.replace(/\/$/, '')
         config.mj_apiBaseUrl = config.mj_apiBaseUrl.replace(/\/$/, '')
         config.mj_translationBaseUrl = config.mj_translationBaseUrl.replace(/\/$/, '')
-        
+
         try {
           const saved = Config.setConfig(config)
           if (!saved) {

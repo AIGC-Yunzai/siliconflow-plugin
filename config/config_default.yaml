@@ -63,3 +63,4 @@ gg_isOnlyMaster: false # 默认配置是否仅限主人使用
 gg_APIList: [] # gg接口列表
 gg_usingAPI: 0 # 当前主人使用的gg接口索引
 gg_userAPI: 0 # 当前用户使用的gg接口索引
+toggleAtMode: false

@@ -22,14 +22,14 @@ import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 import { MJ_Painting } from './MJ_Painting.js'
 
-// 使机器人可以对其第一人称回应
-const reg_chatgpt_for_firstperson_call = new RegExp(Config.getConfig()?.botName || `sf-plugin-bot-name-${Math.floor(10000 + Math.random() * 90000)}`, "g");
-
 var Ws_Server = {};
 init_server();
 
 export class SF_Painting extends plugin {
     constructor() {
+        const config = Config.getConfig()
+        /** 使机器人可以对其第一人称回应 */
+        let reg_chatgpt_for_firstperson_call = new RegExp(config?.botName || `sf-plugin-bot-name-${Math.floor(10000 + Math.random() * 90000)}`, "g");
         super({
             name: 'SF_对话&绘图',
             dsc: 'SF_对话&绘图',
@@ -100,7 +100,13 @@ export class SF_Painting extends plugin {
                 {
                     reg: '^#(g|G)(?!g|G)(.+)',
                     fnc: 'gg_select_and_chat',
-                }
+                },
+                {
+                    /** At模式 */
+                    reg: config.toggleAtMode ? '^[^#][sS]*' : `sf-plugin-bot-name-${Math.floor(10000 + Math.random() * 90000)}`,
+                    fnc: 'atChatMode',
+                    log: false
+                },
             ]
         })
         this.sf_keys_index = -1
@@ -517,6 +523,48 @@ export class SF_Painting extends plugin {
         return true;
     }
 
+    /** At模式 */
+    async atChatMode(e) {
+        if (!e.msg || e.msg?.startsWith('#'))
+            return false
+        if ((e.isGroup || e.group_id) && !(e.atme || e.atBot || (e.at === e.self_id)))
+            return false
+        if (e.user_id == getUin(e))
+            return false
+
+        // 处理 昵称
+        try {
+            e.msg = e.msg.trim()
+            if (e.isGroup) {
+                let mm = this.e.bot.gml
+                let me = mm.get(getUin(e)) || {}
+                let card = me.card
+                let nickname = me.nickname
+                if (nickname && card) {
+                    if (nickname.startsWith(card)) {
+                        e.msg = e.msg.replace(`@${nickname}`, '').trim()
+                    } else if (card.startsWith(nickname)) {
+                        e.msg = e.msg.replace(`@${card}`, '').trim()
+                        e.msg = e.msg.replace(`@${nickname}`, '').trim()
+                    } else {
+                        if (nickname)
+                            e.msg = e.msg.replace(`@${nickname}`, '').trim()
+                        if (card)
+                            e.msg = e.msg.replace(`@${card}`, '').trim()
+                    }
+                } else if (nickname) {
+                    e.msg = e.msg.replace(`@${nickname}`, '').trim()
+                } else if (card) {
+                    e.msg = e.msg.replace(`@${card}`, '').trim()
+                }
+            }
+        } catch (err) {
+            logger.warn(err)
+        }
+
+        this.sf_chat(e)
+    }
+
     async sf_chat(e, config_date = undefined) {
         // 读取配置
         if (!config_date)
@@ -537,7 +585,7 @@ export class SF_Painting extends plugin {
 
             // 检查接口是否仅限主人使用
             if (!isMaster && apiConfig.isOnlyMaster) {
-                await e.reply('该接口仅限主人使用')
+                // await e.reply('该接口仅限主人使用')
                 return false
             }
 
@@ -1055,7 +1103,7 @@ export class SF_Painting extends plugin {
 
             // 检查接口是否仅限主人使用
             if (!isMaster && apiConfig.isOnlyMaster) {
-                await e.reply('该接口仅限主人使用')
+                // await e.reply('该接口仅限主人使用')
                 return false
             }
 
@@ -1641,8 +1689,8 @@ export class SF_Painting extends plugin {
         if (!isMaster && index > 0) {
             const api = apiList[index - 1]
             if (api.isOnlyMaster) {
-                await e.reply('该接口仅限主人使用')
-                return
+                // await e.reply('该接口仅限主人使用')
+                return false
             }
         }
 
@@ -1721,7 +1769,7 @@ export class SF_Painting extends plugin {
 
                 // 检查接口权限
                 if (apiIndex >= 0 && !e.isMaster && apiList[apiIndex].isOnlyMaster) {
-                    await e.reply('该接口仅限主人使用');
+                    // await e.reply('该接口仅限主人使用');
                     return false;
                 }
 
@@ -1852,7 +1900,7 @@ export class SF_Painting extends plugin {
                 if (apiIndex > 0 && !e.isMaster) {
                     const apiList = config_date[`${type}_APIList`];
                     if (apiList[apiIndex - 1].isOnlyMaster) {
-                        await e.reply('该接口仅限主人使用');
+                        // await e.reply('该接口仅限主人使用');
                         return false;
                     }
                 }
