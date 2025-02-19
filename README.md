@@ -55,6 +55,10 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 #### 绘画辅助工具
 - [AI画图Tags生产站](https://nai4-tag-select.pages.dev/) 🥭
 - [直链服务器，一键复制huggingface空间](https://huggingface.co/spaces/xiaozhian/slink/tree/main?duplicate=true) 🍉
+
+<details>
+<summary>点击展开更多绘画教程</summary>
+
 - [Stable Diffusion教程](https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf) 🍇
 - [Midjourney基础教程](https://waytoagi.feishu.cn/wiki/VUadwndc5iRJktkzaYPcaLEynZc) 🍊
 - [MJ prompt参考](https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf) 🍎
@@ -62,6 +66,8 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 - [又一个prompt参考站](https://catjourney.life/all) 🍌
 - [Midjourney Prompt生成器](https://promptfolder.com/midjourney-prompt-helper/) 🥝
 - [MJ和SD Prompt生成器相关合集](https://waytoagi.feishu.cn/wiki/TQogw5uIziB4fykbGhSciaQfndm?table=tbl5kMFjDDdeYoAt&view=vew8AJm3cI) 🍑
+
+</details>
 
 ## 插件配置
 

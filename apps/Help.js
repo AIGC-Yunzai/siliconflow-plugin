@@ -82,6 +82,11 @@ export class help extends plugin {
                         "desc": "使用 Gemini 搜索并回答问题"
                     },
                     {
+                        "icon": 3,
+                        "title": "#sfss接口列表 #sfgg接口列表",
+                        "desc": "#sfss使用接口[n] #sfss使用接口[n] 每个用户独立"
+                    },
+                    {
                         "icon": 86,
                         "title": "#sf删除[ss|gg]前[num]条对话",
                         "desc": "设置生成提示词开关"
