@@ -577,7 +577,7 @@ export class SF_Painting extends plugin {
         let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false
 
         // 根据用户身份选择使用的接口索引
-        const usingApiIndex = isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date)
+        const usingApiIndex = isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)
 
         if (usingApiIndex > 0 && config_date.ss_APIList && config_date.ss_APIList[usingApiIndex - 1]) {
             // 使用接口列表中的配置
@@ -691,7 +691,7 @@ export class SF_Painting extends plugin {
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_useContext) {
-            historyMessages = await loadContext(e.user_id, isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date), 'ss')
+            historyMessages = await loadContext(e.user_id, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
             logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -740,12 +740,12 @@ export class SF_Painting extends plugin {
                 content: aiMessage,
                 extractedContent: extractedContent,
                 imageBase64: currentImages.length > 0 ? currentImages : undefined
-            }, isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date), 'ss')
+            }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
             // 保存AI回复
             await saveContext(e.user_id, {
                 role: 'assistant',
                 content: cleanedAnswer
-            }, isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date), 'ss')
+            }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
         }
 
         try {
@@ -1095,7 +1095,7 @@ export class SF_Painting extends plugin {
         let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true
 
         // 根据用户身份选择使用的接口索引
-        const usingApiIndex = isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date)
+        const usingApiIndex = isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
 
         if (usingApiIndex > 0 && config_date.gg_APIList && config_date.gg_APIList[usingApiIndex - 1]) {
             // 使用接口列表中的配置
@@ -1198,7 +1198,7 @@ export class SF_Painting extends plugin {
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_useContext) {
-            historyMessages = await loadContext(e.user_id, isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date), 'gg')
+            historyMessages = await loadContext(e.user_id, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
             logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -1232,13 +1232,13 @@ export class SF_Painting extends plugin {
                 content: aiMessage,
                 extractedContent: extractedContent,
                 imageBase64: currentImages.length > 0 ? currentImages : undefined
-            }, isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date), 'gg')
+            }, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
             // 保存AI回复
             await saveContext(e.user_id, {
                 role: 'assistant',
                 content: answer,
                 sources: sources
-            }, isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date), 'gg')
+            }, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
         }
 
         try {
@@ -1516,9 +1516,9 @@ export class SF_Painting extends plugin {
         // 设置对应的promptNum
         let promptNum = 0
         if (systemType === 'ss') {
-            promptNum = isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date)
+            promptNum = isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)
         } else if (systemType === 'gg') {
-            promptNum = isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date)
+            promptNum = isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
         }
         // 如果未指定系统类型，则使用默认配置(promptNum=0)
 
@@ -1558,9 +1558,9 @@ export class SF_Painting extends plugin {
             const systemType = match[4]?.toLowerCase() // ss或gg或undefined
             let promptNum = 0
             if (systemType === 'ss') {
-                promptNum = isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date)
+                promptNum = isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)
             } else if (systemType === 'gg') {
-                promptNum = isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date)
+                promptNum = isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
             }
             // 如果未指定系统类型，则使用默认配置(promptNum=0)
 
@@ -1586,10 +1586,10 @@ export class SF_Painting extends plugin {
         const baseType = match[2] === 's' ? 'ss' : 'gg'
         const filterStr = match[3] || ''
         const apiList = baseType === 'ss' ? config_date.ss_APIList : config_date.gg_APIList
-        const currentApi = baseType === 'ss' ? (e.isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date)) : (e.isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date))
+        const currentApi = baseType === 'ss' ? (e.isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)) : (e.isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date))
 
         if (!apiList || apiList.length === 0) {
-            await e.reply(`当前没有配置任何${baseType}接口`)
+            await e.reply(`当前没有配置任何${baseType}接口`, true)
             return
         }
 
@@ -1604,7 +1604,7 @@ export class SF_Painting extends plugin {
                 (baseType === 'gg' && config_date.gg_isOnlyMaster))
 
         if (!defaultConfigAvailable && availableApis.length === 0) {
-            await e.reply('当前没有可用的接口')
+            await e.reply('当前没有可用的接口', true)
             return
         }
 
@@ -1639,7 +1639,7 @@ export class SF_Painting extends plugin {
             })
 
             if (filteredApis.length === 0) {
-                await e.reply(`未找到自定义命令包含 "${filterStr}" 的可用接口`)
+                await e.reply(`未找到自定义命令包含 "${filterStr}" 的可用接口`, true)
                 return
             }
 
@@ -1656,9 +1656,9 @@ export class SF_Painting extends plugin {
 
         // 如果接口数量超过10个，使用转发消息
         if (msg.length > 12) { // 标题占一行，默认配置占1行，所以是12
-            await e.reply(await common.makeForwardMsg(e, msg, `${baseType}接口列表`))
+            await e.reply(await common.makeForwardMsg(e, msg, `${baseType}接口列表`), true)
         } else {
-            await e.reply(msg.join('\n'))
+            await e.reply(msg.join('\n'), true)
         }
     }
 
@@ -1678,7 +1678,7 @@ export class SF_Painting extends plugin {
         // 验证索引
         const apiList = type === 'ss' ? config_date.ss_APIList : config_date.gg_APIList
         if (index < 0 || (index > 0 && (!apiList || index > apiList.length))) {
-            await e.reply(`无效的接口索引，请使用 #sf${type}接口列表 查看可用的接口`)
+            await e.reply(`无效的接口索引，请使用 #sf${type}接口列表 查看可用的接口`, true)
             return
         }
 
@@ -1720,10 +1720,10 @@ export class SF_Painting extends plugin {
 
         // 返回结果
         if (index === 0) {
-            await e.reply(`已切换为使用${type}默认配置`)
+            await e.reply(`已切换为使用${type}默认配置`, true)
         } else {
             const api = apiList[index - 1]
-            await e.reply(`已切换为使用${type}接口：${api.remark || `接口${index}`}`)
+            await e.reply(`已切换为使用${type}接口：${api.remark || `接口${index}`}`, true)
         }
     }
 
@@ -1732,7 +1732,7 @@ export class SF_Painting extends plugin {
         const { type, chatMethod } = options;
 
         return async (e) => {
-            const config_date = Config.getConfig();
+            let config_date = Config.getConfig();
             const fullMsg = e.msg.trim();
             const withoutPrefix = fullMsg.substring(2);
 
@@ -1779,32 +1779,17 @@ export class SF_Painting extends plugin {
                     }
                 }
 
-                // 临时切换接口并执行操作
-                const originalUsingAPI = config_date[`${type}_usingAPI`];
-                const originalUserAPI = config_date[`${type}_userAPI`];
-
                 // 根据用户身份设置对应的API
                 if (e.isMaster) {
                     config_date[`${type}_usingAPI`] = apiIndex + 1;
                 } else {
-                    config_date[`${type}_userAPI`] = apiIndex + 1;
+                    e.sf_llm_user_API = apiIndex + 1;
                 }
 
-                Config.setConfig(config_date);
-
-                try {
-                    e.msg = `#${type} ${content}`;
-                    await this[chatMethod](e);
-                    return true;
-                } finally {
-                    // 恢复原始配置
-                    if (e.isMaster) {
-                        config_date[`${type}_usingAPI`] = originalUsingAPI;
-                    } else {
-                        config_date[`${type}_userAPI`] = originalUserAPI;
-                    }
-                    Config.setConfig(config_date);
-                }
+                e.msg = `#${type} ${content}`;
+                // 调用 ss 或 gg 对话函数
+                await this[chatMethod](e, config_date);
+                return true;
             };
 
             // 尝试匹配自定义命令
@@ -1878,7 +1863,7 @@ export class SF_Painting extends plugin {
         const { type } = options;
 
         return async (e) => {
-            const config_date = Config.getConfig();
+            let config_date = Config.getConfig();
             const fullMsg = e.msg.trim();
             const withoutPrefix = fullMsg.substring(2);
 
@@ -1915,7 +1900,7 @@ export class SF_Painting extends plugin {
                 if (e.isMaster) {
                     config_date[`${type}_usingAPI`] = apiIndex;
                 } else {
-                    config_date[`${type}_userAPI`] = apiIndex;
+                    e.sf_llm_user_API = apiIndex;
                 }
 
                 e.msg = `#sf结束${type}对话${number}`;
@@ -2230,5 +2215,5 @@ async function init_server() {
 async function findIndexByRemark(e, type, config_date) {
     const remark = await redis.get(`sf_plugin:llm:${type}_chat_user:${e.user_id}`)
     const index = config_date[`${type}_APIList`]?.findIndex(item => item.remark === remark);
-    return index === -1 ? 0 : index;
+    return index + 1;
 }
