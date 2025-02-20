@@ -577,7 +577,7 @@ export class SF_Painting extends plugin {
         let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false
 
         // 根据用户身份选择使用的接口索引
-        const usingApiIndex = isMaster ? config_date.ss_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:ss_chat_user:${e.user_id}`)) || 0)
+        const usingApiIndex = isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date)
 
         if (usingApiIndex > 0 && config_date.ss_APIList && config_date.ss_APIList[usingApiIndex - 1]) {
             // 使用接口列表中的配置
@@ -691,7 +691,7 @@ export class SF_Painting extends plugin {
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_useContext) {
-            historyMessages = await loadContext(e.user_id, isMaster ? config_date.ss_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:ss_chat_user:${e.user_id}`)) || 0), 'ss')
+            historyMessages = await loadContext(e.user_id, isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date), 'ss')
             logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -740,12 +740,12 @@ export class SF_Painting extends plugin {
                 content: aiMessage,
                 extractedContent: extractedContent,
                 imageBase64: currentImages.length > 0 ? currentImages : undefined
-            }, isMaster ? config_date.ss_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:ss_chat_user:${e.user_id}`)) || 0), 'ss')
+            }, isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date), 'ss')
             // 保存AI回复
             await saveContext(e.user_id, {
                 role: 'assistant',
                 content: cleanedAnswer
-            }, isMaster ? config_date.ss_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:ss_chat_user:${e.user_id}`)) || 0), 'ss')
+            }, isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date), 'ss')
         }
 
         try {
@@ -1095,7 +1095,7 @@ export class SF_Painting extends plugin {
         let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true
 
         // 根据用户身份选择使用的接口索引
-        const usingApiIndex = isMaster ? config_date.gg_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:gg_chat_user:${e.user_id}`)) || 0)
+        const usingApiIndex = isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date)
 
         if (usingApiIndex > 0 && config_date.gg_APIList && config_date.gg_APIList[usingApiIndex - 1]) {
             // 使用接口列表中的配置
@@ -1198,7 +1198,7 @@ export class SF_Painting extends plugin {
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_useContext) {
-            historyMessages = await loadContext(e.user_id, isMaster ? config_date.gg_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:gg_chat_user:${e.user_id}`)) || 0), 'gg')
+            historyMessages = await loadContext(e.user_id, isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date), 'gg')
             logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -1232,13 +1232,13 @@ export class SF_Painting extends plugin {
                 content: aiMessage,
                 extractedContent: extractedContent,
                 imageBase64: currentImages.length > 0 ? currentImages : undefined
-            }, isMaster ? config_date.gg_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:gg_chat_user:${e.user_id}`)) || 0), 'gg')
+            }, isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date), 'gg')
             // 保存AI回复
             await saveContext(e.user_id, {
                 role: 'assistant',
                 content: answer,
                 sources: sources
-            }, isMaster ? config_date.gg_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:gg_chat_user:${e.user_id}`)) || 0), 'gg')
+            }, isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date), 'gg')
         }
 
         try {
@@ -1516,9 +1516,9 @@ export class SF_Painting extends plugin {
         // 设置对应的promptNum
         let promptNum = 0
         if (systemType === 'ss') {
-            promptNum = isMaster ? config_date.ss_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:ss_chat_user:${e.user_id}`)) || 0)
+            promptNum = isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date)
         } else if (systemType === 'gg') {
-            promptNum = isMaster ? config_date.gg_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:gg_chat_user:${e.user_id}`)) || 0)
+            promptNum = isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date)
         }
         // 如果未指定系统类型，则使用默认配置(promptNum=0)
 
@@ -1558,9 +1558,9 @@ export class SF_Painting extends plugin {
             const systemType = match[4]?.toLowerCase() // ss或gg或undefined
             let promptNum = 0
             if (systemType === 'ss') {
-                promptNum = isMaster ? config_date.ss_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:ss_chat_user:${e.user_id}`)) || 0)
+                promptNum = isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date)
             } else if (systemType === 'gg') {
-                promptNum = isMaster ? config_date.gg_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:gg_chat_user:${e.user_id}`)) || 0)
+                promptNum = isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date)
             }
             // 如果未指定系统类型，则使用默认配置(promptNum=0)
 
@@ -1586,7 +1586,7 @@ export class SF_Painting extends plugin {
         const baseType = match[2] === 's' ? 'ss' : 'gg'
         const filterStr = match[3] || ''
         const apiList = baseType === 'ss' ? config_date.ss_APIList : config_date.gg_APIList
-        const currentApi = baseType === 'ss' ? (e.isMaster ? config_date.ss_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:ss_chat_user:${e.user_id}`)) || 0)) : (e.isMaster ? config_date.gg_usingAPI : (parseInt(await redis.get(`sf_plugin:llm:gg_chat_user:${e.user_id}`)) || 0))
+        const currentApi = baseType === 'ss' ? (e.isMaster ? config_date.ss_usingAPI : await findIndexByRemark(e, "ss", config_date)) : (e.isMaster ? config_date.gg_usingAPI : await findIndexByRemark(e, "gg", config_date))
 
         if (!apiList || apiList.length === 0) {
             await e.reply(`当前没有配置任何${baseType}接口`)
@@ -1705,13 +1705,13 @@ export class SF_Painting extends plugin {
             if (isMaster) {
                 config_date.ss_usingAPI = index
             } else {
-                redis.set(`sf_plugin:llm:ss_chat_user:${e.user_id}`, index, { EX: 60 * 24 * 60 * 60 }); // 写入redis，有效期60天
+                redis.set(`sf_plugin:llm:ss_chat_user:${e.user_id}`, apiList[index - 1].remark, { EX: 60 * 24 * 60 * 60 }); // 写入redis，有效期60天
             }
         } else {
             if (isMaster) {
                 config_date.gg_usingAPI = index
             } else {
-                redis.set(`sf_plugin:llm:gg_chat_user:${e.user_id}`, index, { EX: 60 * 24 * 60 * 60 }); // 写入redis，有效期60天
+                redis.set(`sf_plugin:llm:gg_chat_user:${e.user_id}`, apiList[index - 1].remark, { EX: 60 * 24 * 60 * 60 }); // 写入redis，有效期60天
             }
         }
 
@@ -2218,4 +2218,17 @@ async function init_server() {
             });
         });
     }
+}
+
+/**
+ * @description: 根据接口文件名（备注）查找对应的索引，如果没有找到则返回0
+ * @param {object} e
+ * @param {string} type 填写 ss 或 gg
+ * @param {object} config_date
+ * @return {number} 返回索引
+ */
+async function findIndexByRemark(e, type, config_date) {
+    const remark = await redis.get(`sf_plugin:llm:${type}_chat_user:${e.user_id}`)
+    const index = config_date[`${type}_APIList`]?.findIndex(item => item.remark === remark);
+    return index === -1 ? 0 : index;
 }
