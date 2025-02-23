@@ -186,18 +186,17 @@ export function supportGuoba() {
           component: "Select",
           componentProps: {
             options: [
-              { label: "stabilityai/sd-turbo（免费）", value: "stabilityai/sd-turbo" },
-              { label: "stabilityai/sdxl-turbo（免费）", value: "stabilityai/sdxl-turbo" },
               { label: "stabilityai/stable-diffusion-2-1（免费/图生图）", value: "stabilityai/stable-diffusion-2-1" },
               { label: "stabilityai/stable-diffusion-3-medium（免费/图生图）", value: "stabilityai/stable-diffusion-3-medium" },
               { label: "stabilityai/stable-diffusion-3-5-large（免费/图生图）", value: "stabilityai/stable-diffusion-3-5-large" },
               { label: "stabilityai/stable-diffusion-xl-base-1.0（免费/图生图）", value: "stabilityai/stable-diffusion-xl-base-1.0" },
               { label: "black-forest-labs/FLUX.1-schnell（免费）", value: "black-forest-labs/FLUX.1-schnell" },
               { label: "black-forest-labs/FLUX.1-dev", value: "black-forest-labs/FLUX.1-dev" },
+              { label: "LoRA/black-forest-labs/FLUX.1-dev", value: "LoRA/black-forest-labs/FLUX.1-dev" },
               { label: "black-forest-labs/FLUX.1-pro", value: "black-forest-labs/FLUX.1-pro" },
               { label: "Pro/black-forest-labs/FLUX.1-schnell", value: "Pro/black-forest-labs/FLUX.1-schnell" },
               { label: "stabilityai/stable-diffusion-3-5-large-turbo", value: "stabilityai/stable-diffusion-3-5-large-turbo" },
-              { label: "deepseek-ai/Janus-Pro-7B", value: "deepseek-ai/Janus-Pro-7B" },
+              { label: "deepseek-ai/Janus-Pro-7B（免费）", value: "deepseek-ai/Janus-Pro-7B" },
               // 添加图生图模型后，还需要添加正则表达式： SF_Painting.js 处理支持图生图模型 match(/.../)
             ],
           },
