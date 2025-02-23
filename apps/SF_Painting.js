@@ -1656,9 +1656,9 @@ export class SF_Painting extends plugin {
 
         // 如果接口数量超过10个，使用转发消息
         if (msg.length > 12) { // 标题占一行，默认配置占1行，所以是12
-            await e.reply(await common.makeForwardMsg(e, msg, `${baseType}接口列表`), true)
+            await e.reply(await common.makeForwardMsg(e, msg, `${baseType}接口列表`))
         } else {
-            await e.reply(msg.join('\n'), true)
+            await e.reply(msg.join('\n'))
         }
     }
 
