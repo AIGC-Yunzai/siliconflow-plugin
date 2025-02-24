@@ -190,13 +190,13 @@ export function supportGuoba() {
               { label: "stabilityai/stable-diffusion-3-medium（免费/图生图）", value: "stabilityai/stable-diffusion-3-medium" },
               { label: "stabilityai/stable-diffusion-3-5-large（免费/图生图）", value: "stabilityai/stable-diffusion-3-5-large" },
               { label: "stabilityai/stable-diffusion-xl-base-1.0（免费/图生图）", value: "stabilityai/stable-diffusion-xl-base-1.0" },
+              { label: "deepseek-ai/Janus-Pro-7B（免费）", value: "deepseek-ai/Janus-Pro-7B" },
               { label: "black-forest-labs/FLUX.1-schnell（免费）", value: "black-forest-labs/FLUX.1-schnell" },
               { label: "black-forest-labs/FLUX.1-dev", value: "black-forest-labs/FLUX.1-dev" },
               { label: "LoRA/black-forest-labs/FLUX.1-dev", value: "LoRA/black-forest-labs/FLUX.1-dev" },
               { label: "black-forest-labs/FLUX.1-pro", value: "black-forest-labs/FLUX.1-pro" },
               { label: "Pro/black-forest-labs/FLUX.1-schnell", value: "Pro/black-forest-labs/FLUX.1-schnell" },
               { label: "stabilityai/stable-diffusion-3-5-large-turbo", value: "stabilityai/stable-diffusion-3-5-large-turbo" },
-              { label: "deepseek-ai/Janus-Pro-7B（免费）", value: "deepseek-ai/Janus-Pro-7B" },
               // 添加图生图模型后，还需要添加正则表达式： SF_Painting.js 处理支持图生图模型 match(/.../)
             ],
           },
@@ -436,7 +436,7 @@ export function supportGuoba() {
         {
           field: 'ss_usingAPI',
           label: '[#ss]主人使用接口',
-          bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等",
+          bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等；其他用户可使用指令：#sfss接口列表 #sfss使用接口[数字]",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.ss_APIList || []).map((item, index) => {
@@ -617,7 +617,7 @@ export function supportGuoba() {
         {
           field: 'gg_usingAPI',
           label: '[#gg]主人使用接口',
-          bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等",
+          bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等；其他用户可使用指令：#sfgg接口列表 #sfgg使用接口[数字]",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.gg_APIList || []).map((item, index) => {

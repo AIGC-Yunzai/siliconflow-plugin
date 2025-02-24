@@ -329,21 +329,7 @@ export class SF_Painting extends plugin {
         const hasSearchKeyword = searchKeywords.some(keyword => msg.includes(keyword))
 
         // 根据配置和搜索关键词决定使用哪个命令
-        let useCommand = '#gg'
-        if (config.defaultCommand === 'ss' && !hasSearchKeyword) {
-            useCommand = '#ss'
-        }
-
-        // 构造新的消息内容，不再移除机器人名字
-        const newMsg = useCommand + ' ' + msg.trim()
-
-        // 修改消息内容并调用对应的处理函数
-        e.msg = newMsg
-        if (useCommand === '#ss') {
-            return await this.sf_chat(e)
-        } else {
-            return await this.gg_chat(e)
-        }
+        return (config.defaultCommand === 'ss' && !hasSearchKeyword) ? this.sf_chat(e, config) : this.gg_chat(e, config)
     }
 
     /** 轮询 sf_keys，可禁用key */
@@ -525,6 +511,8 @@ export class SF_Painting extends plugin {
 
     /** At模式 */
     async atChatMode(e) {
+        const config = Config.getConfig()
+
         if (!e.msg || e.msg?.startsWith('#'))
             return false
         if ((e.isGroup || e.group_id) && !(e.atme || e.atBot || (e.at === e.self_id)))
@@ -562,7 +550,7 @@ export class SF_Painting extends plugin {
             logger.warn(err)
         }
 
-        this.sf_chat(e)
+        return config.defaultCommand === 'ss' ? this.sf_chat(e, config) : this.gg_chat(e, config)
     }
 
     async sf_chat(e, config_date = undefined) {
