@@ -399,7 +399,7 @@ export class SF_Painting extends plugin {
                     config_date.gg_useMarkdown = value === '开'
                     break
                 case '上下文':
-                    config_date.gg_useContext = value === '开'
+                    config_date.gg_ss_useContext = value === '开'
                     break
                 case 'ss转发消息':
                     config_date.ss_forwardMessage = value === '开'
@@ -678,7 +678,7 @@ export class SF_Painting extends plugin {
 
         // 获取历史对话
         let historyMessages = []
-        if (config_date.gg_useContext) {
+        if (config_date.gg_ss_useContext) {
             historyMessages = await loadContext(e.user_id, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
             logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length / 2} 条`)
         }
@@ -721,7 +721,7 @@ export class SF_Painting extends plugin {
         }
 
         // 保存对话记录
-        if (config_date.gg_useContext) {
+        if (config_date.gg_ss_useContext) {
             // 保存用户消息
             await saveContext(e.user_id, {
                 role: 'user',
@@ -1185,7 +1185,7 @@ export class SF_Painting extends plugin {
 
         // 获取历史对话
         let historyMessages = []
-        if (config_date.gg_useContext) {
+        if (config_date.gg_ss_useContext) {
             historyMessages = await loadContext(e.user_id, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
             logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length / 2} 条`)
         }
@@ -1213,7 +1213,7 @@ export class SF_Painting extends plugin {
         const { answer, sources } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
 
         // 保存对话记录
-        if (config_date.gg_useContext) {
+        if (config_date.gg_ss_useContext) {
             // 保存用户消息
             await saveContext(e.user_id, {
                 role: 'user',
@@ -1513,7 +1513,7 @@ export class SF_Painting extends plugin {
         // 清除对话记录
         const success = await clearUserContext(targetId, promptNum, systemType)
         if (success) {
-            const contextStatus = config_date.gg_useContext ? '' : '\n（上下文功能未开启）'
+            const contextStatus = config_date.gg_ss_useContext ? '' : '\n（上下文功能未开启）'
             const systemName = systemType ? systemType.toUpperCase() : '默认'
             if (targetId === e.user_id) {
                 await e.reply(`已结束当前${systemName}系统对话，历史记录已清除${contextStatus}`, true)
@@ -1528,7 +1528,7 @@ export class SF_Painting extends plugin {
     async sf_end_all_chat(e) {
         const config_date = Config.getConfig()
         if (await clearAllContext()) {
-            await e.reply('已结束所有对话，所有历史记录已清除' + `${config_date.gg_useContext ? '' : '\n（上下文功能未开启）'}`, true)
+            await e.reply('已结束所有对话，所有历史记录已清除' + `${config_date.gg_ss_useContext ? '' : '\n（上下文功能未开启）'}`, true)
         } else {
             await e.reply('结束所有对话失败，请稍后再试', true)
         }
@@ -1555,7 +1555,7 @@ export class SF_Painting extends plugin {
             const result = await clearContextByCount(e.user_id, parseInt(match[6]) > 0 ? parseInt(match[6]) : 1, promptNum, systemType)
             if (result.success) {
                 const systemName = systemType ? systemType.toUpperCase() : '默认'
-                e.reply(`[sf插件]成功删除你的${systemName}系统最近的 ${result.deletedCount} 条历史对话` + `${config_date.gg_useContext ? '' : '\n（上下文功能未开启）'}`, true)
+                e.reply(`[sf插件]成功删除你的${systemName}系统最近的 ${result.deletedCount} 条历史对话` + `${config_date.gg_ss_useContext ? '' : '\n（上下文功能未开启）'}`, true)
             } else {
                 e.reply('[sf插件]删除失败:\n' + result.error, true)
             }
@@ -1728,7 +1728,7 @@ export class SF_Painting extends plugin {
             const processCommand = async (cmd, content) => {
                 // 确保内容不是纯空白字符
                 if (!content || content.trim().length === 0) {
-                    logger.error('请输入要发送的内容');
+                    logger.warn('请输入要发送的内容');
                     return false;
                 }
 
@@ -1739,7 +1739,7 @@ export class SF_Painting extends plugin {
                 if (!isNaN(cmd)) {
                     const index = parseInt(cmd);
                     if (!apiList || index < 0 || (index > 0 && index > apiList.length)) {
-                        logger.error(`无效的接口索引，请使用 #sf${type}接口列表 查看可用的接口`);
+                        logger.warn(`无效的接口索引，请使用 #sf${type}接口列表 查看可用的接口`);
                         return false;
                     }
                     apiIndex = index - 1;
@@ -1747,7 +1747,7 @@ export class SF_Painting extends plugin {
                     // 处理自定义命令
                     apiIndex = apiList?.findIndex(api => api.customCommand === cmd) ?? -1;
                     if (apiIndex === -1) {
-                        logger.error(`未找到命令 ${cmd} 对应的接口`);
+                        logger.warn(`未找到命令 ${cmd} 对应的接口`);
                         return false;
                     }
                 }
@@ -1773,6 +1773,9 @@ export class SF_Painting extends plugin {
                 } else {
                     e.sf_llm_user_API = apiIndex + 1;
                 }
+
+                // 判断 是否开启 上下文功能
+                config_date.gg_ss_useContext = apiList[apiIndex].useContext ? true : false;
 
                 e.msg = `#${type} ${content}`;
                 // 调用 ss 或 gg 对话函数
@@ -1891,6 +1894,9 @@ export class SF_Painting extends plugin {
                     e.sf_llm_user_API = apiIndex;
                 }
 
+                // 判断 是否开启 上下文功能
+                config_date.gg_ss_useContext = apiList[apiIndex - 1].useContext ? true : false;
+
                 e.msg = `#sf结束${type}对话${number}`;
                 await this.sf_end_chat(e, config_date);
                 return true;
@@ -1915,7 +1921,7 @@ export class SF_Painting extends plugin {
                 return await processEndChat(index);
             }
 
-            logger.error(`未找到命令 ${cmdPart} 对应的接口`);
+            logger.warn(`未找到命令 ${cmdPart} 对应的接口`);
             return false;
         };
     }

@@ -502,6 +502,12 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: "useContext",
+          label: "上下文功能",
+          component: "Switch",
+          bottomHelpMessage: "开启后将对该接口保留对话历史记录，默认为关闭",
+        },
+        {
           field: "ss_isOnlyMaster",
           label: "[#ss]仅限主人使用",
           bottomHelpMessage: "开启后默认配置仅限主人使用",
@@ -579,6 +585,12 @@ export function supportGuoba() {
                 label: "搜索功能",
                 component: "Switch",
                 bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型",
+              },
+              {
+                field: "useContext",
+                label: "上下文功能",
+                component: "Switch",
+                bottomHelpMessage: "开启后将对该接口保留对话历史记录，默认为关闭",
               },
               {
                 field: "remark",
@@ -689,7 +701,7 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
-          field: "gg_useContext",
+          field: "gg_ss_useContext",
           label: "上下文功能",
           bottomHelpMessage: "[#ss][#gg]共用，开启后将保留对话历史记录，上下文#gg与#ss的上下文共享",
           component: "Switch",
