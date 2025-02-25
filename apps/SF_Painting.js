@@ -1704,7 +1704,8 @@ export class SF_Painting extends plugin {
         }
 
         // 保存配置
-        Config.setConfig(config_date)
+        if (isMaster)
+            Config.setConfig(config_date)
 
         // 返回结果
         if (index === 0) {
