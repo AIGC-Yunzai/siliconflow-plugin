@@ -400,6 +400,12 @@ export function supportGuoba() {
                 bottomHelpMessage: "开启后会转发思考过程，如果开启图片对话模式，则需要开启发送合并消息",
               },
               {
+                field: "useContext",
+                label: "上下文功能",
+                component: "Switch",
+                bottomHelpMessage: "开启后将对该接口保留对话历史记录，默认为关闭",
+              },
+              {
                 field: "remark",
                 label: "文件名",
                 component: "Input",
@@ -502,12 +508,6 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
-          field: "useContext",
-          label: "上下文功能",
-          component: "Switch",
-          bottomHelpMessage: "开启后将对该接口保留对话历史记录，默认为关闭",
-        },
-        {
           field: "ss_isOnlyMaster",
           label: "[#ss]仅限主人使用",
           bottomHelpMessage: "开启后默认配置仅限主人使用",
@@ -594,7 +594,7 @@ export function supportGuoba() {
               },
               {
                 field: "remark",
-                label: "备注",
+                label: "文件名",
                 component: "Input",
                 required: true,
                 bottomHelpMessage: "接口配置的备注说明",
