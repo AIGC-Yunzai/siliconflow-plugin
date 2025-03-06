@@ -488,7 +488,7 @@ export class SF_Painting extends plugin {
         let finalPrompt = userPrompt
         let onleReplyOnce = 0;
         const use_sf_key = this.get_use_sf_key(config_date.sf_keys)
-        if (config_date.generatePrompt) {
+        if (e.sfRuntime.isgeneratePrompt ?? config_date.generatePrompt) {
             if (!onleReplyOnce && !config_date.simpleMode) {
                 e.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成提示词并绘图...`)
                 onleReplyOnce++
@@ -1008,7 +1008,8 @@ export class SF_Painting extends plugin {
 步数：${param.parameters.steps}
 图片大小：${param.parameters.width}x${param.parameters.height}
 生成时间：${data.timings.inference.toFixed(2)}秒
-种子：${data.seed}`
+种子：${data.seed}
+${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示词[开|关]" : ""}`
                 const str_3 = `图片URL：${imageUrl}`
 
                 // 发送图片

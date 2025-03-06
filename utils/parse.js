@@ -75,6 +75,15 @@ function stepsParam(text, e) {
     text = text.replace(/步数\s?\d+/g, '')
     return { parameters, text }
 }
+function isGeneratePrompt(text, e) {
+    let parameters = {}
+    let generatePrompt = text.match(/自?动?提示词(开|关)/)?.[1]
+    if (generatePrompt) {
+        e.sfRuntime.isgeneratePrompt = generatePrompt === '开'
+    }
+    text = text.replace(/自?动?提示词(开|关)/g, '')
+    return { parameters, text }
+}
 
 
 /**
@@ -123,6 +132,9 @@ export async function handleParam(e, text) {
     // 种子处理
     result = seedParam(text)
     parameters = Object.assign(parameters, result.parameters)
+    text = result.text
+    // 自动提示词处理
+    result = isGeneratePrompt(text, e)
     text = result.text
 
     // 正负词条处理
