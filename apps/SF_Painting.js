@@ -34,7 +34,7 @@ export class SF_Painting extends plugin {
             name: 'SF_对话&绘图',
             dsc: 'SF_对话&绘图',
             event: 'message',
-            priority: 6,
+            priority: 1143,
             rule: [
                 {
                     reg: '^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))',
