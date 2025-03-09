@@ -274,6 +274,199 @@ export function supportGuoba() {
         },
         {
           component: "Divider",
+          label: "DD 绘图插件配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "dd_APIList",
+          label: "DD接口列表",
+          bottomHelpMessage: "设置DD绘图的API接口列表，可添加多个接口配置",
+          component: "GSubForm",
+          componentProps: {
+            multiple: true,
+            schemas: [
+              {
+                field: "baseUrl",
+                label: "接口地址",
+                component: "Input",
+                bottomHelpMessage: "设置接口地址，例如：https://api.openai.com/v1，https://api.studio.nebius.com/v1",
+                componentProps: {
+                  placeholder: 'https://api.openai.com/v1',
+                },
+              },
+              {
+                field: "apiKey",
+                label: "接口Key",
+                component: "Input",
+                bottomHelpMessage: "设置接口Key",
+                componentProps: {
+                  placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
+                },
+              },
+              {
+                field: "formatType",
+                label: "格式类型",
+                component: "Select",
+                bottomHelpMessage: "选择请求体格式类型，不同类型的接口有不同的请求格式",
+                componentProps: {
+                  options: [
+                    { label: "OpenAI格式", value: "openai" },
+                    { label: "Nebius格式", value: "nebius" },
+                  ],
+                  defaultValue: "openai",
+                },
+              },
+              {
+                field: "model",
+                label: "模型",
+                component: "Input",
+                bottomHelpMessage: "设置模型名称，例如：dall-e-3, black-forest-labs/flux-dev",
+                componentProps: {
+                  placeholder: 'dall-e-3',
+                  defaultValue: 'dall-e-3',
+                },
+              },
+              {
+                field: "width",
+                label: "图片宽度",
+                component: "InputNumber",
+                bottomHelpMessage: "设置图片宽度",
+                componentProps: {
+                  min: 256,
+                  max: 1792,
+                  step: 64,
+                  defaultValue: 1024,
+                },
+              },
+              {
+                field: "height",
+                label: "图片高度",
+                component: "InputNumber",
+                bottomHelpMessage: "设置图片高度",
+                componentProps: {
+                  min: 256,
+                  max: 1792,
+                  step: 64,
+                  defaultValue: 1024,
+                },
+              },
+              {
+                field: "n",
+                label: "生成数量",
+                component: "InputNumber",
+                bottomHelpMessage: "设置生成图片的数量（仅OpenAI格式使用，原生的dall-e-3（即官key）只支持生成数量为1，否则报错）",
+                componentProps: {
+                  min: 1,
+                  max: 10,
+                  step: 1,
+                  defaultValue: 1,
+                },
+              },
+              {
+                field: "num_inference_steps",
+                label: "推理步数",
+                component: "InputNumber",
+                bottomHelpMessage: "设置推理步数（仅Nebius等扩展格式使用，OpenAI格式不需要此参数）",
+                componentProps: {
+                  min: 1,
+                  max: 100,
+                  step: 1,
+                  defaultValue: 28,
+                },
+              },
+              {
+                field: "negative_prompt",
+                label: "负面提示词",
+                component: "InputTextArea",
+                bottomHelpMessage: "设置负面提示词（仅Nebius等扩展格式使用，OpenAI格式不需要此参数）",
+                componentProps: {
+                  defaultValue: "",
+                },
+              },
+              {
+                field: "response_format",
+                label: "响应格式",
+                component: "Input",
+                bottomHelpMessage: "设置响应格式，例如：b64_json, url（OpenAI和Nebius格式都可使用）",
+                componentProps: {
+                  placeholder: 'b64_json',
+                  defaultValue: 'b64_json',
+                },
+              },
+              {
+                field: "response_extension",
+                label: "响应扩展",
+                component: "Input",
+                bottomHelpMessage: "设置响应扩展格式，例如：webp, jpg（仅Nebius等扩展格式使用，OpenAI格式不需要此参数）",
+                componentProps: {
+                  placeholder: 'webp',
+                  defaultValue: 'webp',
+                },
+              },
+              {
+                field: "seed",
+                label: "随机种子",
+                component: "InputNumber",
+                bottomHelpMessage: "设置随机种子，-1表示随机（仅Nebius等扩展格式使用，OpenAI格式不需要此参数）",
+                componentProps: {
+                  min: -1,
+                  step: 1,
+                  defaultValue: -1,
+                },
+              },
+              {
+                field: "extraParams",
+                label: "额外参数",
+                component: "InputTextArea",
+                bottomHelpMessage: "设置额外参数，使用JSON格式，例如：{\"response_format\": \"b64_json\",\"response_extension\": \"webp\",\"num_inference_steps\": 28,\"negative_prompt\": \"\",\"seed\": -1}",
+              },
+              {
+                field: "requestTemplate",
+                label: "请求体模板",
+                component: "InputTextArea",
+                bottomHelpMessage: "设置完整的请求体模板，使用JSON格式。如果设置了此项，将优先使用此模板，忽略上面的参数设置。",
+              },
+              {
+                field: "useTemplateVariables",
+                label: "使用模板变量",
+                component: "Switch",
+                bottomHelpMessage: "开启后会替换模板中的变量，如{{prompt}}、{{width}}等。关闭后将直接使用模板，只替换prompt字段。",
+                componentProps: {
+                  defaultValue: false,
+                },
+              },
+              {
+                field: "remark",
+                label: "备注",
+                component: "Input",
+                bottomHelpMessage: "设置接口备注",
+              },
+              {
+                field: "customCommand",
+                label: "自定义命令",
+                component: "Input",
+                required: false,
+                bottomHelpMessage: "可选，设置后可用 #d命令名 来使用此接口，如设置为test则可用#dtest",
+              },
+            ],
+          },
+        },
+        {
+          field: 'dd_usingAPI',
+          label: '[#dd]使用接口',
+          bottomHelpMessage: "选择要使用的接口配置，必须选择一个接口才能使用绘图功能。其他用户可使用指令：#dd接口列表 #dd使用接口[数字]",
+          component: 'Select',
+          componentProps: {
+            options: (Config.getConfig()?.dd_APIList || []).map((item, index) => {
+              return { label: item.remark || `接口${index + 1}`, value: index + 1 }
+            }).concat([{ label: "请选择一个接口", value: 0 }])
+          },
+        },
+        {
+          component: "Divider",
           label: "直链功能配置",
           componentProps: {
             orientation: "left",

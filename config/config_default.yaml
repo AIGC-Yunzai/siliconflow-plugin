@@ -25,6 +25,9 @@ mj_translationBaseUrl: ""
 mj_translationModel: "gpt-4o"
 mj_translationEnabled: false
 mj_mode: "fast"
+# DD 绘图插件
+dd_APIList: [] # DD接口列表
+dd_usingAPI: 0 # 当前主人使用的DD接口索引
 # Fish TTS 配置
 fish_apiKey: "" # Fish API密钥
 fish_reference_id: "efc1ce3726a64bbc947d53a1465204aa" # 默认音色ID

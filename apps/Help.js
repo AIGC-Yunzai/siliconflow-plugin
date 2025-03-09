@@ -116,6 +116,11 @@ export class help extends plugin {
                         "title": "#设置直链域名 [域名]",
                         "desc": "设置图片直链上传服务器域名"
                     },
+                    {
+                        "icon": 29,
+                        "title": "#dd [描述]",
+                        "desc": "使用openai格式的接口生成AI绘图"
+                    },
                 ],
             },
             {
@@ -130,6 +135,11 @@ export class help extends plugin {
                         "icon": 91,
                         "title": "#mjp帮助",
                         "desc": "获取 mjp 帮助"
+                    },
+                    {
+                        "icon": 39,
+                        "title": "#sfdd帮助",
+                        "desc": "获取DD绘图的帮助"
                     },
                     {
                         "icon": 60,
