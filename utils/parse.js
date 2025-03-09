@@ -2,6 +2,11 @@ import _ from "lodash";
 
 // 尺寸处理
 function scaleParam(text, e) {
+    // 确保text是字符串
+    if (!text || typeof text !== 'string') {
+        return { parameters: { height: 1024, width: 1024 }, text: text || '' };
+    }
+
     const scale = {
         "竖图": { height: 1216, width: 832 },
         "长图": { height: 1216, width: 832 },
@@ -36,6 +41,11 @@ function scaleParam(text, e) {
     return { parameters, text };
 }
 function imgModelParam(text, e) {
+    // 确保text是字符串
+    if (!text || typeof text !== 'string') {
+        return { parameters: { imageModel: e?.sfRuntime?.config?.imageModel || 'stabilityai/stable-diffusion-xl-base-1.0' }, text: text || '' };
+    }
+
     const samplers = {
         // 注释掉 非免费的
         // 'FLUX.1-dev': 'black-forest-labs/FLUX.1-dev',
@@ -47,7 +57,7 @@ function imgModelParam(text, e) {
         'stable-diffusion-3-medium': 'stabilityai/stable-diffusion-3-medium',
         'stable-diffusion-xl-base-1.0': 'stabilityai/stable-diffusion-xl-base-1.0',
     }
-    let parameters = { imageModel: e.sfRuntime.config.imageModel }
+    let parameters = { imageModel: e?.sfRuntime?.config?.imageModel || 'stabilityai/stable-diffusion-xl-base-1.0' }
     Object.entries(samplers).forEach(([alias, imageModel]) => {
         if (text.includes(alias)) {
             parameters.imageModel = imageModel
@@ -57,6 +67,11 @@ function imgModelParam(text, e) {
     return { parameters, text }
 }
 function seedParam(text) {
+    // 确保text是字符串
+    if (!text || typeof text !== 'string') {
+        return { parameters: { seed: Math.floor((Math.random() + Math.floor(Math.random() * 9 + 1)) * Math.pow(10, 9)) }, text: text || '' };
+    }
+
     let parameters = {}
     let seed = text.match(/seed(\s)?=\s?(\d+)/)?.[2]
     if (seed) {
@@ -68,17 +83,28 @@ function seedParam(text) {
     return { parameters, text }
 }
 function stepsParam(text, e) {
+    // 确保text是字符串
+    if (!text || typeof text !== 'string') {
+        return { parameters: { steps: e?.sfRuntime?.config?.num_inference_steps || 28 }, text: text || '' };
+    }
+
     let parameters = {}
     let steps = text.match(/步数\s?(\d+)/)?.[1]
-    const maxStep = e.sfRuntime.config.free_mode ? 50 : 28
-    parameters.steps = steps ? Math.min(Math.max(1, Number(steps)), maxStep) : e.sfRuntime.config.num_inference_steps
+    // 安全地访问 e.sfRuntime.config
+    const maxStep = e?.sfRuntime?.config?.free_mode ? 50 : 28
+    parameters.steps = steps ? Math.min(Math.max(1, Number(steps)), maxStep) : (e?.sfRuntime?.config?.num_inference_steps || 28)
     text = text.replace(/步数\s?\d+/g, '')
     return { parameters, text }
 }
 function isGeneratePrompt(text, e) {
+    // 确保text是字符串
+    if (!text || typeof text !== 'string') {
+        return { parameters: {}, text: text || '' };
+    }
+
     let parameters = {}
     let generatePrompt = text.match(/自?动?提示词(开|关)/)?.[1]
-    if (generatePrompt) {
+    if (generatePrompt && e?.sfRuntime) {
         e.sfRuntime.isgeneratePrompt = generatePrompt === '开'
     }
     text = text.replace(/自?动?提示词(开|关)/g, '')
@@ -93,6 +119,11 @@ function isGeneratePrompt(text, e) {
  * @return {*}
  */
 async function promptParam(text, e) {
+    // 确保text是字符串
+    if (!text || typeof text !== 'string') {
+        return { parameters: { prompt: '', negative_prompt: '' }, text: '', input: '' };
+    }
+
     let parameters = {}
     let input = ''
     let ntags = text.match(/ntags(\s)?=(.*)$/s)?.[2]
@@ -113,7 +144,17 @@ async function promptParam(text, e) {
  * @param {*} text
  * @return {*} { parameters, input }
  */
-export async function handleParam(e, text) {
+export async function handleParam(e, text, skipImgModel = false) {
+    // 确保e和text参数存在
+    if (!e) {
+        throw new Error('参数e不能为空');
+    }
+    
+    // 确保text是字符串
+    if (!text || typeof text !== 'string') {
+        text = '';
+    }
+
     let parameters = {}
     let result = null
 
@@ -122,9 +163,11 @@ export async function handleParam(e, text) {
     parameters = Object.assign(parameters, result.parameters)
     text = result.text
     // 模型处理
-    result = imgModelParam(text, e)
-    parameters = Object.assign(parameters, result.parameters)
-    text = result.text
+    if (!skipImgModel) {
+        result = imgModelParam(text, e)
+        parameters = Object.assign(parameters, result.parameters)
+        text = result.text
+    }
     // 步数处理
     result = stepsParam(text, e)
     parameters = Object.assign(parameters, result.parameters)
