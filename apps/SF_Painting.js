@@ -1290,6 +1290,56 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
         // 从opt中获取useSearch，如果未定义则从config_date中获取
         const useSearch = typeof opt.useSearch !== 'undefined' ? opt.useSearch : config_date.gg_useSearch;
 
+        // 安全设置常量定义
+        const SAFETY_SETTINGS_STRICT = [
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" }
+        ];
+        
+        const SAFETY_SETTINGS_LOOSE = [
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "OFF" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "OFF" }
+        ];
+        
+        // 定义模型到安全设置的映射
+        const MODEL_SAFETY_SETTINGS = {
+            // 最宽松安全设置的模型
+            LOOSE_SAFETY_MODELS: new Set([
+                'gemini-1.5-flash-8b-latest', 'gemini-1.5-flash', 'gemini-1.5-flash-8b-001',
+                'gemini-1.5-flash-002', 'gemini-2.0-flash-001', 'gemini-2.0-flash',
+                'gemini-1.5-pro', 'gemini-1.5-flash-8b', 'gemini-1.5-pro-002',
+                'gemini-1.5-flash-latest', 'gemini-1.5-pro-latest', 'gemini-2.0-flash-exp',
+                'gemini-2.0-flash-lite-preview-02-05', 'gemini-2.0-pro-exp-02-05',
+                'gemini-2.0-pro-exp', 'gemini-2.0-flash-thinking-exp',
+                'gemini-2.0-flash-thinking-exp-01-21', 'gemini-exp-1206',
+                'gemini-2.0-flash-lite-preview', 'gemini-2.0-flash-thinking-exp-1219'
+            ]),
+            // 最严格安全设置的模型
+            STRICT_SAFETY_MODELS: new Set([
+                'gemini-pro-vision', 'gemini-1.5-flash-001-tuning', 'gemini-1.5-flash-8b-exp-0924',
+                'gemini-1.5-pro-001', 'gemini-1.0-pro', 'gemini-1.0-pro-vision-latest',
+                'gemini-1.0-pro-latest', 'gemini-pro', 'gemini-1.5-flash-8b-exp-0827',
+                'gemini-1.0-pro-001', 'gemini-1.5-flash-001'
+            ])
+        };
+        
+        // 获取安全设置
+        function getSafetySettings(modelName) {
+            if (MODEL_SAFETY_SETTINGS.LOOSE_SAFETY_MODELS.has(modelName)) {
+                logger.debug(`[sf插件]模型 ${modelName} 使用最宽松安全设置`);
+                return SAFETY_SETTINGS_LOOSE;
+            } else {
+                logger.debug(`[sf插件]模型 ${modelName} 使用最严格安全设置`);
+                return SAFETY_SETTINGS_STRICT;
+            }
+        }
+
         // 构造请求体
         const requestBody = {
             "systemInstruction": {
@@ -1301,7 +1351,9 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
             // 只要开启了搜索功能就添加搜索工具，不再限制模型，需要模型支持才可以联网
             "tools": useSearch ? [{
                 "googleSearch": {}
-            }] : []
+            }] : [],
+            // 添加安全设置
+            "safetySettings": getSafetySettings(opt.model || "")
         };
 
         // 添加历史对话
