@@ -484,7 +484,21 @@ export class SF_Painting extends plugin {
         let param = await handleParam(e, msg)
 
         let userPrompt = param.input
+        let finalPrompt = await this.txt2img_generatePrompt(e, userPrompt, config_date);
 
+        logger.mark("[sf插件]开始图片生成API调用")
+        this.sf_send_pic(e, finalPrompt, use_sf_key, config_date, param, canImg2Img, souce_image_base64, userPrompt)
+        return true;
+    }
+
+    /**
+     * @description: 生成提示词 附带回复文案
+     * @param {*} e
+     * @param {*} userPrompt
+     * @param {*} config_date
+     * @return {*}
+     */
+    async txt2img_generatePrompt(e, userPrompt, config_date) {
         let finalPrompt = userPrompt
         let onleReplyOnce = 0;
         const use_sf_key = this.get_use_sf_key(config_date.sf_keys)
@@ -495,7 +509,7 @@ export class SF_Painting extends plugin {
             }
             finalPrompt = await this.generatePrompt(userPrompt, use_sf_key, config_date)
             if (!finalPrompt) {
-                await e.reply('生成提示词失败，请稍后再试。')
+                e.reply('生成提示词失败，请稍后再试。')
                 return false
             }
         }
@@ -503,10 +517,7 @@ export class SF_Painting extends plugin {
             e.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成图片...`)
             onleReplyOnce++
         }
-
-        logger.mark("[sf插件]开始图片生成API调用")
-        this.sf_send_pic(e, finalPrompt, use_sf_key, config_date, param, canImg2Img, souce_image_base64, userPrompt)
-        return true;
+        return finalPrompt;
     }
 
     /** At模式 */
