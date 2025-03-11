@@ -104,12 +104,6 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
-          field: "simpleMode",
-          label: "SF简洁模式",
-          bottomHelpMessage: "开启后合并输出图片与prompt，且不提示进入绘画队列",
-          component: "Switch",
-        },
-        {
           field: "num_inference_steps",
           label: "SF推理步数",
           bottomHelpMessage: "设置默认推理步数；注意额度消耗",
@@ -200,6 +194,12 @@ export function supportGuoba() {
               // 添加图生图模型后，还需要添加正则表达式： SF_Painting.js 处理支持图生图模型 match(/.../)
             ],
           },
+        },
+        {
+          field: "simpleMode",
+          label: "绘画简洁模式",
+          bottomHelpMessage: "开启后合并输出图片与prompt，且不提示进入绘画队列",
+          component: "Switch",
         },
         {
           component: "Divider",

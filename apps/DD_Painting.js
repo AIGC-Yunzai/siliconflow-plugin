@@ -474,23 +474,28 @@ export class DD_Painting extends plugin {
             // 构造参数信息文本
             const paramText = this.formatPayloadToText(result.payload);
             
-            // 构造转发消息
-            const forwardMsg = [
-                {
-                    message: segment.image(result.imageData),
-                    nickname: e.bot?.nickname || 'DD绘画',
-                    user_id: e.bot?.uin || e.self_id
-                },
-                {
-                    message: `✅ 绘画生成成功\n\n提示词: ${prompt}\n\n使用接口: ${apiConfig.remark || `接口${apiIndex}`}\n\n【参数详情】\n${paramText}`,
-                    nickname: e.bot?.nickname || 'DD绘画',
-                    user_id: e.bot?.uin || e.self_id
-                }
-            ]
-            
             // 发送合并转发消息
             if (e.group_id) {
-                await e.reply(await e.group.makeForwardMsg(forwardMsg))
+                if(config_date.simpleMode){
+                    // 构造转发消息
+                    const forwardMsg = [
+                        {
+                            message: segment.image(result.imageData),
+                            nickname: e.bot?.nickname || 'DD绘画',
+                            user_id: e.bot?.uin || e.self_id
+                        },
+                        {
+                            message: `✅ 绘画生成成功\n\n提示词: ${prompt}\n\n使用接口: ${apiConfig.remark || `接口${apiIndex}`}\n\n【参数详情】\n${paramText}`,
+                            nickname: e.bot?.nickname || 'DD绘画',
+                            user_id: e.bot?.uin || e.self_id
+                        }
+                    ]
+                    await e.reply(await e.group.makeForwardMsg(forwardMsg))
+                    }
+                else {
+                    await e.reply(segment.image(result.imageData))
+                    await e.reply(`✅ 绘画生成成功\n\n提示词: ${prompt}\n\n使用接口: ${apiConfig.remark || `接口${apiIndex}`}\n\n【参数详情】\n${paramText}`)
+                }
             } else {
                 await e.reply(segment.image(result.imageData))
                 await e.reply(`✅ 绘画生成成功\n\n提示词: ${prompt}\n\n使用接口: ${apiConfig.remark || `接口${apiIndex}`}\n\n【参数详情】\n${paramText}`)
@@ -566,23 +571,28 @@ export class DD_Painting extends plugin {
             // 构造参数信息文本
             const paramText = this.formatPayloadToText(result.payload);
             
-            // 构造转发消息
-            const forwardMsg = [
-                {
-                    message: segment.image(result.imageData),
-                    nickname: e.bot?.nickname || 'DD绘画',
-                    user_id: e.bot?.uin || e.self_id
-                },
-                {
-                    message: `✅ 绘画生成成功\n\n提示词: ${msg}\n\n使用接口: ${apiConfig.remark || (currentApi > 0 ? `接口${currentApi}` : '默认接口')}\n\n【参数详情】\n${paramText}`,
-                    nickname: e.bot?.nickname || 'DD绘画',
-                    user_id: e.bot?.uin || e.self_id
-                }
-            ]
-            
             // 发送合并转发消息
-            if (e.group) {
-                await e.reply(await e.group.makeForwardMsg(forwardMsg))
+            if (e.group_id) {
+                if(config_date.simpleMode){
+                    // 构造转发消息
+                    const forwardMsg = [
+                        {
+                            message: segment.image(result.imageData),
+                            nickname: e.bot?.nickname || 'DD绘画',
+                            user_id: e.bot?.uin || e.self_id
+                        },
+                        {
+                            message: `✅ 绘画生成成功\n\n提示词: ${msg}\n\n使用接口: ${apiConfig.remark || (currentApi > 0 ? `接口${currentApi}` : '默认接口')}\n\n【参数详情】\n${paramText}`,
+                            nickname: e.bot?.nickname || 'DD绘画',
+                            user_id: e.bot?.uin || e.self_id
+                        }
+                    ]
+                    await e.reply(await e.group.makeForwardMsg(forwardMsg))
+                    }
+                else {
+                    await e.reply(segment.image(result.imageData))
+                    await e.reply(`✅ 绘画生成成功\n\n提示词: ${msg}\n\n使用接口: ${apiConfig.remark || (currentApi > 0 ? `接口${currentApi}` : '默认接口')}\n\n【参数详情】\n${paramText}`)
+                }
             } else {
                 await e.reply(segment.image(result.imageData))
                 await e.reply(`✅ 绘画生成成功\n\n提示词: ${msg}\n\n使用接口: ${apiConfig.remark || (currentApi > 0 ? `接口${currentApi}` : '默认接口')}\n\n【参数详情】\n${paramText}`)
