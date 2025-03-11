@@ -1298,7 +1298,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
             { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
             { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" }
         ];
-        
+
         const SAFETY_SETTINGS_LOOSE = [
             { category: "HARM_CATEGORY_HARASSMENT", threshold: "OFF" },
             { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "OFF" },
@@ -1306,7 +1306,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
             { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "OFF" },
             { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "OFF" }
         ];
-        
+
         // 定义模型到安全设置的映射
         const MODEL_SAFETY_SETTINGS = {
             // 最宽松安全设置的模型
@@ -1328,7 +1328,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
                 'gemini-1.0-pro-001', 'gemini-1.5-flash-001'
             ])
         };
-        
+
         // 获取安全设置
         function getSafetySettings(modelName) {
             if (MODEL_SAFETY_SETTINGS.LOOSE_SAFETY_MODELS.has(modelName)) {

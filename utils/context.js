@@ -60,7 +60,7 @@ export async function saveContext(userId, message, promptNum = 0, type = '') {
     try {
         const config = Config.getConfig()
         const maxHistory = config.gg_maxHistoryLength * 2 || 40
-        
+
         // 使用新的key构造函数,传入type参数
         const key = buildRedisKey(userId, Date.now(), promptNum, type)
 
