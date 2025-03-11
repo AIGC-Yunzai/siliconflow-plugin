@@ -48,7 +48,8 @@ export class DD_Painting extends plugin {
         // 尝试匹配自定义命令
         const apiList = config_date.dd_APIList || []
         if (apiList.length === 0) {
-            await e.reply('当前没有配置任何接口，请先添加接口')
+            // await e.reply('当前没有配置任何接口，请先添加接口')
+            logger.debug('[sf插件][dd绘画]未匹配到接口')
             return false
         }
         
@@ -97,7 +98,7 @@ export class DD_Painting extends plugin {
             const apiIndex = apiList.indexOf(matchedApi) + 1
             
             // 使用指定接口绘图
-            return await this.dd_draw_with_api(e, content, apiIndex)
+            return await this.dd_draw_with_api(e, content, apiIndex, config_date)
         }
         
         // 尝试匹配数字命令（支持无空格情况）
@@ -110,12 +111,13 @@ export class DD_Painting extends plugin {
             if (content && content.trim()) {
                 // 检查接口是否存在
                 if (!apiList || apiIndex <= 0 || apiIndex > apiList.length) {
-                    await e.reply(`接口${apiIndex}不存在，请检查接口列表`)
+                    // await e.reply(`接口${index}不存在，请检查接口列表`)
+                    logger.debug('[sf插件][dd绘画]未匹配到接口')
                     return false
                 }
                 
                 // 使用指定接口绘图
-                return await this.dd_draw_with_api(e, content, apiIndex)
+                return await this.dd_draw_with_api(e, content, apiIndex, config_date)
             }
         }
         
@@ -131,24 +133,26 @@ export class DD_Painting extends plugin {
                 const apiIndex = apiList.findIndex(api => api.customCommand === cmd)
                 if (apiIndex !== -1) {
                     // 使用指定接口绘图
-                    return await this.dd_draw_with_api(e, content, apiIndex + 1)
+                    return await this.dd_draw_with_api(e, content, apiIndex + 1, config_date)
                 }
                 
                 // 尝试解析为数字索引
                 if (!isNaN(cmd)) {
                     const index = parseInt(cmd)
                     if (!apiList || index <= 0 || index > apiList.length) {
-                        await e.reply(`接口${index}不存在，请检查接口列表`)
+                        // await e.reply(`接口${index}不存在，请检查接口列表`)
+                        logger.debug('[sf插件][dd绘画]未匹配到接口数字索引')
                         return false
                     }
                     
                     // 使用指定接口绘图
-                    return await this.dd_draw_with_api(e, content, index)
+                    return await this.dd_draw_with_api(e, content, index, config_date)
                 }
             }
         }
         
-        await e.reply('命令格式错误，请使用 "#d[自定义命令] [提示词]" 或 "#d[接口索引] [提示词]"')
+        // await e.reply('命令格式错误，请使用 "#d[自定义命令] [提示词]" 或 "#d[接口索引] [提示词]"')
+        logger.debug('[sf插件][dd绘画]未匹配到接口')
         return false
     }
     
@@ -420,37 +424,50 @@ export class DD_Painting extends plugin {
         return result.join('\n');
     }
 
-    // 使用指定接口绘图
-    async dd_draw_with_api(e, prompt, apiIndex) {
+    /**
+     * @description: 使用指定接口绘图
+     * @param {*} e
+     * @param {*} prompt
+     * @param {*} apiIndex
+     * @param {*} config_date
+     * @return {*}
+     */
+    async dd_draw_with_api(e, prompt, apiIndex, config_date = null) {
         // 读取配置
-        let config_date = Config.getConfig()
+        if (!config_date)
+            config_date = Config.getConfig();
         
         // 获取接口配置
         const apiList = config_date.dd_APIList || []
         if (!apiList || apiIndex <= 0 || apiIndex > apiList.length) {
-            await e.reply(`接口${apiIndex}不存在，请检查接口列表`)
+            await e.reply(`接口${apiIndex}不存在，请检查接口列表`, true)
             return false
         }
         
         const apiConfig = apiList[apiIndex - 1]
-        
+
+        if (apiConfig.isOnlyMaster && !e.isMaster) {
+            await e.reply('此接口仅限主人使用', true)
+            return false
+        }
+
         // 解析参数
         let param = await handleParam(e, prompt, true)
         
         // 检查是否有图片（暂不支持图生图，但保留代码结构）
         if (e.img && e.img.length > 0) {
-            await e.reply('当前不支持图生图功能')
+            await e.reply('当前不支持图生图功能', true)
             return false
         }
         
-        await e.reply('正在生成绘画，请稍候...')
+        await e.reply('正在生成绘画，请稍候...', true)
         
         try {
             // 调用绘图API
             const result = await this.callDrawingAPI(prompt, apiConfig, param)
             
             if (!result.success) {
-                await e.reply(`绘画生成失败: ${result.error}`)
+                await e.reply(`绘画生成失败: ${result.error}`, true)
                 return false
             }
             
@@ -472,7 +489,7 @@ export class DD_Painting extends plugin {
             ]
             
             // 发送合并转发消息
-            if (e.group) {
+            if (e.group_id) {
                 await e.reply(await e.group.makeForwardMsg(forwardMsg))
             } else {
                 await e.reply(segment.image(result.imageData))
@@ -496,7 +513,7 @@ export class DD_Painting extends plugin {
         let msg = e.msg.replace(/^#(dd|DD)\s*/, '').trim()
         
         if (!msg) {
-            await e.reply('请输入绘画提示词，格式：#dd绘图 [提示词]')
+            await e.reply('请输入绘画提示词，格式：#dd绘图 [提示词]', true)
             return false
         }
 
@@ -505,7 +522,7 @@ export class DD_Painting extends plugin {
         
         // 检查是否有图片（暂不支持图生图，但保留代码结构）
         if (e.img && e.img.length > 0) {
-            await e.reply('当前不支持图生图功能')
+            await e.reply('当前不支持图生图功能', true)
             return false
         }
 
@@ -523,21 +540,26 @@ export class DD_Painting extends plugin {
         // 如果没有找到接口配置
         if (!apiConfig) {
             if (currentApi === 0) {
-                await e.reply('请先在配置中选择一个接口，或使用 #dd使用接口[数字] 命令选择接口')
+                await e.reply('请先在配置中选择一个接口，或使用 #dd使用接口[数字] 命令选择接口', true)
             } else {
-                await e.reply('所选接口不存在，请检查接口列表')
+                await e.reply('所选接口不存在，请检查接口列表', true)
             }
             return false
         }
 
-        await e.reply('正在生成绘画，请稍候...')
+        if (apiConfig.isOnlyMaster && !e.isMaster) {
+            await e.reply('此接口仅限主人使用', true)
+            return false
+        }
+
+        await e.reply('正在生成绘画，请稍候...', true)
 
         try {
             // 调用绘图API
             const result = await this.callDrawingAPI(msg, apiConfig, param)
             
             if (!result.success) {
-                await e.reply(`绘画生成失败: ${result.error}`)
+                await e.reply(`绘画生成失败: ${result.error}`, true)
                 return false
             }
 
@@ -569,7 +591,7 @@ export class DD_Painting extends plugin {
             return true
         } catch (error) {
             console.error('生成绘画时发生错误:', error)
-            await e.reply(`绘画生成失败: ${error.message || '未知错误'}`)
+            await e.reply(`绘画生成失败: ${error.message || '未知错误'}`, true)
             return false
         }
     }

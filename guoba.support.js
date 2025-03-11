@@ -440,16 +440,23 @@ export function supportGuoba() {
               },
               {
                 field: "remark",
-                label: "备注",
+                label: "文件名",
                 component: "Input",
+                required: true,
                 bottomHelpMessage: "设置接口备注",
               },
               {
                 field: "customCommand",
                 label: "自定义命令",
                 component: "Input",
-                required: false,
+                required: true,
                 bottomHelpMessage: "可选，设置后可用 #d命令名 来使用此接口，如设置为test则可用#dtest",
+              },
+              {
+                field: "isOnlyMaster",
+                label: "仅限主人使用",
+                component: "Switch",
+                bottomHelpMessage: "开启后仅限主人使用此接口",
               },
             ],
           },
@@ -609,7 +616,7 @@ export function supportGuoba() {
                 field: "customCommand",
                 label: "自定义命令",
                 component: "Input",
-                required: false,
+                required: true,
                 bottomHelpMessage: "可选，设置后可用 #s命令名 来使用此接口，如设置为test则可用#stest，也可以使用#stest结束对话来结束此接口的对话",
               },
               {
@@ -617,7 +624,7 @@ export function supportGuoba() {
                 label: "仅限主人使用",
                 component: "Switch",
                 bottomHelpMessage: "开启后仅限主人使用此接口",
-              }
+              },
             ],
           },
         },
@@ -796,7 +803,7 @@ export function supportGuoba() {
                 field: "customCommand",
                 label: "自定义命令",
                 component: "Input",
-                required: false,
+                required: true,
                 bottomHelpMessage: "可选，设置后可用 #g命令名 来使用此接口，如设置为test则可用#gtest，也可以使用#gtest结束对话来结束此接口的对话",
               },
               {
@@ -804,7 +811,7 @@ export function supportGuoba() {
                 label: "仅限主人使用",
                 component: "Switch",
                 bottomHelpMessage: "开启后仅限主人使用此接口",
-              }
+              },
             ],
           },
         },
