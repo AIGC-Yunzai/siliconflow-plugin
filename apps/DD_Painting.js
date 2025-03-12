@@ -488,6 +488,24 @@ export class DD_Painting extends plugin {
     async txt2img_generatePrompt(e, userPrompt, config_date) {
         const m = await import('./SF_Painting.js');
         const sf = new m.SF_Painting();
+        
+        // 检查当前使用的接口是否设置了自动提示词开关
+        if (e.currentApiConfig && e.currentApiConfig.enableGeneratePrompt !== undefined) {
+            // 临时保存原来的全局设置
+            const originalSetting = e.sfRuntime.isgeneratePrompt;
+            // 使用接口级别的设置覆盖全局设置
+            e.sfRuntime.isgeneratePrompt = e.currentApiConfig.enableGeneratePrompt;
+            
+            // 调用原方法生成提示词
+            const result = await sf.txt2img_generatePrompt(e, userPrompt, config_date);
+            
+            // 恢复原来的全局设置
+            e.sfRuntime.isgeneratePrompt = originalSetting;
+            
+            return result;
+        }
+        
+        // 如果没有接口级别的设置，使用默认行为
         return await sf.txt2img_generatePrompt(e, userPrompt, config_date);
     }
 
@@ -513,6 +531,8 @@ export class DD_Painting extends plugin {
         }
 
         const apiConfig = apiList[apiIndex - 1]
+        // 保存当前接口配置到 e 对象，供自动提示词功能使用
+        e.currentApiConfig = apiConfig
 
         if (apiConfig.isOnlyMaster && !e.isMaster) {
             await e.reply('此接口仅限主人使用', true)
@@ -628,6 +648,9 @@ export class DD_Painting extends plugin {
             await e.reply('此接口仅限主人使用', true)
             return false
         }
+
+        // 保存当前接口配置到 e 对象，供自动提示词功能使用
+        e.currentApiConfig = apiConfig
 
         param.input = await this.txt2img_generatePrompt(e, msg, config_date);
 

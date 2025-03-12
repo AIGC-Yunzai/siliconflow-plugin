@@ -309,6 +309,15 @@ export function supportGuoba() {
                 },
               },
               {
+                field: "enableGeneratePrompt",
+                label: "启用自动提示词",
+                component: "Switch",
+                bottomHelpMessage: "是否对该接口启用自动提示词功能（开启后将自动优化用户输入的提示词）",
+                componentProps: {
+                  defaultValue: true,
+                },
+              },
+              {
                 field: "response_format",
                 label: "响应格式",
                 component: "Input",
@@ -1196,6 +1205,7 @@ export function supportGuoba() {
         config.sf_keys = data['sf_keys']
         config.ss_APIList = data['ss_APIList']
         config.gg_APIList = data['gg_APIList']
+        config.dd_APIList = data['dd_APIList']
         config.fish_text_blacklist = data['fish_text_blacklist']
         config.ss_Key = data['ss_Key']    // 修正为ss_Key
         config.ggKey = data['ggKey']      // 修正为ggKey
