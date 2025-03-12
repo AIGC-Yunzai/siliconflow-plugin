@@ -297,32 +297,87 @@ export class DD_Painting extends plugin {
             // 如果配置了自定义响应格式解析路径
             if (apiConfig.responseFormat) {
                 try {
-                    // 使用自定义路径提取图片数据
-                    const paths = apiConfig.responseFormat.split('.');
+
+                    const formatPath = apiConfig.responseFormat;
+                    // 修复的路径解析逻辑
                     let result = data;
                     
-                    // 逐层解析路径
-                    for (const path of paths) {
-                        // 处理数组索引，如 images[0]
-                        if (path.includes('[') && path.includes(']')) {
-                            const arrayName = path.substring(0, path.indexOf('['));
-                            const index = parseInt(path.substring(path.indexOf('[') + 1, path.indexOf(']')));
-                            result = result[arrayName][index];
-                        } else {
-                            result = result[path];
+                    // 处理复合路径 (如 data.image_urls[0])
+                    let currentPath = '';
+                    let i = 0;
+                    
+                    while (i < formatPath.length) {
+                        // 如果是点号，处理前面收集的路径
+                        if (formatPath[i] === '.') {
+                            if (currentPath) {
+                                // 检查result是否是对象且属性存在
+                                if (typeof result !== 'object' || result === null) {
+                                    throw new Error(`路径 ${currentPath} 不是一个对象，无法继续访问其属性`);
+                                }
+                                // 检查属性是否存在
+                                if (!(currentPath in result)) {
+                                    throw new Error(`响应中不存在路径: ${currentPath}`);
+                                }
+                                result = result[currentPath];
+                            }
+                            currentPath = '';
+                            i++;
+                            continue;
                         }
                         
-                        // 如果路径不存在，中断解析
+                        // 如果是左括号，处理数组
+                        if (formatPath[i] === '[') {
+                            // 先处理前面的对象属性
+                            if (currentPath) {
+                                result = result[currentPath];
+                                if (result === undefined) {
+                                    throw new Error(`响应中不存在路径: ${currentPath}`);
+                                }
+                            }
+                            
+                            // 提取索引
+                            let indexStr = '';
+                            i++;
+                            while (i < formatPath.length && formatPath[i] !== ']') {
+                                indexStr += formatPath[i];
+                                i++;
+                            }
+                            
+                            // 转换为数字并访问数组
+                            const index = parseInt(indexStr);
+                            result = result[index];
+                            if (result === undefined) {
+                                throw new Error(`数组索引越界: ${index}`);
+                            }
+                            
+                            // 跳过右括号
+                            i++;
+                            currentPath = '';
+                            continue;
+                        }
+                        
+                        // 收集当前路径片段
+                        currentPath += formatPath[i];
+                        i++;
+                    }
+                    
+                    // 处理最后一个路径片段
+                    if (currentPath) {
+                        result = result[currentPath];
                         if (result === undefined) {
-                            throw new Error(`响应中不存在路径: ${apiConfig.responseFormat}`);
+                            throw new Error(`响应中不存在路径: ${currentPath}`);
                         }
                     }
                     
                     // 根据结果类型处理
                     if (typeof result === 'string') {
-                        // 如果结果是字符串，判断是否为base64
-                        if (result.startsWith('data:image') || result.startsWith('base64:')) {
+                        // 使用与默认解析相同的判断逻辑
+                        if (result.startsWith('data:image') || 
+                            result.startsWith('base64:')) {
                             imageData = result;
+                        } else if (/^[A-Za-z0-9+/=]{100,}$/.test(result)) {
+                            // 使用与默认解析相同的前缀格式
+                            imageData = `base64://${result}`;
                         } else {
                             // 否则视为URL
                             imageData = result;
