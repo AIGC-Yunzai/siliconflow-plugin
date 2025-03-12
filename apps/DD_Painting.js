@@ -214,13 +214,62 @@ export class DD_Painting extends plugin {
             }
 
             // 发送请求
-            const response = await fetch(`${apiConfig.baseUrl}/images/generations`, {
+            // 确定请求URL
+            let requestUrl;
+            if (apiConfig.baseUrl.endsWith('/v1')) {
+                // 如果baseUrl以/v1结尾，添加/images/generations路径
+                requestUrl = `${apiConfig.baseUrl}/images/generations`;
+            } else {
+                // 否则直接使用baseUrl
+                requestUrl = apiConfig.baseUrl;
+            }
+
+            // 构建请求头
+            let headers = {
+                'Content-Type': 'application/json',
+                'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
+            };
+
+            // 根据认证类型设置Authorization头
+            const authType = apiConfig.authType || 'bearer';
+            if (authType === 'bearer') {
+                // Bearer Token认证（默认）
+                headers['Authorization'] = `Bearer ${apiConfig.apiKey}`;
+            } else if (authType === 'basic') {
+                // Basic认证
+                const base64Credentials = Buffer.from(`${apiConfig.apiKey}:`).toString('base64');
+                headers['Authorization'] = `Basic ${base64Credentials}`;
+            } else if (authType === 'apikey') {
+                // API Key认证
+                const headerName = apiConfig.authHeaderName || 'Authorization';
+                headers[headerName] = apiConfig.apiKey;
+            } else if (authType === 'custom') {
+                // 自定义认证
+                if (apiConfig.customAuthValue) {
+                    headers['Authorization'] = apiConfig.customAuthValue;
+                } else {
+                    // 如果没有设置自定义值，回退到默认Bearer
+                    headers['Authorization'] = `Bearer ${apiConfig.apiKey}`;
+                }
+            }
+
+            // 添加自定义请求头
+            if (apiConfig.customHeaders) {
+                try {
+                    const customHeaders = typeof apiConfig.customHeaders === 'string'
+                        ? JSON.parse(apiConfig.customHeaders)
+                        : apiConfig.customHeaders;
+                    
+                    // 合并自定义请求头
+                    headers = { ...headers, ...customHeaders };
+                } catch (error) {
+                    console.error('解析自定义请求头失败:', error);
+                }
+            }
+
+            const response = await fetch(requestUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiConfig.apiKey}`,
-                    'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
-                },
+                headers: headers,
                 body: JSON.stringify(payload)
             });
 
@@ -244,21 +293,96 @@ export class DD_Painting extends plugin {
 
             // 处理返回的图片数据
             let imageData;
-            if (data.data[0].b64_json) {
-                imageData = `base64://${data.data[0].b64_json}`;
-            } else if (data.data[0].url) {
-                imageData = data.data[0].url;
+            
+            // 如果配置了自定义响应格式解析路径
+            if (apiConfig.responseFormat) {
+                try {
+                    // 使用自定义路径提取图片数据
+                    const paths = apiConfig.responseFormat.split('.');
+                    let result = data;
+                    
+                    // 逐层解析路径
+                    for (const path of paths) {
+                        // 处理数组索引，如 images[0]
+                        if (path.includes('[') && path.includes(']')) {
+                            const arrayName = path.substring(0, path.indexOf('['));
+                            const index = parseInt(path.substring(path.indexOf('[') + 1, path.indexOf(']')));
+                            result = result[arrayName][index];
+                        } else {
+                            result = result[path];
+                        }
+                        
+                        // 如果路径不存在，中断解析
+                        if (result === undefined) {
+                            throw new Error(`响应中不存在路径: ${apiConfig.responseFormat}`);
+                        }
+                    }
+                    
+                    // 根据结果类型处理
+                    if (typeof result === 'string') {
+                        // 如果结果是字符串，判断是否为base64
+                        if (result.startsWith('data:image') || result.startsWith('base64:')) {
+                            imageData = result;
+                        } else {
+                            // 否则视为URL
+                            imageData = result;
+                        }
+                    } else if (result.url) {
+                        // 如果结果是对象且有url属性
+                        imageData = result.url;
+                    } else if (result.b64_json) {
+                        // 如果结果是对象且有b64_json属性
+                        imageData = `base64://${result.b64_json}`;
+                    } else {
+                        throw new Error('无法从自定义路径提取图片数据');
+                    }
+                } catch (error) {
+                    console.error('解析自定义响应格式失败:', error);
+                    return {
+                        success: false,
+                        error: `解析自定义响应格式失败: ${error.message}`
+                    };
+                }
             } else {
-                return {
-                    success: false,
-                    error: '未找到图片数据'
-                };
+                // 尝试自动检测和解析常见的响应格式
+                try {
+                    // 增强的自动检测逻辑
+                    imageData = this.extractImageData(data);
+                    
+                    // 如果仍然没有找到图片数据
+                    if (!imageData) {
+                        console.error('无法自动检测响应格式，原始响应:', JSON.stringify(data).substring(0, 500) + '...');
+                        return {
+                            success: false,
+                            error: '未找到图片数据，请配置自定义响应格式路径'
+                        };
+                    }
+                } catch (error) {
+                    console.error('自动解析响应格式失败:', error, '原始响应:', JSON.stringify(data).substring(0, 500) + '...');
+                    return {
+                        success: false,
+                        error: `解析响应失败: ${error.message}`
+                    };
+                }
+            }
+
+            // 提取修改后的提示词（如果有）
+            let revisedPrompt = prompt;
+            try {
+                if (data.data && data.data[0] && data.data[0].revised_prompt) {
+                    revisedPrompt = data.data[0].revised_prompt;
+                } else if (data.revised_prompt) {
+                    revisedPrompt = data.revised_prompt;
+                }
+            } catch (error) {
+                // 忽略提取修改后提示词的错误
+                console.debug('提取修改后提示词失败:', error);
             }
 
             return {
                 success: true,
                 imageData: imageData,
-                revised_prompt: data.data[0].revised_prompt || prompt,
+                revised_prompt: revisedPrompt,
                 payload: payload  // 返回完整的请求参数
             };
         } catch (error) {
@@ -268,6 +392,146 @@ export class DD_Painting extends plugin {
                 error: error.message || '未知错误'
             };
         }
+    }
+
+    // 新增方法：增强的图片数据提取
+    extractImageData(data) {
+        // 递归检查对象中的所有属性，寻找URL或base64数据
+        const findImageData = (obj, path = '') => {
+            // 如果是null或undefined，直接返回
+            if (obj === null || obj === undefined) {
+                return null;
+            }
+            
+            // 如果是字符串，检查是否为URL或base64
+            if (typeof obj === 'string') {
+                // 检查是否为base64
+                if (obj.startsWith('data:image') || 
+                    obj.startsWith('base64:') || 
+                    /^[A-Za-z0-9+/=]{100,}$/.test(obj)) {
+                    return { type: 'base64', data: obj.startsWith('base64:') ? obj : `base64://${obj}`, path };
+                }
+                
+                // 检查是否为URL
+                if (obj.startsWith('http://') || 
+                    obj.startsWith('https://') || 
+                    obj.startsWith('ftp://') ||
+                    /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(obj)) {
+                    return { type: 'url', data: obj, path };
+                }
+                
+                return null;
+            }
+            
+            // 如果是数组，遍历每个元素
+            if (Array.isArray(obj)) {
+                for (let i = 0; i < obj.length; i++) {
+                    const result = findImageData(obj[i], `${path}[${i}]`);
+                    if (result) return result;
+                }
+                return null;
+            }
+            
+            // 如果是对象，检查特定属性
+            if (typeof obj === 'object') {
+                // 优先检查常见的图片属性名
+                const priorityKeys = ['url', 'image_url', 'imageUrl', 'image', 'b64_json', 'base64', 'data'];
+                
+                // 先检查优先级高的键
+                for (const key of priorityKeys) {
+                    if (obj[key] !== undefined) {
+                        const result = findImageData(obj[key], path ? `${path}.${key}` : key);
+                        if (result) return result;
+                    }
+                }
+                
+                // 然后检查所有其他键
+                for (const key in obj) {
+                    if (!priorityKeys.includes(key)) {
+                        const result = findImageData(obj[key], path ? `${path}.${key}` : key);
+                        if (result) return result;
+                    }
+                }
+            }
+            
+            return null;
+        };
+        
+        // 开始检查常见的响应格式
+        
+        // 1. 检查OpenAI/Nebius标准格式
+        if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+            if (data.data[0].b64_json) {
+                return `base64://${data.data[0].b64_json}`;
+            } else if (data.data[0].url) {
+                return data.data[0].url;
+            }
+        }
+        
+        // 2. 检查ModelScope格式
+        if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+            if (data.images[0].url) {
+                return data.images[0].url;
+            } else if (data.images[0].b64_json) {
+                return `base64://${data.images[0].b64_json}`;
+            } else if (typeof data.images[0] === 'string') {
+                // 有些API直接返回图片URL字符串数组
+                return data.images[0];
+            }
+        }
+        
+        // 3. 检查直接返回图片数组的格式
+        if (Array.isArray(data) && data.length > 0) {
+            if (typeof data[0] === 'string') {
+                // 直接返回URL数组
+                return data[0];
+            } else if (data[0].url) {
+                return data[0].url;
+            } else if (data[0].b64_json) {
+                return `base64://${data[0].b64_json}`;
+            } else if (data[0].image) {
+                // 某些API使用image字段
+                if (typeof data[0].image === 'string') {
+                    return data[0].image;
+                } else if (data[0].image.url) {
+                    return data[0].image.url;
+                }
+            }
+        }
+        
+        // 4. 检查单一对象格式
+        if (!Array.isArray(data)) {
+            if (data.url) {
+                return data.url;
+            } else if (data.b64_json) {
+                return `base64://${data.b64_json}`;
+            } else if (data.image) {
+                if (typeof data.image === 'string') {
+                    return data.image;
+                } else if (data.image.url) {
+                    return data.image.url;
+                }
+            } else if (data.output) {
+                // 某些API使用output字段
+                if (typeof data.output === 'string') {
+                    return data.output;
+                } else if (Array.isArray(data.output) && data.output.length > 0) {
+                    if (typeof data.output[0] === 'string') {
+                        return data.output[0];
+                    }
+                }
+            }
+        }
+        
+        // 5. 递归搜索整个响应对象
+        const result = findImageData(data);
+        if (result) {
+            console.log(`在路径 ${result.path} 找到图片数据，类型: ${result.type}`);
+            return result.data;
+        }
+        
+        // 如果所有方法都失败，返回null
+        return null;
     }
 
     // 替换模板中的变量
@@ -427,6 +691,24 @@ export class DD_Painting extends plugin {
     async txt2img_generatePrompt(e, userPrompt, config_date) {
         const m = await import('./SF_Painting.js');
         const sf = new m.SF_Painting();
+        
+        // 检查当前使用的接口是否设置了自动提示词开关
+        if (e.currentApiConfig && e.currentApiConfig.enableGeneratePrompt !== undefined) {
+            // 临时保存原来的全局设置
+            const originalSetting = e.sfRuntime.isgeneratePrompt;
+            // 使用接口级别的设置覆盖全局设置
+            e.sfRuntime.isgeneratePrompt = e.currentApiConfig.enableGeneratePrompt;
+            
+            // 调用原方法生成提示词
+            const result = await sf.txt2img_generatePrompt(e, userPrompt, config_date);
+            
+            // 恢复原来的全局设置
+            e.sfRuntime.isgeneratePrompt = originalSetting;
+            
+            return result;
+        }
+        
+        // 如果没有接口级别的设置，使用默认行为
         return await sf.txt2img_generatePrompt(e, userPrompt, config_date);
     }
 
@@ -452,6 +734,8 @@ export class DD_Painting extends plugin {
         }
 
         const apiConfig = apiList[apiIndex - 1]
+        // 保存当前接口配置到 e 对象，供自动提示词功能使用
+        e.currentApiConfig = apiConfig
 
         if (apiConfig.isOnlyMaster && !e.isMaster) {
             await e.reply('此接口仅限主人使用', true)
@@ -568,6 +852,9 @@ export class DD_Painting extends plugin {
             return false
         }
 
+        // 保存当前接口配置到 e 对象，供自动提示词功能使用
+        e.currentApiConfig = apiConfig
+
         param.input = await this.txt2img_generatePrompt(e, msg, config_date);
 
         logger.mark("[sf插件][dd]开始图片生成API调用")
@@ -595,7 +882,7 @@ export class DD_Painting extends plugin {
                             user_id: e.bot?.uin || e.self_id
                         },
                         {
-                            message: `✅ 绘画生成成功\n\n原始提示词: ${msg}\n最终提示词: ${param.input}\n\n使用接口: ${apiConfig.remark || (currentApi > 0 ? `接口${currentApi}` : '默认接口')}\n\n【参数详情】\n${paramText}${e.sfRuntime.isgeneratePrompt === undefined ? "\n\n可选参数：\n 自动提示词[开|关]" : ""}`,
+                            message: `✅ 绘画生成成功\n\n原始提示词: ${msg}\n最终提示词: ${param.input}\n\n使用接口: ${apiConfig.remark || (currentApi > 0 ? `接口${currentApi}` : '默认接口')}\n\n【参数详情】\n${paramText}`,
                             nickname: e.bot?.nickname || 'DD绘画',
                             user_id: e.bot?.uin || e.self_id
                         }
@@ -786,6 +1073,7 @@ export class DD_Painting extends plugin {
 3. 接口格式说明：
    - OpenAI格式：兼容OpenAI的DALL-E接口格式
    - Nebius格式：兼容Nebius的接口格式
+   - 自定义格式：通过设置"响应格式路径"支持其他API格式
 
 4. 参数说明：
    - 宽度：图片宽度
@@ -793,11 +1081,13 @@ export class DD_Painting extends plugin {
    - 模型：使用的模型名称
    - 自定义命令：可用于快速调用的命令别名
    - 备注：接口的说明文字
+   - 响应格式路径：从API响应中提取图片数据的路径，例如"images[0].url"
 
 5. 注意事项：
    - 当前版本暂不支持图生图功能
    - 请确保接口配置正确，包括API密钥和基础URL
-   - 部分接口可能需要特定的提示词格式，请参考接口说明`]
+   - 部分接口可能需要特定的提示词格式，请参考接口说明
+   - 对于非标准API响应格式，请设置"响应格式路径"以正确提取图片数据`]
 
         await e.reply(await common.makeForwardMsg(e, helpMessage, e.msg))
     }
