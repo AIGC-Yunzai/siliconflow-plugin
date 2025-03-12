@@ -86,27 +86,9 @@ export function supportGuoba() {
           },
         },
         {
-          field: "generatePrompt",
-          label: "SF自动提示词",
-          bottomHelpMessage: "启用自动提示词；在画图时根据文本自动使用提示词模型生成英文提示词",
-          component: "Switch",
-        },
-        {
-          field: "sf_textToPaint_Prompt",
-          label: "SF提示词prompt",
-          bottomHelpMessage: "自定义你的提示词prompt",
-          component: "InputTextArea",
-        },
-        {
           field: "free_mode",
           label: "SF大图模式",
           bottomHelpMessage: "开启后可以绘制更大的图片和更多的步数；注意额度消耗；指令：2048*2048 或 步数30",
-          component: "Switch",
-        },
-        {
-          field: "simpleMode",
-          label: "SF简洁模式",
-          bottomHelpMessage: "开启后合并输出图片与prompt，且不提示进入绘画队列",
           component: "Switch",
         },
         {
@@ -120,66 +102,6 @@ export function supportGuoba() {
           },
         },
         {
-          field: "translateModel",
-          label: "SF提示词模型",
-          bottomHelpMessage: "在画图时输入的提示词是中文的时候自动使用提示词模型，同步自 https://cloud.siliconflow.cn/models?types=chat ",
-          component: "Select",
-          componentProps: {
-            options: [
-              { label: "01-ai/Yi-1.5-6B-Chat（免费）", value: "01-ai/Yi-1.5-6B-Chat" },
-              { label: "01-ai/Yi-1.5-9B-Chat-16K（免费）", value: "01-ai/Yi-1.5-9B-Chat-16K" },
-              { label: "Vendor-A/Qwen/Qwen2-72B-Instruct（免费）", value: "Vendor-A/Qwen/Qwen2-72B-Instruct" },
-              { label: "Qwen/Qwen2-1.5B-Instruct（免费）", value: "Qwen/Qwen2-1.5B-Instruct" },
-              { label: "Qwen/Qwen2-7B-Instruct（免费）", value: "Qwen/Qwen2-7B-Instruct" },
-              { label: "Qwen/Qwen2.5-7B-Instruct（免费）", value: "Qwen/Qwen2.5-7B-Instruct" },
-              { label: "Qwen/Qwen2.5-Coder-7B-Instruct（免费）", value: "Qwen/Qwen2.5-Coder-7B-Instruct" },
-              { label: "THUDM/chatglm3-6b（免费）", value: "THUDM/chatglm3-6b" },
-              { label: "THUDM/glm-4-9b-chat（免费）", value: "THUDM/glm-4-9b-chat" },
-              { label: "internlm/internlm2_5-7b-chat（免费）", value: "internlm/internlm2_5-7b-chat" },
-              { label: "meta-llama/Meta-Llama-3.1-8B-Instruct（免费）", value: "meta-llama/Meta-Llama-3.1-8B-Instruct" },
-              { label: "google/gemma-2-9b-it（免费）", value: "google/gemma-2-9b-it" },
-              { label: "AIDC-AI/Marco-o1（免费）", value: "AIDC-AI/Marco-o1" },
-              { label: "deepseek-ai/DeepSeek-R1-Distill-Llama-8B（免费）", value: "deepseek-ai/DeepSeek-R1-Distill-Llama-8B" },
-              { label: "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B（免费）", value: "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B" },
-              { label: "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B（免费）", value: "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B" },
-              { label: "deepseek-ai/DeepSeek-V3", value: "deepseek-ai/DeepSeek-V3" },
-              { label: "deepseek-ai/DeepSeek-R1", value: "deepseek-ai/DeepSeek-R1" },
-              { label: "Pro/deepseek-ai/DeepSeek-R1", value: "Pro/deepseek-ai/DeepSeek-R1" },
-              { label: "Pro/deepseek-ai/DeepSeek-V3", value: "Pro/deepseek-ai/DeepSeek-V3" },
-              { label: "deepseek-ai/DeepSeek-V2-Chat", value: "deepseek-ai/DeepSeek-V2-Chat" },
-              { label: "deepseek-ai/DeepSeek-Coder-V2-Instruct", value: "deepseek-ai/DeepSeek-Coder-V2-Instruct" },
-              { label: "deepseek-ai/DeepSeek-V2.5", value: "deepseek-ai/DeepSeek-V2.5" },
-              { label: "deepseek-ai/deepseek-vl2（视觉）", value: "deepseek-ai/deepseek-vl2" },
-              { label: "01-ai/Yi-1.5-34B-Chat-16K", value: "01-ai/Yi-1.5-34B-Chat-16K" },
-              { label: "DianXin/DianXin-V1-Chat", value: "DianXin/DianXin-V1-Chat" },
-              { label: "Pro/01-ai/Yi-1.5-6B-Chat", value: "Pro/01-ai/Yi-1.5-6B-Chat" },
-              { label: "Pro/01-ai/Yi-1.5-9B-Chat-16K", value: "Pro/01-ai/Yi-1.5-9B-Chat-16K" },
-              { label: "Pro/Qwen/Qwen2-1.5B-Instruct", value: "Pro/Qwen/Qwen2-1.5B-Instruct" },
-              { label: "Pro/Qwen/Qwen2-7B-Instruct", value: "Pro/Qwen/Qwen2-7B-Instruct" },
-              { label: "Pro/Qwen/Qwen2.5-7B-Instruct", value: "Pro/Qwen/Qwen2.5-7B-Instruct" },
-              { label: "Qwen/Qwen2-57B-A14B-Instruct", value: "Qwen/Qwen2-57B-A14B-Instruct" },
-              { label: "Qwen/Qwen2-72B-Instruct", value: "Qwen/Qwen2-72B-Instruct" },
-              { label: "Qwen/Qwen2-Math-72B-Instruct", value: "Qwen/Qwen2-Math-72B-Instruct" },
-              { label: "Qwen/Qwen2.5-14B-Instruct", value: "Qwen/Qwen2.5-14B-Instruct" },
-              { label: "Qwen/Qwen2.5-32B-Instruct", value: "Qwen/Qwen2.5-32B-Instruct" },
-              { label: "Qwen/Qwen2.5-72B-Instruct", value: "Qwen/Qwen2.5-72B-Instruct" },
-              { label: "Qwen/Qwen2.5-72B-Instruct-128K", value: "Qwen/Qwen2.5-72B-Instruct-128K" },
-              { label: "Qwen/Qwen2.5-Math-72B-Instruct", value: "Qwen/Qwen2.5-Math-72B-Instruct" },
-              { label: "Qwen/QwQ-32B-Preview", value: "Qwen/QwQ-32B-Preview" },
-              { label: "Qwen/QVQ-72B-Preview（视觉）", value: "Qwen/QVQ-72B-Preview" },
-              { label: "Qwen/Qwen2.5-Coder-32B-Instruct", value: "Qwen/Qwen2.5-Coder-32B-Instruct" },
-              { label: "Qwen/Qwen2-VL-72B-Instruct（视觉）", value: "Qwen/Qwen2-VL-72B-Instruct" },
-              { label: "Pro/Qwen/Qwen2-VL-7B-Instruct（视觉）", value: "Pro/Qwen/Qwen2-VL-7B-Instruct" },
-              { label: "Pro/THUDM/chatglm3-6b", value: "Pro/THUDM/chatglm3-6b" },
-              { label: "Pro/THUDM/glm-4-9b-chat", value: "Pro/THUDM/glm-4-9b-chat" },
-              { label: "internlm/internlm2_5-20b-chat", value: "internlm/internlm2_5-20b-chat" },
-              { label: "OpenGVLab/InternVL2-26B（视觉）", value: "OpenGVLab/InternVL2-26B" },
-              { label: "Pro/OpenGVLab/InternVL2-8B（视觉）", value: "Pro/OpenGVLab/InternVL2-8B" },
-              { label: "meta-llama/Llama-3.3-70B-Instruct", value: "meta-llama/Llama-3.3-70B-Instruct" },
-            ],
-          },
-        },
-        {
           field: "imageModel",
           label: "SF绘图模型",
           bottomHelpMessage: "SF设置绘图模型，同步自 https://cloud.siliconflow.cn/models?types=to-image ",
@@ -190,13 +112,13 @@ export function supportGuoba() {
               { label: "stabilityai/stable-diffusion-3-medium（免费/图生图）", value: "stabilityai/stable-diffusion-3-medium" },
               { label: "stabilityai/stable-diffusion-3-5-large（免费/图生图）", value: "stabilityai/stable-diffusion-3-5-large" },
               { label: "stabilityai/stable-diffusion-xl-base-1.0（免费/图生图）", value: "stabilityai/stable-diffusion-xl-base-1.0" },
+              { label: "deepseek-ai/Janus-Pro-7B（免费）", value: "deepseek-ai/Janus-Pro-7B" },
               { label: "black-forest-labs/FLUX.1-schnell（免费）", value: "black-forest-labs/FLUX.1-schnell" },
               { label: "black-forest-labs/FLUX.1-dev", value: "black-forest-labs/FLUX.1-dev" },
               { label: "LoRA/black-forest-labs/FLUX.1-dev", value: "LoRA/black-forest-labs/FLUX.1-dev" },
               { label: "black-forest-labs/FLUX.1-pro", value: "black-forest-labs/FLUX.1-pro" },
               { label: "Pro/black-forest-labs/FLUX.1-schnell", value: "Pro/black-forest-labs/FLUX.1-schnell" },
               { label: "stabilityai/stable-diffusion-3-5-large-turbo", value: "stabilityai/stable-diffusion-3-5-large-turbo" },
-              { label: "deepseek-ai/Janus-Pro-7B（免费）", value: "deepseek-ai/Janus-Pro-7B" },
               // 添加图生图模型后，还需要添加正则表达式： SF_Painting.js 处理支持图生图模型 match(/.../)
             ],
           },
@@ -270,6 +192,349 @@ export function supportGuoba() {
           component: "Input",
           componentProps: {
             placeholder: 'gpt-4o',
+          },
+        },
+        {
+          component: "Divider",
+          label: "DD 绘图插件配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "dd_APIList",
+          label: "DD接口列表",
+          bottomHelpMessage: "设置DD绘图的API接口列表，可添加多个接口配置",
+          component: "GSubForm",
+          componentProps: {
+            multiple: true,
+            schemas: [
+              {
+                field: "baseUrl",
+                label: "接口地址",
+                component: "Input",
+                bottomHelpMessage: "设置接口地址，例如：https://api.openai.com/v1/images/generations，https://api.studio.nebius.com/v1/images/generations",
+                componentProps: {
+                  placeholder: 'https://api.openai.com/v1/images/generations',
+                },
+              },
+              {
+                field: "apiKey",
+                label: "接口Key",
+                component: "Input",
+                bottomHelpMessage: "设置接口Key",
+                componentProps: {
+                  placeholder: 'sk-xxxxxxxxxxxxxxxxxxxxxxxx',
+                },
+              },
+              {
+                field: "formatType",
+                label: "格式类型",
+                component: "Select",
+                bottomHelpMessage: "选择请求体格式类型，不同类型的接口有不同的请求格式",
+                componentProps: {
+                  options: [
+                    { label: "OpenAI格式", value: "openai" },
+                    { label: "Nebius格式", value: "nebius" },
+                  ],
+                  defaultValue: "openai",
+                },
+              },
+              {
+                field: "model",
+                label: "模型",
+                component: "Input",
+                bottomHelpMessage: "设置模型名称，例如：dall-e-3, black-forest-labs/flux-dev",
+                componentProps: {
+                  placeholder: 'dall-e-3',
+                  defaultValue: 'dall-e-3',
+                },
+              },
+              {
+                field: "width",
+                label: "图片宽度",
+                component: "InputNumber",
+                bottomHelpMessage: "设置图片宽度",
+                componentProps: {
+                  min: 256,
+                  max: 1792,
+                  step: 64,
+                  defaultValue: 1024,
+                },
+              },
+              {
+                field: "height",
+                label: "图片高度",
+                component: "InputNumber",
+                bottomHelpMessage: "设置图片高度",
+                componentProps: {
+                  min: 256,
+                  max: 1792,
+                  step: 64,
+                  defaultValue: 1024,
+                },
+              },
+              {
+                field: "n",
+                label: "生成数量",
+                component: "InputNumber",
+                bottomHelpMessage: "设置生成图片的数量（仅OpenAI格式使用，原生的dall-e-3（即官key）只支持生成数量为1，否则报错）",
+                componentProps: {
+                  min: 1,
+                  max: 10,
+                  step: 1,
+                  defaultValue: 1,
+                },
+              },
+              {
+                field: "num_inference_steps",
+                label: "推理步数",
+                component: "InputNumber",
+                bottomHelpMessage: "设置推理步数（仅Nebius等扩展格式使用，OpenAI格式不需要此参数）",
+                componentProps: {
+                  min: 1,
+                  max: 100,
+                  step: 1,
+                  defaultValue: 28,
+                },
+              },
+              {
+                field: "negative_prompt",
+                label: "负面提示词",
+                component: "InputTextArea",
+                bottomHelpMessage: "设置负面提示词（仅Nebius等扩展格式使用，OpenAI格式不需要此参数）",
+                componentProps: {
+                  defaultValue: "",
+                },
+              },
+              {
+                field: "enableGeneratePrompt",
+                label: "启用自动提示词",
+                component: "Switch",
+                bottomHelpMessage: "是否对该接口启用自动提示词功能（开启后将自动优化用户输入的提示词）",
+                componentProps: {
+                  defaultValue: true,
+                },
+              },
+              {
+                field: "response_format",
+                label: "响应格式",
+                component: "Input",
+                bottomHelpMessage: "设置响应格式，例如：b64_json, url（OpenAI和Nebius格式都可使用）",
+                componentProps: {
+                  placeholder: 'b64_json',
+                  defaultValue: 'b64_json',
+                },
+              },
+              {
+                field: "response_extension",
+                label: "响应扩展",
+                component: "Input",
+                bottomHelpMessage: "设置响应扩展格式，例如：webp, jpg（仅Nebius等扩展格式使用，OpenAI格式不需要此参数）",
+                componentProps: {
+                  placeholder: 'webp',
+                  defaultValue: 'webp',
+                },
+              },
+              {
+                field: "seed",
+                label: "随机种子",
+                component: "InputNumber",
+                bottomHelpMessage: "设置随机种子，-1表示随机（仅Nebius等扩展格式使用，OpenAI格式不需要此参数）",
+                componentProps: {
+                  min: -1,
+                  step: 1,
+                  defaultValue: -1,
+                },
+              },
+              {
+                field: "extraParams",
+                label: "额外参数",
+                component: "InputTextArea",
+                bottomHelpMessage: "设置额外参数，使用JSON格式，例如：{\"response_format\": \"b64_json\",\"response_extension\": \"webp\",\"num_inference_steps\": 28,\"negative_prompt\": \"\",\"seed\": -1}",
+              },
+              {
+                field: "requestTemplate",
+                label: "请求体模板",
+                component: "InputTextArea",
+                bottomHelpMessage: "设置完整的请求体模板，使用JSON格式。如果设置了此项，将优先使用此模板，忽略上面的参数设置。",
+              },
+              {
+                field: "useTemplateVariables",
+                label: "使用模板变量",
+                component: "Switch",
+                bottomHelpMessage: "开启后会替换模板中的变量，如{{prompt}}、{{width}}等。关闭后将直接使用模板，只替换prompt字段。",
+                componentProps: {
+                  defaultValue: false,
+                },
+              },
+              {
+                field: "authType",
+                label: "认证类型",
+                component: "Select",
+                bottomHelpMessage: "设置API请求的认证类型，影响Authorization请求头的格式",
+                componentProps: {
+                  options: [
+                    { label: "Bearer Token (默认)", value: "bearer" },
+                    { label: "Basic Auth", value: "basic" },
+                    { label: "API Key", value: "apikey" },
+                    { label: "自定义", value: "custom" },
+                  ],
+                  defaultValue: "bearer",
+                },
+              },
+              {
+                field: "authHeaderName",
+                label: "认证头名称",
+                component: "Input",
+                bottomHelpMessage: "设置认证头的名称，默认为'Authorization'",
+                componentProps: {
+                  placeholder: 'Authorization',
+                },
+              },
+              {
+                field: "customAuthValue",
+                label: "自定义认证值",
+                component: "Input",
+                bottomHelpMessage: "当认证类型为'自定义'时，设置完整的认证头值，将直接使用此值作为Authorization头的值",
+                componentProps: {
+                  placeholder: '例如：Bearer your-token-here',
+                },
+              },
+              {
+                field: "customHeaders",
+                label: "自定义请求头",
+                component: "InputTextArea",
+                bottomHelpMessage: "设置其他自定义请求头，使用JSON格式，例如：{\"x-api-version\": \"1.0\", \"custom-header\": \"value\"}",
+                componentProps: {
+                  placeholder: '{"x-api-version": "1.0"}',
+                },
+              },
+              {
+                field: "responseFormat",
+                label: "响应格式路径",
+                component: "Input",
+                bottomHelpMessage: "设置从响应中提取图片数据的路径，例如：images[0].url。如果不设置，将使用默认的解析逻辑。",
+              },
+              {
+                field: "remark",
+                label: "文件名",
+                component: "Input",
+                required: true,
+                bottomHelpMessage: "设置接口备注",
+              },
+              {
+                field: "customCommand",
+                label: "自定义命令",
+                component: "Input",
+                required: true,
+                bottomHelpMessage: "可选，设置后可用 #d命令名 来使用此接口，如设置为test则可用#dtest",
+              },
+              {
+                field: "isOnlyMaster",
+                label: "仅限主人使用",
+                component: "Switch",
+                bottomHelpMessage: "开启后仅限主人使用此接口",
+              },
+            ],
+          },
+        },
+        {
+          field: 'dd_usingAPI',
+          label: '[#dd]使用接口',
+          bottomHelpMessage: "选择要使用的接口配置，必须选择一个接口才能使用绘图功能。其他用户可使用指令：#dd接口列表 #dd使用接口[数字]",
+          component: 'Select',
+          componentProps: {
+            options: (Config.getConfig()?.dd_APIList || []).map((item, index) => {
+              return { label: item.remark || `接口${index + 1}`, value: index + 1 }
+            }).concat([{ label: "请选择一个接口", value: 0 }])
+          },
+        },
+        {
+          component: "Divider",
+          label: "绘画全局设置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "simpleMode",
+          label: "绘画简洁模式",
+          bottomHelpMessage: "开启后合并输出图片与prompt，且不提示进入绘画队列",
+          component: "Switch",
+        },
+        {
+          field: "generatePrompt",
+          label: "开启自动提示词",
+          bottomHelpMessage: "启用自动提示词；在画图时根据文本自动使用提示词模型生成英文提示词",
+          component: "Switch",
+        },
+        {
+          field: "sf_textToPaint_Prompt",
+          label: "绘画提示词设定",
+          bottomHelpMessage: "自定义你的提示词prompt",
+          component: "InputTextArea",
+        },
+        {
+          field: "translateModel",
+          label: "绘画提示词模型",
+          bottomHelpMessage: "在画图时输入的提示词是中文的时候自动使用提示词模型，同步自 https://cloud.siliconflow.cn/models?types=chat ",
+          component: "Select",
+          componentProps: {
+            options: [
+              { label: "01-ai/Yi-1.5-6B-Chat（免费）", value: "01-ai/Yi-1.5-6B-Chat" },
+              { label: "01-ai/Yi-1.5-9B-Chat-16K（免费）", value: "01-ai/Yi-1.5-9B-Chat-16K" },
+              { label: "Vendor-A/Qwen/Qwen2-72B-Instruct（免费）", value: "Vendor-A/Qwen/Qwen2-72B-Instruct" },
+              { label: "Qwen/Qwen2-1.5B-Instruct（免费）", value: "Qwen/Qwen2-1.5B-Instruct" },
+              { label: "Qwen/Qwen2-7B-Instruct（免费）", value: "Qwen/Qwen2-7B-Instruct" },
+              { label: "Qwen/Qwen2.5-7B-Instruct（免费）", value: "Qwen/Qwen2.5-7B-Instruct" },
+              { label: "Qwen/Qwen2.5-Coder-7B-Instruct（免费）", value: "Qwen/Qwen2.5-Coder-7B-Instruct" },
+              { label: "THUDM/chatglm3-6b（免费）", value: "THUDM/chatglm3-6b" },
+              { label: "THUDM/glm-4-9b-chat（免费）", value: "THUDM/glm-4-9b-chat" },
+              { label: "internlm/internlm2_5-7b-chat（免费）", value: "internlm/internlm2_5-7b-chat" },
+              { label: "meta-llama/Meta-Llama-3.1-8B-Instruct（免费）", value: "meta-llama/Meta-Llama-3.1-8B-Instruct" },
+              { label: "google/gemma-2-9b-it（免费）", value: "google/gemma-2-9b-it" },
+              { label: "AIDC-AI/Marco-o1（免费）", value: "AIDC-AI/Marco-o1" },
+              { label: "deepseek-ai/DeepSeek-R1-Distill-Llama-8B（免费）", value: "deepseek-ai/DeepSeek-R1-Distill-Llama-8B" },
+              { label: "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B（免费）", value: "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B" },
+              { label: "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B（免费）", value: "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B" },
+              { label: "deepseek-ai/DeepSeek-V3", value: "deepseek-ai/DeepSeek-V3" },
+              { label: "deepseek-ai/DeepSeek-R1", value: "deepseek-ai/DeepSeek-R1" },
+              { label: "Pro/deepseek-ai/DeepSeek-R1", value: "Pro/deepseek-ai/DeepSeek-R1" },
+              { label: "Pro/deepseek-ai/DeepSeek-V3", value: "Pro/deepseek-ai/DeepSeek-V3" },
+              { label: "deepseek-ai/DeepSeek-V2-Chat", value: "deepseek-ai/DeepSeek-V2-Chat" },
+              { label: "deepseek-ai/DeepSeek-Coder-V2-Instruct", value: "deepseek-ai/DeepSeek-Coder-V2-Instruct" },
+              { label: "deepseek-ai/DeepSeek-V2.5", value: "deepseek-ai/DeepSeek-V2.5" },
+              { label: "deepseek-ai/deepseek-vl2（视觉）", value: "deepseek-ai/deepseek-vl2" },
+              { label: "01-ai/Yi-1.5-34B-Chat-16K", value: "01-ai/Yi-1.5-34B-Chat-16K" },
+              { label: "DianXin/DianXin-V1-Chat", value: "DianXin/DianXin-V1-Chat" },
+              { label: "Pro/01-ai/Yi-1.5-6B-Chat", value: "Pro/01-ai/Yi-1.5-6B-Chat" },
+              { label: "Pro/01-ai/Yi-1.5-9B-Chat-16K", value: "Pro/01-ai/Yi-1.5-9B-Chat-16K" },
+              { label: "Pro/Qwen/Qwen2-1.5B-Instruct", value: "Pro/Qwen/Qwen2-1.5B-Instruct" },
+              { label: "Pro/Qwen/Qwen2-7B-Instruct", value: "Pro/Qwen/Qwen2-7B-Instruct" },
+              { label: "Pro/Qwen/Qwen2.5-7B-Instruct", value: "Pro/Qwen/Qwen2.5-7B-Instruct" },
+              { label: "Qwen/Qwen2-57B-A14B-Instruct", value: "Qwen/Qwen2-57B-A14B-Instruct" },
+              { label: "Qwen/Qwen2-72B-Instruct", value: "Qwen/Qwen2-72B-Instruct" },
+              { label: "Qwen/Qwen2-Math-72B-Instruct", value: "Qwen/Qwen2-Math-72B-Instruct" },
+              { label: "Qwen/Qwen2.5-14B-Instruct", value: "Qwen/Qwen2.5-14B-Instruct" },
+              { label: "Qwen/Qwen2.5-32B-Instruct", value: "Qwen/Qwen2.5-32B-Instruct" },
+              { label: "Qwen/Qwen2.5-72B-Instruct", value: "Qwen/Qwen2.5-72B-Instruct" },
+              { label: "Qwen/Qwen2.5-72B-Instruct-128K", value: "Qwen/Qwen2.5-72B-Instruct-128K" },
+              { label: "Qwen/Qwen2.5-Math-72B-Instruct", value: "Qwen/Qwen2.5-Math-72B-Instruct" },
+              { label: "Qwen/QwQ-32B-Preview", value: "Qwen/QwQ-32B-Preview" },
+              { label: "Qwen/QVQ-72B-Preview（视觉）", value: "Qwen/QVQ-72B-Preview" },
+              { label: "Qwen/Qwen2.5-Coder-32B-Instruct", value: "Qwen/Qwen2.5-Coder-32B-Instruct" },
+              { label: "Qwen/Qwen2-VL-72B-Instruct（视觉）", value: "Qwen/Qwen2-VL-72B-Instruct" },
+              { label: "Pro/Qwen/Qwen2-VL-7B-Instruct（视觉）", value: "Pro/Qwen/Qwen2-VL-7B-Instruct" },
+              { label: "Pro/THUDM/chatglm3-6b", value: "Pro/THUDM/chatglm3-6b" },
+              { label: "Pro/THUDM/glm-4-9b-chat", value: "Pro/THUDM/glm-4-9b-chat" },
+              { label: "internlm/internlm2_5-20b-chat", value: "internlm/internlm2_5-20b-chat" },
+              { label: "OpenGVLab/InternVL2-26B（视觉）", value: "OpenGVLab/InternVL2-26B" },
+              { label: "Pro/OpenGVLab/InternVL2-8B（视觉）", value: "Pro/OpenGVLab/InternVL2-8B" },
+              { label: "meta-llama/Llama-3.3-70B-Instruct", value: "meta-llama/Llama-3.3-70B-Instruct" },
+            ],
           },
         },
         {
@@ -400,6 +665,12 @@ export function supportGuoba() {
                 bottomHelpMessage: "开启后会转发思考过程，如果开启图片对话模式，则需要开启发送合并消息",
               },
               {
+                field: "useContext",
+                label: "上下文功能",
+                component: "Switch",
+                bottomHelpMessage: "开启后将对该接口保留对话历史记录，默认为关闭",
+              },
+              {
                 field: "remark",
                 label: "文件名",
                 component: "Input",
@@ -410,7 +681,7 @@ export function supportGuoba() {
                 field: "customCommand",
                 label: "自定义命令",
                 component: "Input",
-                required: false,
+                required: true,
                 bottomHelpMessage: "可选，设置后可用 #s命令名 来使用此接口，如设置为test则可用#stest，也可以使用#stest结束对话来结束此接口的对话",
               },
               {
@@ -418,25 +689,14 @@ export function supportGuoba() {
                 label: "仅限主人使用",
                 component: "Switch",
                 bottomHelpMessage: "开启后仅限主人使用此接口",
-              }
+              },
             ],
           },
         },
-        // {
-        //   field: 'ss_userAPI',
-        //   label: '[#ss]用户使用接口',
-        //   bottomHelpMessage: "选择用户要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等",
-        //   component: 'Select',
-        //   componentProps: {
-        //     options: (Config.getConfig()?.ss_APIList || []).filter(item => !item.isOnlyMaster).map((item, index) => {
-        //       return { label: item.remark || `接口${index + 1}`, value: index + 1 }
-        //     }).concat([{ label: "使用默认配置", value: 0 }])
-        //   },
-        // },
         {
           field: 'ss_usingAPI',
           label: '[#ss]主人使用接口',
-          bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等",
+          bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等；其他用户可使用指令：#sfss接口列表 #sfss使用接口[数字]",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.ss_APIList || []).map((item, index) => {
@@ -581,8 +841,14 @@ export function supportGuoba() {
                 bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型",
               },
               {
+                field: "useContext",
+                label: "上下文功能",
+                component: "Switch",
+                bottomHelpMessage: "开启后将对该接口保留对话历史记录，默认为关闭",
+              },
+              {
                 field: "remark",
-                label: "备注",
+                label: "文件名",
                 component: "Input",
                 required: true,
                 bottomHelpMessage: "接口配置的备注说明",
@@ -591,7 +857,7 @@ export function supportGuoba() {
                 field: "customCommand",
                 label: "自定义命令",
                 component: "Input",
-                required: false,
+                required: true,
                 bottomHelpMessage: "可选，设置后可用 #g命令名 来使用此接口，如设置为test则可用#gtest，也可以使用#gtest结束对话来结束此接口的对话",
               },
               {
@@ -599,25 +865,14 @@ export function supportGuoba() {
                 label: "仅限主人使用",
                 component: "Switch",
                 bottomHelpMessage: "开启后仅限主人使用此接口",
-              }
+              },
             ],
           },
         },
-        // {
-        //   field: 'gg_userAPI',
-        //   label: '[#gg]用户使用接口',
-        //   bottomHelpMessage: "选择用户要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等",
-        //   component: 'Select',
-        //   componentProps: {
-        //     options: (Config.getConfig()?.gg_APIList || []).filter(item => !item.isOnlyMaster).map((item, index) => {
-        //       return { label: item.remark || `接口${index + 1}`, value: index + 1 }
-        //     }).concat([{ label: "使用默认配置", value: 0 }])
-        //   },
-        // },
         {
           field: 'gg_usingAPI',
           label: '[#gg]主人使用接口',
-          bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等",
+          bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等；其他用户可使用指令：#sfgg接口列表 #sfgg使用接口[数字]",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.gg_APIList || []).map((item, index) => {
@@ -689,7 +944,7 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
-          field: "gg_useContext",
+          field: "gg_ss_useContext",
           label: "上下文功能",
           bottomHelpMessage: "[#ss][#gg]共用，开启后将保留对话历史记录，上下文#gg与#ss的上下文共享",
           component: "Switch",
@@ -970,6 +1225,7 @@ export function supportGuoba() {
         config.sf_keys = data['sf_keys']
         config.ss_APIList = data['ss_APIList']
         config.gg_APIList = data['gg_APIList']
+        config.dd_APIList = data['dd_APIList']
         config.fish_text_blacklist = data['fish_text_blacklist']
         config.ss_Key = data['ss_Key']    // 修正为ss_Key
         config.ggKey = data['ggKey']      // 修正为ggKey

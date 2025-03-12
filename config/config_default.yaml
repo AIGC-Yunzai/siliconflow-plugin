@@ -25,6 +25,9 @@ mj_translationBaseUrl: ""
 mj_translationModel: "gpt-4o"
 mj_translationEnabled: false
 mj_mode: "fast"
+# DD 绘图插件
+dd_APIList: [] # DD接口列表
+dd_usingAPI: 0 # 当前主人使用的DD接口索引
 # Fish TTS 配置
 fish_apiKey: "" # Fish API密钥
 fish_reference_id: "efc1ce3726a64bbc947d53a1465204aa" # 默认音色ID
@@ -55,7 +58,7 @@ gg_forwardMessage: true # 是否转发消息
 gg_quoteMessage: true # 是否引用原消息
 gg_Prompt: "" # 对话API提示词
 gg_model: "" # 对话API模型
-gg_useContext: false # 是否启用上下文功能
+gg_ss_useContext: false # 是否启用上下文功能
 gg_maxHistoryLength: 20 # 最大历史记录条数
 gg_useSearch: true # 是否启用搜索功能
 gg_HistoryExTime: 12

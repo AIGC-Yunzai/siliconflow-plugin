@@ -34,7 +34,7 @@ export class SF_Painting extends plugin {
             name: 'SF_对话&绘图',
             dsc: 'SF_对话&绘图',
             event: 'message',
-            priority: 6,
+            priority: 1143,
             rule: [
                 {
                     reg: '^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))',
@@ -329,21 +329,7 @@ export class SF_Painting extends plugin {
         const hasSearchKeyword = searchKeywords.some(keyword => msg.includes(keyword))
 
         // 根据配置和搜索关键词决定使用哪个命令
-        let useCommand = '#gg'
-        if (config.defaultCommand === 'ss' && !hasSearchKeyword) {
-            useCommand = '#ss'
-        }
-
-        // 构造新的消息内容，不再移除机器人名字
-        const newMsg = useCommand + ' ' + msg.trim()
-
-        // 修改消息内容并调用对应的处理函数
-        e.msg = newMsg
-        if (useCommand === '#ss') {
-            return await this.sf_chat(e)
-        } else {
-            return await this.gg_chat(e)
-        }
+        return (config.defaultCommand === 'ss' && !hasSearchKeyword) ? this.sf_chat(e, config) : this.gg_chat(e, config)
     }
 
     /** 轮询 sf_keys，可禁用key */
@@ -413,7 +399,7 @@ export class SF_Painting extends plugin {
                     config_date.gg_useMarkdown = value === '开'
                     break
                 case '上下文':
-                    config_date.gg_useContext = value === '开'
+                    config_date.gg_ss_useContext = value === '开'
                     break
                 case 'ss转发消息':
                     config_date.ss_forwardMessage = value === '开'
@@ -498,18 +484,32 @@ export class SF_Painting extends plugin {
         let param = await handleParam(e, msg)
 
         let userPrompt = param.input
+        let finalPrompt = await this.txt2img_generatePrompt(e, userPrompt, config_date);
 
+        logger.mark("[sf插件]开始图片生成API调用")
+        this.sf_send_pic(e, finalPrompt, use_sf_key, config_date, param, canImg2Img, souce_image_base64, userPrompt)
+        return true;
+    }
+
+    /**
+     * @description: 生成提示词 附带回复文案
+     * @param {*} e
+     * @param {*} userPrompt
+     * @param {*} config_date
+     * @return {*}
+     */
+    async txt2img_generatePrompt(e, userPrompt, config_date) {
         let finalPrompt = userPrompt
         let onleReplyOnce = 0;
         const use_sf_key = this.get_use_sf_key(config_date.sf_keys)
-        if (config_date.generatePrompt) {
+        if (e.sfRuntime.isgeneratePrompt ?? config_date.generatePrompt) {
             if (!onleReplyOnce && !config_date.simpleMode) {
                 e.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成提示词并绘图...`)
                 onleReplyOnce++
             }
             finalPrompt = await this.generatePrompt(userPrompt, use_sf_key, config_date)
             if (!finalPrompt) {
-                await e.reply('生成提示词失败，请稍后再试。')
+                e.reply('生成提示词失败，请稍后再试。')
                 return false
             }
         }
@@ -517,14 +517,13 @@ export class SF_Painting extends plugin {
             e.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成图片...`)
             onleReplyOnce++
         }
-
-        logger.mark("[sf插件]开始图片生成API调用")
-        this.sf_send_pic(e, finalPrompt, use_sf_key, config_date, param, canImg2Img, souce_image_base64, userPrompt)
-        return true;
+        return finalPrompt;
     }
 
     /** At模式 */
     async atChatMode(e) {
+        const config = Config.getConfig()
+
         if (!e.msg || e.msg?.startsWith('#'))
             return false
         if ((e.isGroup || e.group_id) && !(e.atme || e.atBot || (e.at === e.self_id)))
@@ -562,7 +561,7 @@ export class SF_Painting extends plugin {
             logger.warn(err)
         }
 
-        this.sf_chat(e)
+        return config.defaultCommand === 'ss' ? this.sf_chat(e, config) : this.gg_chat(e, config)
     }
 
     async sf_chat(e, config_date = undefined) {
@@ -690,7 +689,7 @@ export class SF_Painting extends plugin {
 
         // 获取历史对话
         let historyMessages = []
-        if (config_date.gg_useContext) {
+        if (config_date.gg_ss_useContext) {
             historyMessages = await loadContext(e.user_id, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
             logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length / 2} 条`)
         }
@@ -733,7 +732,7 @@ export class SF_Painting extends plugin {
         }
 
         // 保存对话记录
-        if (config_date.gg_useContext) {
+        if (config_date.gg_ss_useContext) {
             // 保存用户消息
             await saveContext(e.user_id, {
                 role: 'user',
@@ -1020,7 +1019,8 @@ export class SF_Painting extends plugin {
 步数：${param.parameters.steps}
 图片大小：${param.parameters.width}x${param.parameters.height}
 生成时间：${data.timings.inference.toFixed(2)}秒
-种子：${data.seed}`
+种子：${data.seed}
+${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示词[开|关]" : ""}`
                 const str_3 = `图片URL：${imageUrl}`
 
                 // 发送图片
@@ -1197,7 +1197,7 @@ export class SF_Painting extends plugin {
 
         // 获取历史对话
         let historyMessages = []
-        if (config_date.gg_useContext) {
+        if (config_date.gg_ss_useContext) {
             historyMessages = await loadContext(e.user_id, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
             logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length / 2} 条`)
         }
@@ -1225,7 +1225,7 @@ export class SF_Painting extends plugin {
         const { answer, sources } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
 
         // 保存对话记录
-        if (config_date.gg_useContext) {
+        if (config_date.gg_ss_useContext) {
             // 保存用户消息
             await saveContext(e.user_id, {
                 role: 'user',
@@ -1301,6 +1301,56 @@ export class SF_Painting extends plugin {
         // 从opt中获取useSearch，如果未定义则从config_date中获取
         const useSearch = typeof opt.useSearch !== 'undefined' ? opt.useSearch : config_date.gg_useSearch;
 
+        // 安全设置常量定义
+        const SAFETY_SETTINGS_STRICT = [
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" }
+        ];
+
+        const SAFETY_SETTINGS_LOOSE = [
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "OFF" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "OFF" }
+        ];
+
+        // 定义模型到安全设置的映射
+        const MODEL_SAFETY_SETTINGS = {
+            // 最宽松安全设置的模型
+            LOOSE_SAFETY_MODELS: new Set([
+                'gemini-1.5-flash-8b-latest', 'gemini-1.5-flash', 'gemini-1.5-flash-8b-001',
+                'gemini-1.5-flash-002', 'gemini-2.0-flash-001', 'gemini-2.0-flash',
+                'gemini-1.5-pro', 'gemini-1.5-flash-8b', 'gemini-1.5-pro-002',
+                'gemini-1.5-flash-latest', 'gemini-1.5-pro-latest', 'gemini-2.0-flash-exp',
+                'gemini-2.0-flash-lite-preview-02-05', 'gemini-2.0-pro-exp-02-05',
+                'gemini-2.0-pro-exp', 'gemini-2.0-flash-thinking-exp',
+                'gemini-2.0-flash-thinking-exp-01-21', 'gemini-exp-1206',
+                'gemini-2.0-flash-lite-preview', 'gemini-2.0-flash-thinking-exp-1219'
+            ]),
+            // 最严格安全设置的模型
+            STRICT_SAFETY_MODELS: new Set([
+                'gemini-pro-vision', 'gemini-1.5-flash-001-tuning', 'gemini-1.5-flash-8b-exp-0924',
+                'gemini-1.5-pro-001', 'gemini-1.0-pro', 'gemini-1.0-pro-vision-latest',
+                'gemini-1.0-pro-latest', 'gemini-pro', 'gemini-1.5-flash-8b-exp-0827',
+                'gemini-1.0-pro-001', 'gemini-1.5-flash-001'
+            ])
+        };
+
+        // 获取安全设置
+        function getSafetySettings(modelName) {
+            if (MODEL_SAFETY_SETTINGS.LOOSE_SAFETY_MODELS.has(modelName)) {
+                logger.debug(`[sf插件]模型 ${modelName} 使用最宽松安全设置`);
+                return SAFETY_SETTINGS_LOOSE;
+            } else {
+                logger.debug(`[sf插件]模型 ${modelName} 使用最严格安全设置`);
+                return SAFETY_SETTINGS_STRICT;
+            }
+        }
+
         // 构造请求体
         const requestBody = {
             "systemInstruction": {
@@ -1312,7 +1362,9 @@ export class SF_Painting extends plugin {
             // 只要开启了搜索功能就添加搜索工具，不再限制模型，需要模型支持才可以联网
             "tools": useSearch ? [{
                 "googleSearch": {}
-            }] : []
+            }] : [],
+            // 添加安全设置
+            "safetySettings": getSafetySettings(opt.model || "")
         };
 
         // 添加历史对话
@@ -1525,7 +1577,7 @@ export class SF_Painting extends plugin {
         // 清除对话记录
         const success = await clearUserContext(targetId, promptNum, systemType)
         if (success) {
-            const contextStatus = config_date.gg_useContext ? '' : '\n（上下文功能未开启）'
+            const contextStatus = config_date.gg_ss_useContext ? '' : '\n（上下文功能未开启）'
             const systemName = systemType ? systemType.toUpperCase() : '默认'
             if (targetId === e.user_id) {
                 await e.reply(`已结束当前${systemName}系统对话，历史记录已清除${contextStatus}`, true)
@@ -1540,7 +1592,7 @@ export class SF_Painting extends plugin {
     async sf_end_all_chat(e) {
         const config_date = Config.getConfig()
         if (await clearAllContext()) {
-            await e.reply('已结束所有对话，所有历史记录已清除' + `${config_date.gg_useContext ? '' : '\n（上下文功能未开启）'}`, true)
+            await e.reply('已结束所有对话，所有历史记录已清除' + `${config_date.gg_ss_useContext ? '' : '\n（上下文功能未开启）'}`, true)
         } else {
             await e.reply('结束所有对话失败，请稍后再试', true)
         }
@@ -1567,7 +1619,7 @@ export class SF_Painting extends plugin {
             const result = await clearContextByCount(e.user_id, parseInt(match[6]) > 0 ? parseInt(match[6]) : 1, promptNum, systemType)
             if (result.success) {
                 const systemName = systemType ? systemType.toUpperCase() : '默认'
-                e.reply(`[sf插件]成功删除你的${systemName}系统最近的 ${result.deletedCount} 条历史对话` + `${config_date.gg_useContext ? '' : '\n（上下文功能未开启）'}`, true)
+                e.reply(`[sf插件]成功删除你的${systemName}系统最近的 ${result.deletedCount} 条历史对话` + `${config_date.gg_ss_useContext ? '' : '\n（上下文功能未开启）'}`, true)
             } else {
                 e.reply('[sf插件]删除失败:\n' + result.error, true)
             }
@@ -1656,9 +1708,9 @@ export class SF_Painting extends plugin {
 
         // 如果接口数量超过10个，使用转发消息
         if (msg.length > 12) { // 标题占一行，默认配置占1行，所以是12
-            await e.reply(await common.makeForwardMsg(e, msg, `${baseType}接口列表`), true)
+            await e.reply(await common.makeForwardMsg(e, msg, `${baseType}接口列表`))
         } else {
-            await e.reply(msg.join('\n'), true)
+            await e.reply(msg.join('\n'))
         }
     }
 
@@ -1716,7 +1768,8 @@ export class SF_Painting extends plugin {
         }
 
         // 保存配置
-        Config.setConfig(config_date)
+        if (isMaster)
+            Config.setConfig(config_date)
 
         // 返回结果
         if (index === 0) {
@@ -1738,12 +1791,6 @@ export class SF_Painting extends plugin {
 
             // 处理命令和内容
             const processCommand = async (cmd, content) => {
-                // 确保内容不是纯空白字符
-                if (!content || content.trim().length === 0) {
-                    logger.error('请输入要发送的内容');
-                    return false;
-                }
-
                 const apiList = config_date[`${type}_APIList`];
                 let apiIndex = -1;
 
@@ -1751,7 +1798,7 @@ export class SF_Painting extends plugin {
                 if (!isNaN(cmd)) {
                     const index = parseInt(cmd);
                     if (!apiList || index < 0 || (index > 0 && index > apiList.length)) {
-                        logger.error(`无效的接口索引，请使用 #sf${type}接口列表 查看可用的接口`);
+                        logger.warn(`无效的接口索引，请使用 #sf${type}接口列表 查看可用的接口`);
                         return false;
                     }
                     apiIndex = index - 1;
@@ -1759,7 +1806,7 @@ export class SF_Painting extends plugin {
                     // 处理自定义命令
                     apiIndex = apiList?.findIndex(api => api.customCommand === cmd) ?? -1;
                     if (apiIndex === -1) {
-                        logger.error(`未找到命令 ${cmd} 对应的接口`);
+                        logger.warn(`未找到命令 ${cmd} 对应的接口`);
                         return false;
                     }
                 }
@@ -1785,6 +1832,9 @@ export class SF_Painting extends plugin {
                 } else {
                     e.sf_llm_user_API = apiIndex + 1;
                 }
+
+                // 判断 是否开启 上下文功能
+                config_date.gg_ss_useContext = apiList[apiIndex].useContext ? true : false;
 
                 e.msg = `#${type} ${content}`;
                 // 调用 ss 或 gg 对话函数
@@ -1903,6 +1953,9 @@ export class SF_Painting extends plugin {
                     e.sf_llm_user_API = apiIndex;
                 }
 
+                // 判断 是否开启 上下文功能
+                config_date.gg_ss_useContext = apiList[apiIndex - 1].useContext ? true : false;
+
                 e.msg = `#sf结束${type}对话${number}`;
                 await this.sf_end_chat(e, config_date);
                 return true;
@@ -1927,7 +1980,7 @@ export class SF_Painting extends plugin {
                 return await processEndChat(index);
             }
 
-            logger.error(`未找到命令 ${cmdPart} 对应的接口`);
+            logger.warn(`未找到命令 ${cmdPart} 对应的接口`);
             return false;
         };
     }
