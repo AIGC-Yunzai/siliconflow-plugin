@@ -799,6 +799,7 @@ export class DD_Painting extends plugin {
 
         // 解析参数
         let param = await handleParam(e, prompt, true)
+        prompt = param.input;
 
         // 检查是否有图片（暂不支持图生图，但保留代码结构）
         if (e.img && e.img.length > 0) {
@@ -874,6 +875,7 @@ export class DD_Painting extends plugin {
 
         // 解析参数
         let param = await handleParam(e, msg, true)
+        msg = param.input;
 
         // 检查是否有图片（暂不支持图生图，但保留代码结构）
         if (e.img && e.img.length > 0) {
