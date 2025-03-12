@@ -294,32 +294,46 @@ export class DD_Painting extends plugin {
                         error: `解析自定义响应格式失败: ${error.message}`
                     };
                 }
-            } else if (data.data && data.data[0]) {
-                // 默认的OpenAI/Nebius格式处理
-                if (data.data[0].b64_json) {
-                    imageData = `base64://${data.data[0].b64_json}`;
-                } else if (data.data[0].url) {
-                    imageData = data.data[0].url;
-                } else {
+            } else {
+                // 尝试自动检测和解析常见的响应格式
+                try {
+                    // 增强的自动检测逻辑
+                    imageData = this.extractImageData(data);
+                    
+                    // 如果仍然没有找到图片数据
+                    if (!imageData) {
+                        console.error('无法自动检测响应格式，原始响应:', JSON.stringify(data).substring(0, 500) + '...');
+                        return {
+                            success: false,
+                            error: '未找到图片数据，请配置自定义响应格式路径'
+                        };
+                    }
+                } catch (error) {
+                    console.error('自动解析响应格式失败:', error, '原始响应:', JSON.stringify(data).substring(0, 500) + '...');
                     return {
                         success: false,
-                        error: '未找到图片数据'
+                        error: `解析响应失败: ${error.message}`
                     };
                 }
-            } else if (data.images && data.images[0] && data.images[0].url) {
-                // 支持ModelScope等其他常见格式
-                imageData = data.images[0].url;
-            } else {
-                return {
-                    success: false,
-                    error: '未找到图片数据，请配置自定义响应格式'
-                };
+            }
+
+            // 提取修改后的提示词（如果有）
+            let revisedPrompt = prompt;
+            try {
+                if (data.data && data.data[0] && data.data[0].revised_prompt) {
+                    revisedPrompt = data.data[0].revised_prompt;
+                } else if (data.revised_prompt) {
+                    revisedPrompt = data.revised_prompt;
+                }
+            } catch (error) {
+                // 忽略提取修改后提示词的错误
+                console.debug('提取修改后提示词失败:', error);
             }
 
             return {
                 success: true,
                 imageData: imageData,
-                revised_prompt: data.data[0].revised_prompt || prompt,
+                revised_prompt: revisedPrompt,
                 payload: payload  // 返回完整的请求参数
             };
         } catch (error) {
@@ -329,6 +343,146 @@ export class DD_Painting extends plugin {
                 error: error.message || '未知错误'
             };
         }
+    }
+
+    // 新增方法：增强的图片数据提取
+    extractImageData(data) {
+        // 递归检查对象中的所有属性，寻找URL或base64数据
+        const findImageData = (obj, path = '') => {
+            // 如果是null或undefined，直接返回
+            if (obj === null || obj === undefined) {
+                return null;
+            }
+            
+            // 如果是字符串，检查是否为URL或base64
+            if (typeof obj === 'string') {
+                // 检查是否为base64
+                if (obj.startsWith('data:image') || 
+                    obj.startsWith('base64:') || 
+                    /^[A-Za-z0-9+/=]{100,}$/.test(obj)) {
+                    return { type: 'base64', data: obj.startsWith('base64:') ? obj : `base64://${obj}`, path };
+                }
+                
+                // 检查是否为URL
+                if (obj.startsWith('http://') || 
+                    obj.startsWith('https://') || 
+                    obj.startsWith('ftp://') ||
+                    /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(obj)) {
+                    return { type: 'url', data: obj, path };
+                }
+                
+                return null;
+            }
+            
+            // 如果是数组，遍历每个元素
+            if (Array.isArray(obj)) {
+                for (let i = 0; i < obj.length; i++) {
+                    const result = findImageData(obj[i], `${path}[${i}]`);
+                    if (result) return result;
+                }
+                return null;
+            }
+            
+            // 如果是对象，检查特定属性
+            if (typeof obj === 'object') {
+                // 优先检查常见的图片属性名
+                const priorityKeys = ['url', 'image_url', 'imageUrl', 'image', 'b64_json', 'base64', 'data'];
+                
+                // 先检查优先级高的键
+                for (const key of priorityKeys) {
+                    if (obj[key] !== undefined) {
+                        const result = findImageData(obj[key], path ? `${path}.${key}` : key);
+                        if (result) return result;
+                    }
+                }
+                
+                // 然后检查所有其他键
+                for (const key in obj) {
+                    if (!priorityKeys.includes(key)) {
+                        const result = findImageData(obj[key], path ? `${path}.${key}` : key);
+                        if (result) return result;
+                    }
+                }
+            }
+            
+            return null;
+        };
+        
+        // 开始检查常见的响应格式
+        
+        // 1. 检查OpenAI/Nebius标准格式
+        if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+            if (data.data[0].b64_json) {
+                return `base64://${data.data[0].b64_json}`;
+            } else if (data.data[0].url) {
+                return data.data[0].url;
+            }
+        }
+        
+        // 2. 检查ModelScope格式
+        if (data.images && Array.isArray(data.images) && data.images.length > 0) {
+            if (data.images[0].url) {
+                return data.images[0].url;
+            } else if (data.images[0].b64_json) {
+                return `base64://${data.images[0].b64_json}`;
+            } else if (typeof data.images[0] === 'string') {
+                // 有些API直接返回图片URL字符串数组
+                return data.images[0];
+            }
+        }
+        
+        // 3. 检查直接返回图片数组的格式
+        if (Array.isArray(data) && data.length > 0) {
+            if (typeof data[0] === 'string') {
+                // 直接返回URL数组
+                return data[0];
+            } else if (data[0].url) {
+                return data[0].url;
+            } else if (data[0].b64_json) {
+                return `base64://${data[0].b64_json}`;
+            } else if (data[0].image) {
+                // 某些API使用image字段
+                if (typeof data[0].image === 'string') {
+                    return data[0].image;
+                } else if (data[0].image.url) {
+                    return data[0].image.url;
+                }
+            }
+        }
+        
+        // 4. 检查单一对象格式
+        if (!Array.isArray(data)) {
+            if (data.url) {
+                return data.url;
+            } else if (data.b64_json) {
+                return `base64://${data.b64_json}`;
+            } else if (data.image) {
+                if (typeof data.image === 'string') {
+                    return data.image;
+                } else if (data.image.url) {
+                    return data.image.url;
+                }
+            } else if (data.output) {
+                // 某些API使用output字段
+                if (typeof data.output === 'string') {
+                    return data.output;
+                } else if (Array.isArray(data.output) && data.output.length > 0) {
+                    if (typeof data.output[0] === 'string') {
+                        return data.output[0];
+                    }
+                }
+            }
+        }
+        
+        // 5. 递归搜索整个响应对象
+        const result = findImageData(data);
+        if (result) {
+            console.log(`在路径 ${result.path} 找到图片数据，类型: ${result.type}`);
+            return result.data;
+        }
+        
+        // 如果所有方法都失败，返回null
+        return null;
     }
 
     // 替换模板中的变量
