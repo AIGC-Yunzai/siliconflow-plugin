@@ -214,13 +214,62 @@ export class DD_Painting extends plugin {
             }
 
             // 发送请求
-            const response = await fetch(`${apiConfig.baseUrl}/images/generations`, {
+            // 确定请求URL
+            let requestUrl;
+            if (apiConfig.baseUrl.endsWith('/v1')) {
+                // 如果baseUrl以/v1结尾，添加/images/generations路径
+                requestUrl = `${apiConfig.baseUrl}/images/generations`;
+            } else {
+                // 否则直接使用baseUrl
+                requestUrl = apiConfig.baseUrl;
+            }
+
+            // 构建请求头
+            let headers = {
+                'Content-Type': 'application/json',
+                'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
+            };
+
+            // 根据认证类型设置Authorization头
+            const authType = apiConfig.authType || 'bearer';
+            if (authType === 'bearer') {
+                // Bearer Token认证（默认）
+                headers['Authorization'] = `Bearer ${apiConfig.apiKey}`;
+            } else if (authType === 'basic') {
+                // Basic认证
+                const base64Credentials = Buffer.from(`${apiConfig.apiKey}:`).toString('base64');
+                headers['Authorization'] = `Basic ${base64Credentials}`;
+            } else if (authType === 'apikey') {
+                // API Key认证
+                const headerName = apiConfig.authHeaderName || 'Authorization';
+                headers[headerName] = apiConfig.apiKey;
+            } else if (authType === 'custom') {
+                // 自定义认证
+                if (apiConfig.customAuthValue) {
+                    headers['Authorization'] = apiConfig.customAuthValue;
+                } else {
+                    // 如果没有设置自定义值，回退到默认Bearer
+                    headers['Authorization'] = `Bearer ${apiConfig.apiKey}`;
+                }
+            }
+
+            // 添加自定义请求头
+            if (apiConfig.customHeaders) {
+                try {
+                    const customHeaders = typeof apiConfig.customHeaders === 'string'
+                        ? JSON.parse(apiConfig.customHeaders)
+                        : apiConfig.customHeaders;
+                    
+                    // 合并自定义请求头
+                    headers = { ...headers, ...customHeaders };
+                } catch (error) {
+                    console.error('解析自定义请求头失败:', error);
+                }
+            }
+
+            const response = await fetch(requestUrl, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${apiConfig.apiKey}`,
-                    'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
-                },
+                headers: headers,
                 body: JSON.stringify(payload)
             });
 
@@ -833,7 +882,7 @@ export class DD_Painting extends plugin {
                             user_id: e.bot?.uin || e.self_id
                         },
                         {
-                            message: `✅ 绘画生成成功\n\n原始提示词: ${msg}\n最终提示词: ${param.input}\n\n使用接口: ${apiConfig.remark || (currentApi > 0 ? `接口${currentApi}` : '默认接口')}\n\n【参数详情】\n${paramText}${e.sfRuntime.isgeneratePrompt === undefined ? "\n\n可选参数：\n 自动提示词[开|关]" : ""}`,
+                            message: `✅ 绘画生成成功\n\n原始提示词: ${msg}\n最终提示词: ${param.input}\n\n使用接口: ${apiConfig.remark || (currentApi > 0 ? `接口${currentApi}` : '默认接口')}\n\n【参数详情】\n${paramText}`,
                             nickname: e.bot?.nickname || 'DD绘画',
                             user_id: e.bot?.uin || e.self_id
                         }

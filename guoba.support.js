@@ -214,9 +214,9 @@ export function supportGuoba() {
                 field: "baseUrl",
                 label: "接口地址",
                 component: "Input",
-                bottomHelpMessage: "设置接口地址，例如：https://api.openai.com/v1，https://api.studio.nebius.com/v1",
+                bottomHelpMessage: "设置接口地址，例如：https://api.openai.com/v1/images/generations，https://api.studio.nebius.com/v1/images/generations",
                 componentProps: {
-                  placeholder: 'https://api.openai.com/v1',
+                  placeholder: 'https://api.openai.com/v1/images/generations',
                 },
               },
               {
@@ -367,6 +367,48 @@ export function supportGuoba() {
                 bottomHelpMessage: "开启后会替换模板中的变量，如{{prompt}}、{{width}}等。关闭后将直接使用模板，只替换prompt字段。",
                 componentProps: {
                   defaultValue: false,
+                },
+              },
+              {
+                field: "authType",
+                label: "认证类型",
+                component: "Select",
+                bottomHelpMessage: "设置API请求的认证类型，影响Authorization请求头的格式",
+                componentProps: {
+                  options: [
+                    { label: "Bearer Token (默认)", value: "bearer" },
+                    { label: "Basic Auth", value: "basic" },
+                    { label: "API Key", value: "apikey" },
+                    { label: "自定义", value: "custom" },
+                  ],
+                  defaultValue: "bearer",
+                },
+              },
+              {
+                field: "authHeaderName",
+                label: "认证头名称",
+                component: "Input",
+                bottomHelpMessage: "设置认证头的名称，默认为'Authorization'",
+                componentProps: {
+                  placeholder: 'Authorization',
+                },
+              },
+              {
+                field: "customAuthValue",
+                label: "自定义认证值",
+                component: "Input",
+                bottomHelpMessage: "当认证类型为'自定义'时，设置完整的认证头值，将直接使用此值作为Authorization头的值",
+                componentProps: {
+                  placeholder: '例如：Bearer your-token-here',
+                },
+              },
+              {
+                field: "customHeaders",
+                label: "自定义请求头",
+                component: "InputTextArea",
+                bottomHelpMessage: "设置其他自定义请求头，使用JSON格式，例如：{\"x-api-version\": \"1.0\", \"custom-header\": \"value\"}",
+                componentProps: {
+                  placeholder: '{"x-api-version": "1.0"}',
                 },
               },
               {
@@ -651,17 +693,6 @@ export function supportGuoba() {
             ],
           },
         },
-        // {
-        //   field: 'ss_userAPI',
-        //   label: '[#ss]用户使用接口',
-        //   bottomHelpMessage: "选择用户要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等",
-        //   component: 'Select',
-        //   componentProps: {
-        //     options: (Config.getConfig()?.ss_APIList || []).filter(item => !item.isOnlyMaster).map((item, index) => {
-        //       return { label: item.remark || `接口${index + 1}`, value: index + 1 }
-        //     }).concat([{ label: "使用默认配置", value: 0 }])
-        //   },
-        // },
         {
           field: 'ss_usingAPI',
           label: '[#ss]主人使用接口',
@@ -838,17 +869,6 @@ export function supportGuoba() {
             ],
           },
         },
-        // {
-        //   field: 'gg_userAPI',
-        //   label: '[#gg]用户使用接口',
-        //   bottomHelpMessage: "选择用户要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等",
-        //   component: 'Select',
-        //   componentProps: {
-        //     options: (Config.getConfig()?.gg_APIList || []).filter(item => !item.isOnlyMaster).map((item, index) => {
-        //       return { label: item.remark || `接口${index + 1}`, value: index + 1 }
-        //     }).concat([{ label: "使用默认配置", value: 0 }])
-        //   },
-        // },
         {
           field: 'gg_usingAPI',
           label: '[#gg]主人使用接口',
