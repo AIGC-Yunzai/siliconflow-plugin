@@ -244,14 +244,75 @@ export class DD_Painting extends plugin {
 
             // 处理返回的图片数据
             let imageData;
-            if (data.data[0].b64_json) {
-                imageData = `base64://${data.data[0].b64_json}`;
-            } else if (data.data[0].url) {
-                imageData = data.data[0].url;
+            
+            // 如果配置了自定义响应格式解析路径
+            if (apiConfig.responseFormat) {
+                try {
+                    // 使用自定义路径提取图片数据
+                    const paths = apiConfig.responseFormat.split('.');
+                    let result = data;
+                    
+                    // 逐层解析路径
+                    for (const path of paths) {
+                        // 处理数组索引，如 images[0]
+                        if (path.includes('[') && path.includes(']')) {
+                            const arrayName = path.substring(0, path.indexOf('['));
+                            const index = parseInt(path.substring(path.indexOf('[') + 1, path.indexOf(']')));
+                            result = result[arrayName][index];
+                        } else {
+                            result = result[path];
+                        }
+                        
+                        // 如果路径不存在，中断解析
+                        if (result === undefined) {
+                            throw new Error(`响应中不存在路径: ${apiConfig.responseFormat}`);
+                        }
+                    }
+                    
+                    // 根据结果类型处理
+                    if (typeof result === 'string') {
+                        // 如果结果是字符串，判断是否为base64
+                        if (result.startsWith('data:image') || result.startsWith('base64:')) {
+                            imageData = result;
+                        } else {
+                            // 否则视为URL
+                            imageData = result;
+                        }
+                    } else if (result.url) {
+                        // 如果结果是对象且有url属性
+                        imageData = result.url;
+                    } else if (result.b64_json) {
+                        // 如果结果是对象且有b64_json属性
+                        imageData = `base64://${result.b64_json}`;
+                    } else {
+                        throw new Error('无法从自定义路径提取图片数据');
+                    }
+                } catch (error) {
+                    console.error('解析自定义响应格式失败:', error);
+                    return {
+                        success: false,
+                        error: `解析自定义响应格式失败: ${error.message}`
+                    };
+                }
+            } else if (data.data && data.data[0]) {
+                // 默认的OpenAI/Nebius格式处理
+                if (data.data[0].b64_json) {
+                    imageData = `base64://${data.data[0].b64_json}`;
+                } else if (data.data[0].url) {
+                    imageData = data.data[0].url;
+                } else {
+                    return {
+                        success: false,
+                        error: '未找到图片数据'
+                    };
+                }
+            } else if (data.images && data.images[0] && data.images[0].url) {
+                // 支持ModelScope等其他常见格式
+                imageData = data.images[0].url;
             } else {
                 return {
                     success: false,
-                    error: '未找到图片数据'
+                    error: '未找到图片数据，请配置自定义响应格式'
                 };
             }
 
@@ -786,6 +847,7 @@ export class DD_Painting extends plugin {
 3. 接口格式说明：
    - OpenAI格式：兼容OpenAI的DALL-E接口格式
    - Nebius格式：兼容Nebius的接口格式
+   - 自定义格式：通过设置"响应格式路径"支持其他API格式
 
 4. 参数说明：
    - 宽度：图片宽度
@@ -793,11 +855,13 @@ export class DD_Painting extends plugin {
    - 模型：使用的模型名称
    - 自定义命令：可用于快速调用的命令别名
    - 备注：接口的说明文字
+   - 响应格式路径：从API响应中提取图片数据的路径，例如"images[0].url"
 
 5. 注意事项：
    - 当前版本暂不支持图生图功能
    - 请确保接口配置正确，包括API密钥和基础URL
-   - 部分接口可能需要特定的提示词格式，请参考接口说明`]
+   - 部分接口可能需要特定的提示词格式，请参考接口说明
+   - 对于非标准API响应格式，请设置"响应格式路径"以正确提取图片数据`]
 
         await e.reply(await common.makeForwardMsg(e, helpMessage, e.msg))
     }

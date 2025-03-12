@@ -361,6 +361,12 @@ export function supportGuoba() {
                 },
               },
               {
+                field: "responseFormat",
+                label: "响应格式路径",
+                component: "Input",
+                bottomHelpMessage: "设置从响应中提取图片数据的路径，例如：images[0].url。如果不设置，将使用默认的解析逻辑。",
+              },
+              {
                 field: "remark",
                 label: "文件名",
                 component: "Input",
