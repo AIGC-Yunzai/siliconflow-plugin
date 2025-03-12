@@ -284,7 +284,7 @@ export class DD_Painting extends plugin {
 
             const data = await response.json();
 
-            if (!data || !data.data || !data.data[0]) {
+            if (!data) {
                 return {
                     success: false,
                     error: '返回数据格式异常'
