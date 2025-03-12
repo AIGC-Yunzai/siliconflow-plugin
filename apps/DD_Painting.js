@@ -170,7 +170,6 @@ export class DD_Painting extends plugin {
 
             // 构建请求体
             let payload;
-
             // 如果有请求体模板，优先使用模板
             if (apiConfig.requestTemplate) {
                 try {
@@ -178,23 +177,21 @@ export class DD_Painting extends plugin {
                     let template = typeof apiConfig.requestTemplate === 'string'
                         ? JSON.parse(apiConfig.requestTemplate)
                         : apiConfig.requestTemplate;
-
+    
                     // 检查是否需要替换变量
                     if (apiConfig.useTemplateVariables) {
                         // 深拷贝模板，避免修改原始对象
                         payload = JSON.parse(JSON.stringify(template));
-
                         // 替换模板中的变量
                         payload = this.replaceTemplateVariables(payload, prompt, apiConfig, param);
                     } else {
-                        // 直接使用模板，只替换提示词
-                        payload = template;
-
-                        // 如果模板中有prompt字段，替换为用户输入的提示词
-                        if (payload.prompt) {
-                            payload.prompt = prompt;
-                        }
+                        // 直接使用模板
+                        payload = JSON.parse(JSON.stringify(template));
                     }
+    
+                    // 重要：始终使用用户输入的提示词覆盖模板中的prompt
+                    payload.prompt = prompt;
+    
                 } catch (error) {
                     console.error('解析请求体模板失败:', error);
                     // 如果模板解析失败，回退到参数构建方式
