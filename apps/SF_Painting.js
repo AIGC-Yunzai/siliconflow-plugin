@@ -1791,12 +1791,6 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
 
             // 处理命令和内容
             const processCommand = async (cmd, content) => {
-                // 确保内容不是纯空白字符
-                if (!content || content.trim().length === 0) {
-                    logger.warn('请输入要发送的内容');
-                    return false;
-                }
-
                 const apiList = config_date[`${type}_APIList`];
                 let apiIndex = -1;
 
