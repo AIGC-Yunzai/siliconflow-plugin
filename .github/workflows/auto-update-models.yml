@@ -1,0 +1,96 @@
+name: Update SF Models
+
+on:
+  schedule:
+    - cron: '0 0 * * *'
+  workflow_dispatch:
+
+jobs:
+  update-models:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v2
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '16'
+
+    - name: Update Models
+      env:
+        SF_API_KEY: ${{ secrets.SF_API_KEY }}
+      run: |
+        TEMP_DIR=$(mktemp -d)
+        
+        cat > $TEMP_DIR/update-models.js << 'EOF'
+        const fs = require('fs');
+        const https = require('https');
+
+        function makeRequest(url) {
+          return new Promise((resolve, reject) => {
+            const options = {
+              headers: {
+                'Authorization': `Bearer ${process.env.SF_API_KEY}`,
+                'User-Agent': 'Apifox/1.0.0 (https://apifox.com)',
+                'Content-Type': 'application/json'
+              }
+            };
+
+            https.get(url, options, (res) => {
+              let data = '';
+              res.on('data', (chunk) => { data += chunk; });
+              res.on('end', () => {
+                try {
+                  resolve(JSON.parse(data));
+                } catch (e) {
+                  reject(new Error(`Failed to parse response: ${data}`));
+                }
+              });
+            }).on('error', reject);
+          });
+        }
+
+        async function updateFile() {
+          try {
+            let content = fs.readFileSync('guoba.support.js', 'utf8');
+
+            const chatModels = await makeRequest('https://api.siliconflow.cn/v1/models?sub_type=chat');
+            const imageModels = await makeRequest('https://api.siliconflow.cn/v1/models?sub_type=text-to-image');
+
+            const chatOptions = chatModels.data
+              .map(model => `              { label: "${model.id}", value: "${model.id}" },`)
+              .join('\n');
+
+            const imageOptions = imageModels.data
+              .map(model => `              { label: "${model.id}", value: "${model.id}" },`)
+              .join('\n');
+
+            const translateModelRegex = /(field: "translateModel"[\s\S]*?options: \[)[\s\S]*?(\s+\])/;
+            content = content.replace(translateModelRegex, `$1\n${chatOptions}\n$2`);
+
+            const imageModelRegex = /(field: "imageModel"[\s\S]*?options: \[)[\s\S]*?(\s+\])/;
+            content = content.replace(imageModelRegex, `$1\n${imageOptions}\n$2`);
+
+            fs.writeFileSync('guoba.support.js', content, 'utf8');
+            console.log('Successfully updated models');
+          } catch (error) {
+            console.error('Error updating models:', error);
+            process.exit(1);
+          }
+        }
+
+        updateFile();
+        EOF
+        
+        node $TEMP_DIR/update-models.js
+        rm -rf $TEMP_DIR
+
+    - name: Create Pull Request
+      uses: peter-evans/create-pull-request@v3
+      with:
+        commit-message: 'chore: update SF models'
+        title: 'Update SF Models'
+        body: 'Automatically update SF models list'
+        branch: update-sf-models
+        delete-branch: true
