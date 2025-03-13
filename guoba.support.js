@@ -552,6 +552,12 @@ export function supportGuoba() {
           component: "Input",
         },
         {
+          field: "zhilOnlyMaster",
+          label: "直链仅主人可用",
+          bottomHelpMessage: "#直链 指令仅主人可用",
+          component: "Switch",
+        },
+        {
           label: '对话功能',
           component: 'SOFT_GROUP_BEGIN'
         },

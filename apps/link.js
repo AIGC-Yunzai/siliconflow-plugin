@@ -13,11 +13,11 @@ export class LinkPlugin extends plugin {
             priority: 1000,
             rule: [
                 {
-                    reg: '^#直链', 
+                    reg: '^#直链',
                     fnc: 'zhil',
                 },
                 {
-                    reg: '^#删除直链', 
+                    reg: '^#删除直链',
                     fnc: 'deleteLink',
                 },
                 {
@@ -34,20 +34,25 @@ export class LinkPlugin extends plugin {
      * @param {object} e 事件对象
      */
     async zhil(e) {
-        console.log('收到命令:', e.msg);
+        const config = Config.getConfig()
+        if (config.zhilOnlyMaster && !e.isMaster) {
+            // await this.reply('❌只有主人才能使用此功能。');
+            return true;
+        }
+        logger.info('收到命令:', e.msg);
 
         await parseSourceImg(e)
-        
+
         if (!e.img || e.img.length === 0) {
             await this.reply('❌未找到有效的图片链接。');
             return true;
         }
 
         const imgUrl = e.img[0];
-        console.log('匹配到的图片链接:', imgUrl);
+        logger.info('匹配到的图片链接:', imgUrl);
 
         try {
-            const uploadedUrl = await uploadImage(imgUrl);
+            const uploadedUrl = await uploadImage(imgUrl, config);
             await this.reply(uploadedUrl);
         } catch (err) {
             console.error('上传失败:', err);
@@ -69,18 +74,18 @@ export class LinkPlugin extends plugin {
         const config = Config.getConfig()
         const domain = config.link_domain
 
-        console.log('收到删除命令:', e.msg);
+        logger.info('收到删除命令:', e.msg);
 
         const cleanDomain = domain.replace(/^https?:\/\//, '');
         const linkMatch = e.msg.match(new RegExp(`https?://${cleanDomain.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}/img/(.+\\.jpg)`));
-        
+
         if (!linkMatch) {
             await e.reply('❌未找到有效的图片链接。', true);
             return true;
         }
 
         const filename = linkMatch[1];
-        console.log('匹配到的文件名:', filename);
+        logger.info('匹配到的文件名:', filename);
 
         try {
             // 添加超时控制
@@ -124,7 +129,7 @@ export class LinkPlugin extends plugin {
      */
     async setDomain(e) {
         let domain = e.msg.replace(/^#设置直链域名/, '').trim()
-        
+
         if (!domain) {
             await e.reply('请输入要设置的域名')
             return false

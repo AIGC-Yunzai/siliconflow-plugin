@@ -4,10 +4,12 @@ import Config from '../components/Config.js'
 /**
  * 上传图片到指定域名
  * @param {string} imgUrl 图片URL
+ * @param {*} config
  * @returns {Promise<string>} 上传后的图片URL
  */
-export async function uploadImage(imgUrl) {
-    const config = Config.getConfig()
+export async function uploadImage(imgUrl, config = null) {
+    if (!config)
+        config = Config.getConfig()
     const domain = config.link_domain
 
     if (!domain) {
@@ -19,9 +21,9 @@ export async function uploadImage(imgUrl) {
         const controller = new AbortController();
         const timeout = setTimeout(() => controller.abort(), 30000);
 
-        const response = await fetch(imgUrl, { 
+        const response = await fetch(imgUrl, {
             signal: controller.signal,
-            timeout: 30000 
+            timeout: 30000
         });
         clearTimeout(timeout);
 

@@ -300,7 +300,7 @@ export class MJ_Painting extends plugin {
                 const result = await this.pollTaskResult(newTaskId, config_date)
                 if (result) {
                     const replyMsg = `操作完成！\n操作类型：${action}${position}\n新任务ID：${newTaskId}\n图片链接：${result.imageUrl}`;
-                    
+
                     if (e.ws) {
                         this.sendMessage(e.ws, 'mj', replyMsg);
                         this.sendMessage(e.ws, 'image', {
@@ -329,7 +329,7 @@ export class MJ_Painting extends plugin {
                         await e.reply(replyMsg);
                         await e.reply({ ...segment.image(result.imageUrl), origin: true });
                     }
-                    
+
                     redis.set(`sf_plugin:MJ_Painting:lastTaskId:${e.user_id}`, newTaskId, { EX: 7 * 24 * 60 * 60 }); // 写入redis，有效期7天
                 } else {
                     const errorMsg = '操作失败，请稍后重试。';
@@ -458,7 +458,7 @@ MJP插件帮助：
             const result = await this.pollTaskResult(taskId, config_date)
             if (result) {
                 const replyMsg = `@${e.sender?.card || e.sender?.nickname || 'User'} ${e.user_id}您的图片已生成完成：\n\n原始提示词：${prompt}\n任务ID：${taskId}\n图片链接：${result.imageUrl}`;
-                
+
                 if (e.ws) {
                     // WebSocket连接，发送消息和图片
                     this.sendMessage(e.ws, 'mj', replyMsg);
@@ -489,7 +489,7 @@ MJP插件帮助：
                     await e.reply(replyMsg);
                     e.reply({ ...segment.image(result.imageUrl), origin: true });
                 }
-                
+
                 redis.set(`sf_plugin:MJ_Painting:lastTaskId:${e.user_id}`, taskId, { EX: 7 * 24 * 60 * 60 }); // 写入redis，有效期7天
             } else {
                 const errorMsg = '生成图片失败，请稍后重试。';
@@ -515,12 +515,12 @@ MJP插件帮助：
         // 确保content是字符串类型
         let messageContent = String(content);
         let imageUrl = null;
-        
+
         // 处理图片消息
         if (content.type === 'image') {
             // 如果是 Buffer 或 base64，直接使用
             if (content.file && (Buffer.isBuffer(content.file) || content.file.startsWith('data:image'))) {
-                const base64Data = Buffer.isBuffer(content.file) ? 
+                const base64Data = Buffer.isBuffer(content.file) ?
                     `data:image/jpeg;base64,${content.file.toString('base64')}` :
                     content.file;
                 messageContent = content.text || '';
@@ -611,7 +611,7 @@ MJP插件帮助：
             content: errorMessage,
             timestamp: new Date().getTime()
         };
-        
+
         try {
             ws.send(JSON.stringify(message));
         } catch (error) {
@@ -654,7 +654,7 @@ MJP插件帮助：
             logger.info('[MJ_Painting] Original image URL:', imgUrl)
 
             // 使用 uploadImage 获取直链
-            const uploadedUrl = await uploadImage(imgUrl)
+            const uploadedUrl = await uploadImage(imgUrl, config_date)
             logger.info('[MJ_Painting] Uploaded image URL:', uploadedUrl)
 
             if (!uploadedUrl) {
