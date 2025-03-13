@@ -487,7 +487,7 @@ export class SF_Painting extends plugin {
         let finalPrompt = await this.txt2img_generatePrompt(e, userPrompt, config_date);
 
         logger.mark("[sf插件]开始图片生成API调用")
-        this.sf_send_pic(e, finalPrompt, use_sf_key, config_date, param, canImg2Img, souce_image_base64, userPrompt)
+        this.sf_send_pic(e, finalPrompt, this.get_use_sf_key(config_date.sf_keys), config_date, param, canImg2Img, souce_image_base64, userPrompt)
         return true;
     }
 
