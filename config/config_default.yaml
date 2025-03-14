@@ -61,6 +61,7 @@ gg_model: "" # 对话API模型
 gg_ss_useContext: false # 是否启用上下文功能
 gg_maxHistoryLength: 20 # 最大历史记录条数
 gg_useSearch: true # 是否启用搜索功能
+gg_enableImageGeneration: false # 是否启用文生图功能
 gg_HistoryExTime: 12
 gg_isOnlyMaster: false # 默认配置是否仅限主人使用
 gg_APIList: [] # gg接口列表

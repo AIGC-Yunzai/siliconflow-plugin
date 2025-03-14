@@ -1092,7 +1092,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
         const isMaster = e.isMaster
 
         // 获取接口配置
-        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true
+        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false
 
         // 根据用户身份选择使用的接口索引
         const usingApiIndex = isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
@@ -1116,6 +1116,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
             forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             useSearch = (typeof apiConfig.useSearch !== 'undefined') ? apiConfig.useSearch : false
+            enableImageGeneration = (typeof apiConfig.enableImageGeneration !== 'undefined') ? apiConfig.enableImageGeneration : false
         } else {
             // 检查默认配置是否仅限主人使用
             if (!isMaster && config_date.gg_isOnlyMaster) {
@@ -1132,6 +1133,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
             forwardMessage = config_date.gg_forwardMessage
             quoteMessage = config_date.gg_quoteMessage
             useSearch = config_date.gg_useSearch
+            enableImageGeneration = config_date.gg_enableImageGeneration
         }
 
         // 处理引用消息,获取图片和文本
@@ -1219,10 +1221,11 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
             historyImages: historyImages.length > 0 ? historyImages : undefined,
             systemPrompt: systemPrompt,
             model: model,
-            useSearch: useSearch
+            useSearch: useSearch,
+            enableImageGeneration: enableImageGeneration
         }
 
-        const { answer, sources } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
+        const { answer, sources, imageBase64 } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
 
         // 保存对话记录
         if (config_date.gg_ss_useContext) {
@@ -1237,11 +1240,56 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
             await saveContext(e.user_id, {
                 role: 'assistant',
                 content: answer,
-                sources: sources
+                sources: sources,
+                imageBase64: imageBase64 ? [imageBase64] : undefined
             }, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
         }
 
         try {
+            // 如果有生成的图片，先发送图片
+            if (imageBase64) {
+                logger.mark('[sf插件] 检测到Gemini生成的图片')
+                
+                if (useMarkdown) {
+                    // 在markdown模式下，将图片融入到markdown内容中
+                    // 构建包含图片的markdown内容
+                    const imgMarkdown = `${answer}\n\n![生成的图片](${imageBase64})`;
+                    
+                    // 生成markdown图片
+                    const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, imgMarkdown);
+                    if (img) {
+                        await e.reply({ ...img, origin: true }, quoteMessage);
+                    } else {
+                        logger.error('[sf插件] markdown图片生成失败，使用普通方式发送');
+                        // 如果markdown生成失败，使用普通方式发送
+                        await e.reply([
+                            answer,
+                            { ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }
+                        ], quoteMessage);
+                    }
+                    
+                    // 构建转发消息，包含回答和来源
+                    if (forwardMessage) {
+                        const forwardMsg = [answer];
+                        if (sources && sources.length > 0) {
+                            forwardMsg.push('信息来源：');
+                            sources.forEach((source, index) => {
+                                forwardMsg.push(`${index + 1}. ${source.title}\n${source.url}`);
+                            });
+                        }
+                        e.reply(await common.makeForwardMsg(e, forwardMsg, `${e.sender.card || e.sender.nickname || e.user_id}的搜索结果`));
+                    }
+                } else {
+                    // 非markdown模式，使用普通方式发送
+                    await e.reply([
+                        answer,
+                        { ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }
+                    ], quoteMessage);
+                }
+                
+                return true;
+            }
+            
             if (useMarkdown) {
                 // 如果开启了markdown，生成图片并将回答放入转发消息
                 const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, answer);
@@ -1300,6 +1348,9 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
 
         // 从opt中获取useSearch，如果未定义则从config_date中获取
         const useSearch = typeof opt.useSearch !== 'undefined' ? opt.useSearch : config_date.gg_useSearch;
+        
+        // 从opt中获取enableImageGeneration，如果未定义则从config_date中获取
+        const enableImageGeneration = typeof opt.enableImageGeneration !== 'undefined' ? opt.enableImageGeneration : config_date.gg_enableImageGeneration || false;
 
         // 安全设置常量定义
         const SAFETY_SETTINGS_STRICT = [
@@ -1353,11 +1404,6 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
 
         // 构造请求体
         const requestBody = {
-            "systemInstruction": {
-                "parts": [{
-                    "text": systemPrompt
-                }]
-            },
             "contents": [],
             // 只要开启了搜索功能就添加搜索工具，不再限制模型，需要模型支持才可以联网
             "tools": useSearch ? [{
@@ -1366,6 +1412,25 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
             // 添加安全设置
             "safetySettings": getSafetySettings(opt.model || "")
         };
+        
+        // 如果启用了文生图功能，添加generation_config字段
+        if (enableImageGeneration) {
+            requestBody.generation_config = {
+                "response_modalities": [
+                    "TEXT",
+                    "IMAGE"
+                ]
+            };
+            // 文生图模式下不使用systemInstruction，将系统提示词放在用户输入中
+            logger.debug("[sf插件]启用文生图功能，系统提示词将放在用户输入中");
+        } else {
+            // 非文生图模式下使用systemInstruction
+            requestBody.systemInstruction = {
+                "parts": [{
+                    "text": systemPrompt
+                }]
+            };
+        }
 
         // 添加历史对话
         if (historyMessages.length > 0) {
@@ -1375,27 +1440,49 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
         // 添加当前用户输入和图片
         const currentParts = [];
 
-        // 添加文本和当前图片
-        if (opt.currentImages && opt.currentImages.length > 0) {
+        // 如果启用了文生图功能，将系统提示词放在用户输入中
+        if (enableImageGeneration) {
             currentParts.push({
-                "text": "当前引用的图片:\n" + input
+                "text": systemPrompt + "\n\n" + input
             });
-            opt.currentImages.forEach(image => {
+            // 如果有图片，添加图片
+            if (opt.currentImages && opt.currentImages.length > 0) {
                 currentParts.push({
-                    "inline_data": {
-                        "mime_type": "image/jpeg",
-                        "data": image
-                    }
+                    "text": "\n当前引用的图片:"
                 });
-            });
+                opt.currentImages.forEach(image => {
+                    currentParts.push({
+                        "inline_data": {
+                            "mime_type": "image/jpeg",
+                            "data": image
+                        }
+                    });
+                });
+            }
         } else {
+            // 先添加用户输入文本
             currentParts.push({
                 "text": input
             });
+            
+            // 如果有图片，添加图片
+            if (opt.currentImages && opt.currentImages.length > 0) {
+                currentParts.push({
+                    "text": "\n当前引用的图片:"
+                });
+                opt.currentImages.forEach(image => {
+                    currentParts.push({
+                        "inline_data": {
+                            "mime_type": "image/jpeg",
+                            "data": image
+                        }
+                    });
+                });
+            }
         }
 
         // 添加历史图片
-        if (opt.historyImages && opt.historyImages.length > 0) {
+        if (!enableImageGeneration && opt.historyImages && opt.historyImages.length > 0) {
             currentParts.push({
                 "text": "\n历史对话中的图片:"
             });
@@ -1426,11 +1513,21 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
             const data = await response.json()
 
             if (data?.candidates?.[0]?.content?.parts) {
-                // 合并所有text部分
-                let answer = data.candidates[0].content.parts
-                    .map(part => part.text)
-                    .join('');
-
+                // 处理返回的内容
+                let answer = "";
+                let imageBase64 = null;
+                
+                // 遍历所有parts
+                for (const part of data.candidates[0].content.parts) {
+                    if (part.text) {
+                        answer += part.text;
+                    } else if (part.inlineData && part.inlineData.data) {
+                        // 处理图片数据
+                        imageBase64 = "data:image/png;base64," + part.inlineData.data;
+                        logger.debug("[sf插件]检测到生成的图片数据");
+                    }
+                }
+                
                 // 获取信息来源（搜索结果）
                 let sources = [];
                 if (data.candidates?.[0]?.groundingMetadata?.groundingChunks) {
@@ -1448,6 +1545,11 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示�
 
                 if (sources.length > 0)
                     logger.debug("[sf插件]信息来源：" + JSON.stringify(sources))
+                
+                // 如果有图片数据，将其添加到answer中
+                if (imageBase64) {
+                    return { answer, sources, imageBase64 };
+                }
 
                 return { answer, sources };
             } else {
