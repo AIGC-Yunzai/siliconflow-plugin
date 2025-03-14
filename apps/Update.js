@@ -339,12 +339,12 @@ export class update extends plugin {
       const geminiModelsByFetch = await getGeminiModelsByFetch(sf.get_random_key(config_date.ggKey) || "sk-xuanku", config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev");
       if (geminiModelsByFetch && Array.isArray(geminiModelsByFetch)) {
         writeYaml(`${pluginRoot}/config/config/geminiModelsByFetch.yaml`, geminiModelsByFetch);
-        logger.info('[派蒙chatgpt自动任务] 成功更新 Gemini 模型列表');
+        logger.info('[sf插件自动任务] 成功更新 Gemini 模型列表');
       } else {
-        logger.warn('[派蒙chatgpt自动任务] 获取到的 Gemini 模型列表为空或格式不正确');
+        logger.warn('[sf插件自动任务] 获取到的 Gemini 模型列表为空或格式不正确');
       }
     } catch (err) {
-      logger.error(`[派蒙chatgpt自动任务]每日获取Gemini模型错误:\n` + err)
+      logger.error(`[sf插件自动任务] 每日获取Gemini模型错误:\n` + err)
     }
 
     return true
