@@ -847,6 +847,12 @@ export function supportGuoba() {
                 bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型",
               },
               {
+                field: "enableImageGeneration",
+                label: "文生图功能",
+                component: "Switch",
+                bottomHelpMessage: "开启后Gemini将支持文生图功能，可以生成图片，仅限gemini-2.0-flash-exp模型",
+              },
+              {
                 field: "useContext",
                 label: "上下文功能",
                 component: "Switch",
@@ -941,6 +947,12 @@ export function supportGuoba() {
           field: "gg_useSearch",
           label: "[#gg]搜索功能",
           bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型",
+          component: "Switch",
+        },
+        {
+          field: "gg_enableImageGeneration",
+          label: "[#gg]文生图功能",
+          bottomHelpMessage: "开启后Gemini将支持文生图功能，可以生成图片，仅限gemini-2.0-flash-exp模型",
           component: "Switch",
         },
         {
