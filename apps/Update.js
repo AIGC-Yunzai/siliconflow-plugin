@@ -2,6 +2,13 @@ import plugin from '../../../lib/plugins/plugin.js'
 import { createRequire } from 'module'
 import _ from 'lodash'
 import { Restart } from '../../other/restart.js'
+import {
+  readYaml,
+  writeYaml,
+  getGeminiModelsByFetch,
+} from '../utils/common.js'
+import { pluginRoot } from '../model/path.js'
+import Config from '../components/Config.js'
 
 const require = createRequire(import.meta.url)
 const { exec, execSync } = require('child_process')
@@ -13,7 +20,7 @@ let uping = false
  * 处理插件更新
  */
 export class update extends plugin {
-  constructor () {
+  constructor() {
     super({
       name: 'siliconflow-更新插件',
       event: 'message',
@@ -22,16 +29,29 @@ export class update extends plugin {
         {
           reg: '^#sf((插件)?(强制)?更新| update)$',
           fnc: 'update'
-        }
+        },
+        {
+          reg: '^#sf插件立即执行每日自动任务$',
+          fnc: 'sf_Auto_tasker',
+          permission: 'master'
+        },
       ]
     })
+    this.task = [
+      {
+        // 每日 0:11 am
+        cron: '0 11 0 * * ?',
+        name: 'sf插件自动任务',
+        fnc: this.sf_Auto_tasker.bind(this)
+      },
+    ]
   }
 
   /**
    * rule - 更新sf
    * @returns
    */
-  async update () {
+  async update() {
     if (!this.e.isMaster) return false
 
     /** 检查是否正在更新中 */
@@ -55,7 +75,7 @@ export class update extends plugin {
     }
   }
 
-  restart () {
+  restart() {
     new Restart(this.e).restart()
   }
 
@@ -64,7 +84,7 @@ export class update extends plugin {
    * @param {boolean} isForce 是否为强制更新
    * @returns
    */
-  async runUpdate (isForce) {
+  async runUpdate(isForce) {
     let command = 'git -C ./plugins/siliconflow-plugin/ pull --no-rebase'
     if (isForce) {
       command = `git -C ./plugins/siliconflow-plugin/ checkout . && ${command}`
@@ -107,7 +127,7 @@ export class update extends plugin {
    * @param {string} plugin 插件名称
    * @returns
    */
-  async getLog (plugin = '') {
+  async getLog(plugin = '') {
     let cm = `cd ./plugins/${plugin}/ && git log  -20 --oneline --pretty=format:"%h||[%cd]  %s" --date=format:"%m-%d %H:%M"`
 
     let logAll
@@ -148,7 +168,7 @@ export class update extends plugin {
    * @param {string} plugin 插件名称
    * @returns
    */
-  async getcommitId (plugin = '') {
+  async getcommitId(plugin = '') {
     let cm = `git -C ./plugins/${plugin}/ rev-parse --short HEAD`
 
     let commitId = await execSync(cm, { encoding: 'utf-8' })
@@ -162,7 +182,7 @@ export class update extends plugin {
    * @param {string} plugin 插件名称
    * @returns
    */
-  async getTime (plugin = '') {
+  async getTime(plugin = '') {
     let cm = `cd ./plugins/${plugin}/ && git log -1 --oneline --pretty=format:"%cd" --date=format:"%m-%d %H:%M"`
 
     let time = ''
@@ -183,7 +203,7 @@ export class update extends plugin {
    * @param {string} end 最后一条信息
    * @returns
    */
-  async makeForwardMsg (title, msg, end) {
+  async makeForwardMsg(title, msg, end) {
     let nickname = (this.e.bot ?? Bot).nickname
     if (this.e.isGroup) {
       let info = await (this.e.bot ?? Bot).getGroupMemberInfo?.(this.e.group_id, (this.e.bot ?? Bot).uin) || await (this.e.bot ?? Bot).pickMember?.(this.e.group_id, (this.e.bot ?? Bot).uin);
@@ -244,7 +264,7 @@ export class update extends plugin {
    * @param {string} stdout
    * @returns
    */
-  async gitErr (err, stdout) {
+  async gitErr(err, stdout) {
     let msg = '更新失败！'
     let errMsg = err.toString()
     stdout = stdout.toString()
@@ -288,7 +308,7 @@ export class update extends plugin {
    * @param {string} cmd git命令
    * @returns
    */
-  async execSync (cmd) {
+  async execSync(cmd) {
     return new Promise((resolve, reject) => {
       exec(cmd, { windowsHide: true }, (error, stdout, stderr) => {
         resolve({ error, stdout, stderr })
@@ -300,12 +320,33 @@ export class update extends plugin {
    * 检查git是否安装
    * @returns
    */
-  async checkGit () {
+  async checkGit() {
     let ret = await execSync('git --version', { encoding: 'utf-8' })
     if (!ret || !ret.includes('git version')) {
       await this.reply('请先安装git')
       return false
     }
+    return true
+  }
+
+  /** task任务: */
+  async sf_Auto_tasker() {
+    // 更新 gemini model
+    try {
+      const config_date = Config.getConfig()
+      const m = await import('./SF_Painting.js');
+      const sf = new m.SF_Painting();
+      const geminiModelsByFetch = await getGeminiModelsByFetch(sf.get_random_key(config_date.ggKey) || "sk-xuanku", config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev");
+      if (geminiModelsByFetch && Array.isArray(geminiModelsByFetch)) {
+        writeYaml(`${pluginRoot}/config/config/geminiModelsByFetch.yaml`, geminiModelsByFetch);
+        logger.info('[派蒙chatgpt自动任务] 成功更新 Gemini 模型列表');
+      } else {
+        logger.warn('[派蒙chatgpt自动任务] 获取到的 Gemini 模型列表为空或格式不正确');
+      }
+    } catch (err) {
+      logger.error(`[派蒙chatgpt自动任务]每日获取Gemini模型错误:\n` + err)
+    }
+
     return true
   }
 }

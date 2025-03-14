@@ -1020,7 +1020,7 @@ export class SF_Painting extends plugin {
 图片大小：${param.parameters.width}x${param.parameters.height}
 生成时间：${data.timings.inference.toFixed(2)}秒
 种子：${data.seed}
-${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示词[开|关]" : ""}`
+${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自动提示词[开|关]" : ""}`
                 const str_3 = `图片URL：${imageUrl}`
 
                 // 发送图片

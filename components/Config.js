@@ -2,6 +2,7 @@ import YAML from 'yaml'
 import fs from 'fs'
 import path from 'path'
 import { pluginRoot } from '../model/path.js'
+import lodash from 'lodash'
 
 // 递归获取目录下所有文件
 function getAllFiles(dir, fileList = []) {
@@ -22,12 +23,20 @@ class Config {
   getConfig() {
     try {
       // 读取主配置文件
-      const config_yaml = YAML.parse(
+      let config = YAML.parse(
         fs.readFileSync(`${pluginRoot}/config/config/config.yaml`, 'utf-8')
       )
 
-      // 创建新对象避免引用问题
-      let config = JSON.parse(JSON.stringify(config_yaml))
+      // 读取gemini额外的模型列表
+      const defaultArr = ['gemini-2.0-flash', 'gemini-exp-1206', 'gemini-2.0-flash-thinking-exp-01-21']
+      try {
+        const modelPath = `${pluginRoot}/config/config/geminiModelsByFetch.yaml`
+        const fetchModels = YAML.parse(fs.readFileSync(modelPath, 'utf-8')) || []
+        config.geminiModelsByFetch = lodash.uniq([...defaultArr, ...fetchModels]);
+      } catch (err) {
+        // logger.error('[sf插件]读取geminiModelsByFetch.yaml失败', err)
+        config.geminiModelsByFetch = defaultArr
+      }
 
       // 递归读取所有yaml文件
       const configDir = `${pluginRoot}/config/config/prompts`

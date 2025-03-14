@@ -831,7 +831,7 @@ export class DD_Painting extends plugin {
                             user_id: e.bot?.uin || e.self_id
                         },
                         {
-                            message: `✅ 绘画生成成功\n\n原始提示词: ${prompt}\n最终提示词: ${param.input}\n\n使用接口: ${apiConfig.remark || `接口${apiIndex}`}\n\n【参数详情】\n${paramText}${e.sfRuntime.isgeneratePrompt === undefined ? "\n\n可选参数：\n 自动提示词[开|关]" : ""}`,
+                            message: `✅ 绘画生成成功\n\n原始提示词: ${prompt}\n最终提示词: ${param.input}\n\n使用接口: ${apiConfig.remark || `接口${apiIndex}`}\n\n【参数详情】\n${paramText}${e.sfRuntime.isgeneratePrompt === undefined ? "\n\ntags的额外触发词：\n 自动提示词[开|关]" : ""}`,
                             nickname: e.bot?.nickname || 'DD绘画',
                             user_id: e.bot?.uin || e.self_id
                         }
@@ -840,12 +840,12 @@ export class DD_Painting extends plugin {
                 }
                 else {
                     await e.reply(segment.image(result.imageData))
-                    const msgx = await common.makeForwardMsg(e, [`✅ 绘画生成成功`, `原始提示词: ${prompt}\n最终提示词: ${param.input}`, `使用接口: ${apiConfig.remark || `接口${apiIndex}`}`, `【参数详情】\n${paramText}`, `${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示词[开|关]" : ""}`])
+                    const msgx = await common.makeForwardMsg(e, [`✅ 绘画生成成功`, `原始提示词: ${prompt}\n最终提示词: ${param.input}`, `使用接口: ${apiConfig.remark || `接口${apiIndex}`}`, `【参数详情】\n${paramText}`, `${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自动提示词[开|关]" : ""}`])
                     await e.reply(msgx)
                 }
             } else {
                 await e.reply(segment.image(result.imageData))
-                await e.reply(`✅ 绘画生成成功\n\n原始提示词: ${prompt}\n最终提示词: ${param.input}\n\n使用接口: ${apiConfig.remark || `接口${apiIndex}`}\n\n【参数详情】\n${paramText}${e.sfRuntime.isgeneratePrompt === undefined ? "\n\n可选参数：\n 自动提示词[开|关]" : ""}`)
+                await e.reply(`✅ 绘画生成成功\n\n原始提示词: ${prompt}\n最终提示词: ${param.input}\n\n使用接口: ${apiConfig.remark || `接口${apiIndex}`}\n\n【参数详情】\n${paramText}${e.sfRuntime.isgeneratePrompt === undefined ? "\n\ntags的额外触发词：\n 自动提示词[开|关]" : ""}`)
             }
 
             return true
@@ -945,12 +945,12 @@ export class DD_Painting extends plugin {
                 }
                 else {
                     await e.reply(segment.image(result.imageData))
-                    const msgx = await common.makeForwardMsg(e, [`✅ 绘画生成成功`, `原始提示词: ${msg}\n最终提示词: ${param.input}`, `使用接口: ${apiConfig.remark || (currentApi > 0 ? `接口${currentApi}` : '默认接口')}`, `【参数详情】\n${paramText}`, `${e.sfRuntime.isgeneratePrompt === undefined ? "可选参数：\n 自动提示词[开|关]" : ""}`])
+                    const msgx = await common.makeForwardMsg(e, [`✅ 绘画生成成功`, `原始提示词: ${msg}\n最终提示词: ${param.input}`, `使用接口: ${apiConfig.remark || (currentApi > 0 ? `接口${currentApi}` : '默认接口')}`, `【参数详情】\n${paramText}`, `${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自动提示词[开|关]" : ""}`])
                     await e.reply(msgx)
                 }
             } else {
                 await e.reply(segment.image(result.imageData))
-                await e.reply(`✅ 绘画生成成功\n\n原始提示词: ${msg}\n最终提示词: ${param.input}\n\n使用接口: ${apiConfig.remark || (currentApi > 0 ? `接口${currentApi}` : '默认接口')}\n\n【参数详情】\n${paramText}${e.sfRuntime.isgeneratePrompt === undefined ? "\n\n可选参数：\n 自动提示词[开|关]" : ""}`)
+                await e.reply(`✅ 绘画生成成功\n\n原始提示词: ${msg}\n最终提示词: ${param.input}\n\n使用接口: ${apiConfig.remark || (currentApi > 0 ? `接口${currentApi}` : '默认接口')}\n\n【参数详情】\n${paramText}${e.sfRuntime.isgeneratePrompt === undefined ? "\n\ntags的额外触发词：\n 自动提示词[开|关]" : ""}`)
             }
 
             return true

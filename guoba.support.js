@@ -3,6 +3,8 @@ import lodash from "lodash";
 import path from "path";
 import { pluginRoot } from "./model/path.js";
 
+const geminiModelsByFetch = Config.getConfig()?.geminiModelsByFetch
+
 export function supportGuoba() {
   return {
     pluginInfo: {
@@ -808,10 +810,11 @@ export function supportGuoba() {
                 field: "model",
                 label: "接口模型",
                 component: "Input",
-                bottomHelpMessage: "设置#gg[对话]的API接口模型",
+                bottomHelpMessage: '默认值：gemini-2.0-flash；推荐：gemini-exp-1206,gemini-2.0-flash-thinking-exp-01-21',
+                component: 'Select',
                 componentProps: {
-                  placeholder: 'gemini-2.0-flash-exp',
-                },
+                  options: geminiModelsByFetch.map(s => { return { label: s, value: s } })
+                }
               },
               {
                 field: "prompt",
@@ -910,11 +913,11 @@ export function supportGuoba() {
         {
           field: 'gg_model',
           label: '[#gg]gemini模型',
-          bottomHelpMessage: '设置gemini模型；留空则使用默认模型',
-          component: 'Input',
+          bottomHelpMessage: '默认值：gemini-2.0-flash；推荐：gemini-exp-1206,gemini-2.0-flash-thinking-exp-01-21',
+          component: 'Select',
           componentProps: {
-            placeholder: 'gemini-2.0-flash-exp',
-          },
+            options: geminiModelsByFetch.map(s => { return { label: s, value: s } })
+          }
         },
         {
           field: "gg_Prompt",
