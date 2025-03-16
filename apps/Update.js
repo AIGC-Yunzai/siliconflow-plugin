@@ -329,8 +329,8 @@ export class update extends plugin {
     return true
   }
 
-  /** task任务: */
-  async sf_Auto_tasker() {
+  /** task任务 */
+  async sf_Auto_tasker(e = null) {
     // 更新 gemini model
     try {
       const config_date = Config.getConfig()
@@ -343,8 +343,10 @@ export class update extends plugin {
       } else {
         logger.warn('[sf插件自动任务] 获取到的 Gemini 模型列表为空或格式不正确');
       }
+      if (e?.reply) e.reply('[sf插件自动任务] 成功更新 Gemini 模型列表');
     } catch (err) {
       logger.error(`[sf插件自动任务] 每日获取Gemini模型错误:\n` + err)
+      if (e?.reply) e.reply('[sf插件自动任务] 每日获取Gemini模型错误')
     }
 
     return true

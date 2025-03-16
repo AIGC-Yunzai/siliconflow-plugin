@@ -28,14 +28,18 @@ class Config {
       )
 
       // 读取gemini额外的模型列表
-      const defaultArr = ['gemini-2.0-flash', 'gemini-exp-1206', 'gemini-2.0-flash-thinking-exp-01-21']
+      const defaultGeminiModels = ['gemini-2.0-flash', 'gemini-exp-1206', 'gemini-2.0-flash-thinking-exp-01-21']
       try {
         const modelPath = `${pluginRoot}/config/config/geminiModelsByFetch.yaml`
-        const fetchModels = YAML.parse(fs.readFileSync(modelPath, 'utf-8')) || []
-        config.geminiModelsByFetch = lodash.uniq([...defaultArr, ...fetchModels]);
+        // 如果 modelPath 不存在则执行异步函数获取模型列表yaml
+        if (!fs.existsSync(modelPath)) {
+          this.call_sf_Auto_tasker()
+        }
+        const fetchGeminiModels = YAML.parse(fs.readFileSync(modelPath, 'utf-8')) || []
+        config.geminiModelsByFetch = lodash.uniq([...defaultGeminiModels, ...fetchGeminiModels]);
       } catch (err) {
         // logger.error('[sf插件]读取geminiModelsByFetch.yaml失败', err)
-        config.geminiModelsByFetch = defaultArr
+        config.geminiModelsByFetch = defaultGeminiModels
       }
 
       // 递归读取所有yaml文件
@@ -221,6 +225,13 @@ class Config {
       logger.error('写入config.yaml失败', err)
       return false
     }
+  }
+
+  // 下载gemini额外的模型列表
+  async call_sf_Auto_tasker() {
+    const m = await import('../apps/Update.js');
+    const update = new m.update();
+    update.sf_Auto_tasker();
   }
 }
 
