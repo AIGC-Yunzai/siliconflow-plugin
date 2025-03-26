@@ -810,7 +810,7 @@ export function supportGuoba() {
                 field: "model",
                 label: "接口模型",
                 component: "Input",
-                bottomHelpMessage: '默认值：gemini-2.0-flash；推荐：gemini-exp-1206,gemini-2.0-flash-thinking-exp-01-21',
+                bottomHelpMessage: '默认值：gemini-2.0-flash；推荐：gemini-exp-1206,gemini-2.0-flash-thinking-exp-01-21；可用模型每日自动更新，立即更新指令：#sf插件立即执行每日自动任务',
                 component: 'Select',
                 componentProps: {
                   options: geminiModelsByFetch.map(s => { return { label: s, value: s } })
@@ -913,7 +913,7 @@ export function supportGuoba() {
         {
           field: 'gg_model',
           label: '[#gg]gemini模型',
-          bottomHelpMessage: '默认值：gemini-2.0-flash；推荐：gemini-exp-1206,gemini-2.0-flash-thinking-exp-01-21',
+          bottomHelpMessage: '默认值：gemini-2.0-flash；推荐：gemini-exp-1206,gemini-2.0-flash-thinking-exp-01-21；可用模型每日自动更新，立即更新指令：#sf插件立即执行每日自动任务',
           component: 'Select',
           componentProps: {
             options: geminiModelsByFetch.map(s => { return { label: s, value: s } })
