@@ -116,6 +116,7 @@ export class SF_Painting extends plugin {
     // 处理SS模式消息
     async handleSSMessage(ws, content, images, userQQ = 'web_user') {
         try {
+            const type = "ss"
             let msg = content;
 
             // 获取配置
@@ -129,10 +130,10 @@ export class SF_Painting extends plugin {
 
             // 构造模拟的e对象
             const e = {
-                msg: `#ss ${msg}`,
+                msg: `#${type} ${msg}`,
                 img: images, // 直接使用传入的base64图片数组
                 reply: (content, quote = false) => {
-                    this.sendMessage(ws, 'ss', content, config);
+                    this.sendMessage(ws, type, content, config);
                 },
                 user_id: userQQ,
                 self_id: this.e?.self_id || Bot.uin,
@@ -142,6 +143,10 @@ export class SF_Painting extends plugin {
                 },
                 isMaster: true  // WebSocket用户默认为主人权限
             };
+
+            const apiList = config[`${type}_APIList`];
+            // 判断 是否开启 上下文功能
+            config.gg_ss_useContext = apiList[config[`${type}_usingAPI`]].useContext ? true : false;
 
             // 调用原有的sf_chat方法
             await this.sf_chat(e, config);
@@ -153,6 +158,7 @@ export class SF_Painting extends plugin {
     // 处理GG模式消息
     async handleGGMessage(ws, content, images, userQQ = 'web_user') {
         try {
+            const type = "gg"
             let msg = content;
 
             // 获取配置
@@ -166,10 +172,10 @@ export class SF_Painting extends plugin {
 
             // 构造模拟的e对象
             const e = {
-                msg: `#gg ${msg}`,
+                msg: `#${type} ${msg}`,
                 img: images, // 直接使用传入的base64图片数组
                 reply: (content, quote = false) => {
-                    this.sendMessage(ws, 'gg', content, config);
+                    this.sendMessage(ws, type, content, config);
                 },
                 user_id: userQQ,
                 self_id: this.e?.self_id || Bot.uin,
@@ -179,6 +185,10 @@ export class SF_Painting extends plugin {
                 },
                 isMaster: true  // WebSocket用户默认为主人权限
             };
+
+            const apiList = config[`${type}_APIList`];
+            // 判断 是否开启 上下文功能
+            config.gg_ss_useContext = apiList[config[`${type}_usingAPI`]].useContext ? true : false;
 
             // 调用原有的gg_chat方法
             await this.gg_chat(e, config);
@@ -1249,12 +1259,12 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             // 如果有生成的图片，先发送图片
             if (imageBase64) {
                 logger.mark('[sf插件] 检测到Gemini生成的图片')
-                
+
                 if (useMarkdown) {
                     // 在markdown模式下，将图片融入到markdown内容中
                     // 构建包含图片的markdown内容
                     const imgMarkdown = `${answer}\n\n![生成的图片](${imageBase64})`;
-                    
+
                     // 生成markdown图片
                     const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, imgMarkdown);
                     if (img) {
@@ -1267,7 +1277,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                             { ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }
                         ], quoteMessage);
                     }
-                    
+
                     // 构建转发消息，包含回答和来源
                     if (forwardMessage) {
                         const forwardMsg = [answer];
@@ -1286,10 +1296,10 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                         { ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }
                     ], quoteMessage);
                 }
-                
+
                 return true;
             }
-            
+
             if (useMarkdown) {
                 // 如果开启了markdown，生成图片并将回答放入转发消息
                 const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, answer);
@@ -1348,7 +1358,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
         // 从opt中获取useSearch，如果未定义则从config_date中获取
         const useSearch = typeof opt.useSearch !== 'undefined' ? opt.useSearch : config_date.gg_useSearch;
-        
+
         // 从opt中获取enableImageGeneration，如果未定义则从config_date中获取
         const enableImageGeneration = typeof opt.enableImageGeneration !== 'undefined' ? opt.enableImageGeneration : config_date.gg_enableImageGeneration || false;
 
@@ -1412,7 +1422,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             // 添加安全设置
             "safetySettings": getSafetySettings(opt.model || "")
         };
-        
+
         // 如果启用了文生图功能，添加generation_config字段
         if (enableImageGeneration) {
             requestBody.generation_config = {
@@ -1464,7 +1474,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             currentParts.push({
                 "text": input
             });
-            
+
             // 如果有图片，添加图片
             if (opt.currentImages && opt.currentImages.length > 0) {
                 currentParts.push({
@@ -1516,7 +1526,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 // 处理返回的内容
                 let answer = "";
                 let imageBase64 = null;
-                
+
                 // 遍历所有parts
                 for (const part of data.candidates[0].content.parts) {
                     if (part.text) {
@@ -1527,7 +1537,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                         logger.debug("[sf插件]检测到生成的图片数据");
                     }
                 }
-                
+
                 // 获取信息来源（搜索结果）
                 let sources = [];
                 if (data.candidates?.[0]?.groundingMetadata?.groundingChunks) {
@@ -1545,7 +1555,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
                 if (sources.length > 0)
                     logger.debug("[sf插件]信息来源：" + JSON.stringify(sources))
-                
+
                 // 如果有图片数据，将其添加到answer中
                 if (imageBase64) {
                     return { answer, sources, imageBase64 };
