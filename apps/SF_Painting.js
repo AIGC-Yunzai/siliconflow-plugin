@@ -146,7 +146,9 @@ export class SF_Painting extends plugin {
 
             const apiList = config[`${type}_APIList`];
             // 判断 是否开启 上下文功能
-            config.gg_ss_useContext = apiList[config[`${type}_usingAPI`]].useContext ? true : false;
+            const apiIndex = config[`${type}_usingAPI`] - 1;
+            if (apiIndex > -1)
+                config.gg_ss_useContext = apiList[apiIndex].useContext ? true : false;
 
             // 调用原有的sf_chat方法
             await this.sf_chat(e, config);
@@ -188,7 +190,9 @@ export class SF_Painting extends plugin {
 
             const apiList = config[`${type}_APIList`];
             // 判断 是否开启 上下文功能
-            config.gg_ss_useContext = apiList[config[`${type}_usingAPI`]].useContext ? true : false;
+            const apiIndex = config[`${type}_usingAPI`] - 1;
+            if (apiIndex > -1)
+                config.gg_ss_useContext = apiList[apiIndex].useContext ? true : false;
 
             // 调用原有的gg_chat方法
             await this.gg_chat(e, config);
@@ -1946,7 +1950,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 }
 
                 // 判断 是否开启 上下文功能
-                config_date.gg_ss_useContext = apiList[apiIndex].useContext ? true : false;
+                if (apiIndex > -1)
+                    config_date.gg_ss_useContext = apiList[apiIndex].useContext ? true : false;
 
                 e.msg = `#${type} ${content}`;
                 // 调用 ss 或 gg 对话函数
