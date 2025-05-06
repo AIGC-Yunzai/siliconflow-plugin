@@ -343,7 +343,7 @@ export class update extends plugin {
       } else {
         logger.warn('[sf插件自动任务] 获取到的 Gemini 模型列表为空或格式不正确');
       }
-      if (e?.reply) e.reply('[sf插件自动任务] 成功更新 Gemini 模型列表');
+      if (e?.reply) e.reply('[sf插件自动任务] 成功更新 Gemini 模型列表，请刷新锅巴');
     } catch (err) {
       logger.error(`[sf插件自动任务] 每日获取Gemini模型错误:\n` + err)
       if (e?.reply) e.reply('[sf插件自动任务] 每日获取Gemini模型错误')
