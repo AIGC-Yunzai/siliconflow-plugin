@@ -1770,7 +1770,10 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             }
             // 如果未指定系统类型，则使用默认配置(promptNum=0)
 
-            const result = await clearContextByCount(e.user_id, parseInt(match[6]) > 0 ? parseInt(match[6]) : 1, promptNum, systemType)
+            // 获取用户ID，如果是群聊则使用发送者的ID
+            const userId = e.isGroup ? e.sender.user_id : e.user_id
+
+            const result = await clearContextByCount(userId, parseInt(match[6]) > 0 ? parseInt(match[6]) : 1, promptNum, systemType)
             if (result.success) {
                 const systemName = systemType ? systemType.toUpperCase() : '默认'
                 e.reply(`[sf插件]成功删除你的${systemName}系统最近的 ${result.deletedCount} 条历史对话` + `${config_date.gg_ss_useContext ? '' : '\n（上下文功能未开启）'}`, true)
