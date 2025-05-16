@@ -993,6 +993,12 @@ export function supportGuoba() {
           },
         },
         {
+          field: "groupMultiChat",
+          label: "群聊多人对话",
+          bottomHelpMessage: "开启后群聊中的用户可以在同一话题中与AI聊天，每个群聊都有独立的对话上下文",
+          component: "Switch",
+        },
+        {
           label: '语音功能',
           component: 'SOFT_GROUP_BEGIN'
         },
