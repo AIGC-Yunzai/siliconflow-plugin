@@ -69,3 +69,4 @@ gg_usingAPI: 0 # 当前主人使用的gg接口索引
 # gg_userAPI: 0 # 当前用户使用的gg接口索引
 toggleAtMode: false
 zhilOnlyMaster: false
+groupMultiChat: false # 是否启用群聊多人对话功能

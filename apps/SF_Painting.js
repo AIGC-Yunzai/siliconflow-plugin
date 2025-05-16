@@ -41,7 +41,7 @@ export class SF_Painting extends plugin {
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考)',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考|群聊多人对话)',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 },
@@ -381,7 +381,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考)([\s\S]*)/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考|群聊多人对话)([\s\S]*)/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -452,6 +452,9 @@ export class SF_Painting extends plugin {
                     break
                 case 'ss转发思考':
                     config_date.ss_forwardThinking = value === '开'
+                    break
+                case '群聊多人对话':
+                    config_date.groupMultiChat = value === '开'
                     break
                 default:
                     return
@@ -592,6 +595,12 @@ export class SF_Painting extends plugin {
         // 根据用户身份选择使用的接口索引
         const usingApiIndex = isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)
 
+        // 处理群聊多人对话
+        let contextKey = e.user_id;
+        if (e.isGroup && config_date.groupMultiChat) {
+            contextKey = `group_${e.group_id}`;
+        }
+
         if (usingApiIndex > 0 && config_date.ss_APIList && config_date.ss_APIList[usingApiIndex - 1]) {
             // 使用接口列表中的配置
             const apiConfig = config_date.ss_APIList[usingApiIndex - 1]
@@ -704,7 +713,7 @@ export class SF_Painting extends plugin {
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_ss_useContext) {
-            historyMessages = await loadContext(e.user_id, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
+            historyMessages = await loadContext(contextKey, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
             logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -748,14 +757,15 @@ export class SF_Painting extends plugin {
         // 保存对话记录
         if (config_date.gg_ss_useContext) {
             // 保存用户消息
-            await saveContext(e.user_id, {
+            await saveContext(contextKey, {
                 role: 'user',
                 content: aiMessage,
                 extractedContent: extractedContent,
-                imageBase64: currentImages.length > 0 ? currentImages : undefined
+                imageBase64: currentImages.length > 0 ? currentImages : undefined,
+                sender: e.isGroup ? `${e.sender.card || e.sender.nickname}(${e.user_id})` : undefined
             }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
             // 保存AI回复
-            await saveContext(e.user_id, {
+            await saveContext(contextKey, {
                 role: 'assistant',
                 content: cleanedAnswer
             }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
@@ -805,9 +815,12 @@ export class SF_Painting extends plugin {
     async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}, historyMessages = [], e) {
         // 获取用户名并替换prompt中的变量
         const userName = e?.sender?.card || e?.sender?.nickname || "用户";
+        logger.mark(`[sf插件] 生成提示词 - 用户名: ${userName}`);
+        
         const systemPrompt = !forChat ?
             config_date.sf_textToPaint_Prompt :
             (opt.systemPrompt || config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese").replace(/{{user_name}}/g, userName);
+        //logger.mark(`[sf插件] 生成提示词 - 系统提示词: ${systemPrompt}`);
 
         // 构造请求体
         const requestBody = {
@@ -820,6 +833,7 @@ export class SF_Painting extends plugin {
             ],
             stream: false
         };
+        logger.mark(`[sf插件] 生成提示词 - 使用模型: ${requestBody.model}`);
 
         // 添加历史对话
         if (historyMessages && historyMessages.length > 0) {
@@ -1111,6 +1125,12 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         // 根据用户身份选择使用的接口索引
         const usingApiIndex = isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
 
+        // 处理群聊多人对话
+        let contextKey = e.user_id;
+        if (e.isGroup && config_date.groupMultiChat) {
+            contextKey = `group_${e.group_id}`;
+        }
+
         if (usingApiIndex > 0 && config_date.gg_APIList && config_date.gg_APIList[usingApiIndex - 1]) {
             // 使用接口列表中的配置
             const apiConfig = config_date.gg_APIList[usingApiIndex - 1]
@@ -1214,7 +1234,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_ss_useContext) {
-            historyMessages = await loadContext(e.user_id, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
+            historyMessages = await loadContext(contextKey, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
             logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length / 2} 条`)
         }
 
@@ -1244,14 +1264,15 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         // 保存对话记录
         if (config_date.gg_ss_useContext) {
             // 保存用户消息
-            await saveContext(e.user_id, {
+            await saveContext(contextKey, {
                 role: 'user',
                 content: aiMessage,
                 extractedContent: extractedContent,
-                imageBase64: currentImages.length > 0 ? currentImages : undefined
+                imageBase64: currentImages.length > 0 ? currentImages : undefined,
+                sender: e.isGroup ? `${e.sender.card || e.sender.nickname}(${e.user_id})` : undefined
             }, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
             // 保存AI回复
-            await saveContext(e.user_id, {
+            await saveContext(contextKey, {
                 role: 'assistant',
                 content: answer,
                 sources: sources,
@@ -1631,6 +1652,12 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         let targetId = e.at  // 优先获取@的用户
         let targetName = ''
 
+        // 处理群聊多人对话
+        let contextKey = e.user_id;
+        if (e.isGroup && config_date.groupMultiChat) {
+            contextKey = `group_${e.group_id}`;
+        }
+
         // 如果没有@用户，尝试从消息中提取QQ号
         if (!targetId && match[4]) {
             targetId = match[4]
@@ -1688,14 +1715,15 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         } else if (systemType === 'gg') {
             promptNum = isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
         }
-        // 如果未指定系统类型，则使用默认配置(promptNum=0)
 
         // 清除对话记录
-        const success = await clearUserContext(targetId, promptNum, systemType)
+        const success = await clearUserContext(contextKey, promptNum, systemType)
         if (success) {
             const contextStatus = config_date.gg_ss_useContext ? '' : '\n（上下文功能未开启）'
             const systemName = systemType ? systemType.toUpperCase() : '默认'
-            if (targetId === e.user_id) {
+            if (e.isGroup && config_date.groupMultiChat) {
+                await e.reply(`已结束当前群聊的${systemName}系统对话，历史记录已清除${contextStatus}`, true)
+            } else if (targetId === e.user_id) {
                 await e.reply(`已结束当前${systemName}系统对话，历史记录已清除${contextStatus}`, true)
             } else {
                 await e.reply(`已结束${targetName}的${systemName}系统对话，历史记录已清除${contextStatus}`, true)
