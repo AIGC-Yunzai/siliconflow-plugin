@@ -63,9 +63,55 @@ export async function saveContext(userId, message, promptNum = 0, type = '') {
 
         // 使用新的key构造函数,传入type参数
         const key = buildRedisKey(userId, Date.now(), promptNum, type)
+        logger.debug(`[Context] 保存${message.role === 'user' ? '用户' : 'AI'}消息`);
 
-        // 直接保存消息,不修改content结构
-        await redis.set(key, JSON.stringify(message), { EX: config.gg_HistoryExTime * 60 * 60 }) // x小时过期
+        // 如果是群聊多人对话模式，添加用户信息
+        if (config.groupMultiChat && message.role === 'user') {
+            const timestamp = new Date().toLocaleString('zh-CN', { 
+                year: 'numeric', 
+                month: '2-digit', 
+                day: '2-digit',
+                hour: '2-digit', 
+                minute: '2-digit', 
+                second: '2-digit',
+                hour12: false 
+            });
+            
+            // 使用传入的sender信息
+            const userName = message.sender || '未知用户';
+            
+            // 在消息内容前添加用户信息和时间
+            if (typeof message.content === 'string') {
+                message.content = `[${timestamp}] ${userName}：${message.content}`;
+            } else if (typeof message.content === 'object') {
+                // 如果是对象，检查是否有text属性
+                if (message.content.text) {
+                    message.content.text = `[${timestamp}] ${userName}：${message.content.text}`;
+                } else {
+                    // 如果没有text属性，将整个对象转换为字符串
+                    message.content = `[${timestamp}] ${userName}：${JSON.stringify(message.content)}`;
+                }
+            }
+        }
+
+        // 构造要保存的消息对象，只包含必要的信息
+        const messageToSave = {
+            role: message.role,
+            content: message.content,
+            imageBase64: message.imageBase64
+        };
+
+        // 记录要保存的消息内容
+        const content = typeof messageToSave.content === 'string' 
+            ? messageToSave.content 
+            : (messageToSave.content?.text || JSON.stringify(messageToSave.content));
+        logger.debug(`[Context] ${content}`);
+        if (messageToSave.imageBase64) {
+            logger.debug(`[Context] 包含${messageToSave.imageBase64.length}张图片`);
+        }
+
+        // 保存消息
+        await redis.set(key, JSON.stringify(messageToSave), { EX: config.gg_HistoryExTime * 60 * 60 }) // x小时过期
 
         // 获取该用户的所有消息
         const pattern = buildRedisPattern(userId, promptNum, type)
@@ -82,6 +128,7 @@ export async function saveContext(userId, message, promptNum = 0, type = '') {
             for (const key of keysToDelete) {
                 await redis.del(key)
             }
+            logger.debug(`[Context] 清理${keysToDelete.length}条过期消息`);
         }
 
         return true
@@ -102,6 +149,8 @@ export async function loadContext(userId, promptNum = 0, type = '') {
 
         // 使用新的pattern构造函数,传入type参数
         const pattern = buildRedisPattern(userId, promptNum, type)
+        logger.debug(`[Context] 加载历史记录`);
+        
         const keys = await redis.keys(pattern)
         keys.sort((a, b) => {
             const timeA = parseInt(a.split(':')[3])
@@ -116,13 +165,12 @@ export async function loadContext(userId, promptNum = 0, type = '') {
         for (const key of recentKeys) {
             const data = await redis.get(key)
             if (data) {
-                messages.push(JSON.parse(data))
+                const message = JSON.parse(data)
+                messages.push(message)
             }
         }
 
-        // 添加日志
-        logger.mark(`[Context] 成功加载上下文 - 消息数: ${messages.length}`);
-
+        logger.debug(`[Context] 加载${messages.length}条记录`);
         return messages
     } catch (error) {
         logger.error('[Context] 加载上下文失败:', error)
@@ -135,6 +183,8 @@ export async function clearContextByCount(userId, count = 1, promptNum = 0, type
     try {
         // 使用新的pattern构造函数,传入type参数
         const pattern = buildRedisPattern(userId, promptNum, type)
+        logger.debug(`[Context] 清除${count}条历史记录`);
+        
         const keys = await redis.keys(pattern)
         keys.sort((a, b) => {
             const timeA = parseInt(a.split(':')[3])
@@ -148,6 +198,7 @@ export async function clearContextByCount(userId, count = 1, promptNum = 0, type
             await redis.del(key)
         }
 
+        logger.debug(`[Context] 已清除${keysToDelete.length}条记录`);
         return {
             success: true,
             deletedCount: keysToDelete.length / 2
@@ -165,10 +216,14 @@ export async function clearContextByCount(userId, count = 1, promptNum = 0, type
 export async function clearUserContext(userId, promptNum = 0, type = '') {
     try {
         const pattern = buildRedisPattern(userId, promptNum, type)
+        logger.debug(`[Context] 清除用户所有记录`);
+        
         const keys = await redis.keys(pattern)
         for (const key of keys) {
             await redis.del(key)
         }
+        
+        logger.debug(`[Context] 已清除${keys.length}条记录`);
         return true
     } catch (error) {
         logger.error('[Context] 清除用户上下文失败:', error)
@@ -179,10 +234,12 @@ export async function clearUserContext(userId, promptNum = 0, type = '') {
 /** 清除所有用户的上下文记录 */
 export async function clearAllContext() {
     try {
+        logger.debug(`[Context] 清除所有记录`);
         const keys = await redis.keys('sfplugin:llm:*')
         for (const key of keys) {
             await redis.del(key)
         }
+        logger.debug(`[Context] 已清除${keys.length}条记录`);
         return true
     } catch (error) {
         logger.error('[Context] 清除所有上下文失败:', error)

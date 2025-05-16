@@ -710,15 +710,29 @@ export class SF_Painting extends plugin {
             logger.error(`[SF插件][URL处理]处理URL时发生错误，将使用原始消息继续处理: ${error.message}`)
         }
 
+        // 如果是图片模式，在发送给AI时将提取的内容加回去
+        const aiMessage = config_date.ss_useMarkdown ? msg + extractedContent : msg;
+
+        // 保存用户消息到历史记录
+        if (config_date.gg_ss_useContext) {
+            const senderValue = e.sender ? `${e.sender.card || e.sender.nickname}(${e.user_id})` : undefined;
+            
+            // 保存用户消息
+            await saveContext(contextKey, {
+                role: 'user',
+                content: aiMessage,
+                extractedContent: extractedContent,
+                imageBase64: currentImages.length > 0 ? currentImages : undefined,
+                sender: senderValue
+            }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
+        }
+
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_ss_useContext) {
             historyMessages = await loadContext(contextKey, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
-            logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length / 2} 条`)
+            logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length} 条`)
         }
-
-        // 如果是图片模式，在发送给AI时将提取的内容加回去
-        const aiMessage = config_date.ss_useMarkdown ? msg + extractedContent : msg;
 
         // 收集历史图片
         let historyImages = [];
@@ -754,17 +768,8 @@ export class SF_Painting extends plugin {
             }
         }
 
-        // 保存对话记录
+        // 保存AI回复
         if (config_date.gg_ss_useContext) {
-            // 保存用户消息
-            await saveContext(contextKey, {
-                role: 'user',
-                content: aiMessage,
-                extractedContent: extractedContent,
-                imageBase64: currentImages.length > 0 ? currentImages : undefined,
-                sender: e.isGroup ? `${e.sender.card || e.sender.nickname}(${e.user_id})` : undefined
-            }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
-            // 保存AI回复
             await saveContext(contextKey, {
                 role: 'assistant',
                 content: cleanedAnswer
@@ -815,7 +820,7 @@ export class SF_Painting extends plugin {
     async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}, historyMessages = [], e) {
         // 获取用户名并替换prompt中的变量
         const userName = e?.sender?.card || e?.sender?.nickname || "用户";
-        logger.mark(`[sf插件] 生成提示词 - 用户名: ${userName}`);
+        logger.debug(`[sf插件] 生成提示词 - 用户名: ${userName}`);
         
         const systemPrompt = !forChat ?
             config_date.sf_textToPaint_Prompt :
@@ -833,7 +838,7 @@ export class SF_Painting extends plugin {
             ],
             stream: false
         };
-        logger.mark(`[sf插件] 生成提示词 - 使用模型: ${requestBody.model}`);
+        logger.debug(`[sf插件] 生成提示词 - 使用模型: ${requestBody.model}`);
 
         // 添加历史对话
         if (historyMessages && historyMessages.length > 0) {
@@ -1231,15 +1236,29 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             logger.error(`[SF插件][URL处理]处理URL时发生错误，将使用原始消息继续处理: ${error.message}`)
         }
 
+        // 如果是图片模式，在发送给AI时将提取的内容加回去
+        const aiMessage = config_date.gg_useMarkdown ? msg + extractedContent : msg;
+
+        // 保存用户消息到历史记录
+        if (config_date.gg_ss_useContext) {
+            const senderValue = e.sender ? `${e.sender.card || e.sender.nickname}(${e.user_id})` : undefined;
+            
+            // 保存用户消息
+            await saveContext(contextKey, {
+                role: 'user',
+                content: aiMessage,
+                extractedContent: extractedContent,
+                imageBase64: currentImages.length > 0 ? currentImages : undefined,
+                sender: senderValue
+            }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
+        }
+
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_ss_useContext) {
             historyMessages = await loadContext(contextKey, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
-            logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length / 2} 条`)
+            logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length} 条`)
         }
-
-        // 如果是图片模式，在发送给AI时将提取的内容加回去
-        const aiMessage = config_date.gg_useMarkdown ? msg + extractedContent : msg;
 
         // 收集历史图片
         let historyImages = [];
@@ -1261,17 +1280,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
         const { answer, sources, imageBase64 } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
 
-        // 保存对话记录
+        // 保存AI回复
         if (config_date.gg_ss_useContext) {
-            // 保存用户消息
-            await saveContext(contextKey, {
-                role: 'user',
-                content: aiMessage,
-                extractedContent: extractedContent,
-                imageBase64: currentImages.length > 0 ? currentImages : undefined,
-                sender: e.isGroup ? `${e.sender.card || e.sender.nickname}(${e.user_id})` : undefined
-            }, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
-            // 保存AI回复
             await saveContext(contextKey, {
                 role: 'assistant',
                 content: answer,
