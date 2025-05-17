@@ -41,7 +41,7 @@ export class SF_Painting extends plugin {
                     fnc: 'sf_draw'
                 },
                 {
-                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考|群聊多人对话)',
+                    reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考|群聊多人对话|ss图片上传|gg图片上传)',
                     fnc: 'sf_setConfig',
                     permission: 'master'
                 },
@@ -381,7 +381,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考|群聊多人对话)([\s\S]*)/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考|群聊多人对话|ss图片上传|gg图片上传)([\s\S]*)/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -455,6 +455,12 @@ export class SF_Painting extends plugin {
                     break
                 case '群聊多人对话':
                     config_date.groupMultiChat = value === '开'
+                    break
+                case 'ss图片上传':
+                    config_date.ss_enableImageUpload = value === '开'
+                    break
+                case 'gg图片上传':
+                    config_date.gg_enableImageUpload = value === '开'
                     break
                 default:
                     return
@@ -590,7 +596,7 @@ export class SF_Painting extends plugin {
         const isMaster = e.isMaster
 
         // 获取接口配置
-        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false
+        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false, enableImageUpload = true
 
         // 根据用户身份选择使用的接口索引
         const usingApiIndex = isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)
@@ -620,6 +626,7 @@ export class SF_Painting extends plugin {
             forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             forwardThinking = (typeof apiConfig.forwardThinking !== 'undefined') ? apiConfig.forwardThinking : false
+            enableImageUpload = (typeof apiConfig.enableImageUpload !== 'undefined') ? apiConfig.enableImageUpload : true
         } else if (config_date.ss_apiBaseUrl) {
             // 检查默认配置是否仅限主人使用
             if (!isMaster && config_date.ss_isOnlyMaster) {
@@ -636,6 +643,7 @@ export class SF_Painting extends plugin {
             forwardMessage = config_date.ss_forwardMessage
             quoteMessage = config_date.ss_quoteMessage
             forwardThinking = config_date.ss_forwardThinking
+            enableImageUpload = config_date.ss_enableImageUpload
         } else if (config_date.sf_keys.length == 0) {
             await e.reply('请先设置API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
             return false
@@ -647,12 +655,13 @@ export class SF_Painting extends plugin {
             forwardMessage = config_date.ss_forwardMessage
             quoteMessage = config_date.ss_quoteMessage
             forwardThinking = config_date.ss_forwardThinking
+            enableImageUpload = config_date.ss_enableImageUpload
         }
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
         let currentImages = [];
-        if (e.img && e.img.length > 0) {
+        if (e.img && e.img.length > 0 && enableImageUpload) {
             // 记录获取到的图片链接
             logger.mark(`[SF插件][ss]获取到图片链接:\n${e.img.join('\n')}`)
             // 获取所有图片数据
@@ -737,11 +746,13 @@ export class SF_Painting extends plugin {
         // 收集历史图片
         let historyImages = [];
         // 从历史消息中收集图片
-        historyMessages.forEach(msg => {
-            if (msg.imageBase64) {
-                historyImages = historyImages.concat(msg.imageBase64);
-            }
-        });
+        if (enableImageUpload) {
+            historyMessages.forEach(msg => {
+                if (msg.imageBase64) {
+                    historyImages = historyImages.concat(msg.imageBase64);
+                }
+            });
+        }
 
         const opt = {
             currentImages: currentImages.length > 0 ? currentImages : undefined,
