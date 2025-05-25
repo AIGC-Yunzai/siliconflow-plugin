@@ -325,6 +325,19 @@ export class SF_Painting extends plugin {
     async sf_first_person_call(e) {
         // 读取配置
         const config = Config.getConfig()
+
+        // 检查是否为私聊且私聊AI对话未启用
+        if (!e.isGroup && !config.enablePrivateChatAI) {
+            logger.info('私聊模式AI对话未启用，不予理会')
+            return false
+        }
+
+        // 检查消息是否包含 "自动回复"
+        if (e.msg && e.msg.includes("自动回复")) {
+            logger.info("消息包含自动回复，不触发AI对话")
+            return false
+        }
+
         // 检查消息内容
         let msg = e.msg
         if (!msg || msg.startsWith('#')) {
@@ -545,7 +558,14 @@ export class SF_Painting extends plugin {
 
     /** At模式 */
     async atChatMode(e) {
+        // 读取配置
         const config = Config.getConfig()
+
+        // 检查是否为私聊且私聊AI对话未启用
+        if (!e.isGroup && !config.enablePrivateChatAI) {
+            logger.info('私聊模式AI对话未启用，不予理会')
+            return false
+        }
 
         if (!e.msg || e.msg?.startsWith('#'))
             return false
@@ -591,6 +611,12 @@ export class SF_Painting extends plugin {
         // 读取配置
         if (!config_date)
             config_date = Config.getConfig()
+
+        // 如果消息包含"自动回复"，则不处理
+        if (e.msg && e.msg.includes("自动回复")) {
+            logger.info("消息包含自动回复，不触发AI对话")
+            return false
+        }
 
         // 判断用户身份
         const isMaster = e.isMaster
@@ -1131,6 +1157,12 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         // 读取配置
         if (!config_date)
             config_date = Config.getConfig()
+
+        // 如果消息包含"自动回复"，则不处理
+        if (e.msg && e.msg.includes("自动回复")) {
+            logger.info("消息包含自动回复，不触发AI对话")
+            return false
+        }
 
         // 判断用户身份
         const isMaster = e.isMaster

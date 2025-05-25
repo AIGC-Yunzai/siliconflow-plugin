@@ -595,6 +595,12 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: "enablePrivateChatAI",
+          label: "私聊AI对话开关",
+          bottomHelpMessage: "开启/关闭私聊模式下的AI对话功能",
+          component: "Switch",
+        },
+        {
           field: "defaultCommand",
           label: "默认命令",
           bottomHelpMessage: "当触发BOT名字时使用的默认命令，可选：ss 或 gg",
