@@ -336,7 +336,7 @@ export class update extends plugin {
       const config_date = Config.getConfig()
       const m = await import('./SF_Painting.js');
       const sf = new m.SF_Painting();
-      const geminiModelsByFetch = await getGeminiModelsByFetch(sf.get_random_key(config_date.ggKey) || "sk-xuanku", config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev");
+      const geminiModelsByFetch = await getGeminiModelsByFetch(sf.get_random_key(config_date.ggKey) || sf.get_random_key(sf.ggKeyFreeDecode(config_date.ggKey_free)), config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev");
       if (geminiModelsByFetch && Array.isArray(geminiModelsByFetch)) {
         writeYaml(`${pluginRoot}/config/config/geminiModelsByFetch.yaml`, geminiModelsByFetch);
         logger.info('[sf插件自动任务] 成功更新 Gemini 模型列表');

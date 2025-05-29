@@ -391,6 +391,15 @@ export class SF_Painting extends plugin {
         return keysArr[randomIndex];
     }
 
+    /** Decode */
+    ggKeyFreeDecode(str) {
+        try {
+            return Buffer.from(str, 'base64').toString('utf8');
+        } catch (error) {
+            throw new Error(`ggKeyFreeDecode 失败: ${error.message}`);
+        }
+    }
+
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
@@ -751,7 +760,7 @@ export class SF_Painting extends plugin {
         // 保存用户消息到历史记录
         if (config_date.gg_ss_useContext) {
             const senderValue = e.sender ? `${e.sender.card || e.sender.nickname}(${e.user_id})` : undefined;
-            
+
             // 保存用户消息
             await saveContext(contextKey, {
                 role: 'user',
@@ -858,7 +867,7 @@ export class SF_Painting extends plugin {
         // 获取用户名并替换prompt中的变量
         const userName = e?.sender?.card || e?.sender?.nickname || "用户";
         logger.debug(`[sf插件] 生成提示词 - 用户名: ${userName}`);
-        
+
         const systemPrompt = !forChat ?
             config_date.sf_textToPaint_Prompt :
             (opt.systemPrompt || config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese").replace(/{{user_name}}/g, userName);
@@ -1191,7 +1200,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
             // 只有当APIList中的字段有值时才使用该值
             ggBaseUrl = apiConfig.apiBaseUrl || config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev"
-            ggKey = this.get_random_key(apiConfig.apiKey) || this.get_random_key(config_date.ggKey) || "sk-xuanku"
+            ggKey = this.get_random_key(apiConfig.apiKey) || this.get_random_key(config_date.ggKey) || this.get_random_key(this.ggKeyFreeDecode(config_date.ggKey_free))
             model = apiConfig.model || config_date.gg_model || "gemini-2.0-flash-exp"
             systemPrompt = apiConfig.prompt || config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
             useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
@@ -1208,7 +1217,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
             // 使用默认配置
             ggBaseUrl = config_date.ggBaseUrl || "https://bright-donkey-63.deno.dev"
-            ggKey = this.get_random_key(config_date.ggKey) || "sk-xuanku"
+            ggKey = this.get_random_key(config_date.ggKey) || this.get_random_key(this.ggKeyFreeDecode(config_date.ggKey_free))
             model = config_date.gg_model || "gemini-2.0-flash-exp"
             systemPrompt = config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
             useMarkdown = config_date.gg_useMarkdown
@@ -1285,7 +1294,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         // 保存用户消息到历史记录
         if (config_date.gg_ss_useContext) {
             const senderValue = e.sender ? `${e.sender.card || e.sender.nickname}(${e.user_id})` : undefined;
-            
+
             // 保存用户消息
             await saveContext(contextKey, {
                 role: 'user',
