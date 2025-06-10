@@ -1367,14 +1367,14 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
                     // 构建转发消息，包含回答和来源
                     if (forwardMessage) {
-                        const forwardMsg = [answer];
+                        const forwardMsg = [{ ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }, answer];
                         if (sources && sources.length > 0) {
                             forwardMsg.push('信息来源：');
                             sources.forEach((source, index) => {
                                 forwardMsg.push(`${index + 1}. ${source.title}\n${source.url}`);
                             });
                         }
-                        e.reply(await common.makeForwardMsg(e, forwardMsg, `${e.sender.card || e.sender.nickname || e.user_id}的搜索结果`));
+                        e.reply(await common.makeForwardMsg(e, forwardMsg, `回复${e.sender.card || e.sender.nickname || e.user_id}`));
                     }
                 } else {
                     // 非markdown模式，使用普通方式发送
@@ -1405,7 +1405,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                             forwardMsg.push(`${index + 1}. ${source.title}\n${source.url}`);
                         });
                     }
-                    e.reply(await common.makeForwardMsg(e, forwardMsg, `${e.sender.card || e.sender.nickname || e.user_id}的搜索结果`));
+                    e.reply(await common.makeForwardMsg(e, forwardMsg, `回复${e.sender.card || e.sender.nickname || e.user_id}`));
                 }
             } else {
                 // 如果没开启markdown，直接回复答案
