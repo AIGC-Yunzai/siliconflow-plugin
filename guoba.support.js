@@ -245,6 +245,12 @@ export function supportGuoba() {
                 },
               },
               {
+                field: "enableImageUpload",
+                label: "图片上传功能",
+                component: "Switch",
+                bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
+              },
+              {
                 field: "model",
                 label: "模型",
                 component: "Input",
@@ -439,12 +445,6 @@ export function supportGuoba() {
                 label: "仅限主人使用",
                 component: "Switch",
                 bottomHelpMessage: "开启后仅限主人使用此接口",
-              },
-              {
-                field: "enableImageUpload",
-                label: "图片上传功能",
-                component: "Switch",
-                bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
               },
             ],
           },
@@ -680,6 +680,12 @@ export function supportGuoba() {
                 bottomHelpMessage: "开启后回复时会引用原消息",
               },
               {
+                field: "enableImageUpload",
+                label: "图片上传功能",
+                component: "Switch",
+                bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
+              },
+              {
                 field: "forwardThinking",
                 label: "转发思考",
                 component: "Switch",
@@ -710,12 +716,6 @@ export function supportGuoba() {
                 label: "仅限主人使用",
                 component: "Switch",
                 bottomHelpMessage: "开启后仅限主人使用此接口",
-              },
-              {
-                field: "enableImageUpload",
-                label: "图片上传功能",
-                component: "Switch",
-                bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
               },
             ],
           },
@@ -783,6 +783,12 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: "ss_enableImageUpload",
+          label: "[#ss]图片上传功能",
+          bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
+          component: "Switch",
+        },
+        {
           field: "ss_forwardThinking",
           label: "[#ss]转发思考",
           bottomHelpMessage: "是否转发思考过程",
@@ -792,12 +798,6 @@ export function supportGuoba() {
           field: "ss_isOnlyMaster",
           label: "[#ss]仅限主人使用",
           bottomHelpMessage: "开启后默认配置仅限主人使用",
-          component: "Switch",
-        },
-        {
-          field: "ss_enableImageUpload",
-          label: "[#ss]图片上传功能",
-          bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
           component: "Switch",
         },
         {
@@ -875,6 +875,12 @@ export function supportGuoba() {
                 bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型",
               },
               {
+                field: "enableImageUpload",
+                label: "图片上传功能",
+                component: "Switch",
+                bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
+              },
+              {
                 field: "enableImageGeneration",
                 label: "文生图功能",
                 component: "Switch",
@@ -905,12 +911,6 @@ export function supportGuoba() {
                 label: "仅限主人使用",
                 component: "Switch",
                 bottomHelpMessage: "开启后仅限主人使用此接口",
-              },
-              {
-                field: "enableImageUpload",
-                label: "图片上传功能",
-                component: "Switch",
-                bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
               },
             ],
           },
@@ -984,15 +984,15 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
-          field: "gg_enableImageGeneration",
-          label: "[#gg]文生图功能",
-          bottomHelpMessage: "开启后Gemini将支持文生图功能，可以生成图片，仅限gemini-2.0-flash-exp模型",
-          component: "Switch",
-        },
-        {
           field: "gg_enableImageUpload",
           label: "[#gg]图片上传功能",
           bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
+          component: "Switch",
+        },
+        {
+          field: "gg_enableImageGeneration",
+          label: "[#gg]文生图功能",
+          bottomHelpMessage: "开启后Gemini将支持文生图功能，可以生成图片，仅限gemini-2.0-flash-exp模型",
           component: "Switch",
         },
         {
