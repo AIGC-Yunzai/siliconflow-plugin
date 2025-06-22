@@ -28,7 +28,7 @@ class Config {
       )
 
       // 读取gemini额外的模型列表
-      const defaultGeminiModels = ['gemini-2.0-flash', 'gemini-exp-1206', 'gemini-2.0-flash-thinking-exp-01-21', 'gemini-2.0-pro-exp']
+      const defaultGeminiModels = ['gemini-2.0-flash', 'gemini-exp-1206', 'gemini-2.0-flash-thinking-exp-01-21', 'gemini-2.5-flash', 'gemini-2.5-pro']
       try {
         const modelPath = `${pluginRoot}/config/config/geminiModelsByFetch.yaml`
         const fetchGeminiModels = YAML.parse(fs.readFileSync(modelPath, 'utf-8')) || []
