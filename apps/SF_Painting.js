@@ -1247,19 +1247,19 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                     // 尝试转换为base64
                     const base64Image = await url2Base64(imgUrl);
                     if (!base64Image) {
-                        logger.error(`[SF插件][gg]图片处理失败: ${imgUrl}`);
+                        logger.error(`[SF插件][gg]图片获取失败: ${imgUrl}`);
                         continue;
                     }
                     currentImages.push(base64Image);
                 } catch (error) {
-                    logger.error(`[SF插件][gg]处理图片时出错: ${error.message}`);
+                    logger.error(`[SF插件][gg]获取图片时出错: ${error.message}`);
                     continue;
                 }
             }
 
             // 如果所有图片都处理失败
             if (currentImages.length === 0 && e.img.length > 0) {
-                e.reply('处理图片失败，请重新发送', true);
+                e.reply('获取图片失败，请重新发送', true);
                 return false;
             }
         }
@@ -1449,54 +1449,67 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         // 从opt中获取enableImageGeneration，如果未定义则从config_date中获取
         const enableImageGeneration = typeof opt.enableImageGeneration !== 'undefined' ? opt.enableImageGeneration : config_date.gg_enableImageGeneration || false;
 
-        // 安全设置常量定义
-        const SAFETY_SETTINGS_STRICT = [
+        // // 安全设置常量定义
+        // const SAFETY_SETTINGS_STRICT = [
+        //     { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+        //     { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+        //     { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+        //     { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+        //     { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" }
+        // ];
+
+        // const SAFETY_SETTINGS_LOOSE = [
+        //     { category: "HARM_CATEGORY_HARASSMENT", threshold: "OFF" },
+        //     { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "OFF" },
+        //     { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "OFF" },
+        //     { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "OFF" },
+        //     { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "OFF" }
+        // ];
+
+        // // 定义模型到安全设置的映射
+        // const MODEL_SAFETY_SETTINGS = {
+        //     // 最宽松安全设置的模型
+        //     LOOSE_SAFETY_MODELS: new Set([
+        //         'gemini-1.5-flash-8b-latest', 'gemini-1.5-flash', 'gemini-1.5-flash-8b-001',
+        //         'gemini-1.5-flash-002', 'gemini-2.0-flash-001', 'gemini-2.0-flash',
+        //         'gemini-1.5-pro', 'gemini-1.5-flash-8b', 'gemini-1.5-pro-002',
+        //         'gemini-1.5-flash-latest', 'gemini-1.5-pro-latest', 'gemini-2.0-flash-exp',
+        //         'gemini-2.0-flash-lite-preview-02-05', 'gemini-2.0-pro-exp-02-05',
+        //         'gemini-2.0-pro-exp', 'gemini-2.0-flash-thinking-exp',
+        //         'gemini-2.0-flash-thinking-exp-01-21', 'gemini-exp-1206',
+        //         'gemini-2.0-flash-lite-preview', 'gemini-2.0-flash-thinking-exp-1219',
+        //     ]),
+        //     // 最严格安全设置的模型
+        //     STRICT_SAFETY_MODELS: new Set([
+        //         'gemini-pro-vision', 'gemini-1.5-flash-001-tuning', 'gemini-1.5-flash-8b-exp-0924',
+        //         'gemini-1.5-pro-001', 'gemini-1.0-pro', 'gemini-1.0-pro-vision-latest',
+        //         'gemini-1.0-pro-latest', 'gemini-pro', 'gemini-1.5-flash-8b-exp-0827',
+        //         'gemini-1.0-pro-001', 'gemini-1.5-flash-001'
+        //     ])
+        // };
+
+        // // 获取安全设置
+        // function getSafetySettings(modelName) {
+        //     if (MODEL_SAFETY_SETTINGS.LOOSE_SAFETY_MODELS.has(modelName)) {
+        //         logger.debug(`[sf插件]模型 ${modelName} 使用最宽松安全设置`);
+        //         return SAFETY_SETTINGS_LOOSE;
+        //     } else {
+        //         logger.debug(`[sf插件]模型 ${modelName} 使用最严格安全设置`);
+        //         return SAFETY_SETTINGS_STRICT;
+        //     }
+        // }
+        /** 安全设置常量New */
+        const SAFETY_SETTINGS_New = [
             { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
             { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
             { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
             { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
             { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" }
         ];
-
-        const SAFETY_SETTINGS_LOOSE = [
-            { category: "HARM_CATEGORY_HARASSMENT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "OFF" },
-            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "OFF" }
-        ];
-
-        // 定义模型到安全设置的映射
-        const MODEL_SAFETY_SETTINGS = {
-            // 最宽松安全设置的模型
-            LOOSE_SAFETY_MODELS: new Set([
-                'gemini-1.5-flash-8b-latest', 'gemini-1.5-flash', 'gemini-1.5-flash-8b-001',
-                'gemini-1.5-flash-002', 'gemini-2.0-flash-001', 'gemini-2.0-flash',
-                'gemini-1.5-pro', 'gemini-1.5-flash-8b', 'gemini-1.5-pro-002',
-                'gemini-1.5-flash-latest', 'gemini-1.5-pro-latest', 'gemini-2.0-flash-exp',
-                'gemini-2.0-flash-lite-preview-02-05', 'gemini-2.0-pro-exp-02-05',
-                'gemini-2.0-pro-exp', 'gemini-2.0-flash-thinking-exp',
-                'gemini-2.0-flash-thinking-exp-01-21', 'gemini-exp-1206',
-                'gemini-2.0-flash-lite-preview', 'gemini-2.0-flash-thinking-exp-1219'
-            ]),
-            // 最严格安全设置的模型
-            STRICT_SAFETY_MODELS: new Set([
-                'gemini-pro-vision', 'gemini-1.5-flash-001-tuning', 'gemini-1.5-flash-8b-exp-0924',
-                'gemini-1.5-pro-001', 'gemini-1.0-pro', 'gemini-1.0-pro-vision-latest',
-                'gemini-1.0-pro-latest', 'gemini-pro', 'gemini-1.5-flash-8b-exp-0827',
-                'gemini-1.0-pro-001', 'gemini-1.5-flash-001'
-            ])
-        };
-
-        // 获取安全设置
+        // 设置安全设置
         function getSafetySettings(modelName) {
-            if (MODEL_SAFETY_SETTINGS.LOOSE_SAFETY_MODELS.has(modelName)) {
-                logger.debug(`[sf插件]模型 ${modelName} 使用最宽松安全设置`);
-                return SAFETY_SETTINGS_LOOSE;
-            } else {
-                logger.debug(`[sf插件]模型 ${modelName} 使用最严格安全设置`);
-                return SAFETY_SETTINGS_STRICT;
-            }
+            // 现在gemini已经统一设置了，只用 BLOCK_NONE
+            return SAFETY_SETTINGS_New;
         }
 
         // 构造请求体
