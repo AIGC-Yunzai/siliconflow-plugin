@@ -822,7 +822,7 @@ export function supportGuoba() {
                 component: "Input",
                 bottomHelpMessage: "设置#gg[对话]的API接口地址，对https://generativelanguage.googleapis.com 反代",
                 componentProps: {
-                  placeholder: 'https://bright-donkey-63.deno.dev',
+                  placeholder: 'https://gemini.maliya.top',
                 },
               },
               {
@@ -932,7 +932,7 @@ export function supportGuoba() {
           bottomHelpMessage: "设置#gg[对话] 的API接口地址，对https://generativelanguage.googleapis.com 反代；留空则使用内置地址",
           component: "Input",
           componentProps: {
-            placeholder: 'https://bright-donkey-63.deno.dev',
+            placeholder: 'https://gemini.maliya.top',
           },
         },
         {
