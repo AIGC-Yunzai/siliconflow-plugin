@@ -11,6 +11,7 @@
   - 🗣️ 语音合成：集成Fishaudio的高质量TTS服务
   - 📊 资源管理：支持多key负载均衡，提供图片直链获取等功能
   - 🔗 链接处理：自动提取和处理消息中的URL
+  - 📱 视频解析：支持抖音、哔哩哔哩视频解析
   - ⚡ WebSocket：支持WebSocket与前端通信实现实时对话与绘图，详情看[前端地址](https://sf.maliya.top)，[部署教程](https://github.com/AIGC-Yunzai/SF-WEB)
 
 > [!TIP]
@@ -68,6 +69,20 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 - [MJ和SD Prompt生成器相关合集](https://waytoagi.feishu.cn/wiki/TQogw5uIziB4fykbGhSciaQfndm?table=tbl5kMFjDDdeYoAt&view=vew8AJm3cI) 🍑
 
 </details>
+
+
+#### 3. 安装 Python 与依赖（可选）
+
+- `抖音解析` 功能将调用 Python 对 抖音视频进行解析
+
+```sh
+# Ubuntu 中安装 Python 的方法
+sudo apt update
+sudo apt install python3  # 安装最新 Python 3
+sudo apt install python3-venv python3-pip  # 安装虚拟环境和 pip
+# 安装依赖（依赖约5MB）
+pip install aiohttp
+```
 
 ## 插件配置
 
