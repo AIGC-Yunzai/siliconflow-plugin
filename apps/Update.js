@@ -27,7 +27,7 @@ export class update extends plugin {
       priority: 1009,
       rule: [
         {
-          reg: '^#sf((插件)?(强制)?更新| update)$',
+          reg: '^#sf((插件)?(强制)?更新| update)(\s*(dev|DEV|main|MAIN))?$',
           fnc: 'update'
         },
         {
@@ -64,9 +64,13 @@ export class update extends plugin {
     if (!(await this.checkGit())) return
 
     const isForce = this.e.msg.includes('强制')
+    // 检查是否为dev分支更新
+    const isDevUpdate = this.e.msg.includes('dev') || this.e.msg.includes('DEV')
+    // 检查是否为dev分支更新
+    const isMainUpdate = this.e.msg.includes('main') || this.e.msg.includes('MAIN')
 
     /** 执行更新 */
-    await this.runUpdate(isForce)
+    await this.runUpdate(isForce, isDevUpdate, isMainUpdate)
 
     /** 是否需要重启 */
     if (this.isUp) {
@@ -82,12 +86,23 @@ export class update extends plugin {
   /**
    * 更新
    * @param {boolean} isForce 是否为强制更新
+   * @param {boolean} isDevUpdate 是否为更新 dev
+   * @param {boolean} isMainUpdate 是否为更新 main
    * @returns
    */
-  async runUpdate(isForce) {
+  async runUpdate(isForce, isDevUpdate, isMainUpdate) {
     let command = 'git -C ./plugins/siliconflow-plugin/ pull --no-rebase'
-    if (isForce) {
-      command = `git -C ./plugins/siliconflow-plugin/ checkout . && ${command}`
+
+    if (isForce && isDevUpdate) {
+      // dev分支强制更新
+      command = 'git -C ./plugins/siliconflow-plugin/ reset --hard HEAD && git -C ./plugins/siliconflow-plugin/ clean -fd && git -C ./plugins/siliconflow-plugin/ checkout dev && git -C ./plugins/siliconflow-plugin/ fetch --all && git -C ./plugins/siliconflow-plugin/ reset --hard origin/dev'
+      this.e.reply('正在执行dev分支强制更新操作，请稍等')
+    } else if (isForce && isMainUpdate) {
+      // main分支强制更新
+      command = 'git -C ./plugins/siliconflow-plugin/ reset --hard HEAD && git -C ./plugins/siliconflow-plugin/ clean -fd && git -C ./plugins/siliconflow-plugin/ checkout main && git -C ./plugins/siliconflow-plugin/ fetch --all && git -C ./plugins/siliconflow-plugin/ reset --hard origin/main'
+      this.e.reply('正在执行main分支强制更新操作，请稍等')
+    } else if (isForce) {
+      command = `git -C ./plugins/siliconflow-plugin/ reset --hard HEAD && git -C ./plugins/siliconflow-plugin/ clean -fd && git -C ./plugins/siliconflow-plugin/ checkout . && ${command}`
       this.e.reply('正在执行强制更新操作，请稍等')
     } else {
       this.e.reply('正在执行更新操作，请稍等')
@@ -108,9 +123,9 @@ export class update extends plugin {
     let time = await this.getTime('siliconflow-plugin')
 
     if (/(Already up[ -]to[ -]date|已经是最新的)/.test(ret.stdout)) {
-      await this.reply(`siliconflow-plugin已经是最新版本\n最后更新时间：${time}`)
+      await this.reply(`siliconflow-plugin${isDevUpdate ? '(dev分支)' : ''}${isMainUpdate ? '(main分支)' : ''}已经是最新版本\n最后更新时间：${time}`)
     } else {
-      await this.reply(`siliconflow-plugin\n最后更新时间：${time}`)
+      await this.reply(`siliconflow-plugin${isDevUpdate ? '(dev分支)' : ''}${isMainUpdate ? '(main分支)' : ''}\n最后更新时间：${time}`)
       this.isUp = true
       /** 获取siliconflow-plugin的更新日志 */
       let log = await this.getLog('siliconflow-plugin')
