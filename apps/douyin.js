@@ -35,7 +35,7 @@ export class Douyin_Video extends plugin {
                 for (const item of result.data) {
                     console.log(`   处理视频: ${item.title} - ${item.author}`);
                     // 构建信息文本
-                    const infoText = `标题: ${item.title}\n作者: ${item.author}\n日期: ${item.date}\n视频ID: ${item.video_id}`;
+                    const infoText = `标题: ${item.title}\n作者: ${item.author}\n日期: ${item.date}\n${item.is_gallery ? "图集" : "视频"}ID: ${item.video_id}`;
                     try {
                         // 如果是图集
                         if (item.is_gallery && item.images && item.images.length > 0) {
@@ -43,13 +43,12 @@ export class Douyin_Video extends plugin {
                             if (item.images.length > 3) {
                                 // 先发送封面和基本信息
                                 if (item.cover_url) {
-                                    await e.reply([segment.image(item.cover_url), `📸 图集解析成功\n${infoText}\n\n图片数量：${item.images.length}张`], true);
+                                    await e.reply([segment.image(item.cover_url), `${infoText}\n图数: ${item.images.length}张`], true);
                                 }
                                 // 创建合并转发消息
                                 const forwardMsgs = [
-                                    `📸 抖音图集 - ${item.title}`,
-                                    `作者：${item.author}`,
-                                    `共 ${item.images.length} 张图片`
+                                    `${item.title}`,
+                                    `作者: ${item.author}\n日期: ${item.date}\n图数: ${item.images.length} 张`
                                 ];
                                 // 添加所有图片到合并转发
                                 item.images.forEach((img, index) => {
