@@ -106,6 +106,7 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 - [Fish-Audio](https://fish.audio)：Brand new TTS solution
 - [vits-plugin](https://github.com/erzaozi/vits-plugin)：一个适用于 Yunzai 系列机器人框架 的的 AI 语音合成插件，让你能够在机器人中使用 AI 语音合成功能；Fishaudio语音同传的方式绝大部分参考了该项目的实现方法，Fish-Audio.json也是直接用的该项目的，很是感谢！
 - [midjourney-proxy](https://github.com/trueai-org/midjourney-proxy)：一个开源的MJ代理项目，同时提供了免费的公益API站点，让更多人能够体验AI绘画的乐趣！
+- [Aliorpse](https://gitee.com/Aliorpse/Yunzai-AliorpsePlugins/blob/master/bilitv.js)：Aliorpse 开发的云崽上轻量，快速的b站解析插件！
 
 ## 许可证
 

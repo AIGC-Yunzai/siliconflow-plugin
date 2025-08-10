@@ -1154,18 +1154,31 @@ export function supportGuoba() {
           },
         },
         {
-          component: "Divider",
-          label: "视频解析",
-          componentProps: {
-            orientation: "left",
-            plain: true,
-          },
+          label: '视频解析',
+          component: 'SOFT_GROUP_BEGIN'
         },
         {
           field: "douyinTV",
           label: "抖音解析",
           bottomHelpMessage: "启用抖音解析；需要安装 Python3 和 依赖 pip install aiohttp ；此开关重启生效",
           component: "Switch",
+        },
+        {
+          field: 'turnOnBilitv',
+          label: 'b站解析',
+          bottomHelpMessage: '开启b站后，将会解析并发送bilibili链接或小程序关联的视频；此开关重启生效',
+          component: 'Switch'
+        },
+        {
+          field: 'bilitv_max_duration_min',
+          label: '视频最大时长',
+          bottomHelpMessage: 'b站解析的视频超过该时长的视频将不会解析，防止爆内存重启；此开关重启生效',
+          helpMessage: '单位：分钟',
+          component: 'InputNumber',
+          componentProps: {
+            min: 0,
+            step: 1
+          }
         },
         {
           label: '常见问题',
