@@ -97,17 +97,15 @@ pip install aiohttp
 
 请使用 `#sf帮助` 获取完整帮助
 
-- [x] 接入多项免费画图/语言模型
-- [x] 支持图生图
-- [x] 多keys同时并发
-- [x] 接入MJ绘图
-- [x] 接入Fishaudio语音合成
-- [x] 支持图片直链获取
-- [X] #ss 对话 MD 图片输出
-- [X] #gg 对话实现实时搜索功能
-- [X] 对话支持历史记录、获取用户昵称，结合 MD 输出以获取沉浸式角色扮演体验
+- [x] `#sf绘画[tags][引用图片]` 使用sf接口绘画
+- [x] `#mjp[tags]` 使用MJ接口绘画
+- [x] `#gg[gemini提问/实时搜索]`
+- [x] `#ss[自定义gpt-api接口提问]`
+- [x] 自动 Fishaudio 语音合成
+- [x] `#直链[引用图片]` 图片直链获取
 - [X] 支持接口列表，方便快速切换预设，预设具有独立的上下文
-- [X] 支持 WebSocket 与前端通信实现实时对话与绘图，详情看[前端地址](https://sf.maliya.top)，[部署教程](https://github.com/AIGC-Yunzai/SF-WEB)
+  - 例如自定义一个生成图片prompt的命令 `#gtag 一个美丽的女孩`
+- [X] 自动抖音/b站视频解析
 - [ ] TODO..
 
 ## 支持与贡献
