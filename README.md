@@ -11,6 +11,7 @@
   - 🗣️ 语音合成：集成Fishaudio的高质量TTS服务
   - 📊 资源管理：支持多key负载均衡，提供图片直链获取等功能
   - 🔗 链接处理：自动提取和处理消息中的URL
+  - 📱 视频解析：支持抖音、哔哩哔哩视频解析
   - ⚡ WebSocket：支持WebSocket与前端通信实现实时对话与绘图，详情看[前端地址](https://sf.maliya.top)，[部署教程](https://github.com/AIGC-Yunzai/SF-WEB)
 
 > [!TIP]
@@ -69,6 +70,20 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 
 </details>
 
+
+#### 3. 安装 Python 与依赖（可选）
+
+- `抖音解析` 功能将调用 Python 对 抖音视频进行解析
+
+```sh
+# Ubuntu 中安装 Python 的方法
+sudo apt update
+sudo apt install python3  # 安装最新 Python 3
+sudo apt install python3-venv python3-pip  # 安装虚拟环境和 pip
+# 安装依赖（依赖约5MB）
+pip install aiohttp
+```
+
 ## 插件配置
 
 > [!WARNING]
@@ -106,6 +121,7 @@ curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
 - [Fish-Audio](https://fish.audio)：Brand new TTS solution
 - [vits-plugin](https://github.com/erzaozi/vits-plugin)：一个适用于 Yunzai 系列机器人框架 的的 AI 语音合成插件，让你能够在机器人中使用 AI 语音合成功能；Fishaudio语音同传的方式绝大部分参考了该项目的实现方法，Fish-Audio.json也是直接用的该项目的，很是感谢！
 - [midjourney-proxy](https://github.com/trueai-org/midjourney-proxy)：一个开源的MJ代理项目，同时提供了免费的公益API站点，让更多人能够体验AI绘画的乐趣！
+- [Aliorpse](https://gitee.com/Aliorpse/Yunzai-AliorpsePlugins/blob/master/bilitv.js)：Aliorpse 开发的云崽上轻量，快速的b站解析插件！
 
 ## 许可证
 
