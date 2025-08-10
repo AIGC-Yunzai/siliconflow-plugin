@@ -1154,6 +1154,20 @@ export function supportGuoba() {
           },
         },
         {
+          component: "Divider",
+          label: "视频解析",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "douyinTV",
+          label: "抖音解析",
+          bottomHelpMessage: "启用抖音解析；需要安装 Python3 和 依赖 pip install aiohttp ；此开关重启生效",
+          component: "Switch",
+        },
+        {
           label: '常见问题',
           component: 'SOFT_GROUP_BEGIN'
         },
