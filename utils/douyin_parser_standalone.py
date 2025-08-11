@@ -194,34 +194,49 @@ def format_result_simple(result: Dict) -> Dict:
 
 async def main():
     """主函数 - 用于命令行调用"""
-    if len(sys.argv) < 2:
-        print("用法: python douyin_parser.py <抖音链接或包含链接的文本>")
-        sys.exit(1)
-    
-    input_text = sys.argv[1]
-    parser = DouyinParser()
-    
     try:
-        results = await parser.parse_text(input_text)
-        if not results:
-            print(json.dumps({"error": "未找到有效的抖音链接"}, ensure_ascii=False))
-            return
+        if len(sys.argv) < 2:
+            print(json.dumps({
+                "success": False,
+                "error": "用法: python douyin_parser.py <抖音链接或包含链接的文本>"
+            }, ensure_ascii=False))
+            sys.exit(1)
         
-        # 格式化结果
-        formatted_results = [format_result_simple(result) for result in results]
+        input_text = sys.argv[1]
+        parser = DouyinParser()
         
-        # 输出JSON结果
-        print(json.dumps({
-            "success": True,
-            "count": len(formatted_results),
-            "data": formatted_results
-        }, ensure_ascii=False, indent=2))
-        
+        try:
+            results = await parser.parse_text(input_text)
+            if not results:
+                print(json.dumps({
+                    "success": False,
+                    "error": "未找到有效的抖音链接"
+                }, ensure_ascii=False))
+                return
+            
+            # 格式化结果
+            formatted_results = [format_result_simple(result) for result in results]
+            
+            # 输出JSON结果
+            print(json.dumps({
+                "success": True,
+                "count": len(formatted_results),
+                "data": formatted_results
+            }, ensure_ascii=False, indent=2))
+            
+        except Exception as e:
+            print(json.dumps({
+                "success": False,
+                "error": f"解析失败: {str(e)}"
+            }, ensure_ascii=False))
+            
     except Exception as e:
+        # 捕获所有未处理的异常
         print(json.dumps({
             "success": False,
-            "error": str(e)
+            "error": f"程序异常: {str(e)}"
         }, ensure_ascii=False))
+        sys.exit(1)
 
 
 if __name__ == "__main__":

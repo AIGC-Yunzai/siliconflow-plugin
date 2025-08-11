@@ -4,7 +4,7 @@ import { Douyin_parser } from '../utils/douyin_parser_nodejs.js'
 import fetch from 'node-fetch'
 import common from '../../../lib/common/common.js'
 
-const { douyinTV_on, douyin_maxSizeMB } = Config.getConfig();
+const { douyinTV, douyin_maxSizeMB } = Config.getConfig();
 
 export class Douyin_Video extends plugin {
     constructor() {
@@ -23,10 +23,10 @@ export class Douyin_Video extends plugin {
     }
 
     async douyinParser(e) {
-        if (!douyinTV_on) {
+        if (!douyinTV) {
             return false;
         }
-        // logger.info('douyinParser 收到命令:', e.msg);
+        logger.info('[sf插件]抖音解析:', e.msg);
 
         try {
             const result = await Douyin_parser.parse(e.msg);

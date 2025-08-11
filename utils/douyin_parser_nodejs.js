@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+import { spawn } from 'child_process';
 import path from "path";
 import { pluginRoot } from "../model/path.js";
 
@@ -9,6 +9,21 @@ class DouyinParser {
     }
 
     /**
+     * 转义shell特殊字符
+     * @param {string} str - 需要转义的字符串
+     * @returns {string} 转义后的字符串
+     */
+    escapeShellArg(str) {
+        if (process.platform === 'win32') {
+            // Windows下的转义处理
+            return '"' + str.replace(/"/g, '\\"').replace(/\\/g, '\\\\') + '"';
+        } else {
+            // Unix/Linux下的转义处理
+            return "'" + str.replace(/'/g, "'\"'\"'") + "'";
+        }
+    }
+
+    /**
      * 解析抖音链接
      * @param {string} text - 包含抖音链接的文本
      * @returns {Promise<Object>} 解析结果
@@ -16,19 +31,49 @@ class DouyinParser {
     async parse(text) {
         return new Promise((resolve, reject) => {
             try {
-                // 使用 execSync 执行 Python 脚本
-                try {
-                    const stdout = execSync(`${this.pythonPath} "${this.scriptPath}" "${text}"`, {
-                        encoding: 'utf-8',
-                        windowsHide: true,
-                        timeout: 30000 // 30秒超时
-                    });
+                // 使用spawn代替execSync，避免shell解析问题
+                const child = spawn(this.pythonPath, [this.scriptPath, text], {
+                    stdio: ['pipe', 'pipe', 'pipe'],
+                    windowsHide: true
+                });
 
-                    const result = JSON.parse(stdout);
-                    resolve(result);
-                } catch (error) {
-                    reject(new Error(`Python script execution failed: ${error.message}`));
-                }
+                let stdout = '';
+                let stderr = '';
+
+                // 设置超时
+                const timeout = setTimeout(() => {
+                    child.kill();
+                    reject(new Error('Python script execution timeout (30s)'));
+                }, 30000);
+
+                child.stdout.on('data', (data) => {
+                    stdout += data.toString();
+                });
+
+                child.stderr.on('data', (data) => {
+                    stderr += data.toString();
+                });
+
+                child.on('close', (code) => {
+                    clearTimeout(timeout);
+
+                    if (code !== 0) {
+                        reject(new Error(`Python script execution failed with code ${code}: ${stderr}`));
+                        return;
+                    }
+
+                    try {
+                        const result = JSON.parse(stdout);
+                        resolve(result);
+                    } catch (parseError) {
+                        reject(new Error(`Failed to parse Python output: ${parseError.message}\nOutput: ${stdout}`));
+                    }
+                });
+
+                child.on('error', (error) => {
+                    clearTimeout(timeout);
+                    reject(new Error(`Failed to start Python process: ${error.message}`));
+                });
 
             } catch (error) {
                 reject(error);

@@ -58,6 +58,7 @@ export class bilitv extends plugin {
     async jxsp(e) {
         if (!turnOnBilitv)
             return false;
+        logger.info('[sf插件]b站解析:', e.msg);
         let bvid = ""
         if (e.msg.match(regAV)) {
             let table = 'fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
@@ -134,6 +135,7 @@ export class bilitv extends plugin {
     async jxfj(e) {
         if (!turnOnBilitv)
             return false;
+        logger.info('[sf插件]b站解析:', e.msg);
         let epid = ""
         let ssid = ""
         if (e.msg.includes("点赞" && "投币")) { return false }
