@@ -4,7 +4,7 @@ import { Douyin_parser } from '../utils/douyin_parser_nodejs.js'
 import fetch from 'node-fetch'
 import common from '../../../lib/common/common.js'
 
-const douyinTV_on = Config.getConfig().douyinTV
+const { douyinTV_on, douyin_maxSizeMB } = Config.getConfig();
 
 export class Douyin_Video extends plugin {
     constructor() {
@@ -15,7 +15,7 @@ export class Douyin_Video extends plugin {
             priority: 1000,
             rule: [
                 {
-                    reg: '[sS]*\\.douyin\\.[sS]*',
+                    reg: '[sS]*douyin\\.com\\/[sS]*',
                     fnc: 'douyinParser',
                 },
             ]
@@ -33,7 +33,7 @@ export class Douyin_Video extends plugin {
             if (result.success && result.data.length > 0) {
                 // 处理每个视频
                 for (const item of result.data) {
-                    console.log(`   处理视频: ${item.title} - ${item.author}`);
+                    logger.debug(`   处理视频: ${item.title} - ${item.author}`);
                     // 构建信息文本
                     const infoText = `标题: ${item.title}\n作者: ${item.author}\n日期: ${item.date}\n${item.is_gallery ? "图集" : "视频"}ID: ${item.video_id}`;
                     try {
@@ -70,6 +70,26 @@ export class Douyin_Video extends plugin {
                             }
                             // 然后发送视频
                             try {
+                                // 先检查视频大小
+                                const headResponse = await fetch(item.video_url, {
+                                    method: 'HEAD',
+                                    headers: {
+                                        'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36',
+                                        'Referer': 'https://www.douyin.com/?is_from_mobile_home=1&recommend=1'
+                                    }
+                                });
+                                if (headResponse.ok) {
+                                    const contentLength = headResponse.headers.get('content-length');
+                                    if (contentLength) {
+                                        const fileSizeBytes = parseInt(contentLength);
+                                        const fileSizeMB = fileSizeBytes / (1024 * 1024);
+                                        if (fileSizeMB > douyin_maxSizeMB) {
+                                            await e.reply(`视频文件过大 (${fileSizeMB.toFixed(1)}MB > ${douyin_maxSizeMB}MB)，跳过下载\n请手动访问：${item.video_url}`, true);
+                                            continue; // 跳过当前视频，处理下一个
+                                        }
+                                        logger.debug(`视频大小: ${fileSizeMB.toFixed(1)}MB，开始下载...`);
+                                    }
+                                }
                                 const videoResponse = await fetch(item.video_url, {
                                     headers: {
                                         'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36',
@@ -83,7 +103,7 @@ export class Douyin_Video extends plugin {
                                     await e.reply(`视频下载失败，请手动访问：${item.video_url}`, true);
                                 }
                             } catch (videoError) {
-                                console.log(`视频下载失败: ${videoError.message}`);
+                                logger.mark(`视频下载失败: ${videoError.message}`);
                                 await e.reply(`视频下载失败，请手动访问：${item.video_url}`, true);
                             }
                         }
@@ -96,16 +116,17 @@ export class Douyin_Video extends plugin {
                             await e.reply(infoText, true);
                         }
                     } catch (replyError) {
-                        console.log(`发送消息失败: ${replyError.message}`);
+                        logger.mark(`发送消息失败: ${replyError.message}`);
                         await e.reply(`✅ 解析成功但发送失败\n${infoText}`, true);
                     }
                 }
             } else {
                 await e.reply('❌ 解析失败：未获取到有效数据', true);
+                return false;
             }
 
         } catch (error) {
-            console.log(`❌ 解析失败: ${error.message}`);
+            logger.mark(`❌ 解析失败: ${error.message}`);
 
             // 检查是否是缺少依赖的错误
             if (error.message.includes('ModuleNotFoundError') ||

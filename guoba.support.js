@@ -1164,6 +1164,17 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: 'douyin_maxSizeMB',
+          label: '抖音视频大小限制',
+          bottomHelpMessage: '抖音解析视频容量超过该值将不会下载，防止发送信息时爆内存重启；此值重启生效',
+          helpMessage: '单位：MB',
+          component: 'InputNumber',
+          componentProps: {
+            min: 0,
+            step: 1
+          }
+        },
+        {
           field: 'turnOnBilitv',
           label: 'b站解析',
           bottomHelpMessage: '开启b站后，将会解析并发送bilibili链接或小程序关联的视频；此开关重启生效',
@@ -1171,8 +1182,8 @@ export function supportGuoba() {
         },
         {
           field: 'bilitv_max_duration_min',
-          label: '视频最大时长',
-          bottomHelpMessage: 'b站解析的视频超过该时长的视频将不会解析，防止爆内存重启；此开关重启生效',
+          label: 'b站视频时长限制',
+          bottomHelpMessage: 'b站解析的视频超过该时长的视频将不会下载，防止发送信息时爆内存重启；此值重启生效',
           helpMessage: '单位：分钟',
           component: 'InputNumber',
           componentProps: {

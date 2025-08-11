@@ -108,6 +108,11 @@ pip install aiohttp
 - [X] 自动抖音/b站视频解析
 - [ ] TODO..
 
+## 常见问题
+
+1.  在锅巴中点击保存时提示 `PayloadTooLargeError` 怎么办?
+    - [X] 最新版的锅巴插件[已经修复](https://github.com/guoba-yunzai/guoba-plugin/commit/50f3a847fdba22534d37b97f2ac62b8fdb5c4d41)这个问题了，如果你已经更新到最新版的锅巴插件依然出现这个问题，考虑是你的平台更改了`bodyParser`值，可以[查看这里](https://github.com/AIGC-Yunzai/Trss-Yunzai-lagrange)进行修复。
+
 ## 支持与贡献
 
 如果你喜欢这个项目，请不妨点个 Star🌟，这是对开发者最大的动力。
