@@ -12,7 +12,7 @@
   - 📊 资源管理：支持多key负载均衡，提供图片直链获取等功能
   - 🔗 链接处理：自动提取和处理消息中的URL
   - 📱 视频解析：支持抖音、哔哩哔哩视频解析
-  - ⚡ WebSocket：支持WebSocket与前端通信实现实时对话与绘图，详情看[前端地址](https://sf.maliya.top)，[部署教程](https://github.com/AIGC-Yunzai/SF-WEB)
+  - ⚡ WebSocket：支持WebSocket与前端通信实现实时对话与绘图，详情看[前端地址](https://sf.maliy.top)，[部署教程](https://github.com/AIGC-Yunzai/SF-WEB)
 
 > [!TIP]
 > 插件官网（施工中）：[SiliconFlow-插件](https://aigc-yunzai.dwe.me/)
