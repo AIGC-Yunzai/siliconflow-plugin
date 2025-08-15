@@ -102,7 +102,7 @@ export class bilitv extends plugin {
         })
         res = await res.json()
         if (res.code != 0) {
-            e.reply(bvid + "解析失败\n信息:" + res.message)
+            e.reply("解析失败\n信息:" + res.message, true)
             return false
         } else {
             e.reply([segment.image(res.data.pic), `${res.data.title}\nhttps://www.bilibili.com/video/${bvid}\n作者: ${res.data.owner.name}\n播放: ${formatNumber(res.data.stat.view)} | 弹幕: ${formatNumber(res.data.stat.danmaku)}\n点赞: ${formatNumber(res.data.stat.like)} | 投币: ${formatNumber(res.data.stat.coin)}\n收藏: ${formatNumber(res.data.stat.favorite)} | 评论: ${formatNumber(res.data.stat.reply)}`], true)
@@ -119,7 +119,7 @@ export class bilitv extends plugin {
         })
         res = await res.json()
         if (!res || res.code != 0) {
-            e.reply("视频解析失败")
+            e.reply("视频解析失败", true)
             return false
         }
         e.reply(segment.video(Buffer.from(await (await fetch(res.data.durl[0].url, {
@@ -149,12 +149,12 @@ export class bilitv extends plugin {
                         }
                     })).json()
                     if (temp.code != 0) {
-                        e.reply("解析失败\n信息:" + temp.message)
+                        e.reply("解析失败\n信息:" + temp.message, true)
                         return false
                     }
                     ssid = temp.result.media.season_id
                 } catch (e) {
-                    e.reply("解析失败")
+                    e.reply("解析失败", true)
                     return false
                 }
             } else {
@@ -167,7 +167,7 @@ export class bilitv extends plugin {
                 }
             })).json()
             if (temp.code != 0) {
-                e.reply("解析失败\n信息:" + temp.message)
+                e.reply("解析失败\n信息:" + temp.message, true)
                 return false
             }
             epid = (temp.result.main_section.episodes[0].share_url).replace("https://www.bilibili.com/bangumi/play/ep", "")
@@ -181,7 +181,7 @@ export class bilitv extends plugin {
             }
         })).json()
         if (res.code != 0) {
-            e.reply("解析失败\n信息:" + res.message)
+            e.reply("解析失败\n信息:" + res.message, true)
             return false
         }
         e.reply([
