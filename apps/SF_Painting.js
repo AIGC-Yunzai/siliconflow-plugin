@@ -1200,7 +1200,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
             // 只有当APIList中的字段有值时才使用该值
             ggBaseUrl = apiConfig.apiBaseUrl || config_date.ggBaseUrl || "https://sfgemini.vledx.ggff.net" || "https://gemini.maliy.top"
-            ggKey = this.get_random_key(apiConfig.apiKey) || this.get_random_key(config_date.ggKey) || "sf-plugin" || this.get_random_key(this.ggKeyFreeDecode(config_date.ggKey_free_250823))
+            ggKey = this.get_random_key(apiConfig.apiKey) || this.get_random_key(config_date.ggKey) || "sf-plugin" || this.get_random_key(this.ggKeyFreeDecode(config_date.ggKey_free_250824))
             model = apiConfig.model || config_date.gg_model || "gemini-2.0-flash-exp"
             systemPrompt = apiConfig.prompt || config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
             useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
@@ -1217,7 +1217,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
             // 使用默认配置
             ggBaseUrl = config_date.ggBaseUrl || "https://sfgemini.vledx.ggff.net" || "https://gemini.maliy.top"
-            ggKey = this.get_random_key(config_date.ggKey) || "sf-plugin" || this.get_random_key(this.ggKeyFreeDecode(config_date.ggKey_free_250823))
+            ggKey = this.get_random_key(config_date.ggKey) || "sf-plugin" || this.get_random_key(this.ggKeyFreeDecode(config_date.ggKey_free_250824))
             model = config_date.gg_model || "gemini-2.0-flash-exp"
             systemPrompt = config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
             useMarkdown = config_date.gg_useMarkdown
