@@ -1673,15 +1673,33 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                     errorMessage += data.error.message;
                 } else if (data.message) {
                     errorMessage += data.message;
+                } else if (data.candidates?.[0]?.finishReason) {
+                    const finishReason = data.candidates[0].finishReason;
+                    switch (finishReason) {
+                        case "PROHIBITED_CONTENT":
+                            errorMessage += "内容被禁止，可能包含违规内容，涩涩被抓到啦。\n原始错误：" + JSON.stringify(data);
+                            break;
+                        case "SAFETY":
+                            errorMessage += "内容被安全系统拦截，请修改输入内容后重试。\n原始错误：" + JSON.stringify(data);
+                            break;
+                        case "RECITATION":
+                            errorMessage += "内容可能涉及版权问题，请重新组织语言。\n原始错误：" + JSON.stringify(data);
+                            break;
+                        case "OTHER":
+                            errorMessage += "请求被拦截，原因未知。\n原始错误：" + JSON.stringify(data);
+                            break;
+                        default:
+                            errorMessage += `请求被拦截，原因：${finishReason}` + JSON.stringify(data);
+                            break;
+                    }
                 } else if (data.promptFeedback?.blockReason) {
-                    // 处理promptFeedback中的错误
                     const blockReason = data.promptFeedback.blockReason;
                     switch (blockReason) {
                         case "SAFETY":
                             errorMessage += "内容被安全系统拦截。\n原始错误：" + JSON.stringify(data);
                             break;
                         case "OTHER":
-                            errorMessage += "请求被拦截，可能是由于内容不合规。\n原始错误：" + JSON.stringify(data);
+                            errorMessage += "请求被拦截，可能是由于内容不合规，涩涩被抓到啦。\n原始错误：" + JSON.stringify(data);
                             break;
                     }
                 } else {
