@@ -3,7 +3,7 @@ import axios from 'axios'
 /**
  * @description: 处理引用消息：获取引用的图片和文本，图片放入e.img，优先级==> e.source.img > e.img，文本放入e.sourceMsg
  * @param {*} e
- * @param {*} alsoGetAtAvatar 开启使用At用户头像作为图片，默认 false
+ * @param {*} alsoGetAtAvatar 开启使用At用户头像作为图片，默认 true
  * @return {*}处理过后的e
  */
 export async function parseSourceImg(e, alsoGetAtAvatar = true) {
@@ -119,4 +119,22 @@ export async function url2Base64(url, isReturnBuffer = false) {
     logger.error(`[sf插件]下载引用图片错误，可能是图片链接已失效，使用的图片链接：\n` + url);
     return null;
   }
+}
+
+/**
+ * @description: 请在120秒内发送图片
+ * @param {*} e
+ * @param {*} context
+ * @return {*}
+ */
+export async function getImgFrom_awaitContext(e, context = null) {
+  if (e.img)
+    return e;
+  await e.reply(`[${e.msg.replace(/^[#\/]/, '').substring(0, 4)}]未获取到图片，请在120秒内发送图片喵~`, true, { recallMsg: 115 })
+  const e_new = await context.awaitContext()
+  if (e_new.img)
+    e.img = e_new.img
+  // else
+  //   e.reply(`[${e.msg.replace(/^[#\/]/, '').substring(0, 4)}]未获取到图片，操作已取消`, true)
+  return e;
 }

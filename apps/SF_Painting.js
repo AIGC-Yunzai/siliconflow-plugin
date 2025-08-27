@@ -5,6 +5,7 @@ import common from '../../../lib/common/common.js';
 import {
     parseSourceImg,
     url2Base64,
+    getImgFrom_awaitContext,
 } from '../utils/getImg.js'
 import { handleParam } from '../utils/parse.js'
 import { markdown_screenshot } from '../utils/markdownPic.js'
@@ -75,7 +76,6 @@ export class SF_Painting extends plugin {
                 {
                     reg: '^#(sf|SF)(清除|删除)((ss|gg)?)?(前面?|最近的?)(\\d+)条对话$',
                     fnc: 'sf_clearContextByCount',
-                    log: false
                 },
                 {
                     reg: '^#(sf|SF)(s|g)(.*)接口列表$',
@@ -96,10 +96,12 @@ export class SF_Painting extends plugin {
                 {
                     reg: '^#(s|S)(?!f|F|s|S)(.+)',
                     fnc: 'sf_select_and_chat',
+                    log: false
                 },
                 {
                     reg: '^#(g|G)(?!g|G)(.+)',
                     fnc: 'gg_select_and_chat',
+                    log: false
                 },
                 {
                     /** At模式 */
@@ -443,6 +445,12 @@ export class SF_Painting extends plugin {
                 case 'gg转发消息':
                     config_date.gg_forwardMessage = value === '开'
                     break
+                case 'ss必需图片':
+                    config_date.ss_mustNeedImg = value === '开'
+                    break
+                case 'gg必需图片':
+                    config_date.gg_mustNeedImg = value === '开'
+                    break
                 case 'gg搜索':
                     config_date.gg_useSearch = value === '开'
                     break
@@ -631,7 +639,7 @@ export class SF_Painting extends plugin {
         const isMaster = e.isMaster
 
         // 获取接口配置
-        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false, enableImageUpload = true
+        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false, enableImageUpload = true, mustNeedImg = false
 
         // 根据用户身份选择使用的接口索引
         const usingApiIndex = isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)
@@ -651,7 +659,6 @@ export class SF_Painting extends plugin {
                 // await e.reply('该接口仅限主人使用')
                 return false
             }
-
             // 只有当APIList中的字段有值时才使用该值
             use_sf_key = this.get_random_key(apiConfig.apiKey) || this.get_random_key(config_date.ss_Key) || ""
             apiBaseUrl = apiConfig.apiBaseUrl || config_date.ss_apiBaseUrl || config_date.sfBaseUrl
@@ -659,6 +666,7 @@ export class SF_Painting extends plugin {
             systemPrompt = apiConfig.prompt || config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
             useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
             forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
+            mustNeedImg = (typeof apiConfig.mustNeedImg !== 'undefined') ? apiConfig.mustNeedImg : false
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             forwardThinking = (typeof apiConfig.forwardThinking !== 'undefined') ? apiConfig.forwardThinking : false
             enableImageUpload = (typeof apiConfig.enableImageUpload !== 'undefined') ? apiConfig.enableImageUpload : true
@@ -668,7 +676,6 @@ export class SF_Painting extends plugin {
                 await e.reply('默认配置仅限主人使用')
                 return false
             }
-
             // 使用默认配置
             use_sf_key = this.get_random_key(config_date.ss_Key)
             apiBaseUrl = config_date.ss_apiBaseUrl
@@ -676,6 +683,7 @@ export class SF_Painting extends plugin {
             systemPrompt = config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
             useMarkdown = config_date.ss_useMarkdown
             forwardMessage = config_date.ss_forwardMessage
+            mustNeedImg = config_date.ss_mustNeedImg
             quoteMessage = config_date.ss_quoteMessage
             forwardThinking = config_date.ss_forwardThinking
             enableImageUpload = config_date.ss_enableImageUpload
@@ -688,6 +696,7 @@ export class SF_Painting extends plugin {
             model = config_date.translateModel
             useMarkdown = config_date.ss_useMarkdown
             forwardMessage = config_date.ss_forwardMessage
+            mustNeedImg = config_date.ss_mustNeedImg
             quoteMessage = config_date.ss_quoteMessage
             forwardThinking = config_date.ss_forwardThinking
             enableImageUpload = config_date.ss_enableImageUpload
@@ -695,6 +704,8 @@ export class SF_Painting extends plugin {
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
+        if (mustNeedImg)
+            await getImgFrom_awaitContext(e, this)
         let currentImages = [];
         if (e.img && e.img.length > 0 && enableImageUpload) {
             // 记录获取到的图片链接
@@ -998,8 +1009,8 @@ export class SF_Painting extends plugin {
 7. 设置Gemini URL：#sf设置ggbaseurl [值]
 8. 设置gg图片模式：#sf设置gg图片模式 开/关
 9. 设置上下文功能：#sf设置上下文 开/关
-10. 设置ss转发消息：#sf设置ss转发消息 开/关
-11. 设置gg转发消息：#sf设置gg转发消息 开/关
+10. 设置ss/gg转发消息：#sf设置[ss|gg]转发消息 开/关
+11. 设置ss/gg必需图片：#sf设置[ss|gg]必需图片 开/关
 12. 设置gg搜索功能：#sf设置gg搜索 开/关
 13. 设置ss引用原消息：#sf设置ss引用原消息 开/关
 14. 设置gg引用原消息：#sf设置gg引用原消息 开/关
@@ -1177,7 +1188,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         const isMaster = e.isMaster
 
         // 获取接口配置
-        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false
+        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false, mustNeedImg = false
 
         // 根据用户身份选择使用的接口索引
         const usingApiIndex = isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
@@ -1197,7 +1208,6 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 // await e.reply('该接口仅限主人使用')
                 return false
             }
-
             // 只有当APIList中的字段有值时才使用该值
             ggBaseUrl = apiConfig.apiBaseUrl || config_date.ggBaseUrl || "https://sfgemini.vledx.ggff.net" || "https://gemini.maliy.top"
             ggKey = this.get_random_key(apiConfig.apiKey) || this.get_random_key(config_date.ggKey) || "sf-plugin" || this.get_random_key(this.ggKeyFreeDecode(config_date.ggKey_free_250825))
@@ -1205,6 +1215,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             systemPrompt = apiConfig.prompt || config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
             useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
             forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
+            mustNeedImg = (typeof apiConfig.mustNeedImg !== 'undefined') ? apiConfig.mustNeedImg : false
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             useSearch = (typeof apiConfig.useSearch !== 'undefined') ? apiConfig.useSearch : false
             enableImageGeneration = (typeof apiConfig.enableImageGeneration !== 'undefined') ? apiConfig.enableImageGeneration : false
@@ -1214,7 +1225,6 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 await e.reply('默认配置仅限主人使用')
                 return false
             }
-
             // 使用默认配置
             ggBaseUrl = config_date.ggBaseUrl || "https://sfgemini.vledx.ggff.net" || "https://gemini.maliy.top"
             ggKey = this.get_random_key(config_date.ggKey) || "sf-plugin" || this.get_random_key(this.ggKeyFreeDecode(config_date.ggKey_free_250825))
@@ -1222,6 +1232,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             systemPrompt = config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
             useMarkdown = config_date.gg_useMarkdown
             forwardMessage = config_date.gg_forwardMessage
+            mustNeedImg = config_date.gg_mustNeedImg
             quoteMessage = config_date.gg_quoteMessage
             useSearch = config_date.gg_useSearch
             enableImageGeneration = config_date.gg_enableImageGeneration
@@ -1229,6 +1240,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
+        if (mustNeedImg)
+            await getImgFrom_awaitContext(e, this)
         let currentImages = [];
         if (e.img && e.img.length > 0) {
             // 记录获取到的图片链接
@@ -2046,7 +2059,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                     // 处理自定义命令
                     apiIndex = apiList?.findIndex(api => api.customCommand === cmd) ?? -1;
                     if (apiIndex === -1) {
-                        logger.warn(`未找到命令 ${cmd} 对应的接口`);
+                        logger.debug(`未找到命令 ${cmd} 对应的接口`);
                         return false;
                     }
                 }
@@ -2221,7 +2234,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 return await processEndChat(index);
             }
 
-            logger.warn(`未找到命令 ${cmdPart} 对应的接口`);
+            logger.debug(`未找到命令 ${cmdPart} 对应的接口`);
             return false;
         };
     }

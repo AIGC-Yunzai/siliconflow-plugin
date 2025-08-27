@@ -44,6 +44,7 @@ ss_model: ""
 ss_Prompt: ""
 ss_useMarkdown: false # 是否使用markdown图片展示
 ss_forwardMessage: true # 是否转发消息
+ss_mustNeedImg: false # 必需图片
 ss_quoteMessage: true # 是否引用原消息
 ss_forwardThinking: false # 是否转发思考过程
 ss_isOnlyMaster: false # 默认配置是否仅限主人使用
@@ -56,6 +57,7 @@ ggBaseUrl: ""
 ggKey: ""
 gg_useMarkdown: false # 是否使用markdown图片展示
 gg_forwardMessage: true # 是否转发消息
+gg_mustNeedImg: false # 必需图片
 gg_quoteMessage: true # 是否引用原消息
 gg_Prompt: "" # 对话API提示词
 gg_model: "" # 对话API模型
