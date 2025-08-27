@@ -704,8 +704,11 @@ export class SF_Painting extends plugin {
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
-        if (mustNeedImg)
+        if (mustNeedImg) {
             await getImgFrom_awaitContext(e, this)
+            if (!e.img)
+                return true;
+        }
         let currentImages = [];
         if (e.img && e.img.length > 0 && enableImageUpload) {
             // 记录获取到的图片链接
@@ -1240,8 +1243,11 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
-        if (mustNeedImg)
+        if (mustNeedImg) {
             await getImgFrom_awaitContext(e, this)
+            if (!e.img)
+                return true;
+        }
         let currentImages = [];
         if (e.img && e.img.length > 0) {
             // 记录获取到的图片链接

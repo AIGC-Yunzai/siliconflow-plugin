@@ -87,8 +87,8 @@ export async function parseSourceImg(e, alsoGetAtAvatar = true) {
       // 如果有发送者昵称,添加到引用文本前,使用markdown引用格式
       const lines = text.join('\n').split('\n');
       const quotedLines = lines.map(line => `> ${line}`).join('\n');
-      e.sourceMsg = senderNickname ? 
-        `> ##### ${senderNickname}：\n> ---\n${quotedLines}` : 
+      e.sourceMsg = senderNickname ?
+        `> ##### ${senderNickname}：\n> ---\n${quotedLines}` :
         quotedLines;
     }
   }
@@ -134,7 +134,7 @@ export async function getImgFrom_awaitContext(e, context = null) {
   const e_new = await context.awaitContext()
   if (e_new.img)
     e.img = e_new.img
-  // else
-  //   e.reply(`[${e.msg.replace(/^[#\/]/, '').substring(0, 4)}]未获取到图片，操作已取消`, true)
+  else
+    e.reply(`[${e.msg.replace(/^[#\/]/, '').substring(0, 4)}]未获取到图片，操作已取消`, true)
   return e;
 }
