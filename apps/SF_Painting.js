@@ -335,7 +335,7 @@ export class SF_Painting extends plugin {
         }
 
         // 检查消息是否包含 "自动回复"
-        if (e.msg && e.msg.includes("自动回复")) {
+        if (!e.isGroup && e.msg && e.msg.includes("自动回复")) {
             logger.info("消息包含自动回复，不触发AI对话")
             return false
         }
@@ -630,7 +630,7 @@ export class SF_Painting extends plugin {
             config_date = Config.getConfig()
 
         // 如果消息包含"自动回复"，则不处理
-        if (e.msg && e.msg.includes("自动回复")) {
+        if (!e.isGroup && e.msg && e.msg.includes("自动回复")) {
             logger.info("消息包含自动回复，不触发AI对话")
             return false
         }
@@ -1182,7 +1182,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             config_date = Config.getConfig()
 
         // 如果消息包含"自动回复"，则不处理
-        if (e.msg && e.msg.includes("自动回复")) {
+        if (!e.isGroup && e.msg && e.msg.includes("自动回复")) {
             logger.info("消息包含自动回复，不触发AI对话")
             return false
         }

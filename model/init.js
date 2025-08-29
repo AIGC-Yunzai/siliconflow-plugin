@@ -34,7 +34,7 @@ class Init {
         delete config_yaml[key]
       }
     }
-    Config.setConfig(config_yaml)
+    Config.setConfig(config_yaml, 'config', true)
 
     // fishAudio_default
     const fishAudio_default_path = `${pluginRoot}/config/fishAudio_default.yaml`
