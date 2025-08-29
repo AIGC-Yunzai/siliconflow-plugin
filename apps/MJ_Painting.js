@@ -8,6 +8,7 @@ import {
 } from '../utils/getImg.js'
 import { LinkPlugin } from './link.js'
 import { uploadImage } from '../utils/uploadImage.js'
+import { memberControlProcess } from '../utils/memberControl.js'
 
 export class MJ_Painting extends plugin {
     constructor() {
@@ -114,6 +115,17 @@ export class MJ_Painting extends plugin {
             this.handleAction(e, config_date)
             return true;
         }
+
+        // CD次数限制
+        const memberConfig = {
+            feature: 'SF_Painting',
+            cdTime: config_date.sf_cdtime,
+            dailyLimit: config_date.sf_dailyLimit,
+            unlimitedUsers: config_date.sf_unlimitedUsers
+        }
+        const result = await memberControlProcess(e, memberConfig);
+        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
+        else result.record();
 
         // 如果是niji命令，自动添加--niji参数
         if (match[1] === 'niji' && !prompt.includes('--niji')) {
@@ -241,6 +253,17 @@ export class MJ_Painting extends plugin {
             }
             return;
         }
+
+        // CD次数限制
+        const memberConfig = {
+            feature: 'SF_Painting',
+            cdTime: config_date.sf_cdtime,
+            dailyLimit: config_date.sf_dailyLimit,
+            unlimitedUsers: config_date.sf_unlimitedUsers
+        }
+        const result = await memberControlProcess(e, memberConfig);
+        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
+        else result.record();
 
         const match = e.msg.match(/^#(放大|微调|重绘)(左上|右上|左下|右下)([\s\S]*)/)
         if (match) {
@@ -638,6 +661,17 @@ MJP插件帮助：
             this.handleAction(e, config_date)
             return true;
         }
+
+        // CD次数限制
+        const memberConfig = {
+            feature: 'SF_Painting',
+            cdTime: config_date.sf_cdtime,
+            dailyLimit: config_date.sf_dailyLimit,
+            unlimitedUsers: config_date.sf_unlimitedUsers
+        }
+        const result = await memberControlProcess(e, memberConfig);
+        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
+        else result.record();
 
         const isNiji = match[1] === 'nic'  // 判断是否是 nic 命令
 

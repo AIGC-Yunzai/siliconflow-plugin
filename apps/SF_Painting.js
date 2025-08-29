@@ -22,6 +22,7 @@ import { getUin } from '../utils/common.js'
 import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 import { MJ_Painting } from './MJ_Painting.js'
+import { memberControlProcess } from '../utils/memberControl.js'
 
 var Ws_Server = {};
 init_server();
@@ -512,6 +513,17 @@ export class SF_Painting extends plugin {
             return false
         }
 
+        // CD次数限制
+        const memberConfig = {
+            feature: 'SF_Painting',
+            cdTime: config_date.sf_cdtime,
+            dailyLimit: config_date.sf_dailyLimit,
+            unlimitedUsers: config_date.sf_unlimitedUsers
+        }
+        const result = await memberControlProcess(e, memberConfig);
+        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
+        else result.record();
+
         // 处理图生图模型
         let canImg2Img = false;
         if (config_date.imageModel.match(/stabilityai\/stable-diffusion-3-medium|stabilityai\/stable-diffusion-xl-base-1.0|stabilityai\/stable-diffusion-2-1|stabilityai\/stable-diffusion-3-5-large/)) {
@@ -640,6 +652,7 @@ export class SF_Painting extends plugin {
 
         // 获取接口配置
         let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false, enableImageUpload = true, mustNeedImg = false
+        let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], memberConfigName = 'ss_default';
 
         // 根据用户身份选择使用的接口索引
         const usingApiIndex = isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)
@@ -670,6 +683,10 @@ export class SF_Painting extends plugin {
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             forwardThinking = (typeof apiConfig.forwardThinking !== 'undefined') ? apiConfig.forwardThinking : false
             enableImageUpload = (typeof apiConfig.enableImageUpload !== 'undefined') ? apiConfig.enableImageUpload : true
+            memberConfigName = (typeof apiConfig.customCommand !== 'undefined' && apiConfig.customCommand) ? `ss_${apiConfig.customCommand}` : memberConfigName
+            cdtime = (typeof apiConfig.cdtime !== 'undefined') ? apiConfig.cdtime : cdtime
+            dailyLimit = (typeof apiConfig.dailyLimit !== 'undefined') ? apiConfig.dailyLimit : dailyLimit
+            unlimitedUsers = (typeof apiConfig.unlimitedUsers !== 'undefined') ? apiConfig.unlimitedUsers : unlimitedUsers
         } else if (config_date.ss_apiBaseUrl) {
             // 检查默认配置是否仅限主人使用
             if (!isMaster && config_date.ss_isOnlyMaster) {
@@ -701,6 +718,17 @@ export class SF_Painting extends plugin {
             forwardThinking = config_date.ss_forwardThinking
             enableImageUpload = config_date.ss_enableImageUpload
         }
+
+        // CD次数限制
+        const memberConfig = {
+            feature: memberConfigName,
+            cdTime: cdtime,
+            dailyLimit: dailyLimit,
+            unlimitedUsers: unlimitedUsers
+        }
+        const result = await memberControlProcess(e, memberConfig);
+        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
+        else result.record();
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
@@ -1192,6 +1220,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
         // 获取接口配置
         let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false, mustNeedImg = false
+        let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], memberConfigName = 'gg_default';
 
         // 根据用户身份选择使用的接口索引
         const usingApiIndex = isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
@@ -1222,6 +1251,10 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             useSearch = (typeof apiConfig.useSearch !== 'undefined') ? apiConfig.useSearch : false
             enableImageGeneration = (typeof apiConfig.enableImageGeneration !== 'undefined') ? apiConfig.enableImageGeneration : false
+            memberConfigName = (typeof apiConfig.customCommand !== 'undefined' && apiConfig.customCommand) ? `gg_${apiConfig.customCommand}` : memberConfigName
+            cdtime = (typeof apiConfig.cdtime !== 'undefined') ? apiConfig.cdtime : cdtime
+            dailyLimit = (typeof apiConfig.dailyLimit !== 'undefined') ? apiConfig.dailyLimit : dailyLimit
+            unlimitedUsers = (typeof apiConfig.unlimitedUsers !== 'undefined') ? apiConfig.unlimitedUsers : unlimitedUsers
         } else {
             // 检查默认配置是否仅限主人使用
             if (!isMaster && config_date.gg_isOnlyMaster) {
@@ -1240,6 +1273,17 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             useSearch = config_date.gg_useSearch
             enableImageGeneration = config_date.gg_enableImageGeneration
         }
+
+        // CD次数限制
+        const memberConfig = {
+            feature: memberConfigName,
+            cdTime: cdtime,
+            dailyLimit: dailyLimit,
+            unlimitedUsers: unlimitedUsers
+        }
+        const result = await memberControlProcess(e, memberConfig);
+        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
+        else result.record();
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)

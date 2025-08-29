@@ -3,6 +3,7 @@ import fetch from 'node-fetch'
 import Config from '../components/Config.js'
 import common from '../../../lib/common/common.js';
 import { handleParam } from '../utils/parse.js'
+import { memberControlProcess } from '../utils/memberControl.js'
 
 export class DD_Painting extends plugin {
     constructor() {
@@ -177,7 +178,7 @@ export class DD_Painting extends plugin {
                     let template = typeof apiConfig.requestTemplate === 'string'
                         ? JSON.parse(apiConfig.requestTemplate)
                         : apiConfig.requestTemplate;
-    
+
                     // 检查是否需要替换变量
                     if (apiConfig.useTemplateVariables) {
                         // 深拷贝模板，避免修改原始对象
@@ -188,10 +189,10 @@ export class DD_Painting extends plugin {
                         // 直接使用模板
                         payload = JSON.parse(JSON.stringify(template));
                     }
-    
+
                     // 重要：始终使用用户输入的提示词覆盖模板中的prompt
                     payload.prompt = prompt;
-    
+
                 } catch (error) {
                     console.error('解析请求体模板失败:', error);
                     // 如果模板解析失败，回退到参数构建方式
@@ -256,7 +257,7 @@ export class DD_Painting extends plugin {
                     const customHeaders = typeof apiConfig.customHeaders === 'string'
                         ? JSON.parse(apiConfig.customHeaders)
                         : apiConfig.customHeaders;
-                    
+
                     // 合并自定义请求头
                     headers = { ...headers, ...customHeaders };
                 } catch (error) {
@@ -290,7 +291,7 @@ export class DD_Painting extends plugin {
 
             // 处理返回的图片数据
             let imageData;
-            
+
             // 如果配置了自定义响应格式解析路径
             if (apiConfig.responseFormat) {
                 try {
@@ -298,11 +299,11 @@ export class DD_Painting extends plugin {
                     const formatPath = apiConfig.responseFormat;
                     // 修复的路径解析逻辑
                     let result = data;
-                    
+
                     // 处理复合路径 (如 data.image_urls[0])
                     let currentPath = '';
                     let i = 0;
-                    
+
                     while (i < formatPath.length) {
                         // 如果是点号，处理前面收集的路径
                         if (formatPath[i] === '.') {
@@ -321,7 +322,7 @@ export class DD_Painting extends plugin {
                             i++;
                             continue;
                         }
-                        
+
                         // 如果是左括号，处理数组
                         if (formatPath[i] === '[') {
                             // 先处理前面的对象属性
@@ -331,7 +332,7 @@ export class DD_Painting extends plugin {
                                     throw new Error(`响应中不存在路径: ${currentPath}`);
                                 }
                             }
-                            
+
                             // 提取索引
                             let indexStr = '';
                             i++;
@@ -339,25 +340,25 @@ export class DD_Painting extends plugin {
                                 indexStr += formatPath[i];
                                 i++;
                             }
-                            
+
                             // 转换为数字并访问数组
                             const index = parseInt(indexStr);
                             result = result[index];
                             if (result === undefined) {
                                 throw new Error(`数组索引越界: ${index}`);
                             }
-                            
+
                             // 跳过右括号
                             i++;
                             currentPath = '';
                             continue;
                         }
-                        
+
                         // 收集当前路径片段
                         currentPath += formatPath[i];
                         i++;
                     }
-                    
+
                     // 处理最后一个路径片段
                     if (currentPath) {
                         result = result[currentPath];
@@ -365,11 +366,11 @@ export class DD_Painting extends plugin {
                             throw new Error(`响应中不存在路径: ${currentPath}`);
                         }
                     }
-                    
+
                     // 根据结果类型处理
                     if (typeof result === 'string') {
                         // 使用与默认解析相同的判断逻辑
-                        if (result.startsWith('data:image') || 
+                        if (result.startsWith('data:image') ||
                             result.startsWith('base64:')) {
                             imageData = result;
                         } else if (/^[A-Za-z0-9+/=]{100,}$/.test(result)) {
@@ -400,7 +401,7 @@ export class DD_Painting extends plugin {
                 try {
                     // 增强的自动检测逻辑
                     imageData = this.extractImageData(data);
-                    
+
                     // 如果仍然没有找到图片数据
                     if (!imageData) {
                         console.error('无法自动检测响应格式，原始响应:', JSON.stringify(data).substring(0, 500) + '...');
@@ -454,27 +455,27 @@ export class DD_Painting extends plugin {
             if (obj === null || obj === undefined) {
                 return null;
             }
-            
+
             // 如果是字符串，检查是否为URL或base64
             if (typeof obj === 'string') {
                 // 检查是否为base64
-                if (obj.startsWith('data:image') || 
-                    obj.startsWith('base64:') || 
+                if (obj.startsWith('data:image') ||
+                    obj.startsWith('base64:') ||
                     /^[A-Za-z0-9+/=]{100,}$/.test(obj)) {
                     return { type: 'base64', data: obj.startsWith('base64:') ? obj : `base64://${obj}`, path };
                 }
-                
+
                 // 检查是否为URL
-                if (obj.startsWith('http://') || 
-                    obj.startsWith('https://') || 
+                if (obj.startsWith('http://') ||
+                    obj.startsWith('https://') ||
                     obj.startsWith('ftp://') ||
                     /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(obj)) {
                     return { type: 'url', data: obj, path };
                 }
-                
+
                 return null;
             }
-            
+
             // 如果是数组，遍历每个元素
             if (Array.isArray(obj)) {
                 for (let i = 0; i < obj.length; i++) {
@@ -483,12 +484,12 @@ export class DD_Painting extends plugin {
                 }
                 return null;
             }
-            
+
             // 如果是对象，检查特定属性
             if (typeof obj === 'object') {
                 // 优先检查常见的图片属性名
                 const priorityKeys = ['url', 'image_url', 'imageUrl', 'image', 'b64_json', 'base64', 'data'];
-                
+
                 // 先检查优先级高的键
                 for (const key of priorityKeys) {
                     if (obj[key] !== undefined) {
@@ -496,7 +497,7 @@ export class DD_Painting extends plugin {
                         if (result) return result;
                     }
                 }
-                
+
                 // 然后检查所有其他键
                 for (const key in obj) {
                     if (!priorityKeys.includes(key)) {
@@ -505,12 +506,12 @@ export class DD_Painting extends plugin {
                     }
                 }
             }
-            
+
             return null;
         };
-        
+
         // 开始检查常见的响应格式
-        
+
         // 1. 检查OpenAI/Nebius标准格式
         if (data.data && Array.isArray(data.data) && data.data.length > 0) {
             if (data.data[0].b64_json) {
@@ -519,7 +520,7 @@ export class DD_Painting extends plugin {
                 return data.data[0].url;
             }
         }
-        
+
         // 2. 检查ModelScope格式
         if (data.images && Array.isArray(data.images) && data.images.length > 0) {
             if (data.images[0].url) {
@@ -531,7 +532,7 @@ export class DD_Painting extends plugin {
                 return data.images[0];
             }
         }
-        
+
         // 3. 检查直接返回图片数组的格式
         if (Array.isArray(data) && data.length > 0) {
             if (typeof data[0] === 'string') {
@@ -550,7 +551,7 @@ export class DD_Painting extends plugin {
                 }
             }
         }
-        
+
         // 4. 检查单一对象格式
         if (!Array.isArray(data)) {
             if (data.url) {
@@ -574,14 +575,14 @@ export class DD_Painting extends plugin {
                 }
             }
         }
-        
+
         // 5. 递归搜索整个响应对象
         const result = findImageData(data);
         if (result) {
             console.log(`在路径 ${result.path} 找到图片数据，类型: ${result.type}`);
             return result.data;
         }
-        
+
         // 如果所有方法都失败，返回null
         return null;
     }
@@ -743,23 +744,23 @@ export class DD_Painting extends plugin {
     async txt2img_generatePrompt(e, userPrompt, config_date) {
         const m = await import('./SF_Painting.js');
         const sf = new m.SF_Painting();
-        
+
         // 检查当前使用的接口是否设置了自动提示词开关
         if (e.currentApiConfig && e.currentApiConfig.enableGeneratePrompt !== undefined) {
             // 临时保存原来的全局设置
             const originalSetting = e.sfRuntime.isgeneratePrompt;
             // 使用接口级别的设置覆盖全局设置
             e.sfRuntime.isgeneratePrompt = e.currentApiConfig.enableGeneratePrompt;
-            
+
             // 调用原方法生成提示词
             const result = await sf.txt2img_generatePrompt(e, userPrompt, config_date);
-            
+
             // 恢复原来的全局设置
             e.sfRuntime.isgeneratePrompt = originalSetting;
-            
+
             return result;
         }
-        
+
         // 如果没有接口级别的设置，使用默认行为
         return await sf.txt2img_generatePrompt(e, userPrompt, config_date);
     }
@@ -793,6 +794,17 @@ export class DD_Painting extends plugin {
             await e.reply('此接口仅限主人使用', true)
             return false
         }
+
+        // CD次数限制
+        const memberConfig = {
+            feature: `dd_${apiConfig.customCommand}`,
+            cdTime: apiConfig.dd_cdtime,
+            dailyLimit: apiConfig.dd_dailyLimit,
+            unlimitedUsers: apiConfig.dd_unlimitedUsers
+        }
+        const result = await memberControlProcess(e, memberConfig);
+        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
+        else result.record();
 
         // 解析参数
         let param = await handleParam(e, prompt, true)
@@ -905,6 +917,17 @@ export class DD_Painting extends plugin {
             await e.reply('此接口仅限主人使用', true)
             return false
         }
+
+        // CD次数限制
+        const memberConfig = {
+            feature: `dd_${apiConfig.customCommand}`,
+            cdTime: apiConfig.dd_cdtime,
+            dailyLimit: apiConfig.dd_dailyLimit,
+            unlimitedUsers: apiConfig.dd_unlimitedUsers
+        }
+        const result = await memberControlProcess(e, memberConfig);
+        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
+        else result.record();
 
         // 保存当前接口配置到 e 对象，供自动提示词功能使用
         e.currentApiConfig = apiConfig
