@@ -505,7 +505,7 @@ export function supportGuoba() {
           field: 'sf_cdtime',
           label: 'CD时间',
           helpMessage: '单位：秒',
-          bottomHelpMessage: 'sf/mj/dd 的CD时间，设置为0则无限制',
+          bottomHelpMessage: 'sf绘图/mj绘图 的CD时间，设置为0则无限制',
           component: "InputNumber",
           componentProps: {
             min: 0,
@@ -515,7 +515,7 @@ export function supportGuoba() {
         {
           field: 'sf_dailyLimit',
           label: '次数限制',
-          bottomHelpMessage: 'sf/mj/dd 的每日限制次数，设置为0则无限制，设置为-1则仅限无限制用户使用',
+          bottomHelpMessage: 'sf绘图/mj绘图 的每日限制次数，设置为0则无限制，设置为-1则仅限无限制用户使用',
           component: "InputNumber",
           componentProps: {
             min: -1,
@@ -1156,6 +1156,14 @@ export function supportGuoba() {
           label: "[#gg]仅限主人使用",
           bottomHelpMessage: "开启后默认配置仅限主人使用",
           component: "Switch",
+        },
+        {
+          component: "Divider",
+          label: "对话全局设置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
         },
         {
           field: "gg_ss_useContext",
