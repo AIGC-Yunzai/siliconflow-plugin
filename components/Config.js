@@ -29,7 +29,7 @@ class Config {
 
     this.initConfig()
     this.initConfig_fishAudio()
-    this.initConfig_geminiModels()
+    // this.initConfig_geminiModels()
 
     // 设置文件监听
     this.setupWatchers()
@@ -53,10 +53,10 @@ class Config {
     this.setConfig(this.syncDefKeys(fishAudio_yaml, fishAudio_default_yaml), 'fishAudio', true)
   }
 
-  initConfig_geminiModels() {
-    // geminiModelsByFetch.yaml
-    this.checkCopyDef('geminiModelsByFetch')
-  }
+  // initConfig_geminiModels() {
+  //   // geminiModelsByFetch.yaml
+  //   this.checkCopyDef('geminiModelsByFetch')
+  // }
 
   /**
    * @description: 检查设置文件，当其不存在时复制默认设置文件
