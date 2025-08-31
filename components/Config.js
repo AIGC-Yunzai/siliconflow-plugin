@@ -441,12 +441,24 @@ class Config {
           this.watchHandlers['prompts'].close()
         }
 
-        this.watchHandlers['prompts'] = fs.watch(promptsDir, { recursive: true }, (eventType, filename) => {
-          if (filename && filename.endsWith('.txt')) {
-            logger.debug(`[SF插件] 检测到prompt文件 ${filename} 被${eventType === 'rename' ? '修改/删除' : '变更'}`)
-            // prompts文件不缓存，所以不需要清除缓存
-          }
-        })
+        try {
+          // 尝试使用递归监听
+          this.watchHandlers['prompts'] = fs.watch(promptsDir, { recursive: true }, (eventType, filename) => {
+            if (filename && filename.endsWith('.txt')) {
+              logger.debug(`[SF插件] 检测到prompt文件 ${filename} 被${eventType === 'rename' ? '修改/删除' : '变更'}`)
+              // prompts文件不缓存，所以不需要清除缓存
+            }
+          })
+        } catch (err) {
+          // 如果递归监听不支持，则使用非递归监听
+          logger.debug(`[SF插件] 递归监听不支持，使用非递归监听prompts目录`)
+          this.watchHandlers['prompts'] = fs.watch(promptsDir, (eventType, filename) => {
+            if (filename && filename.endsWith('.txt')) {
+              logger.debug(`[SF插件] 检测到prompt文件 ${filename} 被${eventType === 'rename' ? '修改/删除' : '变更'}`)
+              // prompts文件不缓存，所以不需要清除缓存
+            }
+          })
+        }
       }
 
       logger.debug(`[SF插件] 已设置 ${configFiles.length} 个配置文件的监听`)
