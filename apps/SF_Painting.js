@@ -520,9 +520,8 @@ export class SF_Painting extends plugin {
             dailyLimit: config_date.sf_dailyLimit,
             unlimitedUsers: config_date.sf_unlimitedUsers
         }
-        const result = await memberControlProcess(e, memberConfig);
-        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
-        else result.record();
+        const result_member = await memberControlProcess(e, memberConfig);
+        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
 
         // 处理图生图模型
         let canImg2Img = false;
@@ -542,6 +541,8 @@ export class SF_Painting extends plugin {
         }
         else
             canImg2Img = false;
+
+        result_member.record();
 
         let msg = e.msg.replace(/^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))/, '').trim()
 
@@ -726,9 +727,8 @@ export class SF_Painting extends plugin {
             dailyLimit: dailyLimit,
             unlimitedUsers: unlimitedUsers
         }
-        const result = await memberControlProcess(e, memberConfig);
-        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
-        else result.record();
+        const result_member = await memberControlProcess(e, memberConfig);
+        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
@@ -771,6 +771,8 @@ export class SF_Painting extends plugin {
                 return false;
             }
         }
+
+        result_member.record();
 
         let msg = e.msg.replace(/^#(ss|SS)/, '').trim()
 
@@ -1281,9 +1283,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             dailyLimit: dailyLimit,
             unlimitedUsers: unlimitedUsers
         }
-        const result = await memberControlProcess(e, memberConfig);
-        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
-        else result.record();
+        const result_member = await memberControlProcess(e, memberConfig);
+        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
@@ -1326,6 +1327,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 return false;
             }
         }
+
+        result_member.record();
 
         let msg = e.msg.replace(/^#(gg|GG)/, '').trim()
 

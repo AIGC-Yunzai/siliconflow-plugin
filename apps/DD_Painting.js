@@ -802,9 +802,8 @@ export class DD_Painting extends plugin {
             dailyLimit: apiConfig.dd_dailyLimit,
             unlimitedUsers: apiConfig.dd_unlimitedUsers
         }
-        const result = await memberControlProcess(e, memberConfig);
-        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
-        else result.record();
+        const result_member = await memberControlProcess(e, memberConfig);
+        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
 
         // 解析参数
         let param = await handleParam(e, prompt, true)
@@ -815,6 +814,8 @@ export class DD_Painting extends plugin {
             await e.reply('当前不支持图生图功能', true)
             return false
         }
+
+        result_member.record();
 
         param.input = await this.txt2img_generatePrompt(e, prompt, config_date);
 
@@ -925,9 +926,9 @@ export class DD_Painting extends plugin {
             dailyLimit: apiConfig.dd_dailyLimit,
             unlimitedUsers: apiConfig.dd_unlimitedUsers
         }
-        const result = await memberControlProcess(e, memberConfig);
-        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
-        else result.record();
+        const result_member = await memberControlProcess(e, memberConfig);
+        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
+        else result_member.record();
 
         // 保存当前接口配置到 e 对象，供自动提示词功能使用
         e.currentApiConfig = apiConfig

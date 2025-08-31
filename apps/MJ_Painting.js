@@ -123,9 +123,8 @@ export class MJ_Painting extends plugin {
             dailyLimit: config_date.sf_dailyLimit,
             unlimitedUsers: config_date.sf_unlimitedUsers
         }
-        const result = await memberControlProcess(e, memberConfig);
-        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
-        else result.record();
+        const result_member = await memberControlProcess(e, memberConfig);
+        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
 
         // 如果是niji命令，自动添加--niji参数
         if (match[1] === 'niji' && !prompt.includes('--niji')) {
@@ -150,6 +149,8 @@ export class MJ_Painting extends plugin {
                 base64Array.push(`data:image/png;base64,${imgBase64}`)
             }
         }
+
+        result_member.record();
 
         e.reply('正在生成图片，请稍候...')
         this.mj_send_pic(e, prompt, botType, config_date, base64Array)
@@ -261,9 +262,8 @@ export class MJ_Painting extends plugin {
             dailyLimit: config_date.sf_dailyLimit,
             unlimitedUsers: config_date.sf_unlimitedUsers
         }
-        const result = await memberControlProcess(e, memberConfig);
-        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
-        else result.record();
+        const result_member = await memberControlProcess(e, memberConfig);
+        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
 
         const match = e.msg.match(/^#(放大|微调|重绘)(左上|右上|左下|右下)([\s\S]*)/)
         if (match) {
@@ -279,6 +279,8 @@ export class MJ_Painting extends plugin {
                 }
                 return;
             }
+
+            result_member.record();
 
             if (e.ws) {
                 this.sendMessage(e.ws, 'mj', '正在处理，请稍候...');
@@ -669,9 +671,8 @@ MJP插件帮助：
             dailyLimit: config_date.sf_dailyLimit,
             unlimitedUsers: config_date.sf_unlimitedUsers
         }
-        const result = await memberControlProcess(e, memberConfig);
-        if (!result.allowed) return e.reply(result.message, true, { recallMsg: 60 });
-        else result.record();
+        const result_member = await memberControlProcess(e, memberConfig);
+        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
 
         const isNiji = match[1] === 'nic'  // 判断是否是 nic 命令
 
@@ -682,6 +683,8 @@ MJP插件帮助：
             await e.reply('请输入提示词并提供一张图片')
             return
         }
+
+        result_member.record();
 
         try {
             const imgUrl = e.img[0]
