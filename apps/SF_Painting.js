@@ -839,7 +839,11 @@ export class SF_Painting extends plugin {
             systemPrompt: systemPrompt
         }
 
-        const answer = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
+        const result = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
+
+        // 从结果中提取内容和图片
+        const answer = typeof result === 'string' ? result : result.content;
+        const generatedImageBase64 = typeof result === 'object' ? result.imageBase64 : null;
 
         // 处理思考过程
         let thinkingContent = '';
@@ -862,11 +866,57 @@ export class SF_Painting extends plugin {
         if (config_date.gg_ss_useContext) {
             await saveContext(contextKey, {
                 role: 'assistant',
-                content: cleanedAnswer
+                content: cleanedAnswer,
+                imageBase64: generatedImageBase64 ? [generatedImageBase64] : undefined
             }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
         }
 
         try {
+            // 如果有生成的图片，先发送图片
+            if (generatedImageBase64) {
+                logger.mark('[sf插件] 检测到ss生成的图片')
+
+                if (useMarkdown) {
+                    // 在markdown模式下，将图片融入到markdown内容中
+                    const imgMarkdown = `${cleanedAnswer}\n\n![生成的图片](${generatedImageBase64})`;
+
+                    const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, imgMarkdown);
+                    if (img) {
+                        await e.reply({ ...img, origin: true }, quoteMessage);
+                    } else {
+                        logger.error('[sf插件] markdown图片生成失败，使用普通方式发送');
+                        // 如果markdown生成失败，使用普通方式发送
+                        await e.reply([
+                            cleanedAnswer,
+                            { ...segment.image(`base64://${generatedImageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }
+                        ], quoteMessage);
+                    }
+
+                    if (forwardMessage) {
+                        const forwardMsg = [{ ...segment.image(`base64://${generatedImageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }, cleanedAnswer];
+                        // 如果有思考过程且开启了转发思考
+                        if (thinkingContent && forwardThinking) {
+                            forwardMsg.push('[thinking]', thinkingContent);
+                        }
+                        e.reply(await common.makeForwardMsg(e, forwardMsg, `${e.sender.card || e.sender.nickname || e.user_id}的对话`));
+                    }
+                } else {
+                    // 非markdown模式，使用普通方式发送
+                    await e.reply([
+                        cleanedAnswer,
+                        { ...segment.image(`base64://${generatedImageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }
+                    ], quoteMessage);
+
+                    // 如果有思考过程且开启了转发思考，单独发送转发消息
+                    if (thinkingContent && forwardThinking) {
+                        const forwardMsg = ['[thinking]', thinkingContent];
+                        e.reply(await common.makeForwardMsg(e, forwardMsg, `思考过程`));
+                    }
+                }
+
+                return true;
+            }
+
             if (useMarkdown) {
                 const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, cleanedAnswer);
                 if (img) {
@@ -905,7 +955,7 @@ export class SF_Painting extends plugin {
      * @param {*} apiBaseUrl 使用的API地址
      * @param {*} model 使用的API模型
      * @param {*} opt 可选参数
-     * @return {string}
+     * @return {Object|string} 返回包含content和imageBase64的对象，或直接返回字符串（兼容性）
      */
     async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}, historyMessages = [], e) {
         // 获取用户名并替换prompt中的变量
@@ -1006,28 +1056,64 @@ export class SF_Painting extends plugin {
             });
         }
 
-        logger.debug("[sf插件]API调用LLM msg：\n" + input)
+        logger.debug("[sf插件]API调用LLM msg：\n" + input + "\nrequestBody:\n" + JSON.stringify(requestBody))
         try {
-            const response = await fetch(`${apiBaseUrl || config_date.sfBaseUrl}/chat/completions`, {
+            // 处理API URL，移除末尾斜杠并确保正确路径
+            let apiUrl = apiBaseUrl || config_date.sfBaseUrl;
+
+            // 移除末尾的斜杠
+            if (apiUrl.endsWith('/')) {
+                apiUrl = apiUrl.slice(0, -1);
+            }
+
+            // 如果不包含 /chat/completions 就添加
+            if (!apiUrl.match(/\/chat\/completions$/)) {
+                apiUrl = `${apiUrl}/chat/completions`;
+            }
+
+            // 构造请求头，为OpenRouter等API添加必要的头部
+            const headers = {
+                'Authorization': `Bearer ${use_sf_key}`,
+                'Content-Type': 'application/json'
+            };
+
+            const response = await fetch(apiUrl, {
                 method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${use_sf_key}`,
-                    'Content-Type': 'application/json'
-                },
+                headers: headers,
                 body: JSON.stringify(requestBody)
             })
 
             const data = await response.json()
 
             if (data?.choices?.[0]?.message?.content) {
-                return data.choices[0].message.content
+                // 检查是否有生成的图片
+                const images = data?.choices?.[0]?.message?.images;
+                let imageBase64 = null;
+
+                if (images && images.length > 0 && images[0]?.image_url?.url) {
+                    imageBase64 = images[0].image_url.url;
+                    logger.mark('[sf插件] 检测到API返回的生成图片');
+                }
+
+                return {
+                    content: data.choices[0].message.content,
+                    imageBase64: imageBase64
+                };
             } else {
                 logger.error("[sf插件]LLM调用错误：\n", JSON.stringify(data, null, 2))
-                return !forChat ? input : data.error?.message || data.message || "[sf插件]LLM调用错误，详情请查阅控制台。"
+                const errorMessage = !forChat ? input : data.error?.message || data.message || "[sf插件]LLM调用错误，详情请查阅控制台。";
+                return {
+                    content: errorMessage,
+                    imageBase64: null
+                };
             }
         } catch (error) {
             logger.error("[sf插件]LLM调用失败\n", error)
-            return !forChat ? input : error.message || "[sf插件]LLM调用失败，详情请查阅控制台。"
+            const errorMessage = !forChat ? input : error.message || "[sf插件]LLM调用失败，详情请查阅控制台。";
+            return {
+                content: errorMessage,
+                imageBase64: null
+            };
         }
     }
 

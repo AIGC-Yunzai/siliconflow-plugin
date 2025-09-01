@@ -143,7 +143,7 @@ export async function getImgFrom_awaitContext(e, needImgLength, featureName = ""
     const e_new = await context.awaitContext();
     if (e_new.img && e_new.img.length > 0) {
       // 将新获取的图片添加到现有图片数组中
-      e.img = e.img.concat(e_new.img);
+      e.img.push(...e_new.img);
     } else {
       e.reply(`[${featureName}]未获取到图片，操作已取消`, true);
       return e;
