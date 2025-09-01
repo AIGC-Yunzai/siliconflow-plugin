@@ -843,7 +843,7 @@ export class SF_Painting extends plugin {
 
         // 从结果中提取内容和图片
         const answer = typeof result === 'string' ? result : result.content;
-        const generatedImageBase64 = typeof result === 'object' ? result.imageBase64 : null;
+        const generatedImageArray = typeof result === 'object' ? result.imageBase64Array : null;
 
         // 处理思考过程
         let thinkingContent = '';
@@ -867,18 +867,21 @@ export class SF_Painting extends plugin {
             await saveContext(contextKey, {
                 role: 'assistant',
                 content: cleanedAnswer,
-                imageBase64: generatedImageBase64 ? [generatedImageBase64] : undefined
+                imageBase64: generatedImageArray || undefined
             }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
         }
 
         try {
             // 如果有生成的图片，先发送图片
-            if (generatedImageBase64) {
-                logger.mark('[sf插件] 检测到ss生成的图片')
+            if (generatedImageArray && generatedImageArray.length > 0) {
+                logger.info(`[sf插件] 检测到ss生成的 ${generatedImageArray.length} 张图片`)
 
                 if (useMarkdown) {
                     // 在markdown模式下，将图片融入到markdown内容中
-                    const imgMarkdown = `${cleanedAnswer}\n\n![生成的图片](${generatedImageBase64})`;
+                    let imgMarkdown = cleanedAnswer + '\n\n';
+                    generatedImageArray.forEach((imageBase64, index) => {
+                        imgMarkdown += `![生成的图片${index + 1}](${imageBase64})\n\n`;
+                    });
 
                     const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, imgMarkdown);
                     if (img) {
@@ -886,14 +889,19 @@ export class SF_Painting extends plugin {
                     } else {
                         logger.error('[sf插件] markdown图片生成失败，使用普通方式发送');
                         // 如果markdown生成失败，使用普通方式发送
-                        await e.reply([
-                            cleanedAnswer,
-                            { ...segment.image(`base64://${generatedImageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }
-                        ], quoteMessage);
+                        const replyArray = [cleanedAnswer];
+                        generatedImageArray.forEach((imageBase64) => {
+                            replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                        });
+                        await e.reply(replyArray, quoteMessage);
                     }
 
                     if (forwardMessage) {
-                        const forwardMsg = [{ ...segment.image(`base64://${generatedImageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }, cleanedAnswer];
+                        const forwardMsg = [];
+                        generatedImageArray.forEach((imageBase64) => {
+                            forwardMsg.push({ ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                        });
+                        forwardMsg.push(cleanedAnswer);
                         // 如果有思考过程且开启了转发思考
                         if (thinkingContent && forwardThinking) {
                             forwardMsg.push('[thinking]', thinkingContent);
@@ -902,10 +910,11 @@ export class SF_Painting extends plugin {
                     }
                 } else {
                     // 非markdown模式，使用普通方式发送
-                    await e.reply([
-                        cleanedAnswer,
-                        { ...segment.image(`base64://${generatedImageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }
-                    ], quoteMessage);
+                    const replyArray = [cleanedAnswer];
+                    generatedImageArray.forEach((imageBase64) => {
+                        replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                    });
+                    await e.reply(replyArray, quoteMessage);
 
                     // 如果有思考过程且开启了转发思考，单独发送转发消息
                     if (thinkingContent && forwardThinking) {
@@ -955,7 +964,7 @@ export class SF_Painting extends plugin {
      * @param {*} apiBaseUrl 使用的API地址
      * @param {*} model 使用的API模型
      * @param {*} opt 可选参数
-     * @return {Object|string} 返回包含content和imageBase64的对象，或直接返回字符串（兼容性）
+     * @return {Object|string} 返回包含content和imageBase64Array的对象，或直接返回字符串（兼容性）
      */
     async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}, historyMessages = [], e) {
         // 获取用户名并替换prompt中的变量
@@ -1084,27 +1093,38 @@ export class SF_Painting extends plugin {
             })
 
             const data = await response.json()
+            // logger.mark(`[sf插件]API返回 data：\n` + JSON.stringify(data, createTruncatingReplacer(), 2));
 
             if (data?.choices?.[0]?.message?.content) {
                 // 检查是否有生成的图片
                 const images = data?.choices?.[0]?.message?.images;
-                let imageBase64 = null;
+                let imageBase64Array = null;
 
-                if (images && images.length > 0 && images[0]?.image_url?.url) {
-                    imageBase64 = images[0].image_url.url;
-                    logger.mark('[sf插件] 检测到API返回的生成图片');
+                if (images && images.length > 0) {
+                    imageBase64Array = [];
+                    images.forEach((img, index) => {
+                        if (img?.image_url?.url) {
+                            imageBase64Array.push(img.image_url.url);
+                        }
+                    });
+
+                    if (imageBase64Array.length > 0) {
+                        logger.info(`[sf插件] 检测到API返回的 ${imageBase64Array.length} 张生成图片`);
+                    } else {
+                        imageBase64Array = null;
+                    }
                 }
 
                 return {
                     content: data.choices[0].message.content,
-                    imageBase64: imageBase64
+                    imageBase64Array: imageBase64Array
                 };
             } else {
                 logger.error("[sf插件]LLM调用错误：\n", JSON.stringify(data, null, 2))
                 const errorMessage = !forChat ? input : data.error?.message || data.message || "[sf插件]LLM调用错误，详情请查阅控制台。";
                 return {
                     content: errorMessage,
-                    imageBase64: null
+                    imageBase64Array: null
                 };
             }
         } catch (error) {
@@ -1112,7 +1132,7 @@ export class SF_Painting extends plugin {
             const errorMessage = !forChat ? input : error.message || "[sf插件]LLM调用失败，详情请查阅控制台。";
             return {
                 content: errorMessage,
-                imageBase64: null
+                imageBase64Array: null
             };
         }
     }
@@ -1216,6 +1236,7 @@ export class SF_Painting extends plugin {
             })
 
             const data = await response.json()
+            // logger.mark(`[sf插件]API返回 data：\n` + JSON.stringify(data, createTruncatingReplacer(), 2));
 
             if (data?.images?.[0]?.url) {
                 const imageUrl = data.images[0].url
@@ -1482,7 +1503,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             enableImageGeneration: enableImageGeneration
         }
 
-        const { answer, sources, imageBase64 } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
+        const { answer, sources, imageBase64, textImagePairs } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
 
         // 保存AI回复
         if (config_date.gg_ss_useContext) {
@@ -1490,19 +1511,33 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 role: 'assistant',
                 content: answer,
                 sources: sources,
-                imageBase64: imageBase64 ? [imageBase64] : undefined
+                imageBase64: imageBase64 || undefined
             }, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
         }
 
         try {
             // 如果有生成的图片，先发送图片
-            if (imageBase64) {
-                logger.mark('[sf插件] 检测到Gemini生成的图片')
+            if (imageBase64 && imageBase64.length > 0) {
+                logger.info(`[sf插件] 检测到Gemini生成的 ${imageBase64.length} 张图片`)
 
                 if (useMarkdown) {
-                    // 在markdown模式下，将图片融入到markdown内容中
-                    // 构建包含图片的markdown内容
-                    const imgMarkdown = `${answer}\n\n![生成的图片](${imageBase64})`;
+                    let imgMarkdown = "";
+
+                    // 如果有配对信息，使用配对信息来组织内容
+                    if (textImagePairs && textImagePairs.length > 0) {
+                        textImagePairs.forEach((pair, index) => {
+                            if (pair.text) {
+                                imgMarkdown += `${pair.text}\n\n`;
+                            }
+                            imgMarkdown += `![${pair.text || `图片${index + 1}`}](${pair.image})\n\n`;
+                        });
+                    } else {
+                        // 没有配对信息时使用原来的方式
+                        imgMarkdown = answer + '\n\n';
+                        imageBase64.forEach((img, index) => {
+                            imgMarkdown += `![生成的图片${index + 1}](${img})\n\n`;
+                        });
+                    }
 
                     // 生成markdown图片
                     const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, imgMarkdown);
@@ -1510,16 +1545,27 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                         await e.reply({ ...img, origin: true }, quoteMessage);
                     } else {
                         logger.error('[sf插件] markdown图片生成失败，使用普通方式发送');
-                        // 如果markdown生成失败，使用普通方式发送
-                        await e.reply([
-                            answer,
-                            { ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }
-                        ], quoteMessage);
+                        // 如果markdown生成失败，使用配对方式发送
+                        await this.sendPairedReply(e, textImagePairs, imageBase64, answer, quoteMessage);
                     }
 
                     // 构建转发消息，包含回答和来源
                     if (forwardMessage) {
-                        const forwardMsg = [{ ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }, answer];
+                        const forwardMsg = [];
+                        if (textImagePairs && textImagePairs.length > 0) {
+                            textImagePairs.forEach((pair) => {
+                                if (pair.text) {
+                                    forwardMsg.push(pair.text);
+                                }
+                                forwardMsg.push({ ...segment.image(`base64://${pair.image.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                            });
+                        } else {
+                            imageBase64.forEach((imgData) => {
+                                forwardMsg.push({ ...segment.image(`base64://${imgData.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                            });
+                            forwardMsg.push(answer);
+                        }
+
                         if (sources && sources.length > 0) {
                             forwardMsg.push('信息来源：');
                             sources.forEach((source, index) => {
@@ -1529,11 +1575,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                         e.reply(await common.makeForwardMsg(e, forwardMsg, `回复${e.sender.card || e.sender.nickname || e.user_id}`));
                     }
                 } else {
-                    // 非markdown模式，使用普通方式发送
-                    await e.reply([
-                        answer,
-                        { ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true }
-                    ], quoteMessage);
+                    // 非markdown模式，使用配对方式发送
+                    await this.sendPairedReply(e, textImagePairs, imageBase64, answer, quoteMessage);
                 }
 
                 return true;
@@ -1575,6 +1618,45 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         } catch (error) {
             logger.error('[sf插件] 回复消息时发生错误：', error)
             await e.reply('消息处理失败，请稍后再试')
+        }
+    }
+
+    /**
+     * @description: 发送文本图片配对的回复
+     * @param {*} e 
+     * @param {*} textImagePairs 文本图片配对数组
+     * @param {*} imageBase64 图片数组（备用）
+     * @param {*} answer 完整文本（备用）
+     * @param {*} quoteMessage 是否引用消息
+     */
+    async sendPairedReply(e, textImagePairs, imageBase64, answer, quoteMessage) {
+        try {
+            if (textImagePairs && textImagePairs.length > 0) {
+                // 使用配对信息发送
+                for (const pair of textImagePairs) {
+                    const replyArray = [];
+                    if (pair.text) {
+                        replyArray.push(pair.text);
+                    }
+                    replyArray.push({ ...segment.image(`base64://${pair.image.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                    await e.reply(replyArray, quoteMessage);
+                }
+            } else {
+                // 没有配对信息时使用原来的方式
+                const replyArray = [answer];
+                imageBase64.forEach((imgData) => {
+                    replyArray.push({ ...segment.image(`base64://${imgData.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                });
+                await e.reply(replyArray, quoteMessage);
+            }
+        } catch (error) {
+            logger.error('[sf插件] 发送配对回复时发生错误：', error);
+            // 如果配对发送失败，使用普通方式
+            const replyArray = [answer];
+            imageBase64.forEach((imgData) => {
+                replyArray.push({ ...segment.image(`base64://${imgData.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+            });
+            await e.reply(replyArray, quoteMessage);
         }
     }
 
@@ -1773,22 +1855,45 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             })
 
             const data = await response.json()
+            // logger.mark(`[sf插件]API返回 data：\n` + JSON.stringify(data, createTruncatingReplacer(), 2));
 
             if (data?.candidates?.[0]?.content?.parts) {
                 // 处理返回的内容
                 let answer = "";
-                let imageBase64 = null;
+                let imageBase64Array = [];
+                let textImagePairs = []; // 存储文本和图片的配对关系
 
-                // 遍历所有parts
-                for (const part of data.candidates[0].content.parts) {
+                // 遍历所有parts，将文本和图片进行配对
+                let currentText = "";
+                for (let i = 0; i < data.candidates[0].content.parts.length; i++) {
+                    const part = data.candidates[0].content.parts[i];
+
                     if (part.text) {
+                        currentText += part.text;
                         answer += part.text;
                     } else if (part.inlineData && part.inlineData.data) {
                         // 处理图片数据
-                        imageBase64 = "data:image/png;base64," + part.inlineData.data;
-                        logger.debug("[sf插件]检测到生成的图片数据");
+                        const imageData = "data:image/png;base64," + part.inlineData.data;
+                        imageBase64Array.push(imageData);
+
+                        // 将当前收集的文本与图片配对
+                        textImagePairs.push({
+                            text: currentText.trim(),
+                            image: imageData,
+                            index: imageBase64Array.length - 1
+                        });
+
+                        logger.debug(`[sf插件]检测到图片配对：文本"${currentText.trim()}" -> 图片${imageBase64Array.length}`);
+                        currentText = ""; // 重置当前文本
                     }
                 }
+
+                // 如果最后还有剩余的文本，添加到answer
+                if (currentText.trim()) {
+                    answer += currentText;
+                }
+
+                logger.info(`[sf插件]总共检测到 ${imageBase64Array.length} 张图片，${textImagePairs.length} 个文本-图片配对`);
 
                 // 获取信息来源（搜索结果）
                 let sources = [];
@@ -1808,12 +1913,13 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 if (sources.length > 0)
                     logger.debug("[sf插件]信息来源：" + JSON.stringify(sources))
 
-                // 如果有图片数据，将其添加到answer中
-                if (imageBase64) {
-                    return { answer, sources, imageBase64 };
-                }
-
-                return { answer, sources };
+                // 返回结果，包含图片数组和配对信息
+                return {
+                    answer,
+                    sources,
+                    imageBase64: imageBase64Array.length > 0 ? imageBase64Array : null,
+                    textImagePairs: textImagePairs.length > 0 ? textImagePairs : null
+                };
             } else {
                 logger.error("[sf插件]gg调用错误：\n", JSON.stringify(data, null, 2))
 
