@@ -69,7 +69,7 @@ function extractUrls(text) {
 async function extractUrlContent(url) {
     // 如果是需要跳过的URL类型，直接返回null
     if (isSkippedUrl(url)) {
-        logger.mark(`[URL提取]跳过不需要处理的URL类型: ${url}`)
+        logger.info(`[URL提取]跳过不需要处理的URL类型: ${url}`)
         return null;
     }
 
@@ -100,14 +100,14 @@ export async function processMessageWithUrls(message, appendContent = true) {
         return { message, extractedContent: '' };
     }
 
-    logger.mark(`[URL处理]从消息中提取到${urls.length}个URL`)
+    logger.info(`[URL处理]从消息中提取到${urls.length}个URL`)
     let processedMessage = message;
     let extractedContent = '';
 
     for (const url of urls) {
         // 跳过不需要提取内容的URL
         if (isSkippedUrl(url)) {
-            logger.mark(`[URL处理]跳过URL: ${url}`)
+            logger.info(`[URL处理]跳过URL: ${url}`)
             continue;
         }
 

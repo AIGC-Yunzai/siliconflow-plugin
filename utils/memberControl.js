@@ -107,7 +107,7 @@ async function checkCD(userId, groupId, feature, currentTime, cdTime, cdMultiple
 
             // 处理禁言CD
             if (isFromMute) {
-                logger.mark(`[${feature}][禁言CD]${groupId}:${userId} 因违规已被禁言${totalCdTime}秒，剩余${totalCdTime - seconds}秒`)
+                logger.info(`[${feature}][禁言CD]${groupId}:${userId} 因违规已被禁言${totalCdTime}秒，剩余${totalCdTime - seconds}秒`)
                 return {
                     allowed: false,
                     message: `[${feature}][禁言CD] 因违规已被禁言${totalCdTime}秒，剩余${totalCdTime - seconds}秒`

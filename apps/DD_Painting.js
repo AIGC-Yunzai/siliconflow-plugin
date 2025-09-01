@@ -819,7 +819,7 @@ export class DD_Painting extends plugin {
 
         param.input = await this.txt2img_generatePrompt(e, prompt, config_date);
 
-        logger.mark("[sf插件][dd]开始图片生成API调用")
+        logger.info("[sf插件][dd]开始图片生成API调用")
 
         try {
             // 调用绘图API
@@ -935,7 +935,7 @@ export class DD_Painting extends plugin {
 
         param.input = await this.txt2img_generatePrompt(e, msg, config_date);
 
-        logger.mark("[sf插件][dd]开始图片生成API调用")
+        logger.info("[sf插件][dd]开始图片生成API调用")
 
         try {
             // 调用绘图API

@@ -10,7 +10,7 @@ const _path = process.cwd();
  * @return {object} 图片对象
  */
 export async function markdown_screenshot(userId, botId, userMsg, answer) {
-    logger.mark('[sf插件]正在生成markdown图片...')
+    logger.info('[sf插件]正在生成markdown图片...')
     const data = {
         _path,
         tplFile: './plugins/siliconflow-plugin/resources/markdownPic/index.html',

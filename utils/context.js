@@ -145,7 +145,7 @@ export async function loadContext(userId, promptNum = 0, type = '') {
         const maxHistory = config.gg_maxHistoryLength * 2 || 40
 
         // 添加日志
-        logger.mark(`[Context] 加载上下文 - userId: ${userId}, promptNum: ${promptNum}, type: ${type}`);
+        logger.info(`[Context] 加载上下文 - 用户ID: ${userId}, 接口序号: ${promptNum}, 接口类型: ${type}`);
 
         // 使用新的pattern构造函数,传入type参数
         const pattern = buildRedisPattern(userId, promptNum, type)

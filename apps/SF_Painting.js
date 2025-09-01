@@ -506,7 +506,6 @@ export class SF_Painting extends plugin {
         // 读取配置
         const config_date = Config.getConfig()
         e.sfRuntime = { config: config_date }
-        // logger.mark("draw方法被调用，消息内容:", e.msg)
 
         if (config_date.sf_keys.length == 0) {
             await e.reply('请先设置画图API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
@@ -552,7 +551,6 @@ export class SF_Painting extends plugin {
         let userPrompt = param.input
         let finalPrompt = await this.txt2img_generatePrompt(e, userPrompt, config_date);
 
-        logger.mark("[sf插件]开始图片生成API调用")
         this.sf_send_pic(e, finalPrompt, this.get_use_sf_key(config_date.sf_keys), config_date, param, canImg2Img, souce_image_base64, userPrompt)
         return true;
     }
@@ -578,6 +576,7 @@ export class SF_Painting extends plugin {
                 e.reply('生成提示词失败，请稍后再试。')
                 return false
             }
+            logger.debug("[sf插件]自动提示词生成：" + finalPrompt);
         }
         if (!onleReplyOnce && !config_date.simpleMode) {
             e.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成图片...`)
@@ -740,7 +739,7 @@ export class SF_Painting extends plugin {
         let currentImages = [];
         if (e.img && e.img.length > 0 && enableImageUpload) {
             // 记录获取到的图片链接
-            logger.mark(`[SF插件][ss]获取到图片链接:\n${e.img.join('\n')}`)
+            logger.info(`[SF插件][ss]获取到图片链接:\n${e.img.join('\n')}`)
             // 获取所有图片数据
             for (const imgUrl of e.img) {
                 try {
@@ -810,7 +809,7 @@ export class SF_Painting extends plugin {
                 role: 'user',
                 content: aiMessage,
                 extractedContent: extractedContent,
-                imageBase64: currentImages.length > 0 ? currentImages : undefined,
+                imageBase64: undefined,
                 sender: senderValue
             }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
         }
@@ -819,7 +818,7 @@ export class SF_Painting extends plugin {
         let historyMessages = []
         if (config_date.gg_ss_useContext) {
             historyMessages = await loadContext(contextKey, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
-            logger.mark(`[SF插件][ss]加载历史对话: ${historyMessages.length} 条`)
+            logger.debug(`[SF插件][ss]加载历史对话: ${historyMessages.length} 条`)
         }
 
         // 收集历史图片
@@ -863,15 +862,13 @@ export class SF_Painting extends plugin {
             await saveContext(contextKey, {
                 role: 'assistant',
                 content: cleanedAnswer,
-                imageBase64: generatedImageArray || undefined
+                imageBase64: undefined
             }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
         }
 
         try {
             // 如果有生成的图片，先发送图片
             if (generatedImageArray && generatedImageArray.length > 0) {
-                logger.info(`[sf插件] 检测到ss生成的 ${generatedImageArray.length} 张图片`)
-
                 if (useMarkdown) {
                     // 在markdown模式下，将图片融入到markdown内容中
                     let imgMarkdown = cleanedAnswer + '\n\n';
@@ -1399,7 +1396,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         let currentImages = [];
         if (e.img && e.img.length > 0) {
             // 记录获取到的图片链接
-            logger.mark(`[SF插件][gg]获取到图片链接:\n${e.img.join('\n')}`)
+            logger.info(`[SF插件][gg]获取到图片链接:\n${e.img.join('\n')}`)
             // 获取所有图片数据
             for (const imgUrl of e.img) {
                 try {
@@ -1469,7 +1466,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 role: 'user',
                 content: aiMessage,
                 extractedContent: extractedContent,
-                imageBase64: currentImages.length > 0 ? currentImages : undefined,
+                imageBase64: undefined,
                 sender: senderValue
             }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
         }
@@ -1478,7 +1475,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         let historyMessages = []
         if (config_date.gg_ss_useContext) {
             historyMessages = await loadContext(contextKey, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
-            logger.mark(`[SF插件][gg]加载历史对话: ${historyMessages.length} 条`)
+            logger.debug(`[SF插件][gg]加载历史对话: ${historyMessages.length} 条`)
         }
 
         // 收集历史图片
@@ -1507,15 +1504,13 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 role: 'assistant',
                 content: answer,
                 sources: sources,
-                imageBase64: imageBase64 || undefined
+                imageBase64: undefined
             }, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
         }
 
         try {
             // 如果有生成的图片，先发送图片
             if (imageBase64 && imageBase64.length > 0) {
-                logger.info(`[sf插件] 检测到Gemini生成的 ${imageBase64.length} 张图片`)
-
                 if (useMarkdown) {
                     let imgMarkdown = "";
 
@@ -1889,7 +1884,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                     answer += currentText;
                 }
 
-                logger.info(`[sf插件]总共检测到 ${imageBase64Array.length} 张图片，${textImagePairs.length} 个文本-图片配对`);
+                if (imageBase64Array.length > 0)
+                    logger.info(`[sf插件]总共检测到 ${imageBase64Array.length} 张图片，${textImagePairs.length} 个图文配对`);
 
                 // 获取信息来源（搜索结果）
                 let sources = [];
@@ -2024,7 +2020,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                     const member = await e.group.pickMember(Number(targetId))
                     targetName = member.card || member.nickname
                 } catch (error) {
-                    logger.mark(`[sf插件]获取群成员信息失败: ${error}`)
+                    logger.warn(`[sf插件]获取群成员信息失败: ${error}`)
                     targetName = targetId
                 }
             } else {
@@ -2578,7 +2574,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 const historyData = await redis.lRange(historyKey, 0, -1);
                 messages = historyData.map(item => JSON.parse(item)).flat();
                 if (logLevel === 'debug' || logLevel === 'info')
-                    logger.mark(`[sf插件] 成功加载绘画历史记录: ${messages.length}条消息`);
+                    logger.debug(`[sf插件] 成功加载绘画历史记录: ${messages.length}条消息`);
             } else {
                 // 原有的SS和GG模式历史记录加载逻辑
                 const config = Config.getConfig();
@@ -2589,10 +2585,10 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                     promptNum = config.gg_usingAPI;
                 }
                 if (logLevel === 'debug' || logLevel === 'info')
-                    logger.mark(`[sf插件] 加载历史记录: userQQ=${userQQ}, mode=${mode}, promptNum=${promptNum}`);
+                    logger.debug(`[sf插件] 加载历史记录: userQQ=${userQQ}, mode=${mode}, promptNum=${promptNum}`);
                 messages = await loadContext(userQQ, promptNum, mode);
                 if (logLevel === 'debug' || logLevel === 'info')
-                    logger.mark(`[sf插件] 成功加载历史记录: ${messages.length}条消息`);
+                    logger.debug(`[sf插件] 成功加载历史记录: ${messages.length}条消息`);
             }
 
             // 发送历史记录给客户端
@@ -2601,7 +2597,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 messages: messages
             };
             ws.send(JSON.stringify(response));
-            logger.mark(`[sf插件] ${messages.length}条历史记录已发送给客户端`);
+            logger.debug(`[sf插件] ${messages.length}条历史记录已发送给客户端`);
         } catch (error) {
             logger.error('[sf插件] 加载历史记录失败:', error);
             this.sendError(ws, '加载历史记录失败: ' + error.message);
@@ -2652,9 +2648,9 @@ async function init_server() {
             // 根据日志级别记录
             const logLevel = config.wsLogLevel || 'info';
             if (logLevel === 'debug') {
-                logger.mark(`[sf插件] 新的WebSocket连接 来自: ${req.socket.remoteAddress}`);
+                logger.info(`[sf插件] 新的WebSocket连接 来自: ${req.socket.remoteAddress}`);
             } else if (logLevel === 'info') {
-                logger.mark('[sf插件] 新的WebSocket连接');
+                logger.info('[sf插件] 新的WebSocket连接');
             }
 
             // 添加密码验证处理
