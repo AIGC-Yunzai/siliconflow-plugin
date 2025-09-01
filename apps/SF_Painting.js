@@ -573,7 +573,7 @@ export class SF_Painting extends plugin {
                 e.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成提示词并绘图...`)
                 onleReplyOnce++
             }
-            finalPrompt = await this.generatePrompt(userPrompt, use_sf_key, config_date)
+            finalPrompt = (await this.generatePrompt(userPrompt, use_sf_key, config_date))?.content
             if (!finalPrompt) {
                 e.reply('生成提示词失败，请稍后再试。')
                 return false
@@ -839,11 +839,7 @@ export class SF_Painting extends plugin {
             systemPrompt: systemPrompt
         }
 
-        const result = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
-
-        // 从结果中提取内容和图片
-        const answer = typeof result === 'string' ? result : result.content;
-        const generatedImageArray = typeof result === 'object' ? result.imageBase64Array : null;
+        const { content: answer, imageBase64Array: generatedImageArray } = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
 
         // 处理思考过程
         let thinkingContent = '';
@@ -964,7 +960,7 @@ export class SF_Painting extends plugin {
      * @param {*} apiBaseUrl 使用的API地址
      * @param {*} model 使用的API模型
      * @param {*} opt 可选参数
-     * @return {Object|string} 返回包含content和imageBase64Array的对象，或直接返回字符串（兼容性）
+     * @return {Object} 返回 {content, imageBase64Array}
      */
     async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}, historyMessages = [], e) {
         // 获取用户名并替换prompt中的变量
