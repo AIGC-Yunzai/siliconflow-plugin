@@ -124,17 +124,28 @@ export async function url2Base64(url, isReturnBuffer = false) {
 /**
  * @description: 请在120秒内发送图片
  * @param {*} e
+ * @param {*} needImgLength 需要的图片数量
  * @param {*} context
  * @return {*}
  */
-export async function getImgFrom_awaitContext(e, context = null) {
-  if (e.img)
-    return e;
-  await e.reply(`[${e.msg.replace(/^[#\/]/, '').substring(0, 4)}]未获取到图片，请在120秒内发送图片喵~`, true, { recallMsg: 115 })
-  const e_new = await context.awaitContext()
-  if (e_new.img)
-    e.img = e_new.img
-  else
-    e.reply(`[${e.msg.replace(/^[#\/]/, '').substring(0, 4)}]未获取到图片，操作已取消`, true)
+export async function getImgFrom_awaitContext(e, needImgLength, context = null) {
+  // 初始化图片数组
+  if (!e.img) {
+    e.img = [];
+  }
+  // 检查当前图片数量是否满足要求
+  while (e.img.length < needImgLength) {
+    const currentCount = e.img.length;
+    const stillNeed = needImgLength - currentCount;
+    await e.reply(`[${e.msg.replace(/^[#\/]/, '').substring(0, 3)}]当前已有${currentCount}张图片，还需要${stillNeed}张图片，请在120秒内发送图片喵~`, true, { recallMsg: 115 });
+    const e_new = await context.awaitContext();
+    if (e_new.img && e_new.img.length > 0) {
+      // 将新获取的图片添加到现有图片数组中
+      e.img = e.img.concat(e_new.img);
+    } else {
+      e.reply(`[${e.msg.replace(/^[#\/]/, '').substring(0, 3)}]未获取到图片，操作已取消`, true);
+      return e;
+    }
+  }
   return e;
 }

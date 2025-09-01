@@ -447,10 +447,10 @@ export class SF_Painting extends plugin {
                     config_date.gg_forwardMessage = value === '开'
                     break
                 case 'ss必需图片':
-                    config_date.ss_mustNeedImg = value === '开'
+                    config_date.ss_mustNeedImgLength = value === parseInt(value)
                     break
                 case 'gg必需图片':
-                    config_date.gg_mustNeedImg = value === '开'
+                    config_date.gg_mustNeedImgLength = value === parseInt(value)
                     break
                 case 'gg搜索':
                     config_date.gg_useSearch = value === '开'
@@ -652,7 +652,7 @@ export class SF_Painting extends plugin {
         const isMaster = e.isMaster
 
         // 获取接口配置
-        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false, enableImageUpload = true, mustNeedImg = false
+        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false, enableImageUpload = true, mustNeedImgLength = 0
         let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], memberConfigName = 'ss_default';
 
         // 根据用户身份选择使用的接口索引
@@ -680,7 +680,7 @@ export class SF_Painting extends plugin {
             systemPrompt = apiConfig.prompt || config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
             useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
             forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
-            mustNeedImg = (typeof apiConfig.mustNeedImg !== 'undefined') ? apiConfig.mustNeedImg : false
+            mustNeedImgLength = (typeof apiConfig.mustNeedImgLength !== 'undefined') ? apiConfig.mustNeedImgLength : 0
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             forwardThinking = (typeof apiConfig.forwardThinking !== 'undefined') ? apiConfig.forwardThinking : false
             enableImageUpload = (typeof apiConfig.enableImageUpload !== 'undefined') ? apiConfig.enableImageUpload : true
@@ -701,7 +701,7 @@ export class SF_Painting extends plugin {
             systemPrompt = config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
             useMarkdown = config_date.ss_useMarkdown
             forwardMessage = config_date.ss_forwardMessage
-            mustNeedImg = config_date.ss_mustNeedImg
+            mustNeedImgLength = config_date.ss_mustNeedImgLength
             quoteMessage = config_date.ss_quoteMessage
             forwardThinking = config_date.ss_forwardThinking
             enableImageUpload = config_date.ss_enableImageUpload
@@ -714,7 +714,7 @@ export class SF_Painting extends plugin {
             model = config_date.translateModel
             useMarkdown = config_date.ss_useMarkdown
             forwardMessage = config_date.ss_forwardMessage
-            mustNeedImg = config_date.ss_mustNeedImg
+            mustNeedImgLength = config_date.ss_mustNeedImgLength
             quoteMessage = config_date.ss_quoteMessage
             forwardThinking = config_date.ss_forwardThinking
             enableImageUpload = config_date.ss_enableImageUpload
@@ -732,9 +732,9 @@ export class SF_Painting extends plugin {
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
-        if (mustNeedImg) {
-            await getImgFrom_awaitContext(e, this)
-            if (!e.img)
+        if (mustNeedImgLength) {
+            await getImgFrom_awaitContext(e, mustNeedImgLength, this)
+            if (e.img.length < mustNeedImgLength)
                 return true;
         }
         let currentImages = [];
@@ -1221,7 +1221,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         const isMaster = e.isMaster
 
         // 获取接口配置
-        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false, mustNeedImg = false
+        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false, mustNeedImgLength = 0
         let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], memberConfigName = 'gg_default';
 
         // 根据用户身份选择使用的接口索引
@@ -1249,7 +1249,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             systemPrompt = apiConfig.prompt || config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
             useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
             forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
-            mustNeedImg = (typeof apiConfig.mustNeedImg !== 'undefined') ? apiConfig.mustNeedImg : false
+            mustNeedImgLength = (typeof apiConfig.mustNeedImgLength !== 'undefined') ? apiConfig.mustNeedImgLength : 0
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             useSearch = (typeof apiConfig.useSearch !== 'undefined') ? apiConfig.useSearch : false
             enableImageGeneration = (typeof apiConfig.enableImageGeneration !== 'undefined') ? apiConfig.enableImageGeneration : false
@@ -1270,7 +1270,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             systemPrompt = config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
             useMarkdown = config_date.gg_useMarkdown
             forwardMessage = config_date.gg_forwardMessage
-            mustNeedImg = config_date.gg_mustNeedImg
+            mustNeedImgLength = config_date.gg_mustNeedImgLength
             quoteMessage = config_date.gg_quoteMessage
             useSearch = config_date.gg_useSearch
             enableImageGeneration = config_date.gg_enableImageGeneration
@@ -1288,9 +1288,9 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
-        if (mustNeedImg) {
-            await getImgFrom_awaitContext(e, this)
-            if (!e.img)
+        if (mustNeedImgLength) {
+            await getImgFrom_awaitContext(e, mustNeedImgLength, this)
+            if (e.img.length < mustNeedImgLength)
                 return true;
         }
         let currentImages = [];

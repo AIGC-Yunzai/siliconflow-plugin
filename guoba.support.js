@@ -752,10 +752,15 @@ export function supportGuoba() {
                 bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
               },
               {
-                field: "mustNeedImg",
+                field: "mustNeedImgLength",
                 label: "必需图片",
-                component: "Switch",
-                bottomHelpMessage: "开启后用户使用该接口时必须附带/引用图片，若无图片则要求用户发送图片，常用于图生图或图片鉴赏",
+                bottomHelpMessage: "填写该接口必须使用的图片张数，若用户使用该接口时必须附带/引用图片的图片不足，则要求用户发送图片，常用于图生图/图片鉴赏/ControlNet",
+                helpMessage: '单位：张',
+                component: "InputNumber",
+                componentProps: {
+                  min: 0,
+                  step: 1,
+                },
               },
               {
                 field: "forwardThinking",
@@ -894,10 +899,15 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
-          field: "ss_mustNeedImg",
+          field: "ss_mustNeedImgLength",
           label: "[#ss]必需图片",
-          component: "Switch",
-          bottomHelpMessage: "开启后用户使用该接口时必须附带/引用图片，若无图片则要求用户发送图片，常用于图生图或图片鉴赏",
+          bottomHelpMessage: "填写该接口必须使用的图片张数，若用户使用该接口时必须附带/引用图片的图片不足，则要求用户发送图片，常用于图生图/图片鉴赏/ControlNet",
+          helpMessage: '单位：张',
+          component: "InputNumber",
+          componentProps: {
+            min: 0,
+            step: 1,
+          },
         },
         {
           field: "ss_forwardThinking",
@@ -992,10 +1002,15 @@ export function supportGuoba() {
                 bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
               },
               {
-                field: "mustNeedImg",
+                field: "mustNeedImgLength",
                 label: "必需图片",
-                component: "Switch",
-                bottomHelpMessage: "开启后用户使用该接口时必须附带/引用图片，若无图片则要求用户发送图片，常用于图生图或图片鉴赏",
+                bottomHelpMessage: "填写该接口必须使用的图片张数，若用户使用该接口时必须附带/引用图片的图片不足，则要求用户发送图片，常用于图生图/图片鉴赏/ControlNet",
+                helpMessage: '单位：张',
+                component: "InputNumber",
+                componentProps: {
+                  min: 0,
+                  step: 1,
+                },
               },
               {
                 field: "enableImageGeneration",
@@ -1140,10 +1155,15 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
-          field: "gg_mustNeedImg",
+          field: "gg_mustNeedImgLength",
           label: "[#gg]必需图片",
-          component: "Switch",
-          bottomHelpMessage: "开启后用户使用该接口时必须附带/引用图片，若无图片则要求用户发送图片，常用于图生图或图片鉴赏",
+          bottomHelpMessage: "填写该接口必须使用的图片张数，若用户使用该接口时必须附带/引用图片的图片不足，则要求用户发送图片，常用于图生图/图片鉴赏/ControlNet",
+          helpMessage: '单位：张',
+          component: "InputNumber",
+          componentProps: {
+            min: 0,
+            step: 1,
+          },
         },
         {
           field: "gg_enableImageGeneration",
