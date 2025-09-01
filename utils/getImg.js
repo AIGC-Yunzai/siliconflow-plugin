@@ -125,25 +125,27 @@ export async function url2Base64(url, isReturnBuffer = false) {
  * @description: 请在120秒内发送图片
  * @param {*} e
  * @param {*} needImgLength 需要的图片数量
+ * @param {*} featureName 显示的名称
  * @param {*} context
  * @return {*}
  */
-export async function getImgFrom_awaitContext(e, needImgLength, context = null) {
+export async function getImgFrom_awaitContext(e, needImgLength, featureName = "", context = null) {
   // 初始化图片数组
   if (!e.img) {
     e.img = [];
   }
+  featureName = featureName.replace(/_default$/, '') || e.msg.replace(/^[#\/]/, '').substring(0, 2)
   // 检查当前图片数量是否满足要求
   while (e.img.length < needImgLength) {
     const currentCount = e.img.length;
     const stillNeed = needImgLength - currentCount;
-    await e.reply(`[${e.msg.replace(/^[#\/]/, '').substring(0, 3)}]当前已有${currentCount}张图片，还需要${stillNeed}张图片，请在120秒内发送图片喵~`, true, { recallMsg: 115 });
+    await e.reply(`[${featureName}]当前已有${currentCount}张图片，还需要${stillNeed}张图片，请在120秒内发送图片喵~`, true, { recallMsg: 115 });
     const e_new = await context.awaitContext();
     if (e_new.img && e_new.img.length > 0) {
       // 将新获取的图片添加到现有图片数组中
       e.img = e.img.concat(e_new.img);
     } else {
-      e.reply(`[${e.msg.replace(/^[#\/]/, '').substring(0, 3)}]未获取到图片，操作已取消`, true);
+      e.reply(`[${featureName}]未获取到图片，操作已取消`, true);
       return e;
     }
   }
