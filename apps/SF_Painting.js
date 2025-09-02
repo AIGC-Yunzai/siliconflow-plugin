@@ -2394,7 +2394,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 }
             }
 
-            logger.error('命令格式错误');
+            // logger.error('命令格式错误');
             return false;
         };
     }
@@ -2410,7 +2410,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
             const endChatIndex = withoutPrefix.indexOf('结束对话');
             if (endChatIndex === -1) {
-                logger.error('[sf插件] 命令格式错误');
+                // logger.error('[sf插件] 命令格式错误');
                 return false;
             }
 
