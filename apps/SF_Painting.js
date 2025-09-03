@@ -1859,6 +1859,11 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 for (let i = 0; i < data.candidates[0].content.parts.length; i++) {
                     const part = data.candidates[0].content.parts[i];
 
+                    // 跳过空对象或无效的part
+                    if (!part || (typeof part === 'object' && Object.keys(part).length === 0)) {
+                        continue;
+                    }
+
                     if (part.text) {
                         currentText += part.text;
                         answer += part.text;
@@ -1877,11 +1882,6 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                         logger.debug(`[sf插件]检测到图片配对：文本"${currentText.trim()}" -> 图片${imageBase64Array.length}`);
                         currentText = ""; // 重置当前文本
                     }
-                }
-
-                // 如果最后还有剩余的文本，添加到answer
-                if (currentText.trim()) {
-                    answer += currentText;
                 }
 
                 if (imageBase64Array.length > 0)
