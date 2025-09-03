@@ -91,7 +91,7 @@ export class update extends plugin {
    * @returns
    */
   async runUpdate(isForce, isDevUpdate, isMainUpdate) {
-    let command = 'git -C ./plugins/siliconflow-plugin/ pull --no-rebase'
+    let command = ''
 
     if (isForce && isDevUpdate) {
       // dev分支强制更新
@@ -102,9 +102,10 @@ export class update extends plugin {
       command = 'git -C ./plugins/siliconflow-plugin/ reset --hard HEAD && git -C ./plugins/siliconflow-plugin/ clean -fd && git -C ./plugins/siliconflow-plugin/ checkout main && git -C ./plugins/siliconflow-plugin/ fetch --all && git -C ./plugins/siliconflow-plugin/ reset --hard origin/main'
       this.e.reply('正在执行main分支强制更新操作，请稍等')
     } else if (isForce) {
-      command = `git -C ./plugins/siliconflow-plugin/ reset --hard HEAD && git -C ./plugins/siliconflow-plugin/ clean -fd && git -C ./plugins/siliconflow-plugin/ checkout . && ${command}`
+      command = `git -C ./plugins/siliconflow-plugin/ reset --hard HEAD && git -C ./plugins/siliconflow-plugin/ clean -fd && git -C ./plugins/siliconflow-plugin/ checkout . && git -C ./plugins/siliconflow-plugin/ fetch --all && git -C ./plugins/siliconflow-plugin/ reset --hard @{u}`
       this.e.reply('正在执行强制更新操作，请稍等')
     } else {
+      command = 'git -C ./plugins/siliconflow-plugin/ pull --no-rebase'
       this.e.reply('正在执行更新操作，请稍等')
     }
     /** 获取上次提交的commitId，用于获取日志时判断新增的更新日志 */
@@ -296,26 +297,7 @@ export class update extends plugin {
       return
     }
 
-    if (errMsg.includes('be overwritten by merge')) {
-      await this.reply(
-        msg +
-        `存在冲突：\n${errMsg}\n` +
-        '请解决冲突后再更新，或者执行#强制更新，放弃本地修改'
-      )
-      return
-    }
-
-    if (stdout.includes('CONFLICT')) {
-      await this.reply([
-        msg + '存在冲突\n',
-        errMsg,
-        stdout,
-        '\n请解决冲突后再更新，或者执行#强制更新，放弃本地修改'
-      ])
-      return
-    }
-
-    await this.reply([errMsg, stdout])
+    await this.reply([errMsg, stdout, `\n若存在git冲突，可尝试执行#sf强制更新`])
   }
 
   /**
