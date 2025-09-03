@@ -1,6 +1,6 @@
 ![](https://socialify.git.ci/AIGC-Yunzai/siliconflow-plugin/image?font=KoHo&forks=1&issues=1&language=1&name=1&owner=1&pattern=Circuit%20Board&pulls=1&stargazers=1&theme=Auto)
 
-# SiliconFlow-PLUGIN(SF-PLUGIN) 🍓
+# SiliconFlow-PLUGIN(SF-PLUGIN ——对接万物) 🍓
 
 <img decoding="async" align=right src="resources/readme/girl.png" width="35%">
 
@@ -14,10 +14,6 @@
   - 📱 视频解析：支持抖音、哔哩哔哩视频解析
   - ⚡ WebSocket：支持WebSocket与前端通信实现实时对话与绘图，详情看[前端地址](https://sf.maliy.top)，[部署教程](https://github.com/AIGC-Yunzai/SF-WEB)
 
-> [!TIP]
-> 插件官网（施工中）：[SiliconFlow-插件](https://aigc-yunzai.dwe.me/)
-> 
-> 将逐步接入更多AI服务和功能，Synaptic Fusion插件——对接万物！
 
 ## 安装插件
 
@@ -44,33 +40,6 @@ git clone https://github.com/AIGC-Yunzai/siliconflow-plugin.git ./plugins/silico
 pnpm install --filter=siliconflow-plugin
 ```
 
-## 使用教程
-
-- 如果是低版本的icqq，图生图和直链无法获取图链，请使用以下脚本，在 Yunzai 根目录执行即可
-```
-curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
-```
-#### 教程
-- [SF-PULGIN配置教程](https://aigc-yunzai.dwe.me/siliconflow/%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AE) 🍈
-
-#### 绘画辅助工具
-- [AI画图Tags生产站](https://nai4-tag-select.pages.dev/) 🥭
-- [直链服务器，一键复制huggingface空间](https://huggingface.co/spaces/xiaozhian/slink/tree/main?duplicate=true) 🍉
-
-<details>
-<summary>点击展开更多绘画教程</summary>
-
-- [Stable Diffusion教程](https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf) 🍇
-- [Midjourney基础教程](https://waytoagi.feishu.cn/wiki/VUadwndc5iRJktkzaYPcaLEynZc) 🍊
-- [MJ prompt参考](https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf) 🍎
-- [Midjourney V6 prompt参考](https://aituts.com/midjourney-v6/) 🍐
-- [又一个prompt参考站](https://catjourney.life/all) 🍌
-- [Midjourney Prompt生成器](https://promptfolder.com/midjourney-prompt-helper/) 🥝
-- [MJ和SD Prompt生成器相关合集](https://waytoagi.feishu.cn/wiki/TQogw5uIziB4fykbGhSciaQfndm?table=tbl5kMFjDDdeYoAt&view=vew8AJm3cI) 🍑
-
-</details>
-
-
 #### 3. 安装 Python 与依赖（可选）
 
 - `抖音解析` 功能将调用 Python 对 抖音视频进行解析
@@ -93,10 +62,7 @@ pip install aiohttp
 
 <img decoding="async" align=right src="https://github.com/user-attachments/assets/9698e837-49e7-4c19-8dab-6aa17d1faed4" width="35%">
 
-<img decoding="async" align=right src="https://github.com/user-attachments/assets/f8d8a42f-6c5d-4fa1-a18e-ea2403f6dd6c" width="28%">
-
-请使用 `#sf帮助` 获取完整帮助
-
+请使用 `#sf帮助` 获取完整帮
 - [x] `#sf绘画[tags][引用图片]` 使用sf接口绘画
 - [x] `#mjp[tags]` 使用MJ接口绘画
 - [x] `#gg[gemini提问/实时搜索]`
@@ -108,10 +74,45 @@ pip install aiohttp
 - [X] 自动抖音/b站视频解析
 - [ ] TODO..
 
+## 使用教程
+
+<img decoding="async" align=right src="https://github.com/user-attachments/assets/f8d8a42f-6c5d-4fa1-a18e-ea2403f6dd6c" width="35%">
+
+#### 接口配置教程
+
+> [!TIP]
+> 绘画&对话接口配置教程：[SiliconFlow](https://aigc-yunzai.dwe.me/)
+> 
+> 手办化ai生图配置教程：[OpenRouter.ai](./docs/openrouter_ai.md)
+> 
+
+#### 绘画辅助工具
+- [AI画图Tags生产站](https://nai4-tag-select.pages.dev/) 🥭
+- [直链服务器，一键复制huggingface空间](https://huggingface.co/spaces/xiaozhian/slink/tree/main?duplicate=true) 🍉
+
+<details>
+<summary>点击展开更多绘画教程</summary>
+
+- [Stable Diffusion教程](https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf) 🍇
+- [Midjourney基础教程](https://waytoagi.feishu.cn/wiki/VUadwndc5iRJktkzaYPcaLEynZc) 🍊
+- [MJ prompt参考](https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf) 🍎
+- [Midjourney V6 prompt参考](https://aituts.com/midjourney-v6/) 🍐
+- [又一个prompt参考站](https://catjourney.life/all) 🍌
+- [Midjourney Prompt生成器](https://promptfolder.com/midjourney-prompt-helper/) 🥝
+- [MJ和SD Prompt生成器相关合集](https://waytoagi.feishu.cn/wiki/TQogw5uIziB4fykbGhSciaQfndm?table=tbl5kMFjDDdeYoAt&view=vew8AJm3cI) 🍑
+
+</details>
+
 ## 常见问题
 
 1.  在锅巴中点击保存时提示 `PayloadTooLargeError` 怎么办?
-    - [X] 最新版的锅巴插件[已经修复](https://github.com/guoba-yunzai/guoba-plugin/commit/50f3a847fdba22534d37b97f2ac62b8fdb5c4d41)这个问题了，如果你已经更新到最新版的锅巴插件依然出现这个问题，考虑是你的平台更改了`bodyParser`值，可以[查看这里](https://github.com/AIGC-Yunzai/Trss-Yunzai-lagrange)进行修复。
+    - 最新版的锅巴插件[已经修复](https://github.com/guoba-yunzai/guoba-plugin/commit/50f3a847fdba22534d37b97f2ac62b8fdb5c4d41)这个问题了，如果你已经更新到最新版的锅巴插件依然出现这个问题，考虑是你的平台更改了`bodyParser`值，可以[查看这里](https://github.com/AIGC-Yunzai/Trss-Yunzai-lagrange)进行修复。
+2. 如果是低版本的icqq，图生图和直链无法获取图链怎么办？
+   
+   - 请使用以下脚本，在 Yunzai 根目录执行即可
+      ```
+      curl -sL Gitee.com/eggacheb/parser/raw/master/ver | bash
+      ```
 
 ## 支持与贡献
 
