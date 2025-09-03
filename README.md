@@ -85,6 +85,8 @@ pip install aiohttp
 > 
 > 手办化ai生图配置教程：[OpenRouter.ai](./docs/openrouter_ai.md)
 > 
+> Gemini配置教程：已经内置[gemini](https://generativelanguage.googleapis.com)公益站，无需key直接使用
+> 
 
 #### 绘画辅助工具
 - [AI画图Tags生产站](https://nai4-tag-select.pages.dev/) 🥭
