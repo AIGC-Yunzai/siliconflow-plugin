@@ -312,6 +312,7 @@ export function supportGuoba() {
                   options: [
                     { label: "OpenAI格式", value: "openai" },
                     { label: "Nebius格式", value: "nebius" },
+                    { label: "魔塔modelscope", value: "modelscope" },
                   ],
                   defaultValue: "openai",
                 },

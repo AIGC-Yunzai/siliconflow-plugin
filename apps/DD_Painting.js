@@ -194,7 +194,7 @@ export class DD_Painting extends plugin {
                     payload.prompt = prompt;
 
                 } catch (error) {
-                    console.error('解析请求体模板失败:', error);
+                    logger.error('解析请求体模板失败:', error);
                     // 如果模板解析失败，回退到参数构建方式
                     const basePayload = {
                         model: apiConfig.model || 'dall-e-3',
@@ -214,7 +214,17 @@ export class DD_Painting extends plugin {
             // 发送请求
             // 确定请求URL
             let requestUrl;
-            if (apiConfig.baseUrl.endsWith('/v1')) {
+            const formatType = apiConfig.formatType || 'openai';
+            
+            if (formatType === 'modelscope') {
+                // ModelScope 特殊的URL构建
+                let baseUrl = apiConfig.baseUrl;
+                // 确保baseUrl以/结尾
+                if (!baseUrl.endsWith('/')) {
+                    baseUrl += '/';
+                }
+                requestUrl = `${baseUrl}v1/images/generations`;
+            } else if (apiConfig.baseUrl.endsWith('/v1')) {
                 // 如果baseUrl以/v1结尾，添加/images/generations路径
                 requestUrl = `${apiConfig.baseUrl}/images/generations`;
             } else {
@@ -261,10 +271,112 @@ export class DD_Painting extends plugin {
                     // 合并自定义请求头
                     headers = { ...headers, ...customHeaders };
                 } catch (error) {
-                    console.error('解析自定义请求头失败:', error);
+                    logger.error('解析自定义请求头失败:', error);
                 }
             }
 
+            // ModelScope 特殊处理：需要异步任务模式
+            if (formatType === 'modelscope') {
+                // 为 ModelScope 添加异步模式标头
+                headers['X-ModelScope-Async-Mode'] = 'true';
+
+                // 第一步：提交任务
+                const response = await fetch(requestUrl, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload, null, 0)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    logger.error(`ModelScope API请求失败: ${response.status}`, errorText);
+                    return {
+                        success: false,
+                        error: `ModelScope API响应错误 ${response.status}: ${errorText}`
+                    };
+                }
+
+                const taskResponse = await response.json();
+                if (!taskResponse || !taskResponse.task_id) {
+                    return {
+                        success: false,
+                        error: 'ModelScope 任务提交失败，未获取到 task_id'
+                    };
+                }
+
+                const taskId = taskResponse.task_id;
+                logger.info(`ModelScope 任务已提交，task_id: ${taskId}`);
+
+                // 第二步：轮询任务状态
+                let baseUrl = apiConfig.baseUrl;
+                // 确保baseUrl以/结尾
+                if (!baseUrl.endsWith('/')) {
+                    baseUrl += '/';
+                }
+                const taskCheckUrl = `${baseUrl}v1/tasks/${taskId}`;
+                const taskHeaders = {
+                    ...headers,
+                    'X-ModelScope-Task-Type': 'image_generation'
+                };
+                delete taskHeaders['X-ModelScope-Async-Mode']; // 查询任务时不需要这个头
+
+                let attempts = 0;
+                const maxAttempts = 60; // 最多等待5分钟（每5秒检查一次）
+
+                while (attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 5000)); // 等待5秒
+                    attempts++;
+
+                    try {
+                        const taskResult = await fetch(taskCheckUrl, {
+                            method: 'GET',
+                            headers: taskHeaders
+                        });
+
+                        if (!taskResult.ok) {
+                            logger.error(`ModelScope 任务查询失败: ${taskResult.status}`);
+                            continue;
+                        }
+
+                        const taskData = await taskResult.json();
+                        logger.info(`ModelScope 任务状态检查 (${attempts}/${maxAttempts}):`, taskData.task_status);
+
+                        if (taskData.task_status === 'SUCCEED') {
+                            if (taskData.output_images && taskData.output_images.length > 0) {
+                                // 返回第一个生成的图片URL
+                                const imageUrl = taskData.output_images[0];
+                                return {
+                                    success: true,
+                                    imageData: imageUrl,
+                                    revised_prompt: prompt,
+                                    payload: payload
+                                };
+                            } else {
+                                return {
+                                    success: false,
+                                    error: 'ModelScope 任务完成但未返回图片数据'
+                                };
+                            }
+                        } else if (taskData.task_status === 'FAILED') {
+                            return {
+                                success: false,
+                                error: `ModelScope 图片生成失败: ${taskData.error || '未知错误'}`
+                            };
+                        }
+                        // 如果状态是 PENDING 或 RUNNING，继续循环等待
+                    } catch (error) {
+                        logger.error('ModelScope 任务状态查询出错:', error);
+                        // 继续循环，不立即失败
+                    }
+                }
+
+                return {
+                    success: false,
+                    error: 'ModelScope 任务超时，请稍后重试'
+                };
+            }
+
+            // 非 ModelScope 的常规处理
             const response = await fetch(requestUrl, {
                 method: 'POST',
                 headers: headers,
@@ -273,7 +385,7 @@ export class DD_Painting extends plugin {
 
             if (!response.ok) {
                 const errorText = await response.text();
-                console.error(`API请求失败: ${response.status}`, errorText);
+                logger.error(`API请求失败: ${response.status}`, errorText);
                 return {
                     success: false,
                     error: `API响应错误 ${response.status}: ${errorText}`
@@ -390,7 +502,7 @@ export class DD_Painting extends plugin {
                         throw new Error('无法从自定义路径提取图片数据');
                     }
                 } catch (error) {
-                    console.error('解析自定义响应格式失败:', error);
+                    logger.error('解析自定义响应格式失败:', error);
                     return {
                         success: false,
                         error: `解析自定义响应格式失败: ${error.message}`
@@ -404,14 +516,14 @@ export class DD_Painting extends plugin {
 
                     // 如果仍然没有找到图片数据
                     if (!imageData) {
-                        console.error('无法自动检测响应格式，原始响应:', JSON.stringify(data).substring(0, 500) + '...');
+                        logger.error('无法自动检测响应格式，原始响应:', JSON.stringify(data).substring(0, 500) + '...');
                         return {
                             success: false,
                             error: '未找到图片数据，请配置自定义响应格式路径'
                         };
                     }
                 } catch (error) {
-                    console.error('自动解析响应格式失败:', error, '原始响应:', JSON.stringify(data).substring(0, 500) + '...');
+                    logger.error('自动解析响应格式失败:', error, '原始响应:', JSON.stringify(data).substring(0, 500) + '...');
                     return {
                         success: false,
                         error: `解析响应失败: ${error.message}`
@@ -429,7 +541,7 @@ export class DD_Painting extends plugin {
                 }
             } catch (error) {
                 // 忽略提取修改后提示词的错误
-                console.debug('提取修改后提示词失败:', error);
+                logger.debug('提取修改后提示词失败:', error);
             }
 
             return {
@@ -439,7 +551,7 @@ export class DD_Painting extends plugin {
                 payload: payload  // 返回完整的请求参数
             };
         } catch (error) {
-            console.error('API调用错误:', error);
+            logger.error('API调用错误:', error);
             return {
                 success: false,
                 error: error.message || '未知错误'
@@ -533,6 +645,13 @@ export class DD_Painting extends plugin {
             }
         }
 
+        // 2a. 检查ModelScope异步任务完成后的格式
+        if (data.output_images && Array.isArray(data.output_images) && data.output_images.length > 0) {
+            if (typeof data.output_images[0] === 'string') {
+                return data.output_images[0];
+            }
+        }
+
         // 3. 检查直接返回图片数组的格式
         if (Array.isArray(data) && data.length > 0) {
             if (typeof data[0] === 'string') {
@@ -579,7 +698,7 @@ export class DD_Painting extends plugin {
         // 5. 递归搜索整个响应对象
         const result = findImageData(data);
         if (result) {
-            console.log(`在路径 ${result.path} 找到图片数据，类型: ${result.type}`);
+            logger.info(`在路径 ${result.path} 找到图片数据，类型: ${result.type}`);
             return result.data;
         }
 
@@ -651,6 +770,21 @@ export class DD_Painting extends plugin {
             } else {
                 payload.size = payload.size || '1024x1024';
             }
+        } else if (formatType === 'modelscope') {
+            // ModelScope 格式
+            // 设置默认模型
+            payload.model = apiConfig.model || payload.model || 'black-forest-labs/FLUX.1-Krea-dev';
+
+            // ModelScope 使用简单的请求格式，只需要 model 和 prompt
+            // 不需要设置 size、width、height 等参数，因为这些由模型决定
+
+            // 如果有额外参数需要传递给ModelScope API，可以在这里添加
+            // 例如：seed、guidance_scale 等
+            if (param.seed !== undefined) {
+                payload.seed = param.seed;
+            } else if (apiConfig.seed !== undefined) {
+                payload.seed = apiConfig.seed;
+            }
         } else if (formatType === 'nebius') {
             // Nebius 格式
             // 设置默认模型
@@ -690,7 +824,7 @@ export class DD_Painting extends plugin {
                     : apiConfig.extraParams;
                 Object.assign(payload, extraParams);
             } catch (error) {
-                console.error('解析extraParams失败:', error);
+                logger.error('解析extraParams失败:', error);
             }
         }
 
@@ -863,7 +997,7 @@ export class DD_Painting extends plugin {
 
             return true
         } catch (error) {
-            console.error('生成绘画时发生错误:', error)
+            logger.error('生成绘画时发生错误:', error)
             await e.reply(`绘画生成失败: ${error.message || '未知错误'}`)
             return false
         }
@@ -979,7 +1113,7 @@ export class DD_Painting extends plugin {
 
             return true
         } catch (error) {
-            console.error('生成绘画时发生错误:', error)
+            logger.error('生成绘画时发生错误:', error)
             await e.reply(`绘画生成失败: ${error.message || '未知错误'}`, true)
             return false
         }
@@ -1151,6 +1285,7 @@ export class DD_Painting extends plugin {
 3. 接口格式说明：
    - OpenAI格式：兼容OpenAI的DALL-E接口格式
    - Nebius格式：兼容Nebius的接口格式
+   - ModelScope格式：兼容ModelScope的异步任务API格式
    - 自定义格式：通过设置"响应格式路径"支持其他API格式
 
 4. 参数说明：

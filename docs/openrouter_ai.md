@@ -1,3 +1,8 @@
+# 2025年9月5日 OpenRouter.ai 的 google/gemini-2.5-flash-image-preview:free 模型免费3天之后开始收费了，不必再看下去了
+
+~~...不过他还有其他的免费模型，也可以参考这篇文章 >///<~~
+
+
 # OpenRouter.ai 配置教程
 
 - 注册并登录 [openrouter.ai](https://openrouter.ai/)
