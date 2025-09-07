@@ -135,3 +135,13 @@ pip install aiohttp
 ## 许可证
 
 本项目使用 [GNU AGPLv3](https://choosealicense.com/licenses/agpl-3.0/) 作为开源许可证。
+
+---
+
+<div align="center">
+
+### 🎨 让AI绘画成为日常，让创意永不枯竭！✨
+
+**[📚 查看插件主页](/) | [💬 加入交流群](https://qm.qq.com/q/unjAw930RO) | [⭐ 给个Star](/)**
+
+</div>

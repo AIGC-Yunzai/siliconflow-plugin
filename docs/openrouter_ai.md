@@ -1,6 +1,7 @@
-# 2025年9月5日 OpenRouter.ai 的 google/gemini-2.5-flash-image-preview:free 模型免费3天之后开始收费了...
+# 2025年9月5日 更新说明
 
-~~...不过他还有其他的免费模型，也可以参考这篇文章 >///<~~
+- OpenRouter.ai 的 google/gemini-2.5-flash-image-preview:free 开始收费了...
+- 不过它还有其他的免费模型，例如参考下面的**配置教程**用免费的 [DeepSeek: DeepSeek V3.1 (free)](https://openrouter.ai/deepseek/deepseek-chat-v3.1:free) 或 [Venice: Uncensored (free)](https://openrouter.ai/cognitivecomputations/dolphin-mistral-24b-venice-edition:free) 玩玩角色扮演对话... >///<
 
 # OpenRouter.ai 配置教程
 
@@ -72,6 +73,16 @@
 
     <img width="400" alt="image" src="https://github.com/user-attachments/assets/97a0a07d-e1c4-40b4-b9e0-74961ac22142" />
 
-## 自回归生图模型的更多的提示词
+# 多模态模型的更多的提示词
 
 - 参考[这篇文章](https://bytedance.larkoffice.com/docx/L4vCdah1DoDg7axVdYGcoplSn9f)
+
+---
+
+<div align="center">
+
+### 🎨 让AI绘画成为日常，让创意永不枯竭！✨
+
+**[📚 查看插件主页](/) | [💬 加入交流群](https://qm.qq.com/q/unjAw930RO) | [⭐ 给个Star](/)**
+
+</div>
