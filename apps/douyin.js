@@ -4,7 +4,7 @@ import { Douyin_parser } from '../utils/douyin_parser_nodejs.js'
 import fetch from 'node-fetch'
 import common from '../../../lib/common/common.js'
 
-const { douyinTV, douyin_maxSizeMB } = Config.getConfig();
+const { douyinTV, video_maxSizeMB } = Config.getConfig();
 
 export class Douyin_Video extends plugin {
     constructor() {
@@ -83,8 +83,8 @@ export class Douyin_Video extends plugin {
                                     if (contentLength) {
                                         const fileSizeBytes = parseInt(contentLength);
                                         const fileSizeMB = fileSizeBytes / (1024 * 1024);
-                                        if (fileSizeMB > douyin_maxSizeMB) {
-                                            await e.reply(`视频文件过大 (${fileSizeMB.toFixed(1)}MB > ${douyin_maxSizeMB}MB)，跳过下载\n请手动访问：${item.video_url}`, true);
+                                        if (fileSizeMB > video_maxSizeMB) {
+                                            await e.reply(`视频文件过大 (${fileSizeMB.toFixed(1)}MB > ${video_maxSizeMB}MB)，跳过下载\n请手动访问：${item.video_url}`, true);
                                             continue; // 跳过当前视频，处理下一个
                                         }
                                         logger.debug(`视频大小: ${fileSizeMB.toFixed(1)}MB，开始下载...`);

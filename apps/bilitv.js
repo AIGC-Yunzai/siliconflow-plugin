@@ -2,7 +2,7 @@ import Config from '../components/Config.js'
 import plugin from '../../../lib/plugins/plugin.js'
 import _ from 'lodash'
 
-const { turnOnBilitv, bilitv_max_duration_min } = Config.getConfig();
+const { turnOnBilitv, video_maxSizeMB } = Config.getConfig();
 
 const regB23 = /(b23\.tv|bili2233.cn)\\?\/\w{7}/
 const regBV = /BV1\w{9}/
@@ -107,10 +107,6 @@ export class bilitv extends plugin {
         } else {
             e.reply([segment.image(res.data.pic), `${res.data.title}\nhttps://www.bilibili.com/video/${bvid}\n作者: ${res.data.owner.name}\n播放: ${formatNumber(res.data.stat.view)} | 弹幕: ${formatNumber(res.data.stat.danmaku)}\n点赞: ${formatNumber(res.data.stat.like)} | 投币: ${formatNumber(res.data.stat.coin)}\n收藏: ${formatNumber(res.data.stat.favorite)} | 评论: ${formatNumber(res.data.stat.reply)}`], true)
         }
-        if (res.data.duration > (bilitv_max_duration_min * 60)) {
-            e.reply(`视频时长 ${(res.data.duration / 60).toFixed(1)} 分钟，人家不敢解析QAQ`, true)
-            return true;
-        }
         res = await fetch(`https://api.bilibili.com/x/player/playurl?avid=${res.data.aid}&cid=${res.data.cid}&qn=16&type=mp4&platform=html5`, {
             headers: {
                 'referer': 'https://www.bilibili.com/',
@@ -122,6 +118,37 @@ export class bilitv extends plugin {
             e.reply("视频解析失败", true)
             return false
         }
+
+        // 先检查视频文件大小
+        try {
+            const headResponse = await fetch(res.data.durl[0].url, {
+                method: 'HEAD',
+                headers: {
+                    'referer': 'https://www.bilibili.com/',
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
+                }
+            });
+
+            if (headResponse.ok) {
+                const contentLength = headResponse.headers.get('content-length');
+                if (contentLength) {
+                    const fileSizeBytes = parseInt(contentLength);
+                    const fileSizeMB = fileSizeBytes / (1024 * 1024);
+                    if (fileSizeMB > video_maxSizeMB) {
+                        e.reply(`视频文件太大惹(${fileSizeMB.toFixed(1)}MB > ${video_maxSizeMB}MB)，人家不敢解析QAQ`, true);
+                        return true;
+                    }
+                    logger.debug(`视频大小: ${fileSizeMB.toFixed(1)}MB，开始下载...`);
+                }
+            }
+        } catch (sizeCheckError) {
+            logger.info(`视频大小检查失败，将判断视频时长: ${sizeCheckError.message}`);
+            if (res.data.duration > (10 * 60)) {
+                e.reply(`视频时长 ${(res.data.duration / 60).toFixed(1)} 分钟，人家不敢解析QAQ`, true)
+                return true;
+            }
+        }
+
         e.reply(segment.video(Buffer.from(await (await fetch(res.data.durl[0].url, {
             headers: {
                 'referer': 'https://www.bilibili.com/',
