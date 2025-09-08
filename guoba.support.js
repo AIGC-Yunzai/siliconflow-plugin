@@ -511,6 +511,9 @@ export function supportGuoba() {
                 label: "自定义命令",
                 component: "Input",
                 required: true,
+                rules: [
+                  { pattern: '^d+', message: '自定义命令不能以数字开头（使用数字开头的指令将根据接口序号调用）' },
+                ],
                 bottomHelpMessage: "可选，设置后可用 #d命令名 来使用此接口，如设置为test则可用#dtest",
               },
               {
@@ -787,6 +790,9 @@ export function supportGuoba() {
                 label: "自定义命令",
                 component: "Input",
                 required: true,
+                rules: [
+                  { pattern: '^d+', message: '自定义命令不能以数字开头（使用数字开头的指令将根据接口序号调用）' },
+                ],
                 bottomHelpMessage: "可选，设置后可用 #s命令名 来使用此接口，如设置为test则可用#stest，也可以使用#stest结束对话来结束此接口的对话",
               },
               {
@@ -994,7 +1000,7 @@ export function supportGuoba() {
                 field: "useSearch",
                 label: "搜索功能",
                 component: "Switch",
-                bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型",
+                bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型及后续支持该功能的模型",
               },
               {
                 field: "enableImageUpload",
@@ -1017,7 +1023,7 @@ export function supportGuoba() {
                 field: "enableImageGeneration",
                 label: "文生图功能",
                 component: "Switch",
-                bottomHelpMessage: "开启后Gemini将支持文生图功能，可以生成图片，仅限gemini-2.0-flash-exp模型",
+                bottomHelpMessage: "开启后Gemini将支持文生图功能，可以生成图片，仅限gemini-2.0-flash-exp模型及后续支持该功能的模型",
               },
               {
                 field: "useContext",
@@ -1037,6 +1043,9 @@ export function supportGuoba() {
                 label: "自定义命令",
                 component: "Input",
                 required: true,
+                rules: [
+                  { pattern: '^d+', message: '自定义命令不能以数字开头（使用数字开头的指令将根据接口序号调用）' },
+                ],
                 bottomHelpMessage: "可选，设置后可用 #g命令名 来使用此接口，如设置为test则可用#gtest，也可以使用#gtest结束对话来结束此接口的对话",
               },
               {
@@ -1146,7 +1155,7 @@ export function supportGuoba() {
         {
           field: "gg_useSearch",
           label: "[#gg]搜索功能",
-          bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型",
+          bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型及后续支持该功能的模型",
           component: "Switch",
         },
         {
@@ -1169,7 +1178,7 @@ export function supportGuoba() {
         {
           field: "gg_enableImageGeneration",
           label: "[#gg]文生图功能",
-          bottomHelpMessage: "开启后Gemini将支持文生图功能，可以生成图片，仅限gemini-2.0-flash-exp模型",
+          bottomHelpMessage: "开启后Gemini将支持文生图功能，可以生成图片，仅限gemini-2.0-flash-exp模型及后续支持该功能的模型",
           component: "Switch",
         },
         {
