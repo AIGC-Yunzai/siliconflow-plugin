@@ -512,7 +512,7 @@ export function supportGuoba() {
                 component: "Input",
                 required: true,
                 rules: [
-                  { pattern: '^d+', message: '自定义命令不能以数字开头（使用数字开头的指令将根据接口序号调用）' },
+                  { pattern: '^\\D', message: '自定义命令不能以数字开头（使用数字开头的指令将根据接口序号调用）' },
                 ],
                 bottomHelpMessage: "可选，设置后可用 #d命令名 来使用此接口，如设置为test则可用#dtest",
               },
@@ -791,7 +791,7 @@ export function supportGuoba() {
                 component: "Input",
                 required: true,
                 rules: [
-                  { pattern: '^d+', message: '自定义命令不能以数字开头（使用数字开头的指令将根据接口序号调用）' },
+                  { pattern: '^\\D', message: '自定义命令不能以数字开头（使用数字开头的指令将根据接口序号调用）' },
                 ],
                 bottomHelpMessage: "可选，设置后可用 #s命令名 来使用此接口，如设置为test则可用#stest，也可以使用#stest结束对话来结束此接口的对话",
               },
@@ -1044,7 +1044,7 @@ export function supportGuoba() {
                 component: "Input",
                 required: true,
                 rules: [
-                  { pattern: '^d+', message: '自定义命令不能以数字开头（使用数字开头的指令将根据接口序号调用）' },
+                  { pattern: '^\\D', message: '自定义命令不能以数字开头（使用数字开头的指令将根据接口序号调用）' },
                 ],
                 bottomHelpMessage: "可选，设置后可用 #g命令名 来使用此接口，如设置为test则可用#gtest，也可以使用#gtest结束对话来结束此接口的对话",
               },

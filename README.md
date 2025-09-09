@@ -82,9 +82,9 @@ pip install aiohttp
 #### 接口配置教程
 
 > [!TIP]
-> 绘画&对话接口配置教程：[SiliconFlow](https://aigc-yunzai.dwe.me/)
+> 绘画&对话接口配置教程：[接入SiliconFlow](https://aigc-yunzai.dwe.me/)
 > 
-> 手办化ai生图配置教程：[OpenRouter.ai](./docs/openrouter_ai.md)
+> 手办化ai生图配置教程：[gg&ss接口配置教程](./docs/openrouter_ai.md)
 > 
 > Gemini配置教程：已经内置[gemini](https://generativelanguage.googleapis.com)公益站，无需key直接使用
 > 
