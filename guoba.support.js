@@ -1375,25 +1375,8 @@ export function supportGuoba() {
           }
         },
         {
-          label: '常见问题',
+          label: '帮助',
           component: 'SOFT_GROUP_BEGIN'
-        },
-        {
-          component: 'Divider',
-          label: '注意事项',
-          componentProps: {
-            orientation: 'left',
-            plain: true,
-          },
-        },
-        {
-          field: 'update_note',
-          label: '如果显示未知的组件',
-          component: 'Input',
-          componentProps: {
-            readonly: true,
-            defaultValue: '请使用 #锅巴更新'
-          }
         },
         {
           component: 'Divider',
@@ -1404,13 +1387,39 @@ export function supportGuoba() {
           },
         },
         {
+          field: 'readme',
+          label: '插件首页（必读） 🍌',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: 'https://github.com/AIGC-Yunzai/siliconflow-plugin'
+          }
+        },
+        {
           field: 'tutorial_link',
-          label: 'SF-PLUGIN配置教程 🍈',
+          label: '绘画&对话接口配置教程 🍈',
           component: 'Input',
           componentProps: {
             readonly: true,
             defaultValue: 'https://aigc-yunzai.dwe.me/siliconflow/%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AE'
           }
+        },
+        {
+          field: 'mj_helper',
+          label: '手办化ai生图配置教程 🍉',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: 'https://github.com/AIGC-Yunzai/siliconflow-plugin/blob/main/docs/openrouter_ai.md'
+          }
+        },
+        {
+          component: 'Divider',
+          label: '辅助工具',
+          componentProps: {
+            orientation: 'left',
+            plain: true,
+          },
         },
         {
           field: 'tags_link',
@@ -1423,74 +1432,11 @@ export function supportGuoba() {
         },
         {
           field: 'slink_link',
-          label: '直链服务器 🍉',
+          label: '直链服务器 🍎',
           component: 'Input',
           componentProps: {
             readonly: true,
             defaultValue: 'https://huggingface.co/spaces/xiaozhian/slink/tree/main?duplicate=true'
-          }
-        },
-        {
-          field: 'sd_tutorial',
-          label: 'Stable Diffusion教程🍇',
-          component: 'Input',
-          componentProps: {
-            readonly: true,
-            defaultValue: 'https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf'
-          }
-        },
-        {
-          field: 'mj_tutorial',
-          label: 'Midjourney基础教程🍊',
-          component: 'Input',
-          componentProps: {
-            readonly: true,
-            defaultValue: 'https://waytoagi.feishu.cn/wiki/VUadwndc5iRJktkzaYPcaLEynZc'
-          }
-        },
-        {
-          field: 'mj_prompt',
-          label: 'MJ prompt参考 🍎',
-          component: 'Input',
-          componentProps: {
-            readonly: true,
-            defaultValue: 'https://waytoagi.feishu.cn/wiki/FUQAwxfH9iXqC9k02nYcDobonkf'
-          }
-        },
-        {
-          field: 'mj_v6_prompt',
-          label: 'Mj V6 prompt参考🍐',
-          component: 'Input',
-          componentProps: {
-            readonly: true,
-            defaultValue: 'https://aituts.com/midjourney-v6/'
-          }
-        },
-        {
-          field: 'prompt_ref',
-          label: '又一个prompt参考站🍌',
-          component: 'Input',
-          componentProps: {
-            readonly: true,
-            defaultValue: 'https://catjourney.life/all'
-          }
-        },
-        {
-          field: 'mj_helper',
-          label: 'Mj Prompt生成器🥝',
-          component: 'Input',
-          componentProps: {
-            readonly: true,
-            defaultValue: 'https://promptfolder.com/midjourney-prompt-helper/'
-          }
-        },
-        {
-          field: 'prompt_collection',
-          label: 'MJ和SD Prompt合集🍑',
-          component: 'Input',
-          componentProps: {
-            readonly: true,
-            defaultValue: 'https://waytoagi.feishu.cn/wiki/TQogw5uIziB4fykbGhSciaQfndm?table=tbl5kMFjDDdeYoAt&view=vew8AJm3cI'
           }
         },
       ],

@@ -57,7 +57,7 @@
     })
     });
     ```
-- 按照图片填入 [锅巴插件](https://github.com/guoba-yunzai/guoba-plugin)-sf插件配置-ss接口列表 中
+- 按照图片填入 [锅巴插件](https://github.com/guoba-yunzai/guoba-plugin)-sf插件配置-对话功能(标签页)-[#ss]接口列表 中
 
     <img width="800" alt="image" src="https://github.com/user-attachments/assets/11c60eea-b12a-42c1-83cd-88845558e98b" />
 
@@ -81,7 +81,7 @@
 > 其中 `gemini-2.5-flash-image-preview` 模型目前Google对其限时免费，考虑到其属于 flash 类别，将来也许将永久免费
 >
 
-- 按照图片填入 [锅巴插件](https://github.com/guoba-yunzai/guoba-plugin)-sf插件配置-gg接口列表 中
+- 按照图片填入 [锅巴插件](https://github.com/guoba-yunzai/guoba-plugin)-sf插件配置-对话功能(标签页)-[#gg]接口列表 中
   - 其中接口地址留空则优先使用全局 `[#gg]Gemini反代地址`
   - 其中Key填写你的 [GeminiKey](https://aistudio.google.com/app/apikey) 或者留空使用本插件的公益站（如果还有额度的话）
  
