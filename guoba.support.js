@@ -122,6 +122,8 @@ export function supportGuoba() {
               { label: "Pro/black-forest-labs/FLUX.1-schnell", value: "Pro/black-forest-labs/FLUX.1-schnell" },
               { label: "stabilityai/stable-diffusion-3-5-large-turbo", value: "stabilityai/stable-diffusion-3-5-large-turbo" },
               { label: "Kwai-Kolors/Kolors（免费/文生图）", value: "Kwai-Kolors/Kolors" },
+              { label: "Qwen/Qwen-Image", value: "Qwen/Qwen-Image" },
+              { label: "Qwen/Qwen-Image-Edit", value: "Qwen/Qwen-Image-Edit" },
               // 添加图生图模型后，还需要添加正则表达式： SF_Painting.js 处理支持图生图模型 match(/.../)
             ],
           },
