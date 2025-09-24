@@ -31,7 +31,7 @@ export class SF_Painting extends plugin {
     constructor() {
         const config = Config.getConfig()
         /** 使机器人可以对其第一人称回应 */
-        let reg_chatgpt_for_firstperson_call = new RegExp(config?.botName || `sf-plugin-bot-name-${Math.floor(10000 + Math.random() * 90000)}`, "g");
+        const reg_chatgpt_for_firstperson_call = config?.botName || `sf-plugin-bot-name-${Math.floor(10000 + Math.random() * 90000)}`;
         super({
             name: 'SF_对话&绘图',
             dsc: 'SF_对话&绘图',
