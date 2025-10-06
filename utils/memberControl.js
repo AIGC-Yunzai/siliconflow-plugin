@@ -35,9 +35,11 @@ export async function checkUserPermission(e, config) {
 
     // 白名单群
     if (onlyGroupID.length && !isWhiteGroup) {
+        logger.info(`[${feature}] ${groupId} 不在白名单群`)
         return {
             allowed: false,
-            message: `[${feature}] Group permission denied Nya`
+            // message: `[${feature}] Group permission denied Nya`
+            message: null
         }
     }
 

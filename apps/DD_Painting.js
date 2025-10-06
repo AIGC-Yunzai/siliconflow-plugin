@@ -215,7 +215,7 @@ export class DD_Painting extends plugin {
             // 确定请求URL
             let requestUrl;
             const formatType = apiConfig.formatType || 'openai';
-            
+
             if (formatType === 'modelscope') {
                 // ModelScope 特殊的URL构建
                 let baseUrl = apiConfig.baseUrl;
@@ -938,7 +938,11 @@ export class DD_Painting extends plugin {
             onlyGroupID: apiConfig.dd_onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
-        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
+        if (!result_member.allowed) {
+            if (result_member.message)
+                e.reply(result_member.message, true, { recallMsg: 60 });
+            return false;
+        }
 
         // 解析参数
         let param = await handleParam(e, prompt, true)
@@ -1063,7 +1067,11 @@ export class DD_Painting extends plugin {
             onlyGroupID: apiConfig.dd_onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
-        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
+        if (!result_member.allowed) {
+            if (result_member.message)
+                e.reply(result_member.message, true, { recallMsg: 60 });
+            return false;
+        }
         else result_member.record();
 
         // 保存当前接口配置到 e 对象，供自动提示词功能使用

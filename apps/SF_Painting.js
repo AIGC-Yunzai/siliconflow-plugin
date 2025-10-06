@@ -521,7 +521,11 @@ export class SF_Painting extends plugin {
             onlyGroupID: config_date.sf_onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
-        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
+        if (!result_member.allowed) {
+            if (result_member.message)
+                e.reply(result_member.message, true, { recallMsg: 60 });
+            return false;
+        }
 
         // 处理图生图模型
         let canImg2Img = false;
@@ -730,7 +734,11 @@ export class SF_Painting extends plugin {
             onlyGroupID: onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
-        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
+        if (!result_member.allowed) {
+            if (result_member.message)
+                e.reply(result_member.message, true, { recallMsg: 60 });
+            return false;
+        }
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
@@ -1389,7 +1397,11 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             onlyGroupID: onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
-        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
+        if (!result_member.allowed) {
+            if (result_member.message)
+                e.reply(result_member.message, true, { recallMsg: 60 });
+            return false;
+        }
 
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)

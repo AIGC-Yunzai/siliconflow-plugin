@@ -125,7 +125,11 @@ export class MJ_Painting extends plugin {
             onlyGroupID: config_date.sf_onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
-        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
+        if (!result_member.allowed) {
+            if (result_member.message)
+                e.reply(result_member.message, true, { recallMsg: 60 });
+            return false;
+        }
 
         // 如果是niji命令，自动添加--niji参数
         if (match[1] === 'niji' && !prompt.includes('--niji')) {
@@ -265,7 +269,11 @@ export class MJ_Painting extends plugin {
             onlyGroupID: config_date.sf_onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
-        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
+        if (!result_member.allowed) {
+            if (result_member.message)
+                e.reply(result_member.message, true, { recallMsg: 60 });
+            return false;
+        }
 
         const match = e.msg.match(/^#(放大|微调|重绘)(左上|右上|左下|右下)([\s\S]*)/)
         if (match) {
@@ -675,7 +683,11 @@ MJP插件帮助：
             onlyGroupID: config_date.sf_onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
-        if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
+        if (!result_member.allowed) {
+            if (result_member.message)
+                e.reply(result_member.message, true, { recallMsg: 60 });
+            return false;
+        }
 
         const isNiji = match[1] === 'nic'  // 判断是否是 nic 命令
 
