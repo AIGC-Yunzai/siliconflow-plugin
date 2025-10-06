@@ -83,3 +83,4 @@ ggReProxy: aHR0cHM6Ly9iLmdlbWluaXByb3h5LmdnZmYubmV0LGh0dHBzOi8vZC5nZW1pbmlwcm94e
 sf_cdtime: 0
 sf_dailyLimit: 0
 sf_unlimitedUsers: []
+sf_onlyGroupID: []

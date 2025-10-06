@@ -121,7 +121,8 @@ export class MJ_Painting extends plugin {
             feature: 'SF_Painting',
             cdTime: config_date.sf_cdtime,
             dailyLimit: config_date.sf_dailyLimit,
-            unlimitedUsers: config_date.sf_unlimitedUsers
+            unlimitedUsers: config_date.sf_unlimitedUsers,
+            onlyGroupID: config_date.sf_onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
         if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
@@ -260,7 +261,8 @@ export class MJ_Painting extends plugin {
             feature: 'SF_Painting',
             cdTime: config_date.sf_cdtime,
             dailyLimit: config_date.sf_dailyLimit,
-            unlimitedUsers: config_date.sf_unlimitedUsers
+            unlimitedUsers: config_date.sf_unlimitedUsers,
+            onlyGroupID: config_date.sf_onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
         if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
@@ -669,7 +671,8 @@ MJP插件帮助：
             feature: 'SF_Painting',
             cdTime: config_date.sf_cdtime,
             dailyLimit: config_date.sf_dailyLimit,
-            unlimitedUsers: config_date.sf_unlimitedUsers
+            unlimitedUsers: config_date.sf_unlimitedUsers,
+            onlyGroupID: config_date.sf_onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
         if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });

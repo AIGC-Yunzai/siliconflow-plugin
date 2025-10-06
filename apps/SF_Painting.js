@@ -517,7 +517,8 @@ export class SF_Painting extends plugin {
             feature: 'SF_Painting',
             cdTime: config_date.sf_cdtime,
             dailyLimit: config_date.sf_dailyLimit,
-            unlimitedUsers: config_date.sf_unlimitedUsers
+            unlimitedUsers: config_date.sf_unlimitedUsers,
+            onlyGroupID: config_date.sf_onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
         if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
@@ -652,7 +653,7 @@ export class SF_Painting extends plugin {
 
         // 获取接口配置
         let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false, enableImageUpload = true, mustNeedImgLength = 0
-        let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], memberConfigName = 'ss_default';
+        let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], onlyGroupID = [], memberConfigName = 'ss_default';
 
         // 根据用户身份选择使用的接口索引
         const usingApiIndex = isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)
@@ -687,6 +688,7 @@ export class SF_Painting extends plugin {
             cdtime = (typeof apiConfig.cdtime !== 'undefined') ? apiConfig.cdtime : cdtime
             dailyLimit = (typeof apiConfig.dailyLimit !== 'undefined') ? apiConfig.dailyLimit : dailyLimit
             unlimitedUsers = (typeof apiConfig.unlimitedUsers !== 'undefined') ? apiConfig.unlimitedUsers : unlimitedUsers
+            onlyGroupID = (typeof apiConfig.onlyGroupID !== 'undefined') ? apiConfig.onlyGroupID : onlyGroupID
         } else if (config_date.ss_apiBaseUrl) {
             // 检查默认配置是否仅限主人使用
             if (!isMaster && config_date.ss_isOnlyMaster) {
@@ -724,7 +726,8 @@ export class SF_Painting extends plugin {
             feature: memberConfigName,
             cdTime: cdtime,
             dailyLimit: dailyLimit,
-            unlimitedUsers: unlimitedUsers
+            unlimitedUsers: unlimitedUsers,
+            onlyGroupID: onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
         if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
@@ -1322,7 +1325,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
         // 获取接口配置
         let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false, mustNeedImgLength = 0
-        let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], memberConfigName = 'gg_default';
+        let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], onlyGroupID = [], memberConfigName = 'gg_default';
 
         // 根据用户身份选择使用的接口索引
         const usingApiIndex = isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
@@ -1357,6 +1360,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             cdtime = (typeof apiConfig.cdtime !== 'undefined') ? apiConfig.cdtime : cdtime
             dailyLimit = (typeof apiConfig.dailyLimit !== 'undefined') ? apiConfig.dailyLimit : dailyLimit
             unlimitedUsers = (typeof apiConfig.unlimitedUsers !== 'undefined') ? apiConfig.unlimitedUsers : unlimitedUsers
+            onlyGroupID = (typeof apiConfig.onlyGroupID !== 'undefined') ? apiConfig.onlyGroupID : onlyGroupID
         } else {
             // 检查默认配置是否仅限主人使用
             if (!isMaster && config_date.gg_isOnlyMaster) {
@@ -1381,7 +1385,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             feature: memberConfigName,
             cdTime: cdtime,
             dailyLimit: dailyLimit,
-            unlimitedUsers: unlimitedUsers
+            unlimitedUsers: unlimitedUsers,
+            onlyGroupID: onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
         if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });

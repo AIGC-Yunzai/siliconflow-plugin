@@ -8,6 +8,7 @@ import moment from 'moment'
  * @param {number} config.cdTime - CD时间（秒），设置为0则关闭CD
  * @param {number} config.dailyLimit - 每日使用次数限制，设置为0则关闭次数限制，设置为-1则只有无限制用户可使用
  * @param {Array} config.unlimitedUsers - 无限制用户列表
+ * @param {Array} config.onlyGroupID - 白名单群
  * @param {number} config.operationCount - 本次操作消耗的次数，默认为1
  * @param {number} config.cdMultiple - CD倍率，默认为1
  * @param {boolean} config.isMuteCD - 是否为禁言CD，默认为false
@@ -19,6 +20,7 @@ export async function checkUserPermission(e, config) {
         cdTime = 0,
         dailyLimit = 0,
         unlimitedUsers = [],
+        onlyGroupID = [],
         operationCount = 1,
         cdMultiple = 1,
         isMuteCD = false
@@ -29,6 +31,15 @@ export async function checkUserPermission(e, config) {
     const groupId = String(e.group_id) || "8888"
     const isMaster = e.isMaster
     const isUnlimitedUser = unlimitedUsers.includes(String(userId))
+    const isWhiteGroup = onlyGroupID.includes(String(groupId))
+
+    // 白名单群
+    if (onlyGroupID.length && !isWhiteGroup) {
+        return {
+            allowed: false,
+            message: `[${feature}] Group permission denied Nya`
+        }
+    }
 
     // 如果dailyLimit为-1，只有无限制用户可以使用
     if (dailyLimit === -1 && !isMaster && !isUnlimitedUser) {

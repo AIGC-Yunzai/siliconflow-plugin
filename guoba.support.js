@@ -557,6 +557,18 @@ export function supportGuoba() {
                   valueParser: ((value) => value.split(',') || []),
                 },
               },
+              {
+                field: 'dd_onlyGroupID',
+                label: '白名单群',
+                bottomHelpMessage: '仅白名单群可以使用此接口，留空则所有群可用；私聊用群号8888代替',
+                component: "GTags",
+                componentProps: {
+                  placeholder: '请输入群号',
+                  allowAdd: true,
+                  allowDel: true,
+                  valueParser: ((value) => value.split(',') || []),
+                },
+              },
             ],
           },
         },
@@ -607,6 +619,18 @@ export function supportGuoba() {
           component: "GTags",
           componentProps: {
             placeholder: '请输入用户ID/QQ号',
+            allowAdd: true,
+            allowDel: true,
+            valueParser: ((value) => value.split(',') || []),
+          },
+        },
+        {
+          field: 'sf_onlyGroupID',
+          label: '白名单群',
+          bottomHelpMessage: '仅白名单群可以使用此接口，留空则所有群可用；私聊用群号8888代替',
+          component: "GTags",
+          componentProps: {
+            placeholder: '请输入群号',
             allowAdd: true,
             allowDel: true,
             valueParser: ((value) => value.split(',') || []),
@@ -831,6 +855,18 @@ export function supportGuoba() {
                 component: "GTags",
                 componentProps: {
                   placeholder: '请输入用户ID/QQ号',
+                  allowAdd: true,
+                  allowDel: true,
+                  valueParser: ((value) => value.split(',') || []),
+                },
+              },
+              {
+                field: 'onlyGroupID',
+                label: '白名单群',
+                bottomHelpMessage: '仅白名单群可以使用此接口，留空则所有群可用；私聊用群号8888代替',
+                component: "GTags",
+                componentProps: {
+                  placeholder: '请输入群号',
                   allowAdd: true,
                   allowDel: true,
                   valueParser: ((value) => value.split(',') || []),
@@ -1084,6 +1120,18 @@ export function supportGuoba() {
                 component: "GTags",
                 componentProps: {
                   placeholder: '请输入用户ID/QQ号',
+                  allowAdd: true,
+                  allowDel: true,
+                  valueParser: ((value) => value.split(',') || []),
+                },
+              },
+              {
+                field: 'onlyGroupID',
+                label: '白名单群',
+                bottomHelpMessage: '仅白名单群可以使用此接口，留空则所有群可用；私聊用群号8888代替',
+                component: "GTags",
+                componentProps: {
+                  placeholder: '请输入群号',
                   allowAdd: true,
                   allowDel: true,
                   valueParser: ((value) => value.split(',') || []),

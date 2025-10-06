@@ -934,7 +934,8 @@ export class DD_Painting extends plugin {
             feature: `dd_${apiConfig.customCommand}`,
             cdTime: apiConfig.dd_cdtime,
             dailyLimit: apiConfig.dd_dailyLimit,
-            unlimitedUsers: apiConfig.dd_unlimitedUsers
+            unlimitedUsers: apiConfig.dd_unlimitedUsers,
+            onlyGroupID: apiConfig.dd_onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
         if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
@@ -1058,7 +1059,8 @@ export class DD_Painting extends plugin {
             feature: `dd_${apiConfig.customCommand}`,
             cdTime: apiConfig.dd_cdtime,
             dailyLimit: apiConfig.dd_dailyLimit,
-            unlimitedUsers: apiConfig.dd_unlimitedUsers
+            unlimitedUsers: apiConfig.dd_unlimitedUsers,
+            onlyGroupID: apiConfig.dd_onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
         if (!result_member.allowed) return e.reply(result_member.message, true, { recallMsg: 60 });
