@@ -1,13 +1,67 @@
 # 目录
 
 - [目录](#目录)
+- [`#g手办化` 接口创建教程](#g手办化-接口创建教程)
+  - [2025年10月11日 更新说明](#2025年10月11日-更新说明)
+  - [配置教程](#配置教程)
+- [类似 ControlNet 一般控制图片](#类似-controlnet-一般控制图片)
 - [`#s手办化` 接口创建教程](#s手办化-接口创建教程)
   - [2025年9月5日 更新说明](#2025年9月5日-更新说明)
   - [OpenRouter.ai 配置教程](#openrouterai-配置教程)
-- [`#g手办化` 接口创建教程](#g手办化-接口创建教程)
-- [类似 ControlNet 一般控制图片](#类似-controlnet-一般控制图片)
 - [多模态模型的更多的提示词](#多模态模型的更多的提示词)
     - [🎨 让AI绘画成为日常，让创意永不枯竭！✨](#-让ai绘画成为日常让创意永不枯竭)
+
+
+
+# `#g手办化` 接口创建教程
+
+## 2025年10月11日 更新说明
+
+- 推荐使用 [gcli2api](https://github.com/su-kaka/gcli2api) 以个人学习、研究、教育用途地免费使用 `gemini-2.5-flash-image-preview` 模型
+
+## 配置教程
+
+> [!TIP]
+> 连接 Gemini 官网或使用反代
+> 
+> 其中 `gemini-2.5-flash-image-preview` 模型目前Google对其限时免费，考虑到其属于 flash 类别，将来也许将永久免费
+>
+
+- 按照图片填入 [锅巴插件](https://github.com/guoba-yunzai/guoba-plugin)-sf插件配置-对话功能(标签页)-[#gg]接口列表 中
+  - 其中接口地址留空则优先使用全局 `[#gg]Gemini反代地址`
+  - 其中Key填写你的 [GeminiKey](https://aistudio.google.com/app/apikey) 或者留空使用本插件的公益站（如果还有额度的话）
+ 
+    <img width="400" alt="image" src="https://github.com/user-attachments/assets/ac8c2bbd-b560-4023-85e5-9bb29b2e9e58" />
+
+
+    其中提示词为:
+
+    ```
+    Please turn this photo into a figure. Behind it, there should be a packaging box with a large clear front window, printed character artwork, the product name, logo, barcode, a small specs or authenticity panel, and a handwriten price tag sticker on one corner. There is also a computer monitor screen at the back, showing the design sketch of the figure. In front of the box, on a round plastic base, place the figure version of the photo I gave you, and the figure must be three-dimensional. I'd like the PVC material to be clearly represented. It would be even better if the background is indoors.
+    ```
+
+- 对Bot使用 `#g手办化` 指令即可（可引用图片/附带图片/后续发送图片）
+
+    <img width="400" alt="image" src="https://github.com/user-attachments/assets/2fd8a3a1-128b-42b2-97f0-571880399da5" />
+
+
+# 类似 ControlNet 一般控制图片
+
+> [!TIP]
+> 同时适用于 `#s` 和 `#g` 接口
+>
+
+- 锅巴设置中如下，把 `必需图片` 改为 `2`
+
+    <img width="800" alt="image" src="https://github.com/user-attachments/assets/7360abf1-6ffa-405f-913b-334cc84b385b" />
+
+- 对Bot使用该指令
+
+    <img width="400" alt="image" src="https://github.com/user-attachments/assets/0cf678db-bc68-4cf4-9a87-af38b147d9fa" />
+
+- Bot返回
+
+    <img width="400" alt="image" src="https://github.com/user-attachments/assets/97a0a07d-e1c4-40b4-b9e0-74961ac22142" />
 
 
 # `#s手办化` 接口创建教程
@@ -73,49 +127,6 @@
 
     <img width="400" alt="image" src="https://github.com/user-attachments/assets/b599b948-4ea1-4d38-826d-a164e3fb7400" />
 
-# `#g手办化` 接口创建教程
-
-> [!TIP]
-> 连接 Gemini 官网或使用反代
-> 
-> 其中 `gemini-2.5-flash-image-preview` 模型目前Google对其限时免费，考虑到其属于 flash 类别，将来也许将永久免费
->
-
-- 按照图片填入 [锅巴插件](https://github.com/guoba-yunzai/guoba-plugin)-sf插件配置-对话功能(标签页)-[#gg]接口列表 中
-  - 其中接口地址留空则优先使用全局 `[#gg]Gemini反代地址`
-  - 其中Key填写你的 [GeminiKey](https://aistudio.google.com/app/apikey) 或者留空使用本插件的公益站（如果还有额度的话）
- 
-    <img width="400" alt="image" src="https://github.com/user-attachments/assets/ac8c2bbd-b560-4023-85e5-9bb29b2e9e58" />
-
-
-    其中提示词为:
-
-    ```
-    Please turn this photo into a figure. Behind it, there should be a packaging box with a large clear front window, printed character artwork, the product name, logo, barcode, a small specs or authenticity panel, and a handwriten price tag sticker on one corner. There is also a computer monitor screen at the back, showing the design sketch of the figure. In front of the box, on a round plastic base, place the figure version of the photo I gave you, and the figure must be three-dimensional. I'd like the PVC material to be clearly represented. It would be even better if the background is indoors.
-    ```
-
-- 对Bot使用 `#g手办化` 指令即可（可引用图片/附带图片/后续发送图片）
-
-    <img width="400" alt="image" src="https://github.com/user-attachments/assets/2fd8a3a1-128b-42b2-97f0-571880399da5" />
-
-
-# 类似 ControlNet 一般控制图片
-
-> [!TIP]
-> 同时适用于 `#s` 和 `#g` 接口
->
-
-- 锅巴设置中如下，把 `必需图片` 改为 `2`
-
-    <img width="800" alt="image" src="https://github.com/user-attachments/assets/7360abf1-6ffa-405f-913b-334cc84b385b" />
-
-- 对Bot使用该指令
-
-    <img width="400" alt="image" src="https://github.com/user-attachments/assets/0cf678db-bc68-4cf4-9a87-af38b147d9fa" />
-
-- Bot返回
-
-    <img width="400" alt="image" src="https://github.com/user-attachments/assets/97a0a07d-e1c4-40b4-b9e0-74961ac22142" />
 
 # 多模态模型的更多的提示词
 
