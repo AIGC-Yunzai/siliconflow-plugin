@@ -1,6 +1,7 @@
 # 目录
 
 - [目录](#目录)
+- [SF插件 两种 API 接口简介](#sf插件-两种-api-接口简介)
 - [`#g手办化` 接口创建教程](#g手办化-接口创建教程)
   - [2025年10月11日 更新说明](#2025年10月11日-更新说明)
   - [配置教程](#配置教程)
@@ -11,13 +12,19 @@
 - [多模态模型的更多的提示词](#多模态模型的更多的提示词)
     - [🎨 让AI绘画成为日常，让创意永不枯竭！✨](#-让ai绘画成为日常让创意永不枯竭)
 
+# SF插件 两种 API 接口简介
+
+- 目前市面上存在 **OpenAI** 接口和 **GEMINI API** 接口这两种调用LLM的方式
+- `#g` 接口为 SF插件 调用 **GEMINI API** 接口的命令前缀
+- `#s` 接口为 SF插件 调用 **OpenAI** 接口的命令前缀
 
 
 # `#g手办化` 接口创建教程
 
 ## 2025年10月11日 更新说明
 
-- 推荐使用 [gcli2api](https://github.com/su-kaka/gcli2api) 以个人学习、研究、教育用途地免费使用 `gemini-2.5-flash-image-preview` 模型
+- 目前 Gemini 官网并未推出 `gemini-2.5-flash-image-preview (Nano-Banana)` 模型的免费额度, 推荐使用 [gcli2api](https://github.com/su-kaka/gcli2api) 以个人学习、研究、教育用途地免费使用 `gemini-2.5-flash-image-preview` 模型
+- 部署好 [gcli2api](https://github.com/su-kaka/gcli2api) 之后将 GeminiCLI 转换为 **GEMINI API** 接口后继续阅读[下面](#配置教程)的教程, 其中 `接口地址` 和 `接口密钥` 填写你部署好的 [gcli2api](https://github.com/su-kaka/gcli2api) 提供的 `接口地址` 和 `接口密钥` 
 
 ## 配置教程
 
