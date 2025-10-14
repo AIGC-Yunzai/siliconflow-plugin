@@ -696,7 +696,8 @@ export class SF_Painting extends plugin {
         } else if (config_date.ss_apiBaseUrl) {
             // 检查默认配置是否仅限主人使用
             if (!isMaster && config_date.ss_isOnlyMaster) {
-                await e.reply('默认配置仅限主人使用')
+                // await e.reply('默认配置仅限主人使用')
+                logger.info("已开启仅限主人使用默认配置");
                 return false
             }
             // 使用默认配置
@@ -1372,7 +1373,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         } else {
             // 检查默认配置是否仅限主人使用
             if (!isMaster && config_date.gg_isOnlyMaster) {
-                await e.reply('默认配置仅限主人使用')
+                // await e.reply('默认配置仅限主人使用')
+                logger.info("已开启仅限主人使用默认配置");
                 return false
             }
             // 使用默认配置
@@ -2254,7 +2256,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         if (!isMaster && index === 0) {
             if ((type === 'ss' && config_date.ss_isOnlyMaster) ||
                 (type === 'gg' && config_date.gg_isOnlyMaster)) {
-                await e.reply('默认配置仅限主人使用')
+                // await e.reply('默认配置仅限主人使用')
+                logger.info("已开启仅限主人使用默认配置");
                 return
             }
         }
@@ -2328,7 +2331,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 if (apiIndex === -1 && !e.isMaster) {
                     if ((type === 'ss' && config_date.ss_isOnlyMaster) ||
                         (type === 'gg' && config_date.gg_isOnlyMaster)) {
-                        await e.reply('默认配置仅限主人使用');
+                        // await e.reply('默认配置仅限主人使用')
+                        logger.info("已开启仅限主人使用默认配置");
                         return false;
                     }
                 }
@@ -2449,7 +2453,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 if (apiIndex === 0 && !e.isMaster) {
                     if ((type === 'ss' && config_date.ss_isOnlyMaster) ||
                         (type === 'gg' && config_date.gg_isOnlyMaster)) {
-                        await e.reply('默认配置仅限主人使用');
+                        // await e.reply('默认配置仅限主人使用')
+                        logger.info("已开启仅限主人使用默认配置");
                         return false;
                     }
                 }
