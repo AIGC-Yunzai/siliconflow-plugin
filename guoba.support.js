@@ -1317,6 +1317,17 @@ export function supportGuoba() {
           },
         },
         {
+          field: 'groupSayHello.replyRate',
+          label: '打招呼的概率',
+          bottomHelpMessage: '到预定的定时表达式时，判断此次打招呼的概率，默认为1',
+          component: 'InputNumber',
+          componentProps: {
+            min: 0,
+            max: 1,
+            step: 0.01
+          }
+        },
+        {
           field: 'groupSayHello.usingAPI',
           label: '使用接口',
           bottomHelpMessage: "选择要使用的Gemini接口配置",

@@ -63,12 +63,23 @@ export class groupSayHello extends plugin {
             return false
         }
 
+        // 获取全局概率配置（0-100，默认100表示100%触发）
+        const replyRate = config.groupSayHello?.replyRate ?? 100
+
         // 遍历配置的群列表
         for (const groupId of allowGroups) {
             try {
-                await this.sendGreeting(groupId, config)
-                // 避免发送过快，休息一下
-                await sleep(2000)
+                // 每个群单独进行概率判断
+                const randomValue = Math.random() * 100
+                
+                if (randomValue <= replyRate) {
+                    logger.debug(`[群自动打招呼] 群 ${groupId} 概率判断通过 (${randomValue.toFixed(2)} <= ${replyRate})`)
+                    await this.sendGreeting(groupId, config)
+                    // 避免发送过快，休息一下
+                    await sleep(2000)
+                } else {
+                    logger.debug(`[群自动打招呼] 群 ${groupId} 概率判断未通过 (${randomValue.toFixed(2)} > ${replyRate})，跳过本次发送`)
+                }
             } catch (error) {
                 logger.error(`[群自动打招呼] 群 ${groupId} 发送失败: ${error}`)
             }
@@ -389,6 +400,7 @@ export class groupSayHello extends plugin {
         }
 
         const cronTime = groupSayHelloConfig.cron_time || '0 */5 * * * *'
+        const replyRate = groupSayHelloConfig.replyRate ?? 100
 
         const configMsg = [
             '📊 群自动打招呼配置状态',
@@ -398,6 +410,7 @@ export class groupSayHello extends plugin {
             '',
             '⚙️ 配置参数:',
             `　⏱️ 定时表达式: ${cronTime}`,
+            `　🎲 触发概率: ${replyRate}% (每个群独立判断)`,
             `　🤖 ${interfaceInfo}`,
             '',
             '🎯 允许群组:',
@@ -410,6 +423,12 @@ export class groupSayHello extends plugin {
             '　#自动打招呼开启 - 开启当前群',
             '　#自动打招呼关闭 - 关闭当前群',
             '　#立即打招呼 - 立即发送一条',
+            '',
+            '⚙️ 配置说明:',
+            `　replyRate: 设置触发概率(0-100)`,
+            `　值为100时每次必定触发`,
+            `　值为50时有50%概率触发`,
+            `　每个群在每次定时任务中独立判断`,
         ].filter(line => line !== null && line !== '').join('\n')
 
         await e.reply(configMsg)
