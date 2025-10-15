@@ -65,3 +65,4 @@ export async function getGeminiModelsByFetch(apiKey = '', geminiBaseUrl = '') {
     // Extract model names from the models array and return them
     return (data.models || []).map(model => model.name?.replace(/models\//g, '').trim()).filter(Boolean);
 }
+

@@ -878,7 +878,7 @@ export function supportGuoba() {
         {
           field: 'ss_usingAPI',
           label: '[#ss]主人使用接口',
-          bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#ss]对话接口地址等；其他用户可使用指令：#sfss接口列表 #sfss使用接口[数字]",
+          bottomHelpMessage: "选择主人要使用的接口配置；其他用户可使用指令：#sfss接口列表 #sfss使用接口[数字]",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.ss_APIList || []).map((item, index) => {
@@ -1000,7 +1000,6 @@ export function supportGuoba() {
               {
                 field: "model",
                 label: "接口模型",
-                component: "Input",
                 bottomHelpMessage: '默认值：gemini-2.0-flash；推荐：gemini-exp-1206,gemini-2.0-flash-thinking-exp-01-21；可用模型每日自动更新，立即更新指令：#sf插件立即执行每日自动任务',
                 component: 'Select',
                 componentProps: {
@@ -1143,7 +1142,7 @@ export function supportGuoba() {
         {
           field: 'gg_usingAPI',
           label: '[#gg]主人使用接口',
-          bottomHelpMessage: "选择主人要使用的接口配置，0表示使用默认配置，即不使用这个接口列表的配置，用[#gg]Gemini反代地址等；其他用户可使用指令：#sfgg接口列表 #sfgg使用接口[数字]",
+          bottomHelpMessage: "选择主人要使用的接口配置；其他用户可使用指令：#sfgg接口列表 #sfgg使用接口[数字]",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.gg_APIList || []).map((item, index) => {
@@ -1277,6 +1276,68 @@ export function supportGuoba() {
           label: "群聊多人对话",
           bottomHelpMessage: "开启后群聊中的用户可以在同一话题中与AI聊天，每个群聊都有独立的对话上下文",
           component: "Switch",
+        },
+        {
+          label: '暖群功能',
+          component: 'SOFT_GROUP_BEGIN'
+        },
+        {
+          component: "Divider",
+          label: "群自动打招呼配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "groupSayHello.enabled",
+          label: "启用自动打招呼",
+          bottomHelpMessage: "开启后将在配置的群中定时自动打招呼，使用Gemini生成打招呼内容；可用指令：#打招呼配置 #立即打招呼",
+          component: "Switch",
+        },
+        {
+          field: "groupSayHello.allowGroups",
+          label: "允许的群组",
+          bottomHelpMessage: "填写允许自动打招呼的群号列表，留空则不在任何群打招呼；可在群内使用 #自动打招呼开启/关闭 来管理",
+          component: "GTags",
+          componentProps: {
+            placeholder: '请输入群号',
+            allowAdd: true,
+            allowDel: true,
+            valueParser: ((value) => value.split(',') || []),
+          },
+        },
+        {
+          field: 'groupSayHello.cron_time',
+          label: '定时表达式配置',
+          bottomHelpMessage: '定时打招呼，重启生效，默认每5分钟执行一次：0 */5 * * * *',
+          component: 'EasyCron',
+          componentProps: {
+            placeholder: '请输入或选择Cron表达式',
+          },
+        },
+        {
+          field: 'groupSayHello.usingAPI',
+          label: '使用接口',
+          bottomHelpMessage: "选择要使用的Gemini接口配置",
+          component: 'Select',
+          componentProps: {
+            options: (Config.getConfig()?.gg_APIList || []).map((item, index) => {
+              return { label: item.remark || `接口${index + 1}`, value: index + 1 }
+            }).concat([{ label: "使用默认配置", value: 0 }])
+          },
+        },
+        {
+          field: "groupSayHello.botQQArr",
+          label: "使用的Bot QQ号",
+          bottomHelpMessage: "指定使用哪个Bot发送打招呼消息，留空则使用默认Bot；多个Bot时填写QQ号",
+          component: "GTags",
+          componentProps: {
+            placeholder: '请输入Bot QQ号',
+            allowAdd: true,
+            allowDel: true,
+            valueParser: ((value) => value.split(',') || []),
+          },
         },
         {
           label: '语音功能',
@@ -1508,8 +1569,8 @@ export function supportGuoba() {
         config.gg_APIList = data['gg_APIList']
         config.dd_APIList = data['dd_APIList']
         config.fish_text_blacklist = data['fish_text_blacklist']
-        config.ss_Key = data['ss_Key']    // 修正为ss_Key
-        config.ggKey = data['ggKey']      // 修正为ggKey
+        config.groupSayHello.allowGroups = data['groupSayHello.allowGroups']
+        config.groupSayHello.botQQArr = data['groupSayHello.botQQArr']
 
         // 验证配置
         try {

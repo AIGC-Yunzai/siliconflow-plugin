@@ -84,3 +84,4 @@ sf_cdtime: 0
 sf_dailyLimit: 0
 sf_unlimitedUsers: []
 sf_onlyGroupID: []
+groupSayHello: {}
