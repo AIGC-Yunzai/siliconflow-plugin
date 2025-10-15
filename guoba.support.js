@@ -1340,6 +1340,91 @@ export function supportGuoba() {
           },
         },
         {
+          label: '群自动表情包功能',
+          component: 'Divider'
+        },
+        {
+          field: 'autoEmoticons.useEmojiSave',
+          label: '启用表情保存',
+          bottomHelpMessage: '是否启用表情保存/偷取/发送；会自动发送保存在 /data/autoEmoticons/emoji_save/群号/ 和 /data/autoEmoticons/PaimonChuoYiChouPictures/ 目录下的表情包；群单独指令：#哒咩 #自动表情包[开启|关闭] #表情包配置',
+          component: 'Switch'
+        },
+        {
+          field: 'autoEmoticons.confirmCount',
+          label: '表情确认次数',
+          bottomHelpMessage: '在记录时间内接收多少次才保存表情包',
+          component: 'InputNumber',
+          componentProps: {
+            min: 0,
+            step: 1
+          }
+        },
+        {
+          field: 'autoEmoticons.replyRate',
+          label: '发送表情概率',
+          bottomHelpMessage: '发送偷取表情的概率',
+          component: 'InputNumber',
+          componentProps: {
+            min: 0,
+            max: 1,
+            step: 0.01
+          }
+        },
+        {
+          field: 'autoEmoticons.sendCD',
+          label: '发送表情冷却时间',
+          bottomHelpMessage: '发送表情的冷却时间（秒）',
+          component: 'InputNumber',
+          componentProps: {
+            min: 1,
+            step: 1
+          }
+        },
+        {
+          field: 'autoEmoticons.maxEmojiCount',
+          label: '表情包最大数量',
+          bottomHelpMessage: '每个群最大的表情包储存数量，储存在 data/autoEmoticons/emoji_save/ 文件夹下',
+          component: 'InputNumber',
+          componentProps: {
+            min: 0,
+            step: 1
+          }
+        },
+        {
+          field: 'autoEmoticons.maxEmojiSize',
+          label: '表情大小限制',
+          bottomHelpMessage: '表情包文件大小限制 (MB)',
+          component: 'InputNumber',
+          componentProps: {
+            min: 0,
+            step: 1
+          }
+        },
+        {
+          field: 'autoEmoticons.allowGroups',
+          label: '表情包白名单群',
+          bottomHelpMessage: '需要保存和发送表情包的群号列表，为空数组时表示所有群；（推荐设置该选项，设置后支持无触发自动发送表情包，否则只能接受任意信息后概率触发表情包）',
+          component: "GTags",
+          componentProps: {
+            placeholder: '请输入qq群号',
+            allowAdd: true,
+            allowDel: true,
+            valueParser: (value) => value.split(',') || []
+          },
+        },
+        {
+          field: 'autoEmoticons.getBotByQQ_targetQQArr',
+          label: 'BotQQ号',
+          bottomHelpMessage: 'Bot多开qq时指定一个或多个Bot发送表情包，否则将随机使用1个已登录的Bot',
+          component: "GTags",
+          componentProps: {
+            placeholder: '请输入qq号',
+            allowAdd: true,
+            allowDel: true,
+            valueParser: ((value) => value.split(',') || []),
+          },
+        },
+        {
           label: '语音功能',
           component: 'SOFT_GROUP_BEGIN'
         },
@@ -1571,6 +1656,8 @@ export function supportGuoba() {
         config.fish_text_blacklist = data['fish_text_blacklist']
         config.groupSayHello.allowGroups = data['groupSayHello.allowGroups']
         config.groupSayHello.botQQArr = data['groupSayHello.botQQArr']
+        config.autoEmoticons.allowGroups = data['autoEmoticons.allowGroups']
+        config.autoEmoticons.getBotByQQ_targetQQArr = data['autoEmoticons.getBotByQQ_targetQQArr']
 
         // 验证配置
         try {
