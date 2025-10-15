@@ -1694,7 +1694,7 @@ export function supportGuoba() {
           component: 'Input',
           componentProps: {
             readonly: true,
-            defaultValue: 'https://aigc-yunzai.dwe.me/siliconflow/%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AE'
+            defaultValue: 'https://aigc-yunzai.me/siliconflow/%E5%A6%82%E4%BD%95%E9%85%8D%E7%BD%AE'
           }
         },
         {
