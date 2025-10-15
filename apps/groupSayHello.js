@@ -64,13 +64,13 @@ export class groupSayHello extends plugin {
         }
 
         // 获取全局概率配置（0-100，默认100表示100%触发）
-        const replyRate = config.groupSayHello?.replyRate ?? 100
+        const replyRate = config.groupSayHello?.replyRate ?? 1
 
         // 遍历配置的群列表
         for (const groupId of allowGroups) {
             try {
                 // 每个群单独进行概率判断
-                const randomValue = Math.random() * 100
+                const randomValue = Math.random()
                 
                 if (randomValue <= replyRate) {
                     logger.debug(`[群自动打招呼] 群 ${groupId} 概率判断通过 (${randomValue.toFixed(2)} <= ${replyRate})`)

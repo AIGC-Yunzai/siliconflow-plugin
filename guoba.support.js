@@ -1330,7 +1330,7 @@ export function supportGuoba() {
         {
           field: 'groupSayHello.usingAPI',
           label: '使用接口',
-          bottomHelpMessage: "选择要使用的Gemini接口配置",
+          bottomHelpMessage: "选择要使用的Gemini接口配置，需要先在 对话功能标签页中设置-[#gg]接口",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.gg_APIList || []).map((item, index) => {
