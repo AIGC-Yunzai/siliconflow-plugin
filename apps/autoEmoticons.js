@@ -708,7 +708,7 @@ export class autoEmoticons extends plugin {
         }
 
         try {
-            const config = Config.getConfig()
+            let config = Config.getConfig()
             // 获取当前配置
             const currentAllowGroups = [...config.autoEmoticons.allowGroups]
 
@@ -763,7 +763,7 @@ export class autoEmoticons extends plugin {
                 }
             }
 
-            config.save();
+            Config.setConfig(config);
         } catch (error) {
             logger.error(`[autoEmoticons] 切换群功能失败: ${error}`)
             await e.reply('❌ 操作失败，请查看日志获取详细信息')

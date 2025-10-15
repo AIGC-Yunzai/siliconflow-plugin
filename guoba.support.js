@@ -1340,7 +1340,7 @@ export function supportGuoba() {
           },
         },
         {
-          label: '群自动表情包功能',
+          label: '群自动表情包配置',
           component: 'Divider'
         },
         {
@@ -1422,6 +1422,103 @@ export function supportGuoba() {
             allowAdd: true,
             allowDel: true,
             valueParser: ((value) => value.split(',') || []),
+          },
+        },
+        {
+          label: '复读 & 打断复读配置',
+          component: 'Divider'
+        },
+        {
+          field: "autoRepeat_config",
+          label: "🍓群单独设置",
+          bottomHelpMessage: "复读 & 打断复读；群单独指令：#自动复读[开启|关闭] #打断复读[开启|关闭] #自动复读状态",
+          component: "GSubForm",
+          componentProps: {
+            multiple: true,
+            schemas: [
+              {
+                field: "groupId",
+                label: "群号",
+                required: true,
+                bottomHelpMessage: "群号",
+                component: "InputNumber",
+                componentProps: {
+                  min: 1,
+                  step: 1,
+                },
+              },
+              {
+                field: "enabled",
+                label: "自动复读",
+                required: false,
+                bottomHelpMessage: "是否启用自动复读，默认关闭",
+                component: 'Switch'
+              },
+              {
+                field: "triggerCount",
+                label: "触发复读的次数",
+                required: false,
+                bottomHelpMessage: "触发复读的次数，默认3次",
+                component: "InputNumber",
+                componentProps: {
+                  min: 1,
+                  step: 1,
+                },
+              },
+              {
+                field: "probability",
+                label: "复读概率",
+                required: false,
+                bottomHelpMessage: "复读概率，默认1",
+                component: "InputNumber",
+                componentProps: {
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+              },
+              {
+                field: "breakEnabled",
+                label: "打断复读",
+                required: false,
+                bottomHelpMessage: "是否启用打断复读，默认关闭",
+                component: 'Switch'
+              },
+              {
+                field: "breakCount",
+                label: "打断的次数",
+                required: false,
+                bottomHelpMessage: "打断的次数，默认5次",
+                component: "InputNumber",
+                componentProps: {
+                  min: 1,
+                  step: 1,
+                },
+              },
+              {
+                field: "breakProbability",
+                label: "打断概率",
+                required: false,
+                bottomHelpMessage: "打断概率，默认0.8",
+                component: "InputNumber",
+                componentProps: {
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+              },
+              {
+                field: "cooldown",
+                label: "冷却时间",
+                required: false,
+                bottomHelpMessage: "冷却时间（秒），默认30秒",
+                component: "InputNumber",
+                componentProps: {
+                  min: 1,
+                  step: 1,
+                },
+              },
+            ],
           },
         },
         {
@@ -1658,6 +1755,7 @@ export function supportGuoba() {
         config.groupSayHello.botQQArr = data['groupSayHello.botQQArr']
         config.autoEmoticons.allowGroups = data['autoEmoticons.allowGroups']
         config.autoEmoticons.getBotByQQ_targetQQArr = data['autoEmoticons.getBotByQQ_targetQQArr']
+        config.autoRepeat_config = data['autoRepeat_config']
 
         // 验证配置
         try {
