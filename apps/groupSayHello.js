@@ -1,6 +1,10 @@
 import plugin from '../../../lib/plugins/plugin.js'
 import Config from '../components/Config.js'
-import { getChatHistory_w, getBotByQQ } from '../utils/onebotUtils.js'
+import {
+    getBotByQQ,
+    getChatHistory_w,
+    buildGreetingPrompt,
+} from '../utils/onebotUtils.js'
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 
@@ -71,7 +75,7 @@ export class groupSayHello extends plugin {
             try {
                 // 每个群单独进行概率判断
                 const randomValue = Math.random()
-                
+
                 if (randomValue <= replyRate) {
                     logger.debug(`[群自动打招呼] 群 ${groupId} 概率判断通过 (${randomValue.toFixed(2)} <= ${replyRate})`)
                     await this.sendGreeting(groupId, config)
@@ -163,8 +167,16 @@ export class groupSayHello extends plugin {
             }
         }
 
+        let prompt = `请根据以下最近的群聊记录，生成一条自然、友好的打招呼消息或话题。\n`
+        prompt += `要求：\n`
+        prompt += `1. 语气要活泼自然，像真人聊天一样\n`
+        prompt += `2. 可以评论最近的聊天话题，或提出新话题\n`
+        prompt += `3. 长度控制在50字以内\n`
+        prompt += `4. 不要太正式，要接地气\n`
+        prompt += `5. 可以使用一些网络流行语或表情包文字\n`
+        prompt += `6. 请生成打招呼内容（直接输出内容，不要加任何前缀或解释）\n`
         // 构造打招呼的prompt
-        const greetingPrompt = this.buildGreetingPrompt(chatHistory, config)
+        const greetingPrompt = buildGreetingPrompt(chatHistory, prompt, bot.uin)
 
         // 导入SF_Painting类来调用generateGeminiPrompt
         try {
@@ -235,71 +247,6 @@ export class groupSayHello extends plugin {
         }
 
         return true
-    }
-
-    /**
-     * 构造打招呼的prompt
-     * @param {Array} chatHistory 聊天记录
-     * @param {Object} config 配置对象
-     * @returns {string} prompt文本
-     */
-    buildGreetingPrompt(chatHistory, config) {
-        const currentTime = new Date().toLocaleString('zh-CN', {
-            hour12: false,
-            year: 'numeric',
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-        })
-
-        let prompt = `当前时间: ${currentTime}\n\n`
-        prompt += `请根据以下最近的群聊记录，生成一条自然、友好的打招呼消息或话题。\n`
-        prompt += `要求：\n`
-        prompt += `1. 语气要活泼自然，像真人聊天一样\n`
-        prompt += `2. 可以评论最近的聊天话题，或提出新话题\n`
-        prompt += `3. 长度控制在50字以内\n`
-        prompt += `4. 不要太正式，要接地气\n`
-        prompt += `5. 可以使用一些网络流行语或表情包文字\n\n`
-
-        if (chatHistory && chatHistory.length > 0) {
-            prompt += `最近的聊天记录（最多50条）：\n`
-            prompt += `==================\n`
-
-            // 格式化聊天记录
-            chatHistory.forEach((msg, index) => {
-                const sender = msg.sender?.card || msg.sender?.nickname || '未知用户'
-                const time = msg.time ? new Date(msg.time * 1000).toLocaleTimeString('zh-CN') : ''
-
-                // 提取文本消息
-                let text = ''
-                if (typeof msg.raw_message === 'string') {
-                    text = msg.raw_message
-                } else if (msg.message) {
-                    // 处理消息数组
-                    if (Array.isArray(msg.message)) {
-                        text = msg.message
-                            .filter(seg => seg.type === 'text')
-                            .map(seg => seg.text)
-                            .join('')
-                    } else if (typeof msg.message === 'string') {
-                        text = msg.message
-                    }
-                }
-
-                if (text && text.trim()) {
-                    prompt += `[${time}] ${sender}: ${text.substring(0, 100)}\n`
-                }
-            })
-
-            prompt += `==================\n\n`
-        } else {
-            prompt += `暂无最近的聊天记录。\n\n`
-        }
-
-        prompt += `请生成打招呼内容（直接输出内容，不要加任何前缀或解释）：`
-
-        return prompt
     }
 
     /**
