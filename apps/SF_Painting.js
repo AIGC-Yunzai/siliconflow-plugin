@@ -24,9 +24,8 @@ import { createServer } from 'http';
 import { MJ_Painting } from './MJ_Painting.js'
 import { memberControlProcess } from '../utils/memberControl.js'
 import {
-    getBotByQQ,
     getChatHistory_w,
-    buildGreetingPrompt,
+    buildChatHistoryPrompt,
 } from '../utils/onebotUtils.js'
 
 var Ws_Server = {};
@@ -859,7 +858,7 @@ export class SF_Painting extends plugin {
         }
 
         // 允许机器人读取近期的最多群聊聊天记录条数
-        if (groupContextLength > 0) {
+        if (e.isGroup && groupContextLength > 0) {
             let chatHistory = []
             try {
                 chatHistory = await getChatHistory_w(e.group ?? (e.bot.pickGroup ? e.bot.pickGroup(e.group_id) : (e.bot[e.group_id] ? e.bot[e.group_id].pickGroup(e.group_id) : null)), groupContextLength)
@@ -869,7 +868,7 @@ export class SF_Painting extends plugin {
             }
             // 构造打招呼的prompt
             const prompt = 'There is the conversation history in the group, you must chat according to the conversation history context"'
-            systemPrompt += "\n\n" + buildGreetingPrompt(chatHistory, prompt, e.self_id)
+            systemPrompt += "\n\n" + buildChatHistoryPrompt(chatHistory, prompt, e.self_id)
         }
 
         const opt = {
@@ -1538,7 +1537,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         });
 
         // 允许机器人读取近期的最多群聊聊天记录条数
-        if (groupContextLength > 0) {
+        if (e.isGroup && groupContextLength > 0) {
             let chatHistory = []
             try {
                 chatHistory = await getChatHistory_w(e.group ?? (e.bot.pickGroup ? e.bot.pickGroup(e.group_id) : (e.bot[e.group_id] ? e.bot[e.group_id].pickGroup(e.group_id) : null)), groupContextLength)
@@ -1548,7 +1547,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             }
             // 构造打招呼的prompt
             const prompt = 'There is the conversation history in the group, you must chat according to the conversation history context"'
-            systemPrompt += "\n\n" + buildGreetingPrompt(chatHistory, prompt, e.self_id)
+            systemPrompt += "\n\n" + buildChatHistoryPrompt(chatHistory, prompt, e.self_id)
         }
 
         const opt = {

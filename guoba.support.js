@@ -759,7 +759,7 @@ export function supportGuoba() {
               },
               {
                 field: 'groupContextLength',
-                label: '读取群聊记录数',
+                label: '读取群聊天记录数',
                 bottomHelpMessage: '允许机器人读取近期的最多群聊聊天记录条数（实际可获取条数取决于适配器）',
                 component: 'InputNumber',
                 componentProps: {
@@ -931,7 +931,7 @@ export function supportGuoba() {
         },
         {
           field: 'ss_groupContextLength',
-          label: '读取群聊记录数',
+          label: '[#ss]读取群聊天记录数',
           bottomHelpMessage: '允许机器人读取近期的最多群聊聊天记录条数（实际可获取条数取决于适配器）',
           component: 'InputNumber',
           componentProps: {
@@ -1037,7 +1037,7 @@ export function supportGuoba() {
               },
               {
                 field: 'groupContextLength',
-                label: '读取群聊记录数',
+                label: '读取群聊天记录数',
                 bottomHelpMessage: '允许机器人读取近期的最多群聊聊天记录条数（实际可获取条数取决于适配器）',
                 component: 'InputNumber',
                 componentProps: {
@@ -1215,7 +1215,7 @@ export function supportGuoba() {
         },
         {
           field: 'gg_groupContextLength',
-          label: '读取群聊记录数',
+          label: '[#gg]读取群聊天记录数',
           bottomHelpMessage: '允许机器人读取近期的最多群聊聊天记录条数（实际可获取条数取决于适配器）',
           component: 'InputNumber',
           componentProps: {

@@ -3,7 +3,7 @@ import Config from '../components/Config.js'
 import {
     getBotByQQ,
     getChatHistory_w,
-    buildGreetingPrompt,
+    buildChatHistoryPrompt,
 } from '../utils/onebotUtils.js'
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
@@ -176,7 +176,7 @@ export class groupSayHello extends plugin {
         prompt += `5. 可以使用一些网络流行语或表情包文字\n`
         prompt += `6. 请生成打招呼内容（直接输出内容，不要加任何前缀或解释）\n`
         // 构造打招呼的prompt
-        const greetingPrompt = buildGreetingPrompt(chatHistory, prompt, bot.uin)
+        const greetingPrompt = buildChatHistoryPrompt(chatHistory, prompt, bot.uin)
 
         // 导入SF_Painting类来调用generateGeminiPrompt
         try {

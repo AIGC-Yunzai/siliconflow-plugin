@@ -129,7 +129,7 @@ export async function getChatHistory_w(target, count, seq = null, duration_hours
  * @param {Object} botId 插入到聊天记录中的 Bot ID
  * @returns {string} prompt文本
  */
-export function buildGreetingPrompt(chatHistory, prompt = "", botId = "") {
+export function buildChatHistoryPrompt(chatHistory, prompt = "", botId = "") {
   const currentTime = new Date().toLocaleString('zh-CN', {
     hour12: false,
     year: 'numeric',
