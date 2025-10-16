@@ -23,6 +23,11 @@ import { WebSocketServer } from 'ws';
 import { createServer } from 'http';
 import { MJ_Painting } from './MJ_Painting.js'
 import { memberControlProcess } from '../utils/memberControl.js'
+import {
+    getBotByQQ,
+    getChatHistory_w,
+    buildGreetingPrompt,
+} from '../utils/onebotUtils.js'
 
 var Ws_Server = {};
 init_server();
@@ -406,7 +411,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考|群聊多人对话|ss图片上传|gg图片上传)([\s\S]*)/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考|群聊多人对话|ss图片上传|gg图片上传|ss群聊聊天记录条数|gg群聊聊天记录条数)([\s\S]*)/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -451,6 +456,12 @@ export class SF_Painting extends plugin {
                     break
                 case 'gg必需图片':
                     config_date.gg_mustNeedImgLength = value === parseInt(value)
+                    break
+                case 'ss群聊聊天记录条数':
+                    config_date.ss_groupContextLength = value === parseInt(value)
+                    break
+                case 'gg群聊聊天记录条数':
+                    config_date.gg_groupContextLength = value === parseInt(value)
                     break
                 case 'gg搜索':
                     config_date.gg_useSearch = value === '开'
@@ -657,7 +668,7 @@ export class SF_Painting extends plugin {
 
         // 获取接口配置
         let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false, enableImageUpload = true, mustNeedImgLength = 0
-        let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], onlyGroupID = [], memberConfigName = 'ss_default';
+        let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], onlyGroupID = [], memberConfigName = 'ss_default', groupContextLength = 0
 
         // 根据用户身份选择使用的接口索引
         const usingApiIndex = isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)
@@ -685,6 +696,7 @@ export class SF_Painting extends plugin {
             useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
             forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
             mustNeedImgLength = (typeof apiConfig.mustNeedImgLength !== 'undefined') ? apiConfig.mustNeedImgLength : 0
+            groupContextLength = (typeof apiConfig.groupContextLength !== 'undefined') ? apiConfig.groupContextLength : 0
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             forwardThinking = (typeof apiConfig.forwardThinking !== 'undefined') ? apiConfig.forwardThinking : false
             enableImageUpload = (typeof apiConfig.enableImageUpload !== 'undefined') ? apiConfig.enableImageUpload : true
@@ -708,6 +720,7 @@ export class SF_Painting extends plugin {
             useMarkdown = config_date.ss_useMarkdown
             forwardMessage = config_date.ss_forwardMessage
             mustNeedImgLength = config_date.ss_mustNeedImgLength
+            groupContextLength = config_date.ss_groupContextLength
             quoteMessage = config_date.ss_quoteMessage
             forwardThinking = config_date.ss_forwardThinking
             enableImageUpload = config_date.ss_enableImageUpload
@@ -721,6 +734,7 @@ export class SF_Painting extends plugin {
             useMarkdown = config_date.ss_useMarkdown
             forwardMessage = config_date.ss_forwardMessage
             mustNeedImgLength = config_date.ss_mustNeedImgLength
+            groupContextLength = config_date.ss_groupContextLength
             quoteMessage = config_date.ss_quoteMessage
             forwardThinking = config_date.ss_forwardThinking
             enableImageUpload = config_date.ss_enableImageUpload
@@ -842,6 +856,20 @@ export class SF_Painting extends plugin {
                     historyImages = historyImages.concat(msg.imageBase64);
                 }
             });
+        }
+
+        // 允许机器人读取近期的最多群聊聊天记录条数
+        if (groupContextLength > 0) {
+            let chatHistory = []
+            try {
+                chatHistory = await getChatHistory_w(e.group ?? (e.bot.pickGroup ? e.bot.pickGroup(e.group_id) : (e.bot[e.group_id] ? e.bot[e.group_id].pickGroup(e.group_id) : null)), groupContextLength)
+                logger.debug(`[群自动打招呼] 群 ${e.group_id} 获取到 ${chatHistory.length} 条聊天记录`)
+            } catch (error) {
+                logger.error(`[群自动打招呼] 获取群 ${e.group_id} 聊天记录失败: ${error}`)
+            }
+            // 构造打招呼的prompt
+            const prompt = 'There is the conversation history in the group, you must chat according to the conversation history context"'
+            systemPrompt += "\n\n" + buildGreetingPrompt(chatHistory, prompt, e.self_id)
         }
 
         const opt = {
@@ -1154,13 +1182,14 @@ export class SF_Painting extends plugin {
 8. 设置gg图片模式：#sf设置gg图片模式 开/关
 9. 设置上下文功能：#sf设置上下文 开/关
 10. 设置ss/gg转发消息：#sf设置[ss|gg]转发消息 开/关
-11. 设置ss/gg必需图片：#sf设置[ss|gg]必需图片 开/关
-12. 设置gg搜索功能：#sf设置gg搜索 开/关
-13. 设置ss引用原消息：#sf设置ss引用原消息 开/关
-14. 设置gg引用原消息：#sf设置gg引用原消息 开/关
-15. 设置WebSocket服务：#sf设置ws服务 开/关
-16. 设置思考过程转发：#sf设置ss转发思考 开/关
-17. 查看帮助：#sf帮助`,
+11. 设置ss/gg必需图片：#sf设置[ss|gg]必需图片 [num]
+12. 设置ss/gg必需图片：#sf设置[ss|gg]群聊聊天记录条数 [num]
+13. 设置gg搜索功能：#sf设置gg搜索 开/关
+14. 设置ss引用原消息：#sf设置ss引用原消息 开/关
+15. 设置gg引用原消息：#sf设置gg引用原消息 开/关
+16. 设置WebSocket服务：#sf设置ws服务 开/关
+17. 设置思考过程转发：#sf设置ss转发思考 开/关
+18. 查看帮助：#sf帮助`,
 
             `对话指令：
 1. #gg [内容]：使用Gemini对话
@@ -1334,7 +1363,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
         // 获取接口配置
         let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false, mustNeedImgLength = 0
-        let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], onlyGroupID = [], memberConfigName = 'gg_default';
+        let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], onlyGroupID = [], memberConfigName = 'gg_default', groupContextLength = 0
 
         // 根据用户身份选择使用的接口索引
         const usingApiIndex = isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
@@ -1362,6 +1391,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
             forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
             mustNeedImgLength = (typeof apiConfig.mustNeedImgLength !== 'undefined') ? apiConfig.mustNeedImgLength : 0
+            groupContextLength = (typeof apiConfig.groupContextLength !== 'undefined') ? apiConfig.groupContextLength : 0
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             useSearch = (typeof apiConfig.useSearch !== 'undefined') ? apiConfig.useSearch : false
             enableImageGeneration = (typeof apiConfig.enableImageGeneration !== 'undefined') ? apiConfig.enableImageGeneration : false
@@ -1385,6 +1415,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             useMarkdown = config_date.gg_useMarkdown
             forwardMessage = config_date.gg_forwardMessage
             mustNeedImgLength = config_date.gg_mustNeedImgLength
+            groupContextLength = config_date.gg_groupContextLength
             quoteMessage = config_date.gg_quoteMessage
             useSearch = config_date.gg_useSearch
             enableImageGeneration = config_date.gg_enableImageGeneration
@@ -1505,6 +1536,20 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 historyImages = historyImages.concat(msg.imageBase64);
             }
         });
+
+        // 允许机器人读取近期的最多群聊聊天记录条数
+        if (groupContextLength > 0) {
+            let chatHistory = []
+            try {
+                chatHistory = await getChatHistory_w(e.group ?? (e.bot.pickGroup ? e.bot.pickGroup(e.group_id) : (e.bot[e.group_id] ? e.bot[e.group_id].pickGroup(e.group_id) : null)), groupContextLength)
+                logger.debug(`[群自动打招呼] 群 ${e.group_id} 获取到 ${chatHistory.length} 条聊天记录`)
+            } catch (error) {
+                logger.error(`[群自动打招呼] 获取群 ${e.group_id} 聊天记录失败: ${error}`)
+            }
+            // 构造打招呼的prompt
+            const prompt = 'There is the conversation history in the group, you must chat according to the conversation history context"'
+            systemPrompt += "\n\n" + buildGreetingPrompt(chatHistory, prompt, e.self_id)
+        }
 
         const opt = {
             currentImages: currentImages.length > 0 ? currentImages : undefined,

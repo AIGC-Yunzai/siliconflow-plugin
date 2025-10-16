@@ -758,6 +758,16 @@ export function supportGuoba() {
                 },
               },
               {
+                field: 'groupContextLength',
+                label: '读取群聊记录数',
+                bottomHelpMessage: '允许机器人读取近期的最多群聊聊天记录条数（实际可获取条数取决于适配器）',
+                component: 'InputNumber',
+                componentProps: {
+                  min: 0,
+                  step: 1,
+                },
+              },
+              {
                 field: "useMarkdown",
                 label: "图片对话模式",
                 component: "Switch",
@@ -920,6 +930,16 @@ export function supportGuoba() {
           },
         },
         {
+          field: 'ss_groupContextLength',
+          label: '读取群聊记录数',
+          bottomHelpMessage: '允许机器人读取近期的最多群聊聊天记录条数（实际可获取条数取决于适配器）',
+          component: 'InputNumber',
+          componentProps: {
+            min: 0,
+            step: 1,
+          },
+        },
+        {
           field: "ss_useMarkdown",
           label: "[#ss]图片对话模式",
           bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
@@ -1013,6 +1033,16 @@ export function supportGuoba() {
                 bottomHelpMessage: "设置#gg[对话]的API接口提示词，自动将提示词中的字符串 {{user_name}} 替换为用户昵称/群昵称",
                 componentProps: {
                   placeholder: '你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。',
+                },
+              },
+              {
+                field: 'groupContextLength',
+                label: '读取群聊记录数',
+                bottomHelpMessage: '允许机器人读取近期的最多群聊聊天记录条数（实际可获取条数取决于适配器）',
+                component: 'InputNumber',
+                componentProps: {
+                  min: 0,
+                  step: 1,
                 },
               },
               {
@@ -1181,6 +1211,16 @@ export function supportGuoba() {
           component: "InputTextArea",
           componentProps: {
             placeholder: '你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。',
+          },
+        },
+        {
+          field: 'gg_groupContextLength',
+          label: '读取群聊记录数',
+          bottomHelpMessage: '允许机器人读取近期的最多群聊聊天记录条数（实际可获取条数取决于适配器）',
+          component: 'InputNumber',
+          componentProps: {
+            min: 0,
+            step: 1,
           },
         },
         {
