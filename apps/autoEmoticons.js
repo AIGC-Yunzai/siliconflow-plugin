@@ -186,7 +186,7 @@ function initWatcher(groupId) {
     watchers.set(groupId, watcher)
 }
 
-const useEmojiSave_Switch = Config.getConfig().useEmojiSave;
+const useEmojiSave_Switch = Config.getConfig().autoEmoticons?.useEmojiSave;
 
 /**
  * 自动表情包插件
