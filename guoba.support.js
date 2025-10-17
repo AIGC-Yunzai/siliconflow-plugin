@@ -1350,7 +1350,7 @@ export function supportGuoba() {
         {
           field: 'groupSayHello.cron_time',
           label: '定时表达式配置',
-          bottomHelpMessage: '定时打招呼，重启生效，默认每5分钟执行一次：0 */5 * * * *',
+          bottomHelpMessage: '定时打招呼，重启生效，默认每1小时执行一次：0 0 * * * ? *',
           component: 'EasyCron',
           componentProps: {
             placeholder: '请输入或选择Cron表达式',
@@ -1397,7 +1397,7 @@ export function supportGuoba() {
         {
           field: 'autoEmoticons.useEmojiSave',
           label: '启用表情保存',
-          bottomHelpMessage: '是否启用表情保存/偷取/发送；会自动发送保存在 /data/autoEmoticons/emoji_save/群号/ 和 /data/autoEmoticons/PaimonChuoYiChouPictures/ 目录下的表情包；群单独指令：#哒咩 #自动表情包[开启|关闭] #表情包配置',
+          bottomHelpMessage: '是否启用表情保存/偷取/发送；更改后重启生效；会自动发送保存在 /data/autoEmoticons/emoji_save/群号/ 和 /data/autoEmoticons/PaimonChuoYiChouPictures/ 目录下的表情包；群单独指令：#哒咩 #自动表情包[开启|关闭] #表情包配置',
           component: 'Switch'
         },
         {
@@ -1579,6 +1579,12 @@ export function supportGuoba() {
         {
           label: 'Fish.audio的设置',
           component: 'Divider'
+        },
+        {
+          field: "voiceSwitch",
+          label: "语音功能开关",
+          bottomHelpMessage: "更改后重启生效",
+          component: "Switch",
         },
         {
           field: 'fish_apiKey',

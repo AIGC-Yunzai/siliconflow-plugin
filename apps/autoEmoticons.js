@@ -186,11 +186,14 @@ function initWatcher(groupId) {
     watchers.set(groupId, watcher)
 }
 
+const useEmojiSave_Switch = Config.getConfig().useEmojiSave;
+
 /**
  * 自动表情包插件
  */
 export class autoEmoticons extends plugin {
     constructor() {
+        const regStr = useEmojiSave_Switch ? "" : `sf-plugin-autoEmoticons-${Math.floor(10000 + Math.random() * 90000)}`;
         super({
             name: '自动表情包',
             dsc: '自动保存群聊中多次出现的图片作为表情包，并随机发送',
@@ -198,7 +201,7 @@ export class autoEmoticons extends plugin {
             priority: 5000,
             rule: [
                 {
-                    reg: '',
+                    reg: regStr,
                     fnc: 'autoEmoticonsTrigger',
                     log: false
                 },
@@ -234,8 +237,8 @@ export class autoEmoticons extends plugin {
     }
 
     async saveAndSendEmoji(e) {
+        if (!useEmojiSave_Switch) return false
         const config = Config.getConfig()
-        if (!config.autoEmoticons.useEmojiSave) return false
         if (!e.isGroup) return false
         // 检查群号是否在允许列表中（如果配置了特定群号）
         const groupId = String(e.group_id)
@@ -448,9 +451,8 @@ export class autoEmoticons extends plugin {
     }
 
     async sendimg() {
+        if (!useEmojiSave_Switch) return false;
         const config = Config.getConfig()
-        // 如果表情自动发送功能未开启，则不执行
-        if (!config.autoEmoticons.useEmojiSave) return false;
 
         // 初始化共享图片监视器
         initSharedPicturesWatcher()
@@ -658,7 +660,7 @@ export class autoEmoticons extends plugin {
         const configMsg = [
             '📊 表情包插件配置状态',
             '━━━━━━━━━━━━━━━━━━',
-            `🔧 功能状态: ${config.autoEmoticons.useEmojiSave ? '✅ 已启用' : '❌ 已禁用'}`,
+            `🔧 功能状态: ${useEmojiSave_Switch ? '✅ 已启用' : '❌ 已禁用'}`,
             `🎯 当前群状态: ${isGroupAllowed ? '✅ 允许' : '❌ 不在允许列表'}`,
             '',
             '📈 统计信息:',

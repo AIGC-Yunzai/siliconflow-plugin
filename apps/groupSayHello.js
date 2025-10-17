@@ -39,8 +39,8 @@ export class groupSayHello extends plugin {
 
         this.task = [
             {
-                // 使用配置的定时表达式，默认每5分钟执行一次
-                cron: Config.getConfig().groupSayHello?.cron_time || '0 */5 * * * *',
+                // 使用配置的定时表达式，默认每1小时执行一次
+                cron: Config.getConfig().groupSayHello?.cron_time || '0 0 * * * ? *',
                 name: '群自动打招呼-定时发送',
                 fnc: this.autoSayHello.bind(this),
                 log: false

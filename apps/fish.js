@@ -11,6 +11,8 @@ import { pluginRoot } from "../model/path.js";
 
 export class FishPlugin extends plugin {
     constructor() {
+        const voiceSwitch = Config.getConfig().voiceSwitch;
+        const regStr = voiceSwitch ? "" : `sf-plugin-FishPlugin-${Math.floor(10000 + Math.random() * 90000)}`;
         super({
             name: 'Fish TTS语音同传',
             dsc: '利用Fish TTS技术实现同声传译',
@@ -73,7 +75,7 @@ export class FishPlugin extends plugin {
                     fnc: 'searchFishVoices'
                 },
                 {
-                    reg: '',
+                    reg: regStr,
                     fnc: 'handleMessage',
                     log: false
                 }
