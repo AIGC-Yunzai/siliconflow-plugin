@@ -81,7 +81,7 @@ export class autoRepeat extends plugin {
      */
     saveGroupConfig(groupId, newConfig) {
         const config = Config.getConfig()
-        
+
         if (!config.autoRepeat_config) {
             config.autoRepeat_config = []
         }
@@ -195,8 +195,8 @@ export class autoRepeat extends plugin {
         // 只处理群消息
         if (!e.isGroup) return false
 
-        // 忽略以#开头的命令
-        if (e.msg?.startsWith('#')) return false
+        // 忽略以#开头 /开头的命令
+        if (e.msg?.startsWith('#') || e.msg?.startsWith('/')) return false
 
         const groupId = e.group_id
         const config = this.getGroupConfig(groupId)
