@@ -59,7 +59,7 @@ export class groupSayHello extends plugin {
             return false
         }
 
-        // 获取允许的群列表
+        // 获取允许的群列表（对象数组格式：{groupId, replyRate}）
         const allowGroups = config.groupSayHello?.allowGroups || []
 
         if (allowGroups.length === 0) {
@@ -67,12 +67,13 @@ export class groupSayHello extends plugin {
             return false
         }
 
-        // 获取全局概率配置（0-100，默认100表示100%触发）
-        const replyRate = config.groupSayHello?.replyRate ?? 1
-
         // 遍历配置的群列表
-        for (const groupId of allowGroups) {
+        for (const groupConfig of allowGroups) {
             try {
+                const groupId = groupConfig.groupId
+                // 获取该群的概率配置（0-1之间的小数，默认1表示100%触发）
+                const replyRate = groupConfig.replyRate ?? 1
+
                 // 每个群单独进行概率判断
                 const randomValue = Math.random()
 
@@ -267,17 +268,25 @@ export class groupSayHello extends plugin {
         const action = e.msg.includes('开启') ? 'enable' : 'disable'
 
         try {
-            const config = Config.getConfig()
+            let config = Config.getConfig()
 
             const currentAllowGroups = config.groupSayHello.allowGroups || []
 
             if (action === 'enable') {
-                if (!currentAllowGroups.includes(groupId)) {
-                    currentAllowGroups.push(groupId)
+                // 检查群是否已经存在
+                const existingGroupIndex = currentAllowGroups.findIndex(g => g.groupId === groupId)
+
+                if (existingGroupIndex === -1) {
+                    // 获取全局默认概率配置（0-1之间，默认1表示100%触发）
+                    const defaultReplyRate = 1
+
+                    // 添加新群配置
+                    currentAllowGroups.push({
+                        groupId: groupId,
+                        replyRate: defaultReplyRate
+                    })
                     config.groupSayHello.allowGroups = currentAllowGroups
                     config.groupSayHello.enabled = true
-
-                    Config.save()
 
                     // 获取使用的接口信息
                     const usingApiIndex = config.groupSayHello.usingAPI || 0
@@ -287,14 +296,17 @@ export class groupSayHello extends plugin {
                     }
 
                     const cronTime = config.groupSayHello.cron_time || '0 */5 * * * *'
+                    const replyRatePercent = (defaultReplyRate * 100).toFixed(0)
                     await e.reply(`✅ 已开启本群的自动打招呼功能\n` +
                         `⏰ 定时表达式: ${cronTime}\n` +
+                        `🎲 触发概率: ${replyRatePercent}%\n` +
                         `🤖 使用接口: ${interfaceName}`)
                 } else {
-                    await e.reply('⚠️ 本群已经开启了自动打招呼功能')
+                    const currentRate = (currentAllowGroups[existingGroupIndex].replyRate * 100).toFixed(0)
+                    await e.reply(`⚠️ 本群已经开启了自动打招呼功能\n当前触发概率: ${currentRate}%`)
                 }
             } else {
-                const index = currentAllowGroups.indexOf(groupId)
+                const index = currentAllowGroups.findIndex(g => g.groupId === groupId)
                 if (index > -1) {
                     currentAllowGroups.splice(index, 1)
                     config.groupSayHello.allowGroups = currentAllowGroups
@@ -304,13 +316,13 @@ export class groupSayHello extends plugin {
                         config.groupSayHello.enabled = false
                     }
 
-                    Config.save()
-
                     await e.reply('❌ 已关闭本群的自动打招呼功能')
                 } else {
                     await e.reply('⚠️ 本群未开启自动打招呼功能')
                 }
             }
+
+            Config.setConfig(config);
 
         } catch (error) {
             logger.error(`[群自动打招呼] 切换群功能失败: ${error}`)
@@ -334,7 +346,9 @@ export class groupSayHello extends plugin {
         const groupId = String(e.group_id)
 
         // 检查当前群是否在允许列表中
-        const isGroupAllowed = (groupSayHelloConfig.allowGroups || []).includes(groupId)
+        const allowGroups = groupSayHelloConfig.allowGroups || []
+        const currentGroupConfig = allowGroups.find(g => g.groupId === groupId)
+        const isGroupAllowed = !!currentGroupConfig
 
         // 获取使用的接口信息
         const usingApiIndex = groupSayHelloConfig.usingAPI || 0
@@ -347,35 +361,39 @@ export class groupSayHello extends plugin {
         }
 
         const cronTime = groupSayHelloConfig.cron_time || '0 */5 * * * *'
-        const replyRate = groupSayHelloConfig.replyRate ?? 100
+
+        // 当前群的概率
+        let currentGroupRate = ''
+        if (isGroupAllowed) {
+            const rate = (currentGroupConfig.replyRate * 100).toFixed(0)
+            currentGroupRate = `🎯 当前群状态: ✅ 已开启 (触发概率: ${rate}%)`
+        } else {
+            currentGroupRate = `🎯 当前群状态: ❌ 未开启`
+        }
 
         const configMsg = [
             '📊 群自动打招呼配置状态',
             '━━━━━━━━━━━━━━━━━━',
             `🔧 功能状态: ${groupSayHelloConfig.enabled ? '✅ 已启用' : '❌ 已禁用'}`,
-            e.isGroup ? `🎯 当前群状态: ${isGroupAllowed ? '✅ 已开启' : '❌ 未开启'}` : '',
+            e.isGroup ? currentGroupRate : '',
             '',
             '⚙️ 配置参数:',
             `　⏱️ 定时表达式: ${cronTime}`,
-            `　🎲 触发概率: ${replyRate}% (每个群独立判断)`,
             `　🤖 ${interfaceInfo}`,
             '',
             '🎯 允许群组:',
-            (groupSayHelloConfig.allowGroups || []).length === 0
+            allowGroups.length === 0
                 ? '　📢 暂无群组'
-                : (groupSayHelloConfig.allowGroups || []).map(id => `　🏷️ ${id}`).join('\n'),
+                : allowGroups.map(g => {
+                    const rate = (g.replyRate * 100).toFixed(0)
+                    return `　🏷️ ${g.groupId} (概率: ${rate}%)`
+                }).join('\n'),
             '━━━━━━━━━━━━━━━━━━',
             '',
             '💡 使用提示:',
             '　#自动打招呼开启 - 开启当前群',
             '　#自动打招呼关闭 - 关闭当前群',
             '　#立即打招呼 - 立即发送一条',
-            '',
-            '⚙️ 配置说明:',
-            `　replyRate: 设置触发概率(0-100)`,
-            `　值为100时每次必定触发`,
-            `　值为50时有50%概率触发`,
-            `　每个群在每次定时任务中独立判断`,
         ].filter(line => line !== null && line !== '').join('\n')
 
         await e.reply(configMsg)

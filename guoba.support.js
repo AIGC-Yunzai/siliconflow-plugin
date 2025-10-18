@@ -1336,18 +1336,6 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
-          field: "groupSayHello.allowGroups",
-          label: "允许的群组",
-          bottomHelpMessage: "填写允许自动打招呼的群号列表，留空则不在任何群打招呼；可在群内使用 #自动打招呼开启/关闭 来管理",
-          component: "GTags",
-          componentProps: {
-            placeholder: '请输入群号',
-            allowAdd: true,
-            allowDel: true,
-            valueParser: ((value) => value.split(',') || []),
-          },
-        },
-        {
           field: 'groupSayHello.cron_time',
           label: '定时表达式配置',
           bottomHelpMessage: '定时打招呼，重启生效，默认每1小时执行一次：0 0 * * * ? *',
@@ -1357,15 +1345,37 @@ export function supportGuoba() {
           },
         },
         {
-          field: 'groupSayHello.replyRate',
-          label: '打招呼的概率',
-          bottomHelpMessage: '到预定的定时表达式时，判断此次打招呼的概率，默认为1',
-          component: 'InputNumber',
+          field: "groupSayHello.allowGroups",
+          label: "🥝允许的群组",
+          bottomHelpMessage: "填写允许自动打招呼的群号列表，留空则不在任何群打招呼；可在群内使用 #自动打招呼开启/关闭 来管理",
+          component: "GSubForm",
           componentProps: {
-            min: 0,
-            max: 1,
-            step: 0.01
-          }
+            multiple: true,
+            schemas: [
+              {
+                field: "groupId",
+                label: "群号",
+                required: true,
+                bottomHelpMessage: "允许的群组的群号",
+                component: "InputNumber",
+                componentProps: {
+                  min: 1,
+                  step: 1,
+                },
+              },
+              {
+                field: "replyRate",
+                label: "打招呼的概率",
+                bottomHelpMessage: '到预定的定时表达式时间后，判断此群此次打招呼的概率，默认为1',
+                component: 'InputNumber',
+                componentProps: {
+                  min: 0,
+                  max: 1,
+                  step: 0.01
+                }
+              },
+            ],
+          },
         },
         {
           field: 'groupSayHello.usingAPI',
