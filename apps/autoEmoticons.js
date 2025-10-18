@@ -903,66 +903,44 @@ export async function downloadImageFile(url, relativePath, maxSizeMB = null) {
             }
         }
 
-        // 使用流式读取来处理大文件
-        const chunks = []
-        let downloadedSize = 0
+        // 使用 arrayBuffer 方法获取数据（兼容现代 fetch API）
+        const arrayBuffer = await response.arrayBuffer()
+        const bufferData = Buffer.from(arrayBuffer)
 
-        return new Promise((resolve, reject) => {
-            response.body.on('data', (chunk) => {
-                downloadedSize += chunk.length
+        // 检查文件大小
+        if (maxSize && bufferData.length > maxSize) {
+            const downloadedSizeMB = (bufferData.length / 1024 / 1024).toFixed(2)
+            return {
+                success: false,
+                filePath: null,
+                actualExt: null,
+                size: bufferData.length,
+                error: `下载文件过大: ${downloadedSizeMB}MB，超过限制 ${maxSizeMB}MB`
+            }
+        }
 
-                // 检查文件大小限制
-                if (maxSize && downloadedSize > maxSize) {
-                    response.body.destroy()
-                    const downloadedSizeMB = (downloadedSize / 1024 / 1024).toFixed(2)
-                    resolve({
-                        success: false,
-                        filePath: null,
-                        actualExt: null,
-                        size: downloadedSize,
-                        error: `下载过程中发现文件过大: ${downloadedSizeMB}MB，超过限制 ${maxSizeMB}MB`
-                    })
-                    return
-                }
+        // 根据文件头判断真实格式
+        const actualExt = getImageTypeFromBuffer(bufferData)
 
-                chunks.push(chunk)
-            })
+        // 构建完整文件路径
+        const baseDir = path.join(process.cwd(), 'data', 'autoEmoticons')
+        const fullPath = path.join(baseDir, `${relativePath}.${actualExt}`)
 
-            response.body.on('end', () => {
-                try {
-                    const bufferData = Buffer.concat(chunks)
+        // 确保目录存在
+        const dir = path.dirname(fullPath)
+        if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true })
+        }
 
-                    // 根据文件头判断真实格式
-                    const actualExt = getImageTypeFromBuffer(bufferData)
+        // 写入文件
+        fs.writeFileSync(fullPath, bufferData)
 
-                    // 构建完整文件路径
-                    const baseDir = path.join(process.cwd(), 'data', 'autoEmoticons')
-                    const fullPath = path.join(baseDir, `${relativePath}.${actualExt}`)
-
-                    // 确保目录存在
-                    const dir = path.dirname(fullPath)
-                    if (!fs.existsSync(dir)) {
-                        fs.mkdirSync(dir, { recursive: true })
-                    }
-
-                    // 写入文件
-                    fs.writeFileSync(fullPath, bufferData)
-
-                    resolve({
-                        success: true,
-                        filePath: fullPath,
-                        actualExt: actualExt,
-                        size: bufferData.length
-                    })
-                } catch (error) {
-                    reject(error)
-                }
-            })
-
-            response.body.on('error', (error) => {
-                reject(new Error(`下载流错误: ${error.message}`))
-            })
-        })
+        return {
+            success: true,
+            filePath: fullPath,
+            actualExt: actualExt,
+            size: bufferData.length
+        }
 
     } catch (error) {
         logger.error(`[downloadImageFile] 下载失败: ${error.message}`)
