@@ -59,7 +59,7 @@ export class groupSayHello extends plugin {
             return false
         }
 
-        // 获取允许的群列表（对象数组格式：{groupId, replyRate}）
+        // 获取允许的群列表（对象数组格式：{groupId, replyRate, switchOn}）
         const allowGroups = config.groupSayHello?.allowGroups || []
 
         if (allowGroups.length === 0) {
@@ -67,19 +67,28 @@ export class groupSayHello extends plugin {
             return false
         }
 
-        // 遍历配置的群列表
+        // 遍历配置的群列表，只处理 switchOn = true 的群
         for (const groupConfig of allowGroups) {
             try {
                 const groupId = groupConfig.groupId
+                const switchOn = groupConfig.switchOn ?? false
+
+                // 只处理开启了打招呼的群
+                if (!switchOn) {
+                    logger.debug(`[群自动打招呼] 群 ${groupId} 的开关已关闭，跳过`)
+                    continue
+                }
+
                 // 获取该群的概率配置（0-1之间的小数，默认1表示100%触发）
                 const replyRate = groupConfig.replyRate ?? 1
+                const groupPrompt = groupConfig.groupPrompt
 
                 // 每个群单独进行概率判断
                 const randomValue = Math.random()
 
                 if (randomValue <= replyRate) {
                     logger.debug(`[群自动打招呼] 群 ${groupId} 概率判断通过 (${randomValue.toFixed(2)} <= ${replyRate})`)
-                    await this.sendGreeting(groupId, config)
+                    await this.sendGreeting(groupId, config, null, { groupPrompt })
                     // 避免发送过快，休息一下
                     await sleep(2000)
                 } else {
@@ -108,7 +117,12 @@ export class groupSayHello extends plugin {
         await e.reply('正在生成打招呼内容...')
 
         try {
-            await this.sendGreeting(groupId, config, e)
+            // 查找当前群的配置，获取groupPrompt
+            const allowGroups = config.groupSayHello?.allowGroups || []
+            const currentGroupConfig = allowGroups.find(g => g.groupId === groupId)
+            const groupPrompt = currentGroupConfig?.groupPrompt || ''
+
+            await this.sendGreeting(groupId, config, e, { groupPrompt })
             await e.reply('打招呼完成！', false)
         } catch (error) {
             logger.error(`[群自动打招呼] 立即打招呼失败: ${error}`)
@@ -123,8 +137,10 @@ export class groupSayHello extends plugin {
      * @param {string} groupId 群号
      * @param {Object} config 配置对象
      * @param {Object} e 事件对象（可选）
+     * @param {Object} opt （可选）
+     * @param {string} opt.groupPrompt 群单独提示词
      */
-    async sendGreeting(groupId, config, e = null) {
+    async sendGreeting(groupId, config, e = null, opt = {}) {
         // 获取Bot实例
         const botQQArr = config.groupSayHello?.botQQArr || []
         const bot = getBotByQQ(botQQArr)
@@ -168,14 +184,7 @@ export class groupSayHello extends plugin {
             }
         }
 
-        let prompt = `请根据以下最近的群聊记录，生成一条自然、友好的打招呼消息或话题。\n`
-        prompt += `要求：\n`
-        prompt += `1. 语气要活泼自然，像真人聊天一样\n`
-        prompt += `2. 可以评论最近的聊天话题，或提出新话题\n`
-        prompt += `3. 长度控制在50字以内\n`
-        prompt += `4. 不要太正式，要接地气\n`
-        prompt += `5. 可以使用一些网络流行语或表情包文字\n`
-        prompt += `6. 请生成打招呼内容（直接输出内容，不要加任何前缀或解释）\n`
+        const prompt = opt.groupPrompt || `请根据以下最近的群聊记录，生成一条像真人一样的回复，长度控制在50字以内，直接输出内容，不要加任何前缀或解释。`
         // 构造打招呼的prompt
         const greetingPrompt = buildChatHistoryPrompt(chatHistory, prompt, bot.uin)
 
@@ -280,9 +289,10 @@ export class groupSayHello extends plugin {
                     // 获取全局默认概率配置（0-1之间，默认1表示100%触发）
                     const defaultReplyRate = 1
 
-                    // 添加新群配置
+                    // 添加新群配置，switchOn 默认为 true
                     currentAllowGroups.push({
                         groupId: groupId,
+                        switchOn: true,
                         replyRate: defaultReplyRate
                     })
                     config.groupSayHello.allowGroups = currentAllowGroups
@@ -302,23 +312,24 @@ export class groupSayHello extends plugin {
                         `🎲 触发概率: ${replyRatePercent}%\n` +
                         `🤖 使用接口: ${interfaceName}`)
                 } else {
+                    // 群已存在，修改 switchOn 为 true
+                    currentAllowGroups[existingGroupIndex].switchOn = true
+                    config.groupSayHello.allowGroups = currentAllowGroups
+                    config.groupSayHello.enabled = true
+
                     const currentRate = (currentAllowGroups[existingGroupIndex].replyRate * 100).toFixed(0)
-                    await e.reply(`⚠️ 本群已经开启了自动打招呼功能\n当前触发概率: ${currentRate}%`)
+                    await e.reply(`✅ 已开启本群的自动打招呼功能\n当前触发概率: ${currentRate}%`)
                 }
             } else {
                 const index = currentAllowGroups.findIndex(g => g.groupId === groupId)
                 if (index > -1) {
-                    currentAllowGroups.splice(index, 1)
+                    // 不删除群配置，只修改 switchOn 为 false
+                    currentAllowGroups[index].switchOn = false
                     config.groupSayHello.allowGroups = currentAllowGroups
-
-                    // 如果没有群了，禁用功能
-                    if (currentAllowGroups.length === 0) {
-                        config.groupSayHello.enabled = false
-                    }
 
                     await e.reply('❌ 已关闭本群的自动打招呼功能')
                 } else {
-                    await e.reply('⚠️ 本群未开启自动打招呼功能')
+                    await e.reply('⚠️ 本群未配置自动打招呼功能')
                 }
             }
 
@@ -362,13 +373,15 @@ export class groupSayHello extends plugin {
 
         const cronTime = groupSayHelloConfig.cron_time || '0 */5 * * * *'
 
-        // 当前群的概率
+        // 当前群的概率和开关状态
         let currentGroupRate = ''
         if (isGroupAllowed) {
+            const switchOn = currentGroupConfig.switchOn ?? false
             const rate = (currentGroupConfig.replyRate * 100).toFixed(0)
-            currentGroupRate = `🎯 当前群状态: ✅ 已开启 (触发概率: ${rate}%)`
+            const statusText = switchOn ? '✅ 已开启' : '❌ 已关闭'
+            currentGroupRate = `🎯 当前群状态: ${statusText} (触发概率: ${rate}%)`
         } else {
-            currentGroupRate = `🎯 当前群状态: ❌ 未开启`
+            currentGroupRate = `🎯 当前群状态: ⚠️ 未配置`
         }
 
         const configMsg = [
@@ -386,7 +399,9 @@ export class groupSayHello extends plugin {
                 ? '　📢 暂无群组'
                 : allowGroups.map(g => {
                     const rate = (g.replyRate * 100).toFixed(0)
-                    return `　🏷️ ${g.groupId} (概率: ${rate}%)`
+                    const switchOn = g.switchOn ?? false
+                    const statusIcon = switchOn ? '✅' : '❌'
+                    return `　🏷️ ${g.groupId} ${statusIcon} (概率: ${rate}%)`
                 }).join('\n'),
             '━━━━━━━━━━━━━━━━━━',
             '',

@@ -1364,6 +1364,12 @@ export function supportGuoba() {
                 },
               },
               {
+                field: 'switchOn',
+                label: '开启打招呼',
+                bottomHelpMessage: '开启或关闭该群的自动打招呼',
+                component: 'Switch'
+              },
+              {
                 field: "replyRate",
                 label: "打招呼的概率",
                 bottomHelpMessage: '到预定的定时表达式时间后，判断此群此次打招呼的概率，默认为1',
@@ -1373,6 +1379,15 @@ export function supportGuoba() {
                   max: 1,
                   step: 0.01
                 }
+              },
+              {
+                field: "groupPrompt",
+                label: "群单独提示词",
+                bottomHelpMessage: '除了接口中的系统提示词外，还可以在这里设置输入提示词。',
+                component: "Input",
+                componentProps: {
+                  placeholder: '请根据以下最近的群聊记录，生成一条像真人一样的回复，长度控制在50字以内，直接输出内容，不要加任何前缀或解释。',
+                },
               },
             ],
           },
