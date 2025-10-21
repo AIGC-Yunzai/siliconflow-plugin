@@ -410,7 +410,7 @@ export class autoEmoticons extends plugin {
 
     /** 用于戳一戳等 主动发送表情包 */
     async sendimg_Active(e) {
-        const groupId = e.group_id
+        const groupId = String(e.group_id)
         // 初始化共享图片监视器
         initSharedPicturesWatcher()
         // 初始化该群的监视器

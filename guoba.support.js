@@ -1357,11 +1357,7 @@ export function supportGuoba() {
                 label: "群号",
                 required: true,
                 bottomHelpMessage: "允许的群组的群号",
-                component: "InputNumber",
-                componentProps: {
-                  min: 1,
-                  step: 1,
-                },
+                component: "Input",
               },
               {
                 field: 'switchOn',
@@ -1517,11 +1513,7 @@ export function supportGuoba() {
                 label: "群号",
                 required: true,
                 bottomHelpMessage: "群号",
-                component: "InputNumber",
-                componentProps: {
-                  min: 1,
-                  step: 1,
-                },
+                component: "Input",
               },
               {
                 field: "enabled",

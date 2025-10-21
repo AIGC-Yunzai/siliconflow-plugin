@@ -141,7 +141,7 @@ export class autoRepeat extends plugin {
     async setRepeatStatus(e) {
         if (!e.isGroup) return false
 
-        const groupId = e.group_id
+        const groupId = String(e.group_id)
         const isEnable = e.msg.includes('开启')
 
         this.saveGroupConfig(groupId, { enabled: isEnable })
@@ -156,7 +156,7 @@ export class autoRepeat extends plugin {
     async setBreakStatus(e) {
         if (!e.isGroup) return false
 
-        const groupId = e.group_id
+        const groupId = String(e.group_id)
         const isEnable = e.msg.includes('开启')
 
         this.saveGroupConfig(groupId, { breakEnabled: isEnable })
@@ -171,7 +171,7 @@ export class autoRepeat extends plugin {
     async getRepeatStatus(e) {
         if (!e.isGroup) return false
 
-        const groupId = e.group_id
+        const groupId = String(e.group_id)
         const config = this.getGroupConfig(groupId)
 
         const status = [
@@ -198,7 +198,7 @@ export class autoRepeat extends plugin {
         // 忽略以#开头 /开头的命令
         if (e.msg?.startsWith('#') || e.msg?.startsWith('/')) return false
 
-        const groupId = e.group_id
+        const groupId = String(e.group_id)
         const config = this.getGroupConfig(groupId)
 
         // 如果复读和打断都未启用，直接返回
