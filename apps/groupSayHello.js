@@ -317,7 +317,7 @@ export class groupSayHello extends plugin {
                     config.groupSayHello.allowGroups = currentAllowGroups
                     config.groupSayHello.enabled = true
 
-                    const currentRate = (currentAllowGroups[existingGroupIndex].replyRate * 100).toFixed(0)
+                    const currentRate = (currentAllowGroups[existingGroupIndex].replyRate * 100 || 100).toFixed(0)
                     await e.reply(`✅ 已开启本群的自动打招呼功能\n当前触发概率: ${currentRate}%`)
                 }
             } else {
@@ -377,7 +377,7 @@ export class groupSayHello extends plugin {
         let currentGroupRate = ''
         if (isGroupAllowed) {
             const switchOn = currentGroupConfig.switchOn ?? false
-            const rate = (currentGroupConfig.replyRate * 100).toFixed(0)
+            const rate = (currentGroupConfig.replyRate * 100 || 100).toFixed(0)
             const statusText = switchOn ? '✅ 已开启' : '❌ 已关闭'
             currentGroupRate = `🎯 当前群状态: ${statusText} (触发概率: ${rate}%)`
         } else {
@@ -398,7 +398,7 @@ export class groupSayHello extends plugin {
             allowGroups.length === 0
                 ? '　📢 暂无群组'
                 : allowGroups.map(g => {
-                    const rate = (g.replyRate * 100).toFixed(0)
+                    const rate = (g.replyRate * 100 || 100).toFixed(0)
                     const switchOn = g.switchOn ?? false
                     const statusIcon = switchOn ? '✅' : '❌'
                     return `　🏷️ ${g.groupId} ${statusIcon} (概率: ${rate}%)`
