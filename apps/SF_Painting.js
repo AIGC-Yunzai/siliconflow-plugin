@@ -1832,16 +1832,13 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             { category: "HARM_CATEGORY_JAILBREAK", threshold: "OFF" }
         ];
 
-        /** 图像生成专用模型列表 */
-        const IMAGE_GENERATION_MODELS = new Set([
-            'gemini-2.5-flash-image',
-            'gemini-2.5-flash-image-preview'
-        ]);
+        /** 图像生成专用模型匹配规则 */
+        const IMAGE_GENERATION_MODEL_PATTERN = /^gemini-.*-image/; // 匹配 gemini-2.5-flash-image,gemini-2.5-flash-image-preview,gemini-3.0-flash-image-preview
 
         // 设置安全设置
         function getSafetySettings(modelName) {
             // 判断是否为图像生成专用模型
-            if (IMAGE_GENERATION_MODELS.has(modelName)) {
+            if (IMAGE_GENERATION_MODEL_PATTERN.test(modelName)) {
                 logger.debug(`[sf插件]模型 ${modelName} 使用图像生成安全设置（包含图像专用类别）`);
                 return SAFETY_SETTINGS_Image;
             } else {
@@ -1958,7 +1955,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 },
                 body: JSON.stringify(requestBody)
             })
-            
+
             const data = await response.json()
             // logger.mark(`[sf插件]API返回 data：\n` + JSON.stringify(data, createTruncatingReplacer(), 2));
 
