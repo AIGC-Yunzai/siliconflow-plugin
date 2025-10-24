@@ -1806,18 +1806,48 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         //         return SAFETY_SETTINGS_STRICT;
         //     }
         // }
-        /** 安全设置常量New */
-        const SAFETY_SETTINGS_New = [
-            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
-            { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" }
+        /** 安全设置常量 - 通用模型（文本/多模态） */
+        const SAFETY_SETTINGS_General = [
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "OFF" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "OFF" },
+            { category: "HARM_CATEGORY_JAILBREAK", threshold: "OFF" }
         ];
+
+        /** 安全设置常量 - 图像生成专用模型 */
+        const SAFETY_SETTINGS_Image = [
+            // 通用类别
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "OFF" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "OFF" },
+            // 图像专用类别
+            { category: "HARM_CATEGORY_IMAGE_HATE", threshold: "OFF" },
+            { category: "HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_IMAGE_HARASSMENT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT", threshold: "OFF" },
+            { category: "HARM_CATEGORY_JAILBREAK", threshold: "OFF" }
+        ];
+
+        /** 图像生成专用模型列表 */
+        const IMAGE_GENERATION_MODELS = new Set([
+            'gemini-2.5-flash-image',
+            'gemini-2.5-flash-image-preview'
+        ]);
+
         // 设置安全设置
         function getSafetySettings(modelName) {
-            // 现在gemini已经统一设置了，只用 BLOCK_NONE
-            return SAFETY_SETTINGS_New;
+            // 判断是否为图像生成专用模型
+            if (IMAGE_GENERATION_MODELS.has(modelName)) {
+                logger.debug(`[sf插件]模型 ${modelName} 使用图像生成安全设置（包含图像专用类别）`);
+                return SAFETY_SETTINGS_Image;
+            } else {
+                logger.debug(`[sf插件]模型 ${modelName} 使用通用安全设置`);
+                return SAFETY_SETTINGS_General;
+            }
         }
 
         // 构造请求体
@@ -1920,14 +1950,15 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         });
 
         try {
-            const response = await fetch(`${ggBaseUrl}/v1beta/models/${opt.model}:generateContent?key=${ggKey}`, {
+            const response = await fetch(`${ggBaseUrl}/v1beta/models/${opt.model}:generateContent`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': ggKey
                 },
                 body: JSON.stringify(requestBody)
             })
-
+            
             const data = await response.json()
             // logger.mark(`[sf插件]API返回 data：\n` + JSON.stringify(data, createTruncatingReplacer(), 2));
 
