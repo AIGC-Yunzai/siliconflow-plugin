@@ -709,6 +709,41 @@ export function supportGuoba() {
           },
         },
         {
+          field: "autoReply",
+          label: "🌟群自动回复",
+          bottomHelpMessage: "允许Bot按照概率自动回复群内的消息",
+          component: "GSubForm",
+          componentProps: {
+            multiple: true,
+            schemas: [
+              {
+                field: "groupId",
+                label: "群号",
+                required: true,
+                bottomHelpMessage: "允许的群组的群号",
+                component: "Input",
+              },
+              {
+                field: 'enabled',
+                label: '开启自动回复',
+                bottomHelpMessage: '开启或关闭该群的自动回复',
+                component: 'Switch'
+              },
+              {
+                field: "probability",
+                label: "自动回复的概率",
+                bottomHelpMessage: '判断此群此次自动回复的概率，默认为0.1',
+                component: 'InputNumber',
+                componentProps: {
+                  min: 0,
+                  max: 1,
+                  step: 0.01
+                }
+              },
+            ],
+          },
+        },
+        {
           component: "Divider",
           label: "[#ss]对话相关配置",
           componentProps: {
@@ -1830,6 +1865,7 @@ export function supportGuoba() {
         config.autoEmoticons.allowGroups = data['autoEmoticons.allowGroups']
         config.autoEmoticons.getBotByQQ_targetQQArr = data['autoEmoticons.getBotByQQ_targetQQArr']
         config.autoRepeat_config = data['autoRepeat_config']
+        config.autoReply = data['autoReply']
 
         // 验证配置
         try {

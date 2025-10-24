@@ -111,3 +111,4 @@ autoEmoticons: {
     replyDelay: { min: 1000, max: 240000 },
   }
 autoRepeat_config: []
+autoReply: []

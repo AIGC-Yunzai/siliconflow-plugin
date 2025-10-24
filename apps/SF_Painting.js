@@ -110,7 +110,7 @@ export class SF_Painting extends plugin {
                 },
                 {
                     /** At模式 */
-                    reg: config.toggleAtMode ? '^[^#][sS]*' : `sf-plugin-bot-name-${Math.floor(10000 + Math.random() * 90000)}`,
+                    reg: '^[^#][sS]*',
                     fnc: 'atChatMode',
                     log: false
                 },
@@ -613,10 +613,30 @@ export class SF_Painting extends plugin {
 
         if (!e.msg || e.msg?.startsWith('#'))
             return false
-        if ((e.isGroup || e.group_id) && !(e.atme || e.atBot || (e.at === e.self_id)))
-            return false
         if (e.user_id == getUin(e))
             return false
+
+        // 检查自动回复配置
+        let shouldAutoReply = false
+        if (e.isGroup) {
+            const groupConfig = config.autoReply?.find(item => item.groupId === e.group_id)
+            if (groupConfig && groupConfig.enabled) {
+                // 根据概率判断是否触发群自动回复
+                const randomValue = Math.random()
+                if (randomValue < (groupConfig.probability || 0.1)) {
+                    shouldAutoReply = true
+                    logger.info(`[SF插件][自动回复] 群${e.group_id}触发自动回复`)
+                }
+            }
+        }
+
+        // 如果不是自动回复，则检查 toggleAtMode 和 at 条件
+        if (!shouldAutoReply) {
+            if (!config.toggleAtMode)
+                return false
+            if ((e.isGroup || e.group_id) && !(e.atme || e.atBot || (e.at === e.self_id)))
+                return false
+        }
 
         // 处理 昵称
         try {
