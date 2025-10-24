@@ -2309,7 +2309,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
         // 如果接口数量超过10个，使用转发消息
         if (msg.length > 12) { // 标题占一行，默认配置占1行，所以是12
-            await e.reply(await common.makeForwardMsg(e, msg, `${baseType}接口列表`))
+            await e.reply(await common.makeForwardMsg(e, msg.filter(Boolean), `${baseType}接口列表`))
         } else {
             await e.reply(msg.join('\n'))
         }
