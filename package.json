@@ -1,6 +1,6 @@
 {
   "name": "siliconflow-plugin",
-  "version": "1.0.5",
+  "version": "1.0.6",
   "description": "Yunzai-Bot插件",
   "main": "index.js",
   "scripts": {
