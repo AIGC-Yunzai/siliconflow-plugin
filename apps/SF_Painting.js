@@ -1808,28 +1808,27 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         // }
         /** 安全设置常量 - 通用模型（文本/多模态） */
         const SAFETY_SETTINGS_General = [
-            { category: "HARM_CATEGORY_HARASSMENT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "OFF" },
-            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "OFF" },
-            { category: "HARM_CATEGORY_JAILBREAK", threshold: "OFF" }
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" }
         ];
 
         /** 安全设置常量 - 图像生成专用模型 */
         const SAFETY_SETTINGS_Image = [
             // 通用类别
-            { category: "HARM_CATEGORY_HARASSMENT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "OFF" },
-            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "OFF" },
+            { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_CIVIC_INTEGRITY", threshold: "BLOCK_NONE" },
             // 图像专用类别
-            { category: "HARM_CATEGORY_IMAGE_HATE", threshold: "OFF" },
-            { category: "HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_IMAGE_HARASSMENT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT", threshold: "OFF" },
-            { category: "HARM_CATEGORY_JAILBREAK", threshold: "OFF" }
+            { category: "HARM_CATEGORY_IMAGE_HATE", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_IMAGE_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_IMAGE_HARASSMENT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_IMAGE_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+            { category: "HARM_CATEGORY_JAILBREAK", threshold: "BLOCK_NONE" }
         ];
 
         /** 图像生成专用模型匹配规则 */
