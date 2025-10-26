@@ -2071,8 +2071,10 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                     errorMessage = errorMessage.replace(new RegExp(ggKey, 'g'), '****');
                 }
 
+                logger.warn(errorMessage)
+
                 return {
-                    answer: errorMessage,
+                    answer: errorMessage.substring(0, 100) + "\n详情请查阅控制台。",
                     sources: []
                 };
             }
