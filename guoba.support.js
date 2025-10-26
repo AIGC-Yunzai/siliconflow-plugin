@@ -838,6 +838,17 @@ export function supportGuoba() {
                 },
               },
               {
+                field: "mustReturnImgRetriesTimes",
+                label: "必须返回图片",
+                bottomHelpMessage: "重试次数：该接口必须返回图片，若没有返回图片，则执行重试的次数。",
+                helpMessage: '单位：重试次数',
+                component: "InputNumber",
+                componentProps: {
+                  min: 0,
+                  step: 1,
+                },
+              },
+              {
                 field: "forwardThinking",
                 label: "转发思考",
                 component: "Switch",
@@ -1010,6 +1021,17 @@ export function supportGuoba() {
           },
         },
         {
+          field: "ss_mustReturnImgRetriesTimes",
+          label: "必须返回图片",
+          bottomHelpMessage: "[#ss]重试次数：该接口必须返回图片，若没有返回图片，则执行重试的次数。",
+          helpMessage: '单位：重试次数',
+          component: "InputNumber",
+          componentProps: {
+            min: 0,
+            step: 1,
+          },
+        },
+        {
           field: "ss_forwardThinking",
           label: "[#ss]转发思考",
           bottomHelpMessage: "是否转发思考过程",
@@ -1126,6 +1148,17 @@ export function supportGuoba() {
                 label: "文生图功能",
                 component: "Switch",
                 bottomHelpMessage: "开启后Gemini将支持文生图功能，可以生成图片，仅限gemini-2.0-flash-exp模型及后续支持该功能的模型",
+              },
+              {
+                field: "mustReturnImgRetriesTimes",
+                label: "必须返回图片",
+                bottomHelpMessage: "重试次数：该接口必须返回图片，若没有返回图片，则执行重试的次数。",
+                helpMessage: '单位：重试次数',
+                component: "InputNumber",
+                componentProps: {
+                  min: 0,
+                  step: 1,
+                },
               },
               {
                 field: "useContext",
@@ -1304,6 +1337,17 @@ export function supportGuoba() {
           label: "[#gg]文生图功能",
           bottomHelpMessage: "开启后Gemini将支持文生图功能，可以生成图片，仅限gemini-2.0-flash-exp模型及后续支持该功能的模型",
           component: "Switch",
+        },
+        {
+          field: "gg_mustReturnImgRetriesTimes",
+          label: "[#gg]必须返回图片",
+          bottomHelpMessage: "重试次数：该接口必须返回图片，若没有返回图片，则执行重试的次数。",
+          helpMessage: '单位：重试次数',
+          component: "InputNumber",
+          componentProps: {
+            min: 0,
+            step: 1,
+          },
         },
         {
           field: "gg_isOnlyMaster",

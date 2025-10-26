@@ -410,7 +410,7 @@ export class SF_Painting extends plugin {
     async sf_setConfig(e) {
         // 读取配置
         let config_date = Config.getConfig()
-        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考|群聊多人对话|ss图片上传|gg图片上传|ss群聊聊天记录条数|gg群聊聊天记录条数)([\s\S]*)/)
+        const match = e.msg.match(/^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考|群聊多人对话|ss图片上传|gg图片上传|ss必需图片|gg必需图片|ss必须返回图片|gg必须返回图片|ss群聊聊天记录条数|gg群聊聊天记录条数)([\s\S]*)/)
         if (match) {
             const [, , type, value] = match
             switch (type) {
@@ -455,6 +455,12 @@ export class SF_Painting extends plugin {
                     break
                 case 'gg必需图片':
                     config_date.gg_mustNeedImgLength = value === parseInt(value)
+                    break
+                case 'ss必须返回图片':
+                    config_date.ss_mustReturnImgRetriesTimes = value === parseInt(value)
+                    break
+                case 'gg必须返回图片':
+                    config_date.gg_mustReturnImgRetriesTimes = value === parseInt(value)
                     break
                 case 'ss群聊聊天记录条数':
                     config_date.ss_groupContextLength = value === parseInt(value)
@@ -686,7 +692,7 @@ export class SF_Painting extends plugin {
         const isMaster = e.isMaster
 
         // 获取接口配置
-        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false, enableImageUpload = true, mustNeedImgLength = 0
+        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false, enableImageUpload = true, mustNeedImgLength = 0, mustReturnImgRetriesTimes = 0
         let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], onlyGroupID = [], memberConfigName = 'ss_default', groupContextLength = 0
 
         // 根据用户身份选择使用的接口索引
@@ -715,6 +721,7 @@ export class SF_Painting extends plugin {
             useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
             forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
             mustNeedImgLength = (typeof apiConfig.mustNeedImgLength !== 'undefined') ? apiConfig.mustNeedImgLength : 0
+            mustReturnImgRetriesTimes = (typeof apiConfig.mustReturnImgRetriesTimes !== 'undefined') ? apiConfig.mustReturnImgRetriesTimes : 0
             groupContextLength = (typeof apiConfig.groupContextLength !== 'undefined') ? apiConfig.groupContextLength : 0
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             forwardThinking = (typeof apiConfig.forwardThinking !== 'undefined') ? apiConfig.forwardThinking : false
@@ -739,6 +746,7 @@ export class SF_Painting extends plugin {
             useMarkdown = config_date.ss_useMarkdown
             forwardMessage = config_date.ss_forwardMessage
             mustNeedImgLength = config_date.ss_mustNeedImgLength
+            mustReturnImgRetriesTimes = config_date.ss_mustReturnImgRetriesTimes
             groupContextLength = config_date.ss_groupContextLength
             quoteMessage = config_date.ss_quoteMessage
             forwardThinking = config_date.ss_forwardThinking
@@ -753,6 +761,7 @@ export class SF_Painting extends plugin {
             useMarkdown = config_date.ss_useMarkdown
             forwardMessage = config_date.ss_forwardMessage
             mustNeedImgLength = config_date.ss_mustNeedImgLength
+            mustReturnImgRetriesTimes = config_date.ss_mustReturnImgRetriesTimes
             groupContextLength = config_date.ss_groupContextLength
             quoteMessage = config_date.ss_quoteMessage
             forwardThinking = config_date.ss_forwardThinking
@@ -894,7 +903,8 @@ export class SF_Painting extends plugin {
         const opt = {
             currentImages: currentImages.length > 0 ? currentImages : undefined,
             historyImages: historyImages.length > 0 ? historyImages : undefined,
-            systemPrompt: systemPrompt
+            systemPrompt: systemPrompt,
+            mustReturnImgRetriesTimes: mustReturnImgRetriesTimes
         }
 
         const { content: answer, imageBase64Array: generatedImageArray } = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
@@ -1019,6 +1029,59 @@ export class SF_Painting extends plugin {
      * @return {Object} 返回 {content, imageBase64Array}
      */
     async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}, historyMessages = [], e) {
+        // 获取重试次数配置
+        const mustReturnImgRetriesTimes = opt.mustReturnImgRetriesTimes || 0;
+        const needRetryForImage = mustReturnImgRetriesTimes > 0;
+        
+        // 执行主要逻辑
+        const executeRequest = async () => {
+            return await this._generatePromptInternal(input, use_sf_key, config_date, forChat, apiBaseUrl, model, opt, historyMessages, e);
+        };
+
+        // 如果需要重试检查图片
+        if (needRetryForImage) {
+            let lastResult = null;
+            for (let attempt = 0; attempt <= mustReturnImgRetriesTimes; attempt++) {
+                if (attempt > 0) {
+                    logger.info(`[sf插件][generatePrompt] 第 ${attempt} 次重试，原因：未返回图片`);
+                }
+                
+                lastResult = await executeRequest();
+                
+                // 如果返回了图片，直接返回结果
+                if (lastResult.imageBase64Array && lastResult.imageBase64Array.length > 0) {
+                    if (attempt > 0) {
+                        logger.info(`[sf插件][generatePrompt] 重试成功，第 ${attempt} 次重试返回了图片`);
+                    }
+                    return lastResult;
+                }
+                
+                // 如果还有重试次数，继续；否则返回最后的结果
+                if (attempt < mustReturnImgRetriesTimes) {
+                    logger.debug(`[sf插件][generatePrompt] 未返回图片，准备重试 (${attempt + 1}/${mustReturnImgRetriesTimes})`);
+                }
+            }
+            
+            logger.warn(`[sf插件][generatePrompt] 重试 ${mustReturnImgRetriesTimes} 次后仍未返回图片`);
+            return lastResult;
+        }
+        
+        // 不需要重试，直接执行
+        return await executeRequest();
+    }
+
+    /**
+     * @description: 自动提示词内部实现
+     * @param {*} input
+     * @param {*} use_sf_key
+     * @param {*} config_date
+     * @param {*} forChat 聊天调用
+     * @param {*} apiBaseUrl 使用的API地址
+     * @param {*} model 使用的API模型
+     * @param {*} opt 可选参数
+     * @return {Object} 返回 {content, imageBase64Array}
+     */
+    async _generatePromptInternal(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}, historyMessages = [], e) {
         // 获取用户名并替换prompt中的变量
         const userName = e?.sender?.card || e?.sender?.nickname || "用户";
         logger.debug(`[sf插件] 生成提示词 - 用户名: ${userName}`);
@@ -1381,7 +1444,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         const isMaster = e.isMaster
 
         // 获取接口配置
-        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false, mustNeedImgLength = 0
+        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false, mustNeedImgLength = 0, mustReturnImgRetriesTimes = 0
         let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], onlyGroupID = [], memberConfigName = 'gg_default', groupContextLength = 0
 
         // 根据用户身份选择使用的接口索引
@@ -1410,6 +1473,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             useMarkdown = (typeof apiConfig.useMarkdown !== 'undefined') ? apiConfig.useMarkdown : false
             forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
             mustNeedImgLength = (typeof apiConfig.mustNeedImgLength !== 'undefined') ? apiConfig.mustNeedImgLength : 0
+            mustReturnImgRetriesTimes = (typeof apiConfig.mustReturnImgRetriesTimes !== 'undefined') ? apiConfig.mustReturnImgRetriesTimes : 0
             groupContextLength = (typeof apiConfig.groupContextLength !== 'undefined') ? apiConfig.groupContextLength : 0
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             useSearch = (typeof apiConfig.useSearch !== 'undefined') ? apiConfig.useSearch : false
@@ -1434,6 +1498,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             useMarkdown = config_date.gg_useMarkdown
             forwardMessage = config_date.gg_forwardMessage
             mustNeedImgLength = config_date.gg_mustNeedImgLength
+            mustReturnImgRetriesTimes = config_date.gg_mustReturnImgRetriesTimes
             groupContextLength = config_date.gg_groupContextLength
             quoteMessage = config_date.gg_quoteMessage
             useSearch = config_date.gg_useSearch
@@ -1576,7 +1641,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             systemPrompt: systemPrompt,
             model: model,
             useSearch: useSearch,
-            enableImageGeneration: enableImageGeneration
+            enableImageGeneration: enableImageGeneration,
+            mustReturnImgRetriesTimes: mustReturnImgRetriesTimes
         }
 
         const { answer, sources, imageBase64, textImagePairs } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
@@ -1745,6 +1811,58 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
      * @return {Object} 包含答案和来源的对象
      */
     async generateGeminiPrompt(input, ggBaseUrl, ggKey, config_date, opt = {}, historyMessages = [], e) {
+        // 获取重试次数配置
+        const mustReturnImgRetriesTimes = opt.mustReturnImgRetriesTimes || 0;
+        const needRetryForImage = mustReturnImgRetriesTimes > 0;
+        
+        // 执行主要逻辑
+        const executeRequest = async () => {
+            return await this._generateGeminiPromptInternal(input, ggBaseUrl, ggKey, config_date, opt, historyMessages, e);
+        };
+
+        // 如果需要重试检查图片
+        if (needRetryForImage) {
+            let lastResult = null;
+            for (let attempt = 0; attempt <= mustReturnImgRetriesTimes; attempt++) {
+                if (attempt > 0) {
+                    logger.info(`[sf插件][generateGeminiPrompt] 第 ${attempt} 次重试，原因：未返回图片`);
+                }
+                
+                lastResult = await executeRequest();
+                
+                // 如果返回了图片，直接返回结果
+                if (lastResult.imageBase64 && lastResult.imageBase64.length > 0) {
+                    if (attempt > 0) {
+                        logger.info(`[sf插件][generateGeminiPrompt] 重试成功，第 ${attempt} 次重试返回了图片`);
+                    }
+                    return lastResult;
+                }
+                
+                // 如果还有重试次数，继续；否则返回最后的结果
+                if (attempt < mustReturnImgRetriesTimes) {
+                    logger.debug(`[sf插件][generateGeminiPrompt] 未返回图片，准备重试 (${attempt + 1}/${mustReturnImgRetriesTimes})`);
+                }
+            }
+            
+            logger.warn(`[sf插件][generateGeminiPrompt] 重试 ${mustReturnImgRetriesTimes} 次后仍未返回图片`);
+            return lastResult;
+        }
+        
+        // 不需要重试，直接执行
+        return await executeRequest();
+    }
+
+    /**
+     * @description: Gemini API 调用内部实现
+     * @param {string} input 用户输入
+     * @param {string} ggBaseUrl API 基础 URL
+     * @param {string} ggKey API 密钥
+     * @param {Object} config_date 配置信息
+     * @param {Object} opt 可选参数
+     * @param {Array} historyMessages 历史对话记录
+     * @return {Object} 包含答案和来源的对象
+     */
+    async _generateGeminiPromptInternal(input, ggBaseUrl, ggKey, config_date, opt = {}, historyMessages = [], e) {
         logger.debug("[sf插件]API调用Gemini msg：\n" + input)
 
         // 获取用户名并替换prompt中的变量
@@ -2071,10 +2189,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                     errorMessage = errorMessage.replace(new RegExp(ggKey, 'g'), '****');
                 }
 
-                logger.warn(errorMessage)
-
                 return {
-                    answer: errorMessage.substring(0, 100) + "\n详情请查阅控制台。",
+                    answer: errorMessage.substring(0, 100) + "...\n详情请查阅控制台。",
                     sources: []
                 };
             }
