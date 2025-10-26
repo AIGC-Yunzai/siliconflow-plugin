@@ -238,8 +238,8 @@ export class autoRepeat extends plugin {
                         await redis.set(cooldownKey, String(now), { EX: config.cooldown })
 
                         // 发送复读消息
+                        logger.mark(`[autoRepeat] 群 ${groupId} 触发复读 (${groupData.count}次)`)
                         await e.reply(groupData.lastMessage)
-                        logger.info(`[autoRepeat] 群 ${groupId} 触发复读 (${groupData.count}次)`)
 
                         // 标记已复读，但不重置计数，继续累计到打断次数
                         groupData.hasRepeated = true

@@ -87,7 +87,7 @@ export class groupSayHello extends plugin {
                 const randomValue = Math.random()
 
                 if (randomValue <= replyRate) {
-                    logger.debug(`[群自动打招呼] 群 ${groupId} 概率判断通过 (${randomValue.toFixed(2)} <= ${replyRate})`)
+                    logger.mark(`[群自动打招呼] 群 ${groupId} 开始执行打招呼 (${randomValue.toFixed(2)} <= ${replyRate})`)
                     await this.sendGreeting(groupId, config, null, { groupPrompt })
                     // 避免发送过快，休息一下
                     await sleep(2000)

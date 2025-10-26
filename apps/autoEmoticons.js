@@ -385,7 +385,7 @@ export class autoEmoticons extends plugin {
 
                 // 添加随机延迟
                 const delay = randomInt(config.autoEmoticons.replyDelay.min, config.autoEmoticons.replyDelay.max)
-                logger.debug(`[autoEmoticons] 将在${delay}毫秒后发送图片: ${picturePath}`)
+                logger.mark(`[autoEmoticons] 群${e.group_id} 将在${delay}毫秒后发送表情包`)
                 await sleep(delay)
 
                 // 发送图片
@@ -509,7 +509,7 @@ export class autoEmoticons extends plugin {
 
                     // 添加随机延迟
                     const delay = randomInt(config.autoEmoticons.replyDelay.min, config.autoEmoticons.replyDelay.max)
-                    logger.debug(`[autoEmoticons] 将在${delay}毫秒后发送图片: ${picturePath}`)
+                    logger.mark(`[autoEmoticons] 群${groupId} 将在${delay}毫秒后发送表情包`)
                     await sleep(delay)
 
                     // 存储文件信息
