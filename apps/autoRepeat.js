@@ -260,7 +260,7 @@ export class autoRepeat extends plugin {
                         // 发送打断消息
                         const breakMsg = this.getRandomBreakMessage(config.breakMessages, e.msg)
                         await e.reply(breakMsg)
-                        logger.info(`[autoRepeat] 群 ${groupId} 触发打断复读 (${groupData.count}次)`)
+                        logger.mark(`[autoRepeat] 群 ${groupId} 触发打断复读 (${groupData.count}次)`)
 
                         // 重置计数和复读标记
                         groupData.count = 0

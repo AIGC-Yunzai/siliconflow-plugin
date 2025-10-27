@@ -399,7 +399,7 @@ export class autoEmoticons extends plugin {
                     : path.basename(picturePath)
 
                 redis.set(`Yz:autoEmoticons.sent:pic_filePath:${groupId}:${msgRet_id}`, fileInfo, { EX: 60 * 60 * 24 * 1 })
-                logger.info(`[autoEmoticons] 概率发送图片成功: ${picturePath}`)
+                logger.debug(`[autoEmoticons] 概率发送图片成功: ${picturePath}`)
             } catch (error) {
                 logger.error(`[autoEmoticons] 发送图片失败: ${error}`)
             }
@@ -509,7 +509,7 @@ export class autoEmoticons extends plugin {
 
                     // 添加随机延迟
                     const delay = randomInt(config.autoEmoticons.replyDelay.min, config.autoEmoticons.replyDelay.max)
-                    logger.mark(`[autoEmoticons] 群${groupId} 将在${delay}毫秒后发送表情包`)
+                    logger.mark(`[autoEmoticons] 群${groupId} 将在${(delay / 1000).toFixed(0)}秒后发送表情包 ${picturePath}`)
                     await sleep(delay)
 
                     // 存储文件信息
@@ -522,7 +522,7 @@ export class autoEmoticons extends plugin {
                         EX: 60 * 60 * 24 * 1
                     });
 
-                    logger.info(`[autoEmoticons] 定时任务发送图片到群 ${groupId}: ${picturePath}`);
+                    // logger.info(`[autoEmoticons] 定时任务发送图片到群 ${groupId}: ${picturePath}`);
                 } catch (error) {
                     logger.error(`[autoEmoticons] 定时任务发送图片到群 ${groupId} 失败: ${error}`);
                 }

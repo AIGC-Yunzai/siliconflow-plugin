@@ -246,7 +246,7 @@ export class groupSayHello extends plugin {
             if (answer) {
                 // 发送打招呼消息
                 await group.sendMsg(answer)
-                logger.info(`[群自动打招呼] 群 ${groupId} 发送成功`)
+                // logger.debug(`[群自动打招呼] 群 ${groupId} 发送成功`)
             } else {
                 logger.error('[群自动打招呼] LLM返回为空')
             }

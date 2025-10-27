@@ -1032,7 +1032,7 @@ export class SF_Painting extends plugin {
         // 获取重试次数配置
         const mustReturnImgRetriesTimes = opt.mustReturnImgRetriesTimes || 0;
         const needRetryForImage = mustReturnImgRetriesTimes > 0;
-        
+
         // 执行主要逻辑
         const executeRequest = async () => {
             return await this._generatePromptInternal(input, use_sf_key, config_date, forChat, apiBaseUrl, model, opt, historyMessages, e);
@@ -1045,9 +1045,9 @@ export class SF_Painting extends plugin {
                 if (attempt > 0) {
                     logger.info(`[sf插件][generatePrompt] 第 ${attempt} 次重试，原因：未返回图片`);
                 }
-                
+
                 lastResult = await executeRequest();
-                
+
                 // 如果返回了图片，直接返回结果
                 if (lastResult.imageBase64Array && lastResult.imageBase64Array.length > 0) {
                     if (attempt > 0) {
@@ -1055,17 +1055,17 @@ export class SF_Painting extends plugin {
                     }
                     return lastResult;
                 }
-                
+
                 // 如果还有重试次数，继续；否则返回最后的结果
                 if (attempt < mustReturnImgRetriesTimes) {
                     logger.debug(`[sf插件][generatePrompt] 未返回图片，准备重试 (${attempt + 1}/${mustReturnImgRetriesTimes})`);
                 }
             }
-            
+
             logger.warn(`[sf插件][generatePrompt] 重试 ${mustReturnImgRetriesTimes} 次后仍未返回图片`);
             return lastResult;
         }
-        
+
         // 不需要重试，直接执行
         return await executeRequest();
     }
@@ -1814,7 +1814,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
         // 获取重试次数配置
         const mustReturnImgRetriesTimes = opt.mustReturnImgRetriesTimes || 0;
         const needRetryForImage = mustReturnImgRetriesTimes > 0;
-        
+
         // 执行主要逻辑
         const executeRequest = async () => {
             return await this._generateGeminiPromptInternal(input, ggBaseUrl, ggKey, config_date, opt, historyMessages, e);
@@ -1827,9 +1827,9 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 if (attempt > 0) {
                     logger.info(`[sf插件][generateGeminiPrompt] 第 ${attempt} 次重试，原因：未返回图片`);
                 }
-                
+
                 lastResult = await executeRequest();
-                
+
                 // 如果返回了图片，直接返回结果
                 if (lastResult.imageBase64 && lastResult.imageBase64.length > 0) {
                     if (attempt > 0) {
@@ -1837,17 +1837,17 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                     }
                     return lastResult;
                 }
-                
+
                 // 如果还有重试次数，继续；否则返回最后的结果
                 if (attempt < mustReturnImgRetriesTimes) {
                     logger.debug(`[sf插件][generateGeminiPrompt] 未返回图片，准备重试 (${attempt + 1}/${mustReturnImgRetriesTimes})`);
                 }
             }
-            
+
             logger.warn(`[sf插件][generateGeminiPrompt] 重试 ${mustReturnImgRetriesTimes} 次后仍未返回图片`);
             return lastResult;
         }
-        
+
         // 不需要重试，直接执行
         return await executeRequest();
     }
@@ -2062,6 +2062,13 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             "parts": currentParts,
             "role": "user"
         });
+
+        // // TODO: nano banana 生成图片的宽高比设置，考虑到 #gg 主要用于LLM对话，宽高比应该仅在 #dd 中控制，参考： https://ai.google.dev/gemini-api/docs/image-generation?hl=zh-cn#rest_14
+        // requestBody.generationConfig = {
+        //     "imageConfig": {
+        //         "aspectRatio": "16:9"
+        //     }
+        // };
 
         try {
             const response = await fetch(`${ggBaseUrl}/v1beta/models/${opt.model}:generateContent`, {
