@@ -1747,7 +1747,7 @@ export function supportGuoba() {
         {
           field: "enableWS",
           label: "启用WebSocket服务",
-          bottomHelpMessage: "是否启用WebSocket服务，用于在网页端 https://sf.maliy.top/ ，进行对话&绘图；如果是从没有ws的版本更新过来的，请重新安装依赖；重启生效",
+          bottomHelpMessage: "是否启用WebSocket服务，用于在网页端 https://sf.maliy.top/ 或 https://sfd.maliy.top/ ，进行对话&绘图；如果是从没有ws的版本更新过来的，请重新安装依赖；重启生效",
           component: "Switch",
         },
         {
