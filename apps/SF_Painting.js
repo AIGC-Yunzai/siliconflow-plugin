@@ -2180,11 +2180,17 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                 } else if (data.promptFeedback?.blockReason) {
                     const blockReason = data.promptFeedback.blockReason;
                     switch (blockReason) {
+                        case "PROHIBITED_CONTENT":
+                            errorMessage += "内容被禁止，提示词包含违规内容，请修改后重试。";
+                            break;
                         case "SAFETY":
-                            errorMessage += "内容被安全系统拦截。\n原始错误：" + JSON.stringify(data);
+                            errorMessage += "内容被安全系统拦截，请修改输入内容后重试。";
                             break;
                         case "OTHER":
-                            errorMessage += "请求被拦截，可能是由于内容不合规，涩涩被抓到啦。\n原始错误：" + JSON.stringify(data);
+                            errorMessage += "请求被拦截，可能是由于内容不合规。";
+                            break;
+                        default:
+                            errorMessage += `请求被拦截，原因：${blockReason}`;
                             break;
                     }
                 } else {
@@ -2196,8 +2202,13 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                     errorMessage = errorMessage.replace(new RegExp(ggKey, 'g'), '****');
                 }
 
+                // 截断错误信息，避免回复过长
+                const displayMessage = errorMessage.length > 100
+                    ? errorMessage.substring(0, 100) + "...\n详情请查阅控制台。"
+                    : errorMessage;
+
                 return {
-                    answer: errorMessage.substring(0, 100) + "...\n详情请查阅控制台。",
+                    answer: displayMessage,
                     sources: []
                 };
             }
