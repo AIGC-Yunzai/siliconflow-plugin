@@ -184,7 +184,7 @@ export class groupSayHello extends plugin {
             }
         }
 
-        const prompt = opt.groupPrompt || `请根据以下最近的群聊记录，生成一条像真人一样的回复，长度控制在50字以内，直接输出内容，不要加任何前缀或解释。`
+        const prompt = opt.groupPrompt || `请根据以下最近的群聊记录，生成一条像真人一样的回复，长度控制在50字以内，直接输出内容，不要加任何前缀或解释，尽量接着群聊天记录的话题或做延伸。`
         // 构造打招呼的prompt
         const greetingPrompt = buildChatHistoryPrompt(chatHistory, prompt, bot.uin)
 

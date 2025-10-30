@@ -907,7 +907,13 @@ export class SF_Painting extends plugin {
             mustReturnImgRetriesTimes: mustReturnImgRetriesTimes
         }
 
-        const { content: answer, imageBase64Array: generatedImageArray } = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
+        const { content: answer, imageBase64Array: generatedImageArray, isError } = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
+
+        // 如果是错误返回，不保存聊天记录，直接回复错误信息
+        if (isError) {
+            await e.reply(answer, quoteMessage);
+            return;
+        }
 
         // 处理思考过程
         let thinkingContent = '';
@@ -1232,22 +1238,25 @@ export class SF_Painting extends plugin {
 
                 return {
                     content: data.choices[0].message.content,
-                    imageBase64Array: imageBase64Array
+                    imageBase64Array: imageBase64Array,
+                    isError: false
                 };
             } else {
                 logger.error("[sf插件]LLM调用错误：\n", JSON.stringify(data, null, 2))
                 const errorMessage = !forChat ? input : data.error?.message || data.message || "[sf插件]LLM调用错误，详情请查阅控制台。";
                 return {
                     content: errorMessage,
-                    imageBase64Array: null
+                    imageBase64Array: null,
+                    isError: true
                 };
             }
         } catch (error) {
             logger.error("[sf插件]LLM调用失败\n", error)
-            const errorMessage = !forChat ? input : error.message || "[sf插件]LLM调用失败，详情请查阅控制台。";
+            const errorMessage = !forChat ? ("[sf插件]LLM调用失败:\n" + input) : ("[sf插件]LLM调用失败:\n" + error.message);
             return {
                 content: errorMessage,
-                imageBase64Array: null
+                imageBase64Array: null,
+                isError: true
             };
         }
     }
@@ -1645,7 +1654,13 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
             mustReturnImgRetriesTimes: mustReturnImgRetriesTimes
         }
 
-        const { answer, sources, imageBase64, textImagePairs } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
+        const { answer, sources, imageBase64, textImagePairs, isError } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
+
+        // 如果是错误返回，不保存聊天记录，直接回复错误信息
+        if (isError) {
+            await e.reply(answer, quoteMessage);
+            return;
+        }
 
         // 保存AI回复
         if (config_date.gg_ss_useContext) {
@@ -2145,7 +2160,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
                     answer,
                     sources,
                     imageBase64: imageBase64Array.length > 0 ? imageBase64Array : null,
-                    textImagePairs: textImagePairs.length > 0 ? textImagePairs : null
+                    textImagePairs: textImagePairs.length > 0 ? textImagePairs : null,
+                    isError: false
                 };
             } else {
                 logger.error("[sf插件]gg调用错误：\n", JSON.stringify(data, null, 2))
@@ -2209,19 +2225,21 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自�
 
                 return {
                     answer: displayMessage,
-                    sources: []
+                    sources: [],
+                    isError: true
                 };
             }
         } catch (error) {
             logger.error("[sf插件]gg调用失败\n", error)
             // 隐藏错误信息中的key
-            let errorMsg = error.message || "[sf插件]gg调用失败，详情请查阅控制台。";
+            let errorMsg = "[sf插件]gg调用失败:\n" + error.message;
             if (ggKey && errorMsg.includes(ggKey)) {
                 errorMsg = errorMsg.replace(new RegExp(ggKey, 'g'), '****');
             }
             return {
                 answer: errorMsg,
-                sources: []
+                sources: [],
+                isError: true
             };
         }
     }
