@@ -1411,7 +1411,7 @@ export function supportGuoba() {
         {
           field: "groupSayHello.enabled",
           label: "启用自动打招呼",
-          bottomHelpMessage: "开启后将在配置的群中定时自动打招呼，使用Gemini生成打招呼内容；可用指令：#打招呼配置 #立即打招呼",
+          bottomHelpMessage: "开启后将在配置的群中定时自动打招呼，使用Gemini生成打招呼内容；更改后重启生效；可用指令：#打招呼配置 #立即打招呼",
           component: "Switch",
         },
         {

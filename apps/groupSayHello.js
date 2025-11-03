@@ -7,6 +7,7 @@ import {
 } from '../utils/onebotUtils.js'
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
+const groupSayHello_Switch = Config.getConfig().groupSayHello?.enabled;
 
 /**
  * 自动打招呼插件
@@ -52,12 +53,12 @@ export class groupSayHello extends plugin {
      * 自动打招呼主函数（定时任务）
      */
     async autoSayHello() {
-        const config = Config.getConfig()
-
         // 检查功能是否启用
-        if (!config.groupSayHello?.enabled) {
+        if (!groupSayHello_Switch) {
             return false
         }
+
+        const config = Config.getConfig()
 
         // 获取允许的群列表（对象数组格式：{groupId, replyRate, switchOn}）
         const allowGroups = config.groupSayHello?.allowGroups || []
@@ -457,7 +458,7 @@ export class groupSayHello extends plugin {
         const configMsg = [
             '📊 群自动打招呼配置状态',
             '━━━━━━━━━━━━━━━━━━',
-            `🔧 功能状态: ${groupSayHelloConfig.enabled ? '✅ 已启用' : '❌ 已禁用'}`,
+            `🔧 功能状态: ${groupSayHello_Switch ? '✅ 已启用' : '❌ 已禁用'}`,
             e.isGroup ? currentGroupInfo : '',
             '',
             '⚙️ 配置参数:',
