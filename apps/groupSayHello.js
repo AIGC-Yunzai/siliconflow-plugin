@@ -233,7 +233,7 @@ export class groupSayHello extends plugin {
             }
 
             // 调用generateGeminiPrompt
-            const { answer } = await sfPainting.generateGeminiPrompt(
+            const { answer, iserror } = await sfPainting.generateGeminiPrompt(
                 greetingPrompt,
                 ggBaseUrl,
                 ggKey,
@@ -243,16 +243,21 @@ export class groupSayHello extends plugin {
                 eventObj
             )
 
+            if (iserror) {
+                logger.error(`[群自动打招呼] Gemini 调用出错: ${answer || '未知错误'}`)
+                return false
+            }
+
             if (answer) {
                 // 发送打招呼消息
                 await group.sendMsg(answer)
                 // logger.debug(`[群自动打招呼] 群 ${groupId} 发送成功`)
             } else {
-                logger.error('[群自动打招呼] LLM返回为空')
+                logger.error('[群自动打招呼] Gemini 返回为空')
             }
 
         } catch (error) {
-            logger.error(`[群自动打招呼] 调用LLM失败: ${error}`)
+            logger.error(`[群自动打招呼] 调用 Gemini 失败: ${error}`)
             throw error
         }
 
