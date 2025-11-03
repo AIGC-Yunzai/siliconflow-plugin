@@ -233,7 +233,7 @@ export class groupSayHello extends plugin {
             }
 
             // 调用generateGeminiPrompt
-            const { answer, iserror } = await sfPainting.generateGeminiPrompt(
+            const { answer, sources, imageBase64, textImagePairs, isError } = await sfPainting.generateGeminiPrompt(
                 greetingPrompt,
                 ggBaseUrl,
                 ggKey,
@@ -243,14 +243,40 @@ export class groupSayHello extends plugin {
                 eventObj
             )
 
-            if (iserror) {
-                logger.error(`[群自动打招呼] Gemini 调用出错: ${answer || '未知错误'}`)
+            // 如果返回错误,不发送打招呼消息
+            if (isError) {
+                logger.error(`[群自动打招呼] Gemini 返回错误: ${answer}`)
                 return false
             }
 
             if (answer) {
+                // 构建消息数组
+                const messages = []
+
+                // 如果有生成的图片,根据是否有配对信息来处理
+                if (imageBase64 && imageBase64.length > 0) {
+                    if (textImagePairs && textImagePairs.length > 0) {
+                        // 有配对信息，按配对顺序发送
+                        textImagePairs.forEach((pair) => {
+                            if (pair.text) {
+                                messages.push(pair.text)
+                            }
+                            messages.push(segment.image(`base64://${pair.image.replace(/data:image\/\w+;base64,/g, "")}`))
+                        })
+                    } else {
+                        // 没有配对信息，先发送所有图片，再发送文本
+                        imageBase64.forEach((imgData) => {
+                            messages.push(segment.image(`base64://${imgData.replace(/data:image\/\w+;base64,/g, "")}`))
+                        })
+                        messages.push(answer)
+                    }
+                } else {
+                    // 没有图片，只发送文本
+                    messages.push(answer)
+                }
+
                 // 发送打招呼消息
-                await group.sendMsg(answer)
+                await group.sendMsg(messages)
                 // logger.debug(`[群自动打招呼] 群 ${groupId} 发送成功`)
             } else {
                 logger.error('[群自动打招呼] Gemini 返回为空')
