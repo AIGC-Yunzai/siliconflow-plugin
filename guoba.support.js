@@ -1425,7 +1425,7 @@ export function supportGuoba() {
         },
         {
           field: "groupSayHello.allowGroups",
-          label: "🥝允许的群组",
+          label: "🥝群单独设置",
           bottomHelpMessage: "填写允许自动打招呼的群号列表，留空则不在任何群打招呼；可在群内使用 #自动打招呼开启/关闭 来管理",
           component: "GSubForm",
           componentProps: {
@@ -1435,7 +1435,7 @@ export function supportGuoba() {
                 field: "groupId",
                 label: "群号",
                 required: true,
-                bottomHelpMessage: "允许的群组的群号",
+                bottomHelpMessage: "允许的群组的群号；提示：可以对同一个群配置多个不同接口的配置",
                 component: "Input",
               },
               {
@@ -1464,30 +1464,30 @@ export function supportGuoba() {
                   placeholder: '请根据以下最近的群聊记录，生成一条像真人一样的回复，长度控制在50字以内，直接输出内容，不要加任何前缀或解释。',
                 },
               },
+              {
+                field: 'usingAPI',
+                label: '使用接口',
+                bottomHelpMessage: "选择要使用的Gemini接口配置，需要先在 对话功能标签页中设置-[#gg]接口；（如果更改了接口顺序的话，记得也要修改此选项）",
+                component: 'Select',
+                componentProps: {
+                  options: (Config.getConfig()?.gg_APIList || []).map((item, index) => {
+                    return { label: item.remark || `接口${index + 1}`, value: index + 1 }
+                  }).concat([{ label: "使用默认配置", value: 0 }])
+                },
+              },
+              {
+                field: "botQQArr",
+                label: "使用的Bot QQ号",
+                bottomHelpMessage: "指定使用哪个Bot发送打招呼消息，留空则使用默认Bot；多个Bot时填写QQ号",
+                component: "GTags",
+                componentProps: {
+                  placeholder: '请输入Bot QQ号',
+                  allowAdd: true,
+                  allowDel: true,
+                  valueParser: ((value) => value.split(',') || []),
+                },
+              },
             ],
-          },
-        },
-        {
-          field: 'groupSayHello.usingAPI',
-          label: '使用接口',
-          bottomHelpMessage: "选择要使用的Gemini接口配置，需要先在 对话功能标签页中设置-[#gg]接口；（如果更改了接口顺序的话，记得也要修改此选项）",
-          component: 'Select',
-          componentProps: {
-            options: (Config.getConfig()?.gg_APIList || []).map((item, index) => {
-              return { label: item.remark || `接口${index + 1}`, value: index + 1 }
-            }).concat([{ label: "使用默认配置", value: 0 }])
-          },
-        },
-        {
-          field: "groupSayHello.botQQArr",
-          label: "使用的Bot QQ号",
-          bottomHelpMessage: "指定使用哪个Bot发送打招呼消息，留空则使用默认Bot；多个Bot时填写QQ号",
-          component: "GTags",
-          componentProps: {
-            placeholder: '请输入Bot QQ号',
-            allowAdd: true,
-            allowDel: true,
-            valueParser: ((value) => value.split(',') || []),
           },
         },
         {
@@ -1905,7 +1905,6 @@ export function supportGuoba() {
         config.dd_APIList = data['dd_APIList']
         config.fish_text_blacklist = data['fish_text_blacklist']
         config.groupSayHello.allowGroups = data['groupSayHello.allowGroups']
-        config.groupSayHello.botQQArr = data['groupSayHello.botQQArr']
         config.autoEmoticons.allowGroups = data['autoEmoticons.allowGroups']
         config.autoEmoticons.getBotByQQ_targetQQArr = data['autoEmoticons.getBotByQQ_targetQQArr']
         config.autoRepeat_config = data['autoRepeat_config']

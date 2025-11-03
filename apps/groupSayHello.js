@@ -87,8 +87,8 @@ export class groupSayHello extends plugin {
                 const randomValue = Math.random()
 
                 if (randomValue <= replyRate) {
-                    logger.mark(`[群自动打招呼] 群 ${groupId} 开始执行打招呼 (${randomValue.toFixed(2)} <= ${replyRate})`)
-                    await this.sendGreeting(groupId, config, null, { groupPrompt })
+                    logger.mark(`[群自动打招呼] 群 ${groupId} 开始执行打招呼，使用gg接口 ${groupConfig.usingAPI + 1}`)
+                    await this.sendGreeting(groupId, config, null, { groupPrompt, groupConfig })
                     // 避免发送过快，休息一下
                     await sleep(2000)
                 } else {
@@ -117,12 +117,29 @@ export class groupSayHello extends plugin {
         await e.reply('正在生成打招呼内容...')
 
         try {
-            // 查找当前群的配置，获取groupPrompt
+            // 查找当前群的所有配置（可能有多个配置使用不同的接口）
             const allowGroups = config.groupSayHello?.allowGroups || []
-            const currentGroupConfig = allowGroups.find(g => g.groupId === groupId)
-            const groupPrompt = currentGroupConfig?.groupPrompt || ''
+            const currentGroupConfigs = allowGroups.filter(g => g.groupId === groupId)
 
-            await this.sendGreeting(groupId, config, e, { groupPrompt })
+            if (currentGroupConfigs.length === 0) {
+                await e.reply('⚠️ 本群未配置自动打招呼功能')
+                return true
+            }
+
+            // 遍历该群的所有配置，每个配置发送一次打招呼
+            for (const groupConfig of currentGroupConfigs) {
+                const groupPrompt = groupConfig?.groupPrompt || ''
+                const usingApiIndex = groupConfig?.usingAPI ?? 0
+
+                logger.mark(`[群自动打招呼] 群 ${groupId} 立即打招呼，使用gg接口 ${usingApiIndex + 1}`)
+                await this.sendGreeting(groupId, config, e, { groupPrompt, groupConfig })
+
+                // 如果有多个配置，间隔一下避免发送过快
+                if (currentGroupConfigs.length > 1) {
+                    await sleep(2000)
+                }
+            }
+
             await e.reply('打招呼完成！', false)
         } catch (error) {
             logger.error(`[群自动打招呼] 立即打招呼失败: ${error}`)
@@ -139,10 +156,12 @@ export class groupSayHello extends plugin {
      * @param {Object} e 事件对象（可选）
      * @param {Object} opt （可选）
      * @param {string} opt.groupPrompt 群单独提示词
+     * @param {Object} opt.groupConfig 群配置对象
      */
     async sendGreeting(groupId, config, e = null, opt = {}) {
-        // 获取Bot实例
-        const botQQArr = config.groupSayHello?.botQQArr || []
+        // 从 groupConfig 中获取 botQQArr，如果没有则从全局配置获取
+        const groupConfig = opt.groupConfig || {}
+        const botQQArr = groupConfig.botQQArr || []
         const bot = getBotByQQ(botQQArr)
 
         // 获取群对象
@@ -193,8 +212,8 @@ export class groupSayHello extends plugin {
             const { SF_Painting } = await import('./SF_Painting.js')
             const sfPainting = new SF_Painting()
 
-            // 获取选中的接口配置
-            const usingApiIndex = config.groupSayHello?.usingAPI || 0
+            // 获取选中的接口配置，优先从 groupConfig 中读取，如果没有则从全局配置读取
+            const usingApiIndex = groupConfig.usingAPI ?? 0
             let ggBaseUrl, ggKey, model, systemPrompt
 
             if (usingApiIndex > 0 && config.gg_APIList && config.gg_APIList[usingApiIndex - 1]) {
@@ -329,8 +348,9 @@ export class groupSayHello extends plugin {
                     config.groupSayHello.allowGroups = currentAllowGroups
                     config.groupSayHello.enabled = true
 
-                    // 获取使用的接口信息
-                    const usingApiIndex = config.groupSayHello.usingAPI || 0
+                    // 获取使用的接口信息（优先从群配置读取，如果没有则从全局配置读取）
+                    const newGroupConfig = currentAllowGroups[currentAllowGroups.length - 1]
+                    const usingApiIndex = newGroupConfig.usingAPI ?? 0
                     let interfaceName = '默认配置'
                     if (usingApiIndex > 0 && config.gg_APIList && config.gg_APIList[usingApiIndex - 1]) {
                         interfaceName = config.gg_APIList[usingApiIndex - 1].remark || `接口${usingApiIndex}`
@@ -387,53 +407,66 @@ export class groupSayHello extends plugin {
         const groupSayHelloConfig = config.groupSayHello || {}
         const groupId = String(e.group_id)
 
-        // 检查当前群是否在允许列表中
+        // 检查当前群是否在允许列表中（可能有多个配置）
         const allowGroups = groupSayHelloConfig.allowGroups || []
-        const currentGroupConfig = allowGroups.find(g => g.groupId === groupId)
-        const isGroupAllowed = !!currentGroupConfig
-
-        // 获取使用的接口信息
-        const usingApiIndex = groupSayHelloConfig.usingAPI || 0
-        let interfaceInfo = '使用 [#gg] 默认配置'
-        if (usingApiIndex > 0 && config.gg_APIList && config.gg_APIList[usingApiIndex - 1]) {
-            const apiConfig = config.gg_APIList[usingApiIndex - 1]
-            interfaceInfo = `使用接口 ${usingApiIndex}: ${apiConfig.remark || `接口${usingApiIndex}`}\n　　模型: ${apiConfig.model || config.gg_model || 'gemini-2.0-flash-exp'}`
-        } else {
-            interfaceInfo = `使用 [#gg] 默认配置\n　　模型: ${config.gg_model || 'gemini-2.0-flash-exp'}`
-        }
+        const currentGroupConfigs = allowGroups.filter(g => g.groupId === groupId)
+        const isGroupAllowed = currentGroupConfigs.length > 0
 
         const cronTime = groupSayHelloConfig.cron_time || '0 */5 * * * *'
 
-        // 当前群的概率和开关状态
-        let currentGroupRate = ''
+        // 当前群的配置信息
+        let currentGroupInfo = ''
         if (isGroupAllowed) {
-            const switchOn = currentGroupConfig.switchOn ?? false
-            const rate = (currentGroupConfig.replyRate * 100 || 100).toFixed(0)
-            const statusText = switchOn ? '✅ 已开启' : '❌ 已关闭'
-            currentGroupRate = `🎯 当前群状态: ${statusText} (触发概率: ${rate}%)`
+            if (currentGroupConfigs.length === 1) {
+                // 只有一个配置
+                const groupConfig = currentGroupConfigs[0]
+                const switchOn = groupConfig.switchOn ?? false
+                const rate = (groupConfig.replyRate * 100 || 100).toFixed(0)
+                const statusText = switchOn ? '✅ 已开启' : '❌ 已关闭'
+                const usingApiIndex = groupConfig.usingAPI ?? 0
+
+                let interfaceInfo = '默认配置'
+                if (usingApiIndex > 0 && config.gg_APIList && config.gg_APIList[usingApiIndex - 1]) {
+                    const apiConfig = config.gg_APIList[usingApiIndex - 1]
+                    interfaceInfo = `接口${usingApiIndex}: ${apiConfig.remark || `接口${usingApiIndex}`}`
+                }
+
+                currentGroupInfo = `🎯 当前群状态: ${statusText} (触发概率: ${rate}%, 接口: ${interfaceInfo})`
+            } else {
+                // 有多个配置
+                currentGroupInfo = `🎯 当前群状态: 已配置 ${currentGroupConfigs.length} 个接口\n` +
+                    currentGroupConfigs.map((groupConfig, index) => {
+                        const switchOn = groupConfig.switchOn ?? false
+                        const rate = (groupConfig.replyRate * 100 || 100).toFixed(0)
+                        const statusIcon = switchOn ? '✅' : '❌'
+                        const usingApiIndex = groupConfig.usingAPI ?? 0
+
+                        let interfaceInfo = '默认配置'
+                        if (usingApiIndex > 0 && config.gg_APIList && config.gg_APIList[usingApiIndex - 1]) {
+                            const apiConfig = config.gg_APIList[usingApiIndex - 1]
+                            interfaceInfo = `接口${usingApiIndex}: ${apiConfig.remark || `接口${usingApiIndex}`}`
+                        }
+
+                        return `　${statusIcon} 配置${index + 1}: ${interfaceInfo} (概率: ${rate}%)`
+                    }).join('\n')
+            }
         } else {
-            currentGroupRate = `🎯 当前群状态: ⚠️ 未配置`
+            currentGroupInfo = `🎯 当前群状态: ⚠️ 未配置`
         }
 
         const configMsg = [
             '📊 群自动打招呼配置状态',
             '━━━━━━━━━━━━━━━━━━',
             `🔧 功能状态: ${groupSayHelloConfig.enabled ? '✅ 已启用' : '❌ 已禁用'}`,
-            e.isGroup ? currentGroupRate : '',
+            e.isGroup ? currentGroupInfo : '',
             '',
             '⚙️ 配置参数:',
             `　⏱️ 定时表达式: ${cronTime}`,
-            `　🤖 ${interfaceInfo}`,
             '',
             '🎯 允许群组:',
             allowGroups.length === 0
                 ? '　📢 暂无群组'
-                : allowGroups.map(g => {
-                    const rate = (g.replyRate * 100 || 100).toFixed(0)
-                    const switchOn = g.switchOn ?? false
-                    const statusIcon = switchOn ? '✅' : '❌'
-                    return `　🏷️ ${g.groupId} ${statusIcon} (概率: ${rate}%)`
-                }).join('\n'),
+                : this.formatGroupList(allowGroups, config),
             '━━━━━━━━━━━━━━━━━━',
             '',
             '💡 使用提示:',
@@ -444,5 +477,57 @@ export class groupSayHello extends plugin {
 
         await e.reply(configMsg)
         return true
+    }
+
+    /**
+     * 格式化群组列表显示
+     */
+    formatGroupList(allowGroups, config) {
+        // 按 groupId 分组
+        const groupMap = new Map()
+
+        allowGroups.forEach(g => {
+            if (!groupMap.has(g.groupId)) {
+                groupMap.set(g.groupId, [])
+            }
+            groupMap.get(g.groupId).push(g)
+        })
+
+        const lines = []
+        groupMap.forEach((configs, groupId) => {
+            if (configs.length === 1) {
+                // 单个配置
+                const g = configs[0]
+                const rate = (g.replyRate * 100 || 100).toFixed(0)
+                const switchOn = g.switchOn ?? false
+                const statusIcon = switchOn ? '✅' : '❌'
+                const usingApiIndex = g.usingAPI ?? 0
+
+                let interfaceInfo = '默认'
+                if (usingApiIndex > 0 && config.gg_APIList && config.gg_APIList[usingApiIndex - 1]) {
+                    interfaceInfo = `接口${usingApiIndex}`
+                }
+
+                lines.push(`　🏷️ ${groupId} ${statusIcon} (概率: ${rate}%, ${interfaceInfo})`)
+            } else {
+                // 多个配置
+                lines.push(`　🏷️ ${groupId} (${configs.length}个配置):`)
+                configs.forEach((g, index) => {
+                    const rate = (g.replyRate * 100 || 100).toFixed(0)
+                    const switchOn = g.switchOn ?? false
+                    const statusIcon = switchOn ? '✅' : '❌'
+                    const usingApiIndex = g.usingAPI ?? 0
+
+                    let interfaceInfo = '默认'
+                    if (usingApiIndex > 0 && config.gg_APIList && config.gg_APIList[usingApiIndex - 1]) {
+                        interfaceInfo = `接口${usingApiIndex}`
+                    }
+
+                    lines.push(`　　${statusIcon} 配置${index + 1}: ${interfaceInfo} (概率: ${rate}%)`)
+                })
+            }
+        })
+
+        return lines.join('\n')
     }
 }
