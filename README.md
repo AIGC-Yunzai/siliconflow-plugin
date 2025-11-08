@@ -14,6 +14,7 @@
   - 📱 视频解析：支持抖音、哔哩哔哩视频解析
   - 🌡️ 暖群功能：群自动Gemini打招呼、群自动偷取发送表情包、复读 & 打断等功能
   - ⚡ WebSocket：支持WebSocket与前端通信实现实时对话与绘图，详情看[前端地址](https://sf.maliy.top)，[部署教程](https://github.com/AIGC-Yunzai/SF-WEB)
+  - 📀 Jimeng-Api接口：支持调用即梦Api免费文生图、图生图、视频生成等
 
 
 ## 安装插件
