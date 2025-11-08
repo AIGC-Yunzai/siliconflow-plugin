@@ -69,6 +69,18 @@ function stepsParam(text) {
     text = text.replace(/步数\s?\d+/g, '')
     return { parameters, text }
 }
+/** 参考图片强度 */
+function reference_strengthParam(text) {
+    let parameters = {}
+    let reference_strength = text.match(/(reference_strength)\s?=\s?([-+]?\d+(\.)?(\d+)?)/i)?.[2]
+    if (reference_strength) {
+        parameters.reference_strength = parseFloat(Number(reference_strength).toFixed(1))
+        if (parameters.reference_strength < 0.1) parameters.reference_strength = 0.1
+        if (parameters.reference_strength > 1) parameters.reference_strength = 1
+        text = text.replace(/(reference_strength)\s?=\s?([-+]?\d+(\.)?(\d+)?)/ig, '')
+    }
+    return { parameters, text }
+}
 
 /**
  * @description: 处理prompt
@@ -121,6 +133,10 @@ export async function handleParam(e, text) {
     // result = seedParam(text)
     // parameters = Object.assign(parameters, result.parameters)
     // text = result.text
+    // 参考图片强度
+    result = reference_strengthParam(text)
+    parameters = Object.assign(parameters, result.parameters)
+    text = result.text
 
     // 正负词条处理
     try {

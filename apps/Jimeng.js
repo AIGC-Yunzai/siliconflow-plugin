@@ -56,8 +56,11 @@ export class Jimeng extends plugin {
             const helpMsg = `[sf插件][即梦API]帮助：
 默认的resolution: 2k
 支持的ratio: 横图, 竖图, 方图, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3, 21:9
+负面提示词: ntags = [tags]
+参考图片强度: reference_strength = 1.0
+
 示例：
-#即梦绘画 美丽的小少女，胶片感 9:16`
+#即梦绘画 美丽的小少女，胶片感 竖图`
             e.reply(helpMsg, true);
             return
         }
@@ -93,7 +96,8 @@ export class Jimeng extends plugin {
                 "images": [e.img[0]], // 使用第一张图片
                 "ratio": param.parameters.ratio || "1:1",
                 "resolution": param.parameters.resolution || "2k",
-                "sample_strength": param.parameters.sample_strength || 0.7
+                "negative_prompt": param.parameters.negative_prompt || undefined,
+                "sample_strength": param.parameters.reference_strength || undefined,
             }
         } else {
             // 文生图模式
@@ -103,8 +107,14 @@ export class Jimeng extends plugin {
                 "prompt": param.input || "美丽的少女，胶片感",
                 "ratio": param.parameters.ratio || "1:1",
                 "resolution": param.parameters.resolution || "2k",
+                "negative_prompt": param.parameters.negative_prompt || undefined,
             }
         }
+
+        // 过滤掉 undefined
+        requestBody = Object.fromEntries(
+            Object.entries(requestBody).filter(([_, value]) => value !== undefined)
+        )
 
         try {
             const sessionid = Config.get_random_Str(config_date.Jimeng.sessionid, "Jimeng-Sessionid");
@@ -128,8 +138,8 @@ export class Jimeng extends plugin {
 
                 // 构造回复消息
                 const str_1 = `@${e.sender.card || e.sender.nickname} 您的${isImg2Img ? "图生图" : "文生图"}已完成：`
-                const str_2 = `提示词：${requestBody.prompt}
-模型：${requestBody.model}
+                const str_2 = `提示词：${requestBody.prompt}`
+                const str_3 = `模型：${requestBody.model}
 比例：${requestBody.ratio}
 分辨率：${requestBody.resolution}
 ${isImg2Img ? `合成强度：${requestBody.sample_strength}\n` : ''}生成图片数量：${imageUrls.length}张
@@ -145,7 +155,7 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
                             origin: true
                         })
                     })
-                    forwardMsgs.push(str_2)
+                    forwardMsgs.push(str_2, str_3)
 
                     const msgx = await common.makeForwardMsg(
                         e,
@@ -157,7 +167,7 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
                     // 非简洁模式：分别发送
                     const msgx = await common.makeForwardMsg(
                         e,
-                        [str_1, str_2],
+                        [str_1, str_2, str_3],
                         `${e.sender.card || e.sender.nickname} 的${isImg2Img ? "图生图" : "文生图"}`
                     )
                     await e.reply(msgx)
