@@ -564,7 +564,7 @@ export class SF_Painting extends plugin {
 
         result_member.record();
 
-        let msg = e.msg.replace(/^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))/, '').trim()
+        let msg = e.msg.replace(/^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))(\n*)?/, '').trim()
 
         // 处理 msg
         let param = await handleParam(e, msg)

@@ -114,3 +114,11 @@ autoEmoticons: {
   }
 autoRepeat_config: []
 autoReply: []
+Jimeng: {
+    cdtime: 60,
+    dailyLimit: 0,
+    unlimitedUsers: [],
+    onlyGroupID: [],
+    sessionid: "", # 支持轮询
+    base_url: "http://localhost:5100",
+  }

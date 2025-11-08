@@ -96,7 +96,7 @@ export async function parseSourceImg(e, alsoGetAtAvatar = true) {
 }
 
 
-export async function url2Base64(url, isReturnBuffer = false) {
+export async function url2Base64(url, isReturnBuffer = false, onlyCheck = false) {
   try {
     const response = await axios.get(url, {
       responseType: 'arraybuffer',
@@ -110,6 +110,10 @@ export async function url2Base64(url, isReturnBuffer = false) {
       logger.error('[sf插件]图片大小超过10MB，请使用大小合适的图片');
       return null;
     }
+
+    // 用于 Jimeng-api 的图片链接则不用下载图片
+    if (onlyCheck) return true;
+
     // 返回 Buffer
     if (isReturnBuffer)
       return Buffer.from(response.data, 'binary');

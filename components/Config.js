@@ -523,6 +523,19 @@ class Config {
       }
     }
   }
+
+  /** 随机轮询字符串中英文逗号分割 */
+  get_random_Str(str, funcName = "Key") {
+    if (!str) return '';
+    const strArr = str.split(/[,，]/).map(item => item.trim()).filter(Boolean);
+    if (strArr.length === 0) return '';
+
+    // 随机选择一个key
+    const randomIndex = Math.floor(Math.random() * strArr.length);
+    logger.debug(`[SF插件]随机使用第${randomIndex + 1}个${funcName}: ${strArr[randomIndex].replace(/(.{7}).*(.{10})/, '$1****$2')}`);
+    return strArr[randomIndex];
+  }
+
 }
 
 export default new Config()

@@ -663,6 +663,74 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          component: "Divider",
+          label: "Jimeng-API",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "Jimeng.base_url",
+          label: "Jimeng-API 地址",
+          bottomHelpMessage: "https://github.com/iptag/jimeng-api 根据说明文档部署后填入地址，默认为 http://localhost:5100  ；支持文生图、图生图，指令： #即梦绘画[tags] #即梦绘画帮助",
+          component: "Input",
+          componentProps: {
+            placeholder: 'http://localhost:5100',
+          },
+        },
+        {
+          field: "Jimeng.sessionid",
+          label: "Sessionid",
+          bottomHelpMessage: "获取Sessionid：打开浏览器，访问 https://jimeng.jianying.com/ai-tool/home/ 登录你的账号，按F12打开开发者工具，切换到 `Application`或 `Storage` 标签页，在左侧展开`Cookies`，点击 `https://jimeng.jianying.com` 找到名为sessionid的cookie值；若有多个 sessionid 用英文逗号分割",
+          component: "Input",
+        },
+        {
+          field: 'Jimeng.cdtime',
+          label: 'CD时间',
+          helpMessage: '单位：秒',
+          bottomHelpMessage: '此接口 的CD时间，设置为0则无限制',
+          component: "InputNumber",
+          componentProps: {
+            min: 0,
+            step: 1,
+          },
+        },
+        {
+          field: 'Jimeng.dailyLimit',
+          label: '次数限制',
+          bottomHelpMessage: '此接口 的每日限制次数，设置为0则无限制，设置为-1则仅限无限制用户使用',
+          component: "InputNumber",
+          componentProps: {
+            min: -1,
+            step: 1,
+          },
+        },
+        {
+          field: 'Jimeng.unlimitedUsers',
+          label: '无限制用户ID',
+          bottomHelpMessage: '此接口的 主人与无限制用户无CD次数限制，填写用户ID/QQ号',
+          component: "GTags",
+          componentProps: {
+            placeholder: '请输入用户ID/QQ号',
+            allowAdd: true,
+            allowDel: true,
+            valueParser: ((value) => value.split(',') || []),
+          },
+        },
+        {
+          field: 'Jimeng.onlyGroupID',
+          label: '白名单群',
+          bottomHelpMessage: '仅白名单群可以使用此接口，留空则所有群可用；私聊用群号8888代替',
+          component: "GTags",
+          componentProps: {
+            placeholder: '请输入群号',
+            allowAdd: true,
+            allowDel: true,
+            valueParser: ((value) => value.split(',') || []),
+          },
+        },
+        {
           label: '对话功能',
           component: 'SOFT_GROUP_BEGIN'
         },
@@ -1908,7 +1976,8 @@ export function supportGuoba() {
         config.autoEmoticons.allowGroups = data['autoEmoticons.allowGroups']
         config.autoEmoticons.getBotByQQ_targetQQArr = data['autoEmoticons.getBotByQQ_targetQQArr']
         config.autoRepeat_config = data['autoRepeat_config']
-        config.autoReply = data['autoReply']
+        config.Jimeng.unlimitedUsers = data['Jimeng.unlimitedUsers']
+        config.Jimeng.onlyGroupID = data['Jimeng.onlyGroupID']
 
         // 验证配置
         try {
