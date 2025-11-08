@@ -2,9 +2,6 @@ import _ from "lodash";
 
 // 尺寸处理
 function scaleParam(text) {
-    if (!text) {
-        return { parameters: { ratio: "1:1" }, text: "" };
-    }
     const scale = {
         "竖图": { ratio: "9:16" },
         "长图": { ratio: "9:16" },
@@ -44,10 +41,6 @@ function scaleParam(text) {
 }
 
 function seedParam(text) {
-    if (!text) {
-        return { parameters: { seed: Math.floor((Math.random() + Math.floor(Math.random() * 9 + 1)) * Math.pow(10, 9)) }, text: "" };
-    }
-
     let parameters = {}
     let seed = text.match(/seed(\s)?=\s?(\d+)/)?.[2]
     if (seed) {
@@ -59,9 +52,6 @@ function seedParam(text) {
     return { parameters, text }
 }
 function stepsParam(text) {
-    if (!text) {
-        return { parameters: { steps: 28 }, text: "" };
-    }
     let parameters = {}
     let steps = text.match(/步数\s?(\d+)/)?.[1]
     const maxStep = 50
@@ -70,15 +60,12 @@ function stepsParam(text) {
     return { parameters, text }
 }
 function video_durationParam(text) {
-    if (!text) {
-        return { parameters: { video_duration: 5 }, text: "" };
-    }
     const duration = {
         "5秒": { video_duration: 5 },
         "10秒": { video_duration: 10 },
     };
 
-    let parameters = { video_duration: "1:1" };
+    let parameters = {};
 
     Object.entries(duration).forEach(([size, duration]) => {
         if (text.includes(size)) {
@@ -109,10 +96,6 @@ function reference_strengthParam(text) {
  * @return {*}
  */
 async function promptParam(text) {
-    if (!text) {
-        return { parameters: { prompt: '', negative_prompt: '' }, text: '', input: '' };
-    }
-
     let parameters = {}
     let input = ''
     let ntags = text.match(/ntags(\s)?=(.*)$/s)?.[2]

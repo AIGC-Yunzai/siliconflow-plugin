@@ -108,7 +108,7 @@ export class Jimeng extends plugin {
                 "prompt": param.input || "一个女人在花园里跳舞",
                 "ratio": param.parameters.ratio || "16:9",
                 // "resolution": param.parameters.resolution || "720p",
-                "duration": param.parameters.video_duration || 5,
+                "duration": param.parameters.video_duration || undefined,
                 "filePaths": e.img && e.img.length > 0 ? e.img.slice(0, 2) : undefined, // 最多支持2张图片
             }
         } else if (isImg2Img) {
