@@ -673,7 +673,7 @@ export function supportGuoba() {
         {
           field: "Jimeng.base_url",
           label: "Jimeng-API 地址",
-          bottomHelpMessage: "https://github.com/iptag/jimeng-api 根据说明文档部署后填入地址，默认为 http://localhost:5100  ；支持文生图、图生图，指令： #即梦绘画[tags] #即梦绘画帮助",
+          bottomHelpMessage: "https://github.com/iptag/jimeng-api 根据说明文档部署后填入地址，默认为 http://localhost:5100  ；支持文生图、图生图，指令： #即梦绘画[tags] #即梦绘画帮助 #即梦视频帮助",
           component: "Input",
           componentProps: {
             placeholder: 'http://localhost:5100',

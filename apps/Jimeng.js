@@ -12,7 +12,7 @@ export class Jimeng extends plugin {
     constructor() {
         super({
             /** 功能名称 */
-            name: 'sf插件-即梦绘图api',
+            name: 'sf插件-即梦api',
             /** 功能描述 */
             dsc: '绘画',
             event: 'message',
@@ -21,7 +21,7 @@ export class Jimeng extends plugin {
             rule: [
                 {
                     /** 命令正则匹配 */
-                    reg: '^#即梦(画图|绘图|绘画)',
+                    reg: '^#即梦(画图|绘图|绘画|视频)',
                     /** 执行方法 */
                     fnc: 'call_Jimeng_Api'
                 }
@@ -51,9 +51,21 @@ export class Jimeng extends plugin {
             return false;
         }
 
-        let msg = e.msg.replace(/^#即梦(画图|绘图|绘画)(\n*)?/, '').trim()
+        // 判断是否为视频生成
+        const isVideo = /^#即梦视频/.test(e.msg)
+
+        let msg = e.msg.replace(/^#即梦(画图|绘图|绘画|视频)(\n*)?/, '').trim()
         if (msg === '帮助') {
-            const helpMsg = `[sf插件][即梦API]帮助：
+            const helpMsg = isVideo ? `[sf插件][即梦视频API]帮助：
+支持的ratio: 横图, 竖图, 方图, 1:1, 4:3, 3:4, 16:9, 9:16, 21:9
+ 注意：在图生视频模式下（有图片输入时），ratio参数将被忽略，视频比例由输入图片的实际比例决定。
+引用图片：
+ 无图片 → 文生视频模式
+ 1张图片 → 图生视频模式
+ 2张图片 → 首尾帧视频模式
+
+示例：
+#即梦视频 一个女人在花园里跳舞` : `[sf插件][即梦API]帮助：
 默认的resolution: 2k
 支持的ratio: 横图, 竖图, 方图, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3, 21:9
 负面提示词: ntags = [tags]
@@ -81,13 +93,24 @@ export class Jimeng extends plugin {
         // 处理 msg
         let param = await handleParam(e, msg)
 
-        // 判断是否为图生图
-        const isImg2Img = e.img && e.img.length > 0
+        // 判断是否为图生图（非视频模式）
+        const isImg2Img = !isVideo && e.img && e.img.length > 0
 
         // 构造请求体
         let requestBody, apiEndpoint
 
-        if (isImg2Img) {
+        if (isVideo) {
+            // 视频生成模式
+            apiEndpoint = `${config_date.Jimeng.base_url}/v1/videos/generations`
+            requestBody = {
+                "model": param.model || "jimeng-video-3.0",
+                "prompt": param.input || "一个女人在花园里跳舞",
+                "ratio": param.parameters.ratio || "16:9",
+                // "resolution": param.parameters.resolution || "720p",
+                // "duration": param.parameters.duration || 5,
+                "filePaths": e.img && e.img.length > 0 ? e.img.slice(0, 2) : undefined, // 最多支持2张图片
+            }
+        } else if (isImg2Img) {
             // 图生图模式
             apiEndpoint = `${config_date.Jimeng.base_url}/v1/images/compositions`
             requestBody = {
@@ -130,7 +153,73 @@ export class Jimeng extends plugin {
             })
 
             const data = await response.json()
-            logger.mark(`[即梦API]返回数据：\n${JSON.stringify(data, null, 2)}`)
+            logger.mark(`[即梦API]返回数据：\n${JSON.stringify(data)}`)
+
+            // 检查是否为视频生成
+            if (isVideo) {
+                if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
+                    const videoUrl = data.data[0].url
+                    const revisedPrompt = data.data[0].revised_prompt
+
+                    // 构造回复消息
+                    const str_1 = `@${e.sender.card || e.sender.nickname} 您的视频已生成完成：`
+                    const str_2 = `提示词：${revisedPrompt}`
+                    const imageCountStr = requestBody.filePaths ? `参考图片：${requestBody.filePaths.length}张` : '文生视频'
+                    const str_3 = `模型：${requestBody.model}
+比例：${requestBody.ratio}
+模式：${imageCountStr}
+${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString('zh-CN')}` : ''}`
+
+                    // 根据简洁模式决定回复方式
+                    if (config_date.simpleMode) {
+                        // 简洁模式：转发消息包含所有内容
+                        const forwardMsgs = [str_1, str_2, str_3]
+
+                        const msgx = await common.makeForwardMsg(
+                            e,
+                            forwardMsgs,
+                            `${e.sender.card || e.sender.nickname} 的视频生成`
+                        )
+                        await e.reply(msgx)
+                    } else {
+                        // 非简洁模式：分别发送
+                        const msgx = await common.makeForwardMsg(
+                            e,
+                            [str_1, str_2, str_3],
+                            `${e.sender.card || e.sender.nickname} 的视频生成`
+                        )
+                        await e.reply(msgx)
+                    }
+
+                    // 下载视频并发送
+                    try {
+                        logger.info(`[即梦视频]开始下载视频: ${videoUrl}`)
+                        const videoResponse = await fetch(videoUrl, {
+                            headers: {
+                                'referer': 'https://jimeng.jianying.com/',
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                            }
+                        })
+
+                        if (!videoResponse.ok) {
+                            throw new Error(`视频下载失败: HTTP ${videoResponse.status}`)
+                        }
+
+                        const videoBuffer = Buffer.from(await videoResponse.arrayBuffer())
+                        // logger.info(`[即梦视频]视频下载成功，大小: ${(videoBuffer.length / 1024 / 1024).toFixed(2)}MB`)
+                        await e.reply(segment.video(videoBuffer))
+                    } catch (videoError) {
+                        logger.error("[sf插件][即梦视频]视频下载失败\n", videoError)
+                        await e.reply(`视频生成成功，但下载失败。视频链接：${videoUrl}`, true)
+                    }
+
+                    return true
+                } else {
+                    logger.error("[sf插件][即梦视频API]返回错误：\n", JSON.stringify(data, null, 2))
+                    await e.reply(`[sf插件]生成视频失败：${data.message || data.error || '未知错误'}`)
+                    return false
+                }
+            }
 
             // 检查是否有返回的图片
             if (data?.data && Array.isArray(data.data) && data.data.length > 0) {
