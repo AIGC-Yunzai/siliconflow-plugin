@@ -69,6 +69,26 @@ function stepsParam(text) {
     text = text.replace(/步数\s?\d+/g, '')
     return { parameters, text }
 }
+function video_durationParam(text) {
+    if (!text) {
+        return { parameters: { video_duration: 5 }, text: "" };
+    }
+    const duration = {
+        "5秒": { video_duration: 5 },
+        "10秒": { video_duration: 10 },
+    };
+
+    let parameters = { video_duration: "1:1" };
+
+    Object.entries(duration).forEach(([size, duration]) => {
+        if (text.includes(size)) {
+            parameters = { ...duration };
+            text = text.replace(new RegExp(size, 'g'), '');
+        }
+    });
+
+    return { parameters, text };
+}
 /** 参考图片强度 */
 function reference_strengthParam(text) {
     let parameters = {}
@@ -135,6 +155,10 @@ export async function handleParam(e, text) {
     // text = result.text
     // 参考图片强度
     result = reference_strengthParam(text)
+    parameters = Object.assign(parameters, result.parameters)
+    text = result.text
+    // 视频时长
+    result = video_durationParam(text)
     parameters = Object.assign(parameters, result.parameters)
     text = result.text
 

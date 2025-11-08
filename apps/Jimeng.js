@@ -59,6 +59,7 @@ export class Jimeng extends plugin {
             const helpMsg = isVideo ? `[sf插件][即梦视频API]帮助：
 支持的ratio: 横图, 竖图, 方图, 1:1, 4:3, 3:4, 16:9, 9:16, 21:9
  注意：在图生视频模式下（有图片输入时），ratio参数将被忽略，视频比例由输入图片的实际比例决定。
+支持的时长：5秒, 10秒
 引用图片：
  无图片 → 文生视频模式
  1张图片 → 图生视频模式
@@ -107,7 +108,7 @@ export class Jimeng extends plugin {
                 "prompt": param.input || "一个女人在花园里跳舞",
                 "ratio": param.parameters.ratio || "16:9",
                 // "resolution": param.parameters.resolution || "720p",
-                // "duration": param.parameters.duration || 5,
+                "duration": param.parameters.video_duration || 5,
                 "filePaths": e.img && e.img.length > 0 ? e.img.slice(0, 2) : undefined, // 最多支持2张图片
             }
         } else if (isImg2Img) {
