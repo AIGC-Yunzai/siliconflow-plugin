@@ -504,13 +504,13 @@ export class autoEmoticons extends plugin {
                         continue;
                     }
 
-                    const msgRet = await group.sendMsg(segment.image(picturePath));
-                    const msgId = msgRet.seq || msgRet.data?.message_id || msgRet.time
-
                     // 添加随机延迟
                     const delay = randomInt(config.autoEmoticons.replyDelay.min, config.autoEmoticons.replyDelay.max)
                     logger.mark(`[autoEmoticons] 群${groupId} 将在${(delay / 1000).toFixed(0)}秒后发送表情包 ${picturePath}`)
                     await sleep(delay)
+
+                    const msgRet = await group.sendMsg(segment.image(picturePath));
+                    const msgId = msgRet.seq || msgRet.data?.message_id || msgRet.time
 
                     // 存储文件信息
                     const isSharedPicture = sharedPicturesCache.includes(picturePath)
@@ -560,7 +560,7 @@ export class autoEmoticons extends plugin {
             if (fileInfo.startsWith('shared:')) {
                 // 共享图片 - 不允许删除
                 canDelete = false;
-                await e.reply('这是共享图片，不能删除哦~');
+                await e.reply('[autoEmoticons] 这是共享目录图片，不能删除哦~', true);
             } else {
                 // 群专属表情
                 filePath = path.join(process.cwd(), 'data', 'autoEmoticons', 'emoji_save', groupId, fileInfo);
