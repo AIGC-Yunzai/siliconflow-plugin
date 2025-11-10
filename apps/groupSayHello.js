@@ -10,6 +10,54 @@ const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 const groupSayHello_Switch = Config.getConfig().groupSayHello?.enabled;
 
 /**
+ * 处理消息中的 CQ at 码，转换为 segment.at()
+ * @param {string} text 原始文本
+ * @returns {Array} 消息数组
+ */
+function processCQAtCode(text) {
+    // 匹配 [CQ:at,id=123456] 或 [CQ:at,qq=123456] 格式
+    const cqAtRegex = /\[CQ:at,(?:id|qq)=(\d+)\]/gi
+
+    // 如果没有匹配到 CQ 码，直接返回原文本
+    if (!cqAtRegex.test(text)) {
+        return [text]
+    }
+
+    // 重置 regex 的 lastIndex
+    cqAtRegex.lastIndex = 0
+
+    const result = []
+    let lastIndex = 0
+    let match
+
+    while ((match = cqAtRegex.exec(text)) !== null) {
+        // 添加 CQ 码之前的文本
+        if (match.index > lastIndex) {
+            const beforeText = text.substring(lastIndex, match.index)
+            if (beforeText) {
+                result.push(beforeText)
+            }
+        }
+
+        // 添加 segment.at
+        const userId = match[1]
+        result.push(segment.at(userId))
+
+        lastIndex = match.index + match[0].length
+    }
+
+    // 添加最后剩余的文本
+    if (lastIndex < text.length) {
+        const remainingText = text.substring(lastIndex)
+        if (remainingText) {
+            result.push(remainingText)
+        }
+    }
+
+    return result
+}
+
+/**
  * 自动打招呼插件
  */
 export class groupSayHello extends plugin {
@@ -204,7 +252,13 @@ export class groupSayHello extends plugin {
             }
         }
 
-        const prompt = opt.groupPrompt || `请根据以下最近的群聊记录，生成一条像真人一样的回复，长度控制在50字以内，直接输出内容，不要加任何前缀或解释，尽量接着群聊天记录的话题或做延伸。`
+        let prompt = opt.groupPrompt || `请根据以下最近的群聊记录，生成一条像真人一样的回复，长度控制在50字以内，直接输出内容，不要加任何前缀或解释，尽量接着群聊天记录的话题或做延伸。`
+
+        // 真 At
+        if (groupConfig.trueAtUser) {
+            prompt += "\n如果你想要At某个用户，请在回复中使用格式 [CQ:at,id=用户id号]，例如 [CQ:at,id=123456]。注意：使用At码后不要再重复写用户昵称，直接继续你的回复内容即可。"
+        }
+
         // 构造打招呼的prompt
         const greetingPrompt = buildChatHistoryPrompt(chatHistory, prompt, bot.uin)
 
@@ -279,7 +333,13 @@ export class groupSayHello extends plugin {
                         // 有配对信息，按配对顺序发送
                         textImagePairs.forEach((pair) => {
                             if (pair.text) {
-                                messages.push(pair.text)
+                                // 处理文本中的 CQ at 码
+                                if (groupConfig.trueAtUser) {
+                                    const processedText = processCQAtCode(pair.text)
+                                    messages.push(...processedText)
+                                } else {
+                                    messages.push(pair.text)
+                                }
                             }
                             messages.push(segment.image(`base64://${pair.image.replace(/data:image\/\w+;base64,/g, "")}`))
                         })
@@ -288,11 +348,23 @@ export class groupSayHello extends plugin {
                         imageBase64.forEach((imgData) => {
                             messages.push(segment.image(`base64://${imgData.replace(/data:image\/\w+;base64,/g, "")}`))
                         })
-                        messages.push(answer)
+                        // 处理文本中的 CQ at 码
+                        if (groupConfig.trueAtUser) {
+                            const processedText = processCQAtCode(answer)
+                            messages.push(...processedText)
+                        } else {
+                            messages.push(answer)
+                        }
                     }
                 } else {
                     // 没有图片，只发送文本
-                    messages.push(answer)
+                    // 处理文本中的 CQ at 码
+                    if (groupConfig.trueAtUser) {
+                        const processedText = processCQAtCode(answer)
+                        messages.push(...processedText)
+                    } else {
+                        messages.push(answer)
+                    }
                 }
 
                 // 发送打招呼消息

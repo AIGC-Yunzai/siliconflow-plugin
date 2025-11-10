@@ -1524,15 +1524,6 @@ export function supportGuoba() {
                 }
               },
               {
-                field: "groupPrompt",
-                label: "群单独提示词",
-                bottomHelpMessage: '除了接口中的系统提示词外，还可以在这里设置输入提示词。',
-                component: "Input",
-                componentProps: {
-                  placeholder: '请根据以下最近的群聊记录，生成一条像真人一样的回复，长度控制在50字以内，直接输出内容，不要加任何前缀或解释。',
-                },
-              },
-              {
                 field: 'usingAPI',
                 label: '使用接口',
                 bottomHelpMessage: "选择要使用的Gemini接口配置，需要先在 对话功能标签页中设置-[#gg]接口；（如果更改了接口顺序的话，记得也要修改此选项）",
@@ -1542,6 +1533,21 @@ export function supportGuoba() {
                     return { label: item.remark || `接口${index + 1}`, value: index + 1 }
                   }).concat([{ label: "使用默认配置", value: 0 }])
                 },
+              },
+              {
+                field: "groupPrompt",
+                label: "群单独提示词",
+                bottomHelpMessage: '除了接口中的系统提示词外，还可以在这里设置输入提示词。',
+                component: "Input",
+                componentProps: {
+                  placeholder: '请根据以下最近的群聊记录，生成一条像真人一样的回复，长度控制在50字以内，直接输出内容，不要加任何前缀或解释。',
+                },
+              },
+              {
+                field: 'trueAtUser',
+                label: 'At用户',
+                bottomHelpMessage: '在打招呼中真的At用户',
+                component: 'Switch'
               },
               {
                 field: "botQQArr",
