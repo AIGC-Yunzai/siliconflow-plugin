@@ -279,7 +279,11 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
             }
         } catch (error) {
             logger.error("[sf插件][即梦API]调用失败\n", error)
-            await e.reply(`[sf插件]调用即梦API时遇到错误：${error.message}`)
+            let errorMsg = `[sf插件]调用即梦API时遇到错误：${error.message}`
+            if (error.message.includes('fetch failed')) {
+                errorMsg += '\n\n请检查：\n1. API地址是否正确配置\n2. API服务器端口是否开放\n3. API服务是否正常运行\n4. 防火墙或代理设置是否阻止访问'
+            }
+            await e.reply(errorMsg)
             return false
         }
     }
