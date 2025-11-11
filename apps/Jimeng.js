@@ -71,6 +71,7 @@ export class Jimeng extends plugin {
 支持的ratio: 横图, 竖图, 方图, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3, 21:9
 负面提示词: ntags = [tags]
 参考图片强度: reference_strength = 1.0
+国际站支持的模型: nanobanana, jimeng-4.0
 
 示例：
 #即梦绘画 美丽的小少女，胶片感 竖图`

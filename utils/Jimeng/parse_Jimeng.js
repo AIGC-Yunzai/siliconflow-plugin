@@ -88,6 +88,19 @@ function reference_strengthParam(text) {
     }
     return { parameters, text }
 }
+export function modelParam(text) {
+    let parameters = {}
+    let model = undefined
+    if (text.match(/nanobanana/i)) {
+        model = "nanobanana"
+        text = text.replace(/nanobanana/ig, '')
+    }
+    else if (text.match(/jimeng-4.0/i)) {
+        model = "jimeng-4.0"
+        text = text.replace(/jimeng-4.0/ig, '')
+    }
+    return { model, text, parameters }
+}
 
 /**
  * @description: 处理prompt
@@ -122,7 +135,7 @@ export async function handleParam(e, text) {
     }
 
     let parameters = {}
-    let result = null
+    let result, model
 
     // 尺寸处理
     result = scaleParam(text)
@@ -144,6 +157,11 @@ export async function handleParam(e, text) {
     result = video_durationParam(text)
     parameters = Object.assign(parameters, result.parameters)
     text = result.text
+    // model
+    result = modelParam(text)
+    model = result.model
+    parameters = Object.assign(parameters, result.parameters)
+    text = result.text
 
     // 正负词条处理
     try {
@@ -153,5 +171,5 @@ export async function handleParam(e, text) {
     }
     parameters = Object.assign(parameters, result.parameters)
     let input = result.input || undefined
-    return { parameters, input }
+    return { parameters, input, model }
 }
