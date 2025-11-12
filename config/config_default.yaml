@@ -122,3 +122,4 @@ Jimeng: {
     sessionid: "", # 支持轮询
     base_url: "http://localhost:5100",
   }
+presets: [] # 绘画预设

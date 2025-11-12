@@ -7,6 +7,7 @@ import {
 } from '../utils/getImg.js'
 import { handleParam } from '../utils/Jimeng/parse_Jimeng.js'
 import { memberControlProcess } from '../utils/memberControl.js'
+import { applyPresets } from '../utils/Presets.js'
 
 export class Jimeng extends plugin {
     constructor() {
@@ -92,6 +93,10 @@ export class Jimeng extends plugin {
 
         result_member.record();
 
+        // 处理预设
+        const presetResult = applyPresets(msg, config_date)
+        msg = presetResult.processedText
+
         // 处理 msg
         let param = await handleParam(e, msg)
 
@@ -165,7 +170,7 @@ export class Jimeng extends plugin {
 
                     // 构造回复消息
                     const str_1 = `@${e.sender.card || e.sender.nickname} 您的视频已生成完成：`
-                    const str_2 = `提示词：${revisedPrompt}`
+                    const str_2 = `提示词：${presetResult.replaceDisplay(revisedPrompt)}`
                     const imageCountStr = requestBody.filePaths ? `参考图片：${requestBody.filePaths.length}张` : '文生视频'
                     const str_3 = `模型：${requestBody.model}
 比例：${requestBody.ratio}
@@ -229,7 +234,7 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
 
                 // 构造回复消息
                 const str_1 = `@${e.sender.card || e.sender.nickname} 您的${isImg2Img ? "图生图" : "文生图"}已完成：`
-                const str_2 = `提示词：${requestBody.prompt}`
+                const str_2 = `提示词：${presetResult.replaceDisplay(requestBody.prompt)}`
                 const str_3 = `模型：${requestBody.model}
 比例：${requestBody.ratio}
 分辨率：${requestBody.resolution}

@@ -731,6 +731,38 @@ export function supportGuoba() {
           },
         },
         {
+          component: "Divider",
+          label: "绘画全局设置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "presets",
+          label: "绘画预设",
+          bottomHelpMessage: "支持 #sf绘画 #即梦",
+          component: "GSubForm",
+          componentProps: {
+            multiple: true,
+            schemas: [
+              {
+                field: "preset_name",
+                label: "预设名",
+                component: "Input",
+                required: true,
+                bottomHelpMessage: "将绘画输入文本中的 预设名 替换为 预设文本",
+              },
+              {
+                field: "preset_str",
+                label: "预设文本",
+                component: "Input",
+                // bottomHelpMessage: "将绘画输入文本中的预设名替换为预设文本",
+              },
+            ],
+          },
+        },
+        {
           label: '对话功能',
           component: 'SOFT_GROUP_BEGIN'
         },
@@ -1984,6 +2016,7 @@ export function supportGuoba() {
         config.autoRepeat_config = data['autoRepeat_config']
         config.Jimeng.unlimitedUsers = data['Jimeng.unlimitedUsers']
         config.Jimeng.onlyGroupID = data['Jimeng.onlyGroupID']
+        config.presets = data['presets']
 
         // 验证配置
         try {

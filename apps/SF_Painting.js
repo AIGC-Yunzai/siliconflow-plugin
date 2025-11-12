@@ -27,6 +27,7 @@ import {
     getChatHistory_w,
     buildChatHistoryPrompt,
 } from '../utils/onebotUtils.js'
+import { applyPresets } from '../utils/Presets.js'
 
 var Ws_Server = {};
 init_server();
@@ -566,13 +567,17 @@ export class SF_Painting extends plugin {
 
         let msg = e.msg.replace(/^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))(\n*)?/, '').trim()
 
+        // 处理预设
+        const presetResult = applyPresets(msg, config_date)
+        msg = presetResult.processedText
+
         // 处理 msg
         let param = await handleParam(e, msg)
 
         let userPrompt = param.input
         let finalPrompt = await this.txt2img_generatePrompt(e, userPrompt, config_date);
 
-        this.sf_send_pic(e, finalPrompt, this.get_use_sf_key(config_date.sf_keys), config_date, param, canImg2Img, souce_image_base64, userPrompt)
+        this.sf_send_pic(e, finalPrompt, this.get_use_sf_key(config_date.sf_keys), config_date, param, canImg2Img, souce_image_base64, presetResult.replaceDisplay(userPrompt))
         return true;
     }
 
@@ -1375,7 +1380,7 @@ export class SF_Painting extends plugin {
 图片大小：${param.parameters.width}x${param.parameters.height}
 生成时间：${data.timings.inference.toFixed(2)}秒
 种子：${data.seed}
-${e.sfRuntime.isgeneratePrompt === undefined ? "tags的额外触发词：\n 自动提示词[开|关]" : ""}`
+${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：自动提示词[开|关]" : ""}`
                 const str_3 = `图片URL：${imageUrl}`
 
                 // 发送图片
