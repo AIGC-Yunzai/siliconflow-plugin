@@ -32,7 +32,7 @@ export class Jimeng extends plugin {
 
     async call_Jimeng_Api(e) {
         const config_date = Config.getConfig()
-        if (!config_date.Jimeng.sessionid) {
+        if (!config_date.Jimeng.sessionid && !config_date.Jimeng.sessionid_ITN) {
             await e.reply('请先使用锅巴设置即梦 Sessionid')
             return false
         }
@@ -91,8 +91,6 @@ export class Jimeng extends plugin {
             }
         }
 
-        result_member.record();
-
         // 处理预设
         const presetResult = applyPresets(msg, Config.getConfig("presets"))
         msg = presetResult.processedText
@@ -147,7 +145,22 @@ export class Jimeng extends plugin {
         )
 
         try {
-            const sessionid = Config.get_random_Str(config_date.Jimeng.sessionid, "Jimeng-Sessionid");
+            // 根据模型选择 sessionid
+            let sessionid;
+            if (requestBody.model === "nanobanana") {
+                // nanobanana 模型只使用 sessionid_ITN
+                sessionid = Config.get_random_Str(config_date.Jimeng.sessionid_ITN, "Jimeng-Sessionid-ITN");
+                if (!sessionid)
+                    await e.reply('请先使用锅巴设置即梦国际站 Sessionid')
+            } else {
+                // 其他模型可以从 sessionid 和 sessionid_ITN 中随机选择
+                const combinedSessionids = [config_date.Jimeng.sessionid, config_date.Jimeng.sessionid_ITN]
+                    .filter(Boolean)
+                    .join(',');
+                sessionid = Config.get_random_Str(combinedSessionids, "Jimeng-Sessionid");
+            }
+
+            result_member.record();
 
             // 发送API请求
             const response = await fetch(apiEndpoint, {

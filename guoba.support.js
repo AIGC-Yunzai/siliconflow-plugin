@@ -686,6 +686,12 @@ export function supportGuoba() {
           component: "Input",
         },
         {
+          field: "Jimeng.sessionid_ITN",
+          label: "国际站Sessionid",
+          bottomHelpMessage: "同上，访问国际站 https://dreamina.capcut.com/ ；需要自行加上不同的前缀 us-your_session_id；仅当使用nanobanana时强制选择国际站Sessionid，否则Sessionid与国际站Sessionid共同轮询；若有多个 sessionid 用英文逗号分割",
+          component: "Input",
+        },
+        {
           field: 'Jimeng.cdtime',
           label: 'CD时间',
           helpMessage: '单位：秒',
@@ -2035,7 +2041,7 @@ export function supportGuoba() {
         try {
           Config.validateConfig(config)
         } catch (err) {
-          return Result.ok({}, '配置验证失败: ' + err.message)
+          return Result.error('配置验证失败: ' + err.message)
         }
 
         // 其他处理保持不变
@@ -2047,11 +2053,11 @@ export function supportGuoba() {
           const saved = Config.setConfig(config)
           const saved_presets = Config.setConfig(config_presets, "presets")
           if (!saved || !saved_presets) {
-            return Result.ok({}, '保存失败')
+            return Result.error('保存失败，请查看控制台')
           }
           return Result.ok({}, '保存成功~')
         } catch (err) {
-          return Result.ok({}, '保存失败: ' + err.message)
+          return Result.error('保存失败: ' + err.message)
         }
       },
     },
