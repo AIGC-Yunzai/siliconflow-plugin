@@ -27,7 +27,7 @@ import {
     getChatHistory_w,
     buildChatHistoryPrompt,
 } from '../utils/onebotUtils.js'
-import { applyPresets } from '../utils/Presets.js'
+import { applyPresets } from '../utils/applyPresets.js'
 
 var Ws_Server = {};
 init_server();

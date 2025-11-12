@@ -7,7 +7,7 @@ import {
 } from '../utils/getImg.js'
 import { handleParam } from '../utils/Jimeng/parse_Jimeng.js'
 import { memberControlProcess } from '../utils/memberControl.js'
-import { applyPresets } from '../utils/Presets.js'
+import { applyPresets } from '../utils/applyPresets.js'
 
 export class Jimeng extends plugin {
     constructor() {
@@ -15,7 +15,7 @@ export class Jimeng extends plugin {
             /** 功能名称 */
             name: 'sf插件-即梦api',
             /** 功能描述 */
-            dsc: '绘画',
+            dsc: '绘画/视频',
             event: 'message',
             /** 优先级，数字越小等级越高 */
             priority: 1011,
@@ -33,7 +33,7 @@ export class Jimeng extends plugin {
     async call_Jimeng_Api(e) {
         const config_date = Config.getConfig()
         if (!config_date.Jimeng.sessionid && !config_date.Jimeng.sessionid_ITN) {
-            await e.reply('请先使用锅巴设置即梦 Sessionid')
+            await e.reply('请先使用锅巴设置即梦 Sessionid', true)
             return false
         }
 
@@ -151,7 +151,7 @@ export class Jimeng extends plugin {
                 // nanobanana 模型只使用 sessionid_ITN
                 sessionid = Config.get_random_Str(config_date.Jimeng.sessionid_ITN, "Jimeng-Sessionid-ITN");
                 if (!sessionid)
-                    await e.reply('请先使用锅巴设置即梦国际站 Sessionid')
+                    await e.reply('请先使用锅巴设置即梦国际站 Sessionid', true)
             } else {
                 // 其他模型可以从 sessionid 和 sessionid_ITN 中随机选择
                 const combinedSessionids = [config_date.Jimeng.sessionid, config_date.Jimeng.sessionid_ITN]
@@ -159,6 +159,8 @@ export class Jimeng extends plugin {
                     .join(',');
                 sessionid = Config.get_random_Str(combinedSessionids, "Jimeng-Sessionid");
             }
+
+            e.reply("人家开始生成啦，请等待1-5分钟", true);
 
             result_member.record();
 
@@ -236,7 +238,7 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
                     return true
                 } else {
                     logger.error("[sf插件][即梦视频API]返回错误：\n", JSON.stringify(data, null, 2))
-                    await e.reply(`[sf插件]生成视频失败：${data.message || data.error || '未知错误'}`)
+                    await e.reply(`[sf插件]生成视频失败：${data.message || data.error || '未知错误'}`, true)
                     return false
                 }
             }
@@ -293,7 +295,7 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
                 return true
             } else {
                 logger.error("[sf插件][即梦API]返回错误：\n", JSON.stringify(data, null, 2))
-                await e.reply(`[sf插件]生成图片失败：${data.message || data.error || '未知错误'}`)
+                await e.reply(`[sf插件]生成图片失败：${data.message || data.error || '未知错误'}`, true)
                 return false
             }
         } catch (error) {
@@ -302,7 +304,7 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
             if (error.message.includes('fetch failed')) {
                 errorMsg += '\n\n请检查：\n1. API地址是否正确配置\n2. API服务器端口是否开放\n3. API服务是否正常运行\n4. 防火墙或代理设置是否阻止访问'
             }
-            await e.reply(errorMsg)
+            await e.reply(errorMsg, true)
             return false
         }
     }
