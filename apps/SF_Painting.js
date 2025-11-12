@@ -568,7 +568,7 @@ export class SF_Painting extends plugin {
         let msg = e.msg.replace(/^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))(\n*)?/, '').trim()
 
         // 处理预设
-        const presetResult = applyPresets(msg, config_date)
+        const presetResult = applyPresets(msg, Config.getConfig("presets"))
         msg = presetResult.processedText
 
         // 处理 msg

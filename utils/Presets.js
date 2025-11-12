@@ -38,8 +38,8 @@ export function applyPresets(text, config) {
         const presetName = preset.name.trim()
         const presetPrompt = preset.prompt.trim()
 
-        // 检查文本中是否包含预设名(支持多种分隔符)
-        const regex = new RegExp(`\\b${escapeRegExp(presetName)}\\b`, 'gi')
+        // 1. 检查文本中是否包含预设名(支持中文和英文) 2. 使用非贪婪匹配，确保精确匹配预设名
+        const regex = new RegExp(escapeRegExp(presetName), 'gi')
 
         if (regex.test(processedText)) {
             // 记录使用的预设

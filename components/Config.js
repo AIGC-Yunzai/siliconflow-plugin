@@ -29,6 +29,7 @@ class Config {
 
     this.initConfig()
     this.initConfig_fishAudio()
+    this.initConfig_presets()
     // this.initConfig_geminiModels()
 
     // 设置文件监听
@@ -51,6 +52,14 @@ class Config {
     let fishAudio_default_yaml = this.getDefConfig('fishAudio')
     let fishAudio_yaml = this.getConfig('fishAudio')
     this.setConfig(this.syncDefKeys(fishAudio_yaml, fishAudio_default_yaml), 'fishAudio', true)
+  }
+
+  initConfig_presets() {
+    // presets.yaml
+    this.checkCopyDef('presets')
+    let presets_default_yaml = this.getDefConfig('presets')
+    let presets_yaml = this.getConfig('presets')
+    this.setConfig(this.syncDefKeys(presets_yaml, presets_default_yaml), 'presets', true)
   }
 
   // initConfig_geminiModels() {
@@ -279,7 +288,8 @@ class Config {
       }
 
       // 验证配置
-      this.validateConfig(newConfig)
+      if (configName == 'config')
+        this.validateConfig(newConfig)
 
       // 仅在非初始化时处理 prompt 文件写入
       if (!skipCleanup) {

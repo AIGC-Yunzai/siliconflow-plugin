@@ -739,24 +739,24 @@ export function supportGuoba() {
           },
         },
         {
-          field: "presets",
+          field: "config_presets.presets",
           label: "绘画预设",
-          bottomHelpMessage: "支持 #sf绘画 #即梦",
+          bottomHelpMessage: "绘画预设目前支持 #sf绘画 #即梦",
           component: "GSubForm",
           componentProps: {
             multiple: true,
             schemas: [
               {
-                field: "preset_name",
+                field: "name",
                 label: "预设名",
                 component: "Input",
                 required: true,
                 bottomHelpMessage: "将绘画输入文本中的 预设名 替换为 预设文本",
               },
               {
-                field: "preset_str",
+                field: "prompt",
                 label: "预设文本",
-                component: "Input",
+                component: "InputTextArea",
                 // bottomHelpMessage: "将绘画输入文本中的预设名替换为预设文本",
               },
             ],
@@ -1994,17 +1994,29 @@ export function supportGuoba() {
       ],
       getConfigData() {
         let config = Config.getConfig()
+        config.config_presets = Config.getConfig("presets")
+
         return config
       },
 
       setConfigData(data, { Result }) {
         let config = {}
+        let config_presets = {}
+
+        // 根据 带点的路径 对 config 赋值
         for (let [keyPath, value] of Object.entries(data)) {
+          // 注意: data 并不存在 data['config_presets'] ，仅存在 带点的路径
+          if (keyPath.startsWith("config_presets.")) {
+            lodash.set(config_presets, keyPath.replace(/^config_presets\./, ""), value);
+            continue;
+          }
           lodash.set(config, keyPath, value)
         }
-        config = lodash.merge({}, Config.getConfig(), config)
 
-        // 直接赋值所有数组类型的配置项
+        config = lodash.merge({}, Config.getConfig(), config)
+        config_presets = lodash.merge({}, Config.getConfig("presets"), config_presets)
+
+        // 直接赋值所有数组类型的配置项，否则只可以添加不可以删除： lodash.merge 的机制问题，但是全局直接赋值会导致 1. 丢失未修改的字段；2. 破坏嵌套结构
         config.sf_keys = data['sf_keys']
         config.ss_APIList = data['ss_APIList']
         config.gg_APIList = data['gg_APIList']
@@ -2016,7 +2028,8 @@ export function supportGuoba() {
         config.autoRepeat_config = data['autoRepeat_config']
         config.Jimeng.unlimitedUsers = data['Jimeng.unlimitedUsers']
         config.Jimeng.onlyGroupID = data['Jimeng.onlyGroupID']
-        config.presets = data['presets']
+
+        config_presets.presets = data['config_presets.presets']
 
         // 验证配置
         try {
@@ -2032,7 +2045,8 @@ export function supportGuoba() {
 
         try {
           const saved = Config.setConfig(config)
-          if (!saved) {
+          const saved_presets = Config.setConfig(config_presets, "presets")
+          if (!saved || !saved_presets) {
             return Result.ok({}, '保存失败')
           }
           return Result.ok({}, '保存成功~')

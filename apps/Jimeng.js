@@ -94,7 +94,7 @@ export class Jimeng extends plugin {
         result_member.record();
 
         // 处理预设
-        const presetResult = applyPresets(msg, config_date)
+        const presetResult = applyPresets(msg, Config.getConfig("presets"))
         msg = presetResult.processedText
 
         // 处理 msg
