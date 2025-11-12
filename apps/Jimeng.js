@@ -185,7 +185,7 @@ export class Jimeng extends plugin {
 
                     // 构造回复消息
                     const str_1 = `@${e.sender.card || e.sender.nickname} 您的视频已生成完成：`
-                    const str_2 = `提示词：${presetResult.replaceDisplay(revisedPrompt)}`
+                    const str_2 = `提示词：\n${presetResult.originalText}`
                     const imageCountStr = requestBody.filePaths ? `参考图片：${requestBody.filePaths.length}张` : '文生视频'
                     const str_3 = `模型：${requestBody.model}
 比例：${requestBody.ratio}
@@ -249,11 +249,11 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
 
                 // 构造回复消息
                 const str_1 = `@${e.sender.card || e.sender.nickname} 您的${isImg2Img ? "图生图" : "文生图"}已完成：`
-                const str_2 = `提示词：${presetResult.replaceDisplay(requestBody.prompt)}`
+                const str_2 = `提示词：\n${presetResult.originalText}`
                 const str_3 = `模型：${requestBody.model}
 比例：${requestBody.ratio}
 分辨率：${requestBody.resolution}
-${isImg2Img ? `合成强度：${requestBody.sample_strength}\n` : ''}生成图片数量：${imageUrls.length}张
+${isImg2Img ? `合成强度：${requestBody.sample_strength || 1.0}\n` : ''}生成图片数量：${imageUrls.length}张
 ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString('zh-CN')}` : ''}`
 
                 // 根据简洁模式决定回复方式

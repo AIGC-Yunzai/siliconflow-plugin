@@ -577,7 +577,7 @@ export class SF_Painting extends plugin {
         let userPrompt = param.input
         let finalPrompt = await this.txt2img_generatePrompt(e, userPrompt, config_date);
 
-        this.sf_send_pic(e, finalPrompt, this.get_use_sf_key(config_date.sf_keys), config_date, param, canImg2Img, souce_image_base64, presetResult.replaceDisplay(userPrompt))
+        this.sf_send_pic(e, finalPrompt, this.get_use_sf_key(config_date.sf_keys), config_date, param, canImg2Img, souce_image_base64, presetResult.originalText)
         return true;
     }
 

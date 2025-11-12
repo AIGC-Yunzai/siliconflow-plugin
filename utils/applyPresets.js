@@ -6,14 +6,15 @@
  * @returns {object} 返回对象包含:
  *   - processedText: 处理后的文本(预设名替换为预设文本)
  *   - usedPresets: 使用过的预设数组 [{name, prompt}]
- *   - replaceDisplay: 替换显示文本的方法(text) => displayText
+ *   - originalText: 原始文本
  */
 export function applyPresets(text, config) {
+    let originalText = text || '';
     if (!text || typeof text !== 'string') {
         return {
             processedText: text || '',
             usedPresets: [],
-            replaceDisplay: (text) => text || ''
+            originalText
         }
     }
 
@@ -22,7 +23,7 @@ export function applyPresets(text, config) {
         return {
             processedText: text,
             usedPresets: [],
-            replaceDisplay: (text) => text || ''
+            originalText
         }
     }
 
@@ -52,26 +53,16 @@ export function applyPresets(text, config) {
 
             // 替换预设名为预设文本(用于API请求)
             processedText = processedText.replace(regex, presetPrompt)
-        }
-    }
 
-    // 返回替换显示文本的方法
-    const replaceDisplay = (text) => {
-        if (!text || usedPresets.length === 0) {
-            return text || ''
+            // 标记使用的预设
+            originalText = originalText.replace(regex, `{sf预设: ${presetName}}`)
         }
-        let displayText = text
-        for (const preset of usedPresets) {
-            const displayRegex = new RegExp(escapeRegExp(preset.prompt), 'gi')
-            displayText = displayText.replace(displayRegex, `{预设${preset.name}}`)
-        }
-        return displayText
     }
 
     return {
         processedText: processedText.trim(),
         usedPresets,
-        replaceDisplay
+        originalText
     }
 }
 
