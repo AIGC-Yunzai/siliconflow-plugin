@@ -150,8 +150,10 @@ export class Jimeng extends plugin {
             if (requestBody.model === "nanobanana") {
                 // nanobanana 模型只使用 sessionid_ITN
                 sessionid = Config.get_random_Str(config_date.Jimeng.sessionid_ITN, "Jimeng-Sessionid-ITN");
-                if (!sessionid)
-                    await e.reply('请先使用锅巴设置即梦国际站 Sessionid', true)
+                if (!sessionid) {
+                    e.reply('请先使用锅巴设置即梦国际站 Sessionid', true)
+                    return
+                }
             } else {
                 // 其他模型可以从 sessionid 和 sessionid_ITN 中随机选择
                 const combinedSessionids = [config_date.Jimeng.sessionid, config_date.Jimeng.sessionid_ITN]
@@ -160,8 +162,8 @@ export class Jimeng extends plugin {
                 sessionid = Config.get_random_Str(combinedSessionids, "Jimeng-Sessionid");
             }
 
-            if (!config_date.simpleMode)
-                e.reply("人家开始生成啦，请等待1-5分钟", true);
+            // if (!config_date.simpleMode)
+            e.reply("人家开始生成啦，请等待1-5分钟", true);
             logger.info(`[sf插件][Jimeng]开始执行:\n` + JSON.stringify(requestBody))
 
             result_member.record();

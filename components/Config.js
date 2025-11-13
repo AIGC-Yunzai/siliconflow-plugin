@@ -542,7 +542,7 @@ class Config {
 
     // 随机选择一个key
     const randomIndex = Math.floor(Math.random() * strArr.length);
-    logger.debug(`[SF插件]随机使用第${randomIndex + 1}个${funcName}: ${strArr[randomIndex].replace(/(.{7}).*(.{10})/, '$1****$2')}`);
+    logger.info(`[SF插件]随机使用第${randomIndex + 1}个${funcName}: ${strArr[randomIndex].replace(/(.{7}).*(.{10})/, '$1****$2')}`);
     return strArr[randomIndex];
   }
 
