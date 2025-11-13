@@ -168,15 +168,20 @@ export class Jimeng extends plugin {
 
             result_member.record();
 
-            // 发送API请求
+            // 发送API请求（设置20分钟超时）
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 20 * 60 * 1000); // 20分钟，否则默认5分钟不够等待
+
             const response = await fetch(apiEndpoint, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${sessionid}`
                 },
-                body: JSON.stringify(requestBody)
+                body: JSON.stringify(requestBody),
+                signal: controller.signal
             })
+            clearTimeout(timeoutId);
 
             const data = await response.json()
             logger.mark(`[即梦API]返回数据：\n${JSON.stringify(data)}`)
