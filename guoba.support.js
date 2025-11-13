@@ -757,7 +757,7 @@ export function supportGuoba() {
                 field: "prompt",
                 label: "预设文本",
                 component: "InputTextArea",
-                // bottomHelpMessage: "将绘画输入文本中的预设名替换为预设文本",
+                bottomHelpMessage: "支持的固定参数: 横图, 竖图, 方图, --1:1, --16:9, --9:16, reference_strength = 0.8 等",
               },
             ],
           },

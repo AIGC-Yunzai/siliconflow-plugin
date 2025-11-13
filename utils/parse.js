@@ -12,7 +12,15 @@ function scaleParam(text, e) {
         "长图": { height: 1216, width: 832 },
         "宽图": { height: 832, width: 1216 },
         "横图": { height: 832, width: 1216 },
-        "方图": { height: 1024, width: 1024 }
+        "方图": { height: 1024, width: 1024 },
+
+        "--1:1": { height: 1024, width: 1024 },
+        "--16:9": { height: 832, width: 1216 },
+        "--9:16": { height: 1216, width: 832 },
+
+        "--1：1": { height: 1024, width: 1024 },
+        "--16：9": { height: 832, width: 1216 },
+        "--9：16": { height: 1216, width: 832 },
     };
 
     let parameters = { height: 1024, width: 1024 };
@@ -103,11 +111,11 @@ function isGeneratePrompt(text, e) {
     }
 
     let parameters = {}
-    let generatePrompt = text.match(/自?动?提示词(开|关)/)?.[1]
+    let generatePrompt = text.match(/--自?动?提示词(开|关)/)?.[1]
     if (generatePrompt && e?.sfRuntime) {
         e.sfRuntime.isgeneratePrompt = generatePrompt === '开'
     }
-    text = text.replace(/自?动?提示词(开|关)/g, '')
+    text = text.replace(/--自?动?提示词(开|关)/g, '')
     return { parameters, text }
 }
 
@@ -149,7 +157,7 @@ export async function handleParam(e, text, skipImgModel = false) {
     if (!e) {
         throw new Error('参数e不能为空');
     }
-    
+
     // 确保text是字符串
     if (!text || typeof text !== 'string') {
         text = '';

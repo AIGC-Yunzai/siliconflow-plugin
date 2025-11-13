@@ -58,24 +58,24 @@ export class Jimeng extends plugin {
         let msg = e.msg.replace(/^#即梦(画图|绘图|绘画|视频)(\n*)?/, '').trim()
         if (msg === '帮助') {
             const helpMsg = isVideo ? `[sf插件][即梦视频API]帮助：
-支持的ratio: 横图, 竖图, 方图, 1:1, 4:3, 3:4, 16:9, 9:16, 21:9
+支持的ratio: 横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --21:9
  注意：在图生视频模式下（有图片输入时），ratio参数将被忽略，视频比例由输入图片的实际比例决定。
-支持的时长：5秒, 10秒
+支持的时长：--5秒, --10秒
 引用图片：
  无图片 → 文生视频模式
  1张图片 → 图生视频模式
  2张图片 → 首尾帧视频模式
 
 示例：
-#即梦视频 一个女人在花园里跳舞` : `[sf插件][即梦API]帮助：
+#即梦视频 一个女人在花园里跳舞 --9:16 --5秒` : `[sf插件][即梦API]帮助：
 默认的resolution: 2k
-支持的ratio: 横图, 竖图, 方图, 1:1, 4:3, 3:4, 16:9, 9:16, 3:2, 2:3, 21:9
+支持的ratio: 横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --3:2, --2:3, --21:9
 负面提示词: ntags = [tags]
-参考图片强度: reference_strength = 1.0
-国际站支持的模型: nanobanana, jimeng-4.0
+参考图片强度: reference_strength = 0.8
+国际站支持的模型: --nanobanana, --jimeng-4.0
 
 示例：
-#即梦绘画 美丽的小少女，胶片感 竖图`
+#即梦绘画 美丽的小少女，胶片感, 竖图, reference_strength = 0.8, --nanobanana, ntags = 丑陋的`
             e.reply(helpMsg, true);
             return
         }
@@ -121,7 +121,7 @@ export class Jimeng extends plugin {
             requestBody = {
                 "model": param.model || "jimeng-4.0",
                 "prompt": param.input || "美丽的少女，胶片感",
-                "images": [e.img[0]], // 使用第一张图片
+                "images": e.img,
                 "ratio": param.parameters.ratio || "1:1",
                 "resolution": param.parameters.resolution || "2k",
                 "negative_prompt": param.parameters.negative_prompt || undefined,

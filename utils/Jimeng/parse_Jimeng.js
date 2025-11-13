@@ -9,23 +9,23 @@ function scaleParam(text) {
         "横图": { ratio: "16:9" },
         "方图": { ratio: "1:1" },
 
-        "1:1": { ratio: "1:1" },
-        "4:3": { ratio: "4:3" },
-        "3:4": { ratio: "3:4" },
-        "16:9": { ratio: "16:9" },
-        "9:16": { ratio: "9:16" },
-        "3:2": { ratio: "3:2" },
-        "2:3": { ratio: "2:3" },
-        "21:9": { ratio: "21:9" },
+        "--1:1": { ratio: "1:1" },
+        "--4:3": { ratio: "4:3" },
+        "--3:4": { ratio: "3:4" },
+        "--16:9": { ratio: "16:9" },
+        "--9:16": { ratio: "9:16" },
+        "--3:2": { ratio: "3:2" },
+        "--2:3": { ratio: "2:3" },
+        "--21:9": { ratio: "21:9" },
 
-        "1：1": { ratio: "1:1" },
-        "4：3": { ratio: "4:3" },
-        "3：4": { ratio: "3:4" },
-        "16：9": { ratio: "16:9" },
-        "9：16": { ratio: "9:16" },
-        "3：2": { ratio: "3:2" },
-        "2：3": { ratio: "2:3" },
-        "21：9": { ratio: "21:9" },
+        "--1：1": { ratio: "1:1" },
+        "--4：3": { ratio: "4:3" },
+        "--3：4": { ratio: "3:4" },
+        "--16：9": { ratio: "16:9" },
+        "--9：16": { ratio: "9:16" },
+        "--3：2": { ratio: "3:2" },
+        "--2：3": { ratio: "2:3" },
+        "--21：9": { ratio: "21:9" },
     };
 
     let parameters = { ratio: "1:1" };
@@ -61,8 +61,8 @@ function stepsParam(text) {
 }
 function video_durationParam(text) {
     const duration = {
-        "5秒": { video_duration: 5 },
-        "10秒": { video_duration: 10 },
+        "--5秒": { video_duration: 5 },
+        "--10秒": { video_duration: 10 },
     };
 
     let parameters = {};
@@ -91,13 +91,13 @@ function reference_strengthParam(text) {
 export function modelParam(text) {
     let parameters = {}
     let model = undefined
-    if (text.match(/nanobanana/i)) {
+    if (text.match(/--nanobanana/i)) {
         model = "nanobanana"
-        text = text.replace(/nanobanana/ig, '')
+        text = text.replace(/--nanobanana/ig, '')
     }
-    else if (text.match(/jimeng-4.0/i)) {
+    else if (text.match(/--jimeng-4.0/i)) {
         model = "jimeng-4.0"
-        text = text.replace(/jimeng-4.0/ig, '')
+        text = text.replace(/--jimeng-4.0/ig, '')
     }
     return { model, text, parameters }
 }
