@@ -143,7 +143,7 @@ export async function getImgFrom_awaitContext(e, needImgLength, featureName = ""
   while (e.img.length < needImgLength) {
     const currentCount = e.img.length;
     const stillNeed = needImgLength - currentCount;
-    await e.reply(`[${featureName}]当前已有${currentCount}张图片，还需要${stillNeed}张图片，请在120秒内发送图片喵~`, true, { recallMsg: 115 });
+    await e.reply(`[${featureName}]当前已有${currentCount}张图片，还需要${stillNeed}张图片，请在120秒内发送图片喵~`, true, { recallMsg: 119 });
     const e_new = await context.awaitContext();
     if (e_new.img && e_new.img.length > 0) {
       // 将新获取的图片添加到现有图片数组中

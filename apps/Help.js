@@ -72,6 +72,16 @@ export class help extends plugin {
                         "desc": "指定绘画参数 [横图|竖图|方图|512*512|步数20]"
                     },
                     {
+                        "icon": 29,
+                        "title": "#dd [描述]",
+                        "desc": "使用openai格式的接口生成AI绘图"
+                    },
+                    {
+                        "icon": 10,
+                        "title": "#sf预设列表",
+                        "desc": "#sf预设添加 #sf预设删除"
+                    },
+                    {
                         "icon": 54,
                         "title": "#ss [对话]",
                         "desc": "可用指令：#sf结束[全部|ss|gg|dd]对话"
@@ -103,23 +113,8 @@ export class help extends plugin {
                     },
                     {
                         "icon": 9,
-                        "title": "#直链",
-                        "desc": "获取图片的直链地址"
-                    },
-                    {
-                        "icon": 10,
-                        "title": "#删除直链[图链]",
-                        "desc": "删除已上传的图片直链"
-                    },
-                    {
-                        "icon": 12,
-                        "title": "#设置直链域名 [域名]",
-                        "desc": "设置图片直链上传服务器域名"
-                    },
-                    {
-                        "icon": 29,
-                        "title": "#dd [描述]",
-                        "desc": "使用openai格式的接口生成AI绘图"
+                        "title": "#直链 #删除直链[图链]",
+                        "desc": "获取/删除图片的直链地址"
                     },
                 ],
             },

@@ -273,6 +273,59 @@ export function supportGuoba() {
         },
         {
           component: "Divider",
+          label: "绘画限制",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: 'sf_cdtime',
+          label: 'CD时间',
+          helpMessage: '单位：秒',
+          bottomHelpMessage: 'sf绘图/mj绘图 的CD时间，设置为0则无限制',
+          component: "InputNumber",
+          componentProps: {
+            min: 0,
+            step: 1,
+          },
+        },
+        {
+          field: 'sf_dailyLimit',
+          label: '次数限制',
+          bottomHelpMessage: 'sf绘图/mj绘图 的每日限制次数，设置为0则无限制，设置为-1则仅限无限制用户使用',
+          component: "InputNumber",
+          componentProps: {
+            min: -1,
+            step: 1,
+          },
+        },
+        {
+          field: 'sf_unlimitedUsers',
+          label: '无限制用户ID',
+          bottomHelpMessage: '主人与无限制用户无CD次数限制，填写用户ID/QQ号',
+          component: "GTags",
+          componentProps: {
+            placeholder: '请输入用户ID/QQ号',
+            allowAdd: true,
+            allowDel: true,
+            valueParser: ((value) => value.split(',') || []),
+          },
+        },
+        {
+          field: 'sf_onlyGroupID',
+          label: '白名单群',
+          bottomHelpMessage: '仅白名单群可以使用此接口，留空则所有群可用；私聊用群号8888代替',
+          component: "GTags",
+          componentProps: {
+            placeholder: '请输入群号',
+            allowAdd: true,
+            allowDel: true,
+            valueParser: ((value) => value.split(',') || []),
+          },
+        },
+        {
+          component: "Divider",
           label: "DD 绘图插件配置",
           componentProps: {
             orientation: "left",
@@ -585,65 +638,6 @@ export function supportGuoba() {
         },
         {
           component: "Divider",
-          label: "绘画全局设置",
-          componentProps: {
-            orientation: "left",
-            plain: true,
-          },
-        },
-        {
-          field: 'sf_cdtime',
-          label: 'CD时间',
-          helpMessage: '单位：秒',
-          bottomHelpMessage: 'sf绘图/mj绘图 的CD时间，设置为0则无限制',
-          component: "InputNumber",
-          componentProps: {
-            min: 0,
-            step: 1,
-          },
-        },
-        {
-          field: 'sf_dailyLimit',
-          label: '次数限制',
-          bottomHelpMessage: 'sf绘图/mj绘图 的每日限制次数，设置为0则无限制，设置为-1则仅限无限制用户使用',
-          component: "InputNumber",
-          componentProps: {
-            min: -1,
-            step: 1,
-          },
-        },
-        {
-          field: 'sf_unlimitedUsers',
-          label: '无限制用户ID',
-          bottomHelpMessage: '主人与无限制用户无CD次数限制，填写用户ID/QQ号',
-          component: "GTags",
-          componentProps: {
-            placeholder: '请输入用户ID/QQ号',
-            allowAdd: true,
-            allowDel: true,
-            valueParser: ((value) => value.split(',') || []),
-          },
-        },
-        {
-          field: 'sf_onlyGroupID',
-          label: '白名单群',
-          bottomHelpMessage: '仅白名单群可以使用此接口，留空则所有群可用；私聊用群号8888代替',
-          component: "GTags",
-          componentProps: {
-            placeholder: '请输入群号',
-            allowAdd: true,
-            allowDel: true,
-            valueParser: ((value) => value.split(',') || []),
-          },
-        },
-        {
-          field: "simpleMode",
-          label: "绘画简洁模式",
-          bottomHelpMessage: "开启后合并输出图片与prompt，且不提示进入绘画队列",
-          component: "Switch",
-        },
-        {
-          component: "Divider",
           label: "直链功能配置",
           componentProps: {
             orientation: "left",
@@ -688,7 +682,7 @@ export function supportGuoba() {
         {
           field: "Jimeng.sessionid_ITN",
           label: "国际站Sessionid",
-          bottomHelpMessage: "同上，访问国际站 https://dreamina.capcut.com/ ；需要自行加上不同的前缀 us-your_session_id；仅当使用nanobanana时强制选择国际站Sessionid，否则Sessionid与国际站Sessionid共同轮询；若有多个 sessionid 用英文逗号分割",
+          bottomHelpMessage: "同上，访问国际站 https://dreamina.capcut.com/ ；需要自行加上不同的前缀 us-your_session_id 或 hk- 或 jp- 或 sg- ；仅当使用nanobanana时强制选择国际站Sessionid，否则Sessionid与国际站Sessionid共同轮询；若有多个 sessionid 用英文逗号分割",
           component: "Input",
         },
         {
@@ -747,7 +741,7 @@ export function supportGuoba() {
         {
           field: "config_presets.presets",
           label: "绘画预设",
-          bottomHelpMessage: "绘画预设目前支持 #sf绘画 #即梦；可用指令：#sf预设列表",
+          bottomHelpMessage: "绘画预设目前支持 #sf绘画 #即梦；可用指令：#sf预设列表 #sf预设添加 #sf预设删除",
           component: "GSubForm",
           componentProps: {
             multiple: true,
@@ -767,6 +761,12 @@ export function supportGuoba() {
               },
             ],
           },
+        },
+        {
+          field: "simpleMode",
+          label: "绘画简洁模式",
+          bottomHelpMessage: "开启后合并输出图片与prompt，且不提示进入绘画队列",
+          component: "Switch",
         },
         {
           label: '对话功能',

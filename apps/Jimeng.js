@@ -160,7 +160,9 @@ export class Jimeng extends plugin {
                 sessionid = Config.get_random_Str(combinedSessionids, "Jimeng-Sessionid");
             }
 
-            e.reply("人家开始生成啦，请等待1-5分钟", true);
+            if (!config_date.simpleMode)
+                e.reply("人家开始生成啦，请等待1-5分钟", true);
+            logger.info(`[sf插件][Jimeng]开始执行:\n` + JSON.stringify(requestBody))
 
             result_member.record();
 
