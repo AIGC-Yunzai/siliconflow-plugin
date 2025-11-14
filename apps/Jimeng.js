@@ -4,6 +4,7 @@ import common from '../../../lib/common/common.js';
 import {
     parseSourceImg,
     url2Base64,
+    getImgFrom_awaitContext,
 } from '../utils/getImg.js'
 import { handleParam } from '../utils/Jimeng/parse_Jimeng.js'
 import { memberControlProcess } from '../utils/memberControl.js'
@@ -61,6 +62,7 @@ export class Jimeng extends plugin {
 支持的ratio: 横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --21:9
  注意：在图生视频模式下（有图片输入时），ratio参数将被忽略，视频比例由输入图片的实际比例决定。
 支持的时长：--5秒, --10秒
+上传图片数: --upimgs 2
 引用图片：
  无图片 → 文生视频模式
  1张图片 → 图生视频模式
@@ -71,6 +73,7 @@ export class Jimeng extends plugin {
 默认的resolution: 2k
 支持的ratio: 横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --3:2, --2:3, --21:9
 负面提示词: ntags = [tags]
+上传图片数: --upimgs 2
 参考图片强度: reference_strength = 0.8
 国际站支持的模型: --nanobanana, --jimeng-4.0
 
@@ -98,6 +101,13 @@ export class Jimeng extends plugin {
         // 处理 msg
         let param = await handleParam(e, msg)
 
+        // 要求上传更多图片
+        if (param.parameters.upimgs) {
+            await getImgFrom_awaitContext(e, param.parameters.upimgs, "upimgs", this)
+            if (e.img.length < param.parameters.upimgs)
+                return true;
+        }
+
         // 判断是否为图生图（非视频模式）
         const isImg2Img = !isVideo && e.img && e.img.length > 0
 
@@ -121,7 +131,7 @@ export class Jimeng extends plugin {
             requestBody = {
                 "model": param.model || "jimeng-4.0",
                 "prompt": param.input || "美丽的少女，胶片感",
-                "images": e.img,
+                "images": e.img.slice(0, 2),
                 "ratio": param.parameters.ratio || "1:1",
                 "resolution": param.parameters.resolution || "2k",
                 "negative_prompt": param.parameters.negative_prompt || undefined,
@@ -261,7 +271,7 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
                 const str_2 = `提示词：\n${presetResult.originalText}`
                 const str_3 = `模型：${requestBody.model}
 比例：${requestBody.ratio}
-分辨率：${requestBody.resolution}
+分辨率：${requestBody.resolution}${requestBody.images ? `\n参考图片：${requestBody.images.length}张` : ''}
 ${isImg2Img ? `合成强度：${requestBody.sample_strength || 1.0}\n` : ''}生成图片数量：${imageUrls.length}张
 ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString('zh-CN')}` : ''}`
 

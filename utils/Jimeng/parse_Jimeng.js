@@ -88,6 +88,18 @@ function reference_strengthParam(text) {
     }
     return { parameters, text }
 }
+/** 参考图片强度 */
+function callGetImgs(text) {
+    let parameters = {}
+    let upimgs = text.match(/(--)?(upimgs)\s?=?\s?([-+]?\d+(\.)?(\d+)?)/i)?.[3]
+    if (upimgs) {
+        parameters.upimgs = parseInt(Number(upimgs))
+        if (parameters.upimgs < 1) parameters.upimgs = 0
+        if (parameters.upimgs > 2) parameters.upimgs = 2
+        text = text.replace(/(--)?(upimgs)\s?=?\s?([-+]?\d+(\.)?(\d+)?)/ig, '')
+    }
+    return { parameters, text }
+}
 export function modelParam(text) {
     let parameters = {}
     let model = undefined
@@ -155,6 +167,10 @@ export async function handleParam(e, text) {
     text = result.text
     // 视频时长
     result = video_durationParam(text)
+    parameters = Object.assign(parameters, result.parameters)
+    text = result.text
+    // 上传图片数量
+    result = callGetImgs(text)
     parameters = Object.assign(parameters, result.parameters)
     text = result.text
     // model
