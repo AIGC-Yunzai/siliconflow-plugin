@@ -291,108 +291,111 @@ class Config {
       if (configName == 'config')
         this.validateConfig(newConfig)
 
-      // 仅在非初始化时处理 prompt 文件写入
-      if (!skipCleanup) {
-        // 检查是否需要更新ss默认prompt
-        if ('ss_Prompt' in config_data) {
-          const promptValue = typeof config_data.ss_Prompt === 'function' ? config_data.ss_Prompt() : config_data.ss_Prompt
-          fs.writeFileSync(
-            path.join(promptDir, 'ss_default.txt'),
-            promptValue ?? ''
-          )
-          delete newConfig.ss_Prompt
-        }
+      // 仅对 config 配置文件处理 prompt 相关逻辑
+      if (configName === 'config') {
+        // 仅在非初始化时处理 prompt 文件写入
+        if (!skipCleanup) {
+          // 检查是否需要更新ss默认prompt
+          if ('ss_Prompt' in config_data) {
+            const promptValue = typeof config_data.ss_Prompt === 'function' ? config_data.ss_Prompt() : config_data.ss_Prompt
+            fs.writeFileSync(
+              path.join(promptDir, 'ss_default.txt'),
+              promptValue ?? ''
+            )
+            delete newConfig.ss_Prompt
+          }
 
-        // 检查是否需要更新gg默认prompt
-        if ('gg_Prompt' in config_data) {
-          const promptValue = typeof config_data.gg_Prompt === 'function' ? config_data.gg_Prompt() : config_data.gg_Prompt
-          fs.writeFileSync(
-            path.join(promptDir, 'gg_default.txt'),
-            promptValue ?? ''
-          )
-          delete newConfig.gg_Prompt
-        }        // 保存ss接口prompt
-        if (config_data.ss_APIList) {
-          config_data.ss_APIList.forEach((api, index) => {
-            if (api.remark && 'prompt' in api) {
-              const promptValue = typeof api.prompt === 'function' ? api.prompt() : api.prompt
-              fs.writeFileSync(
-                path.join(promptDir, `ss_${api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_')}.txt`),
-                promptValue ?? ''
-              )
-              // 从 newConfig 中删除 prompt 字段
-              if (newConfig.ss_APIList && newConfig.ss_APIList[index]) {
+          // 检查是否需要更新gg默认prompt
+          if ('gg_Prompt' in config_data) {
+            const promptValue = typeof config_data.gg_Prompt === 'function' ? config_data.gg_Prompt() : config_data.gg_Prompt
+            fs.writeFileSync(
+              path.join(promptDir, 'gg_default.txt'),
+              promptValue ?? ''
+            )
+            delete newConfig.gg_Prompt
+          }        // 保存ss接口prompt
+          if (config_data.ss_APIList) {
+            config_data.ss_APIList.forEach((api, index) => {
+              if (api.remark && 'prompt' in api) {
+                const promptValue = typeof api.prompt === 'function' ? api.prompt() : api.prompt
+                fs.writeFileSync(
+                  path.join(promptDir, `ss_${api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_')}.txt`),
+                  promptValue ?? ''
+                )
+                // 从 newConfig 中删除 prompt 字段
+                if (newConfig.ss_APIList && newConfig.ss_APIList[index]) {
+                  delete newConfig.ss_APIList[index].prompt
+                }
+              }
+            })
+          }
+
+          // 保存gg接口prompt
+          if (config_data.gg_APIList) {
+            config_data.gg_APIList.forEach((api, index) => {
+              if (api.remark && 'prompt' in api) {
+                const promptValue = typeof api.prompt === 'function' ? api.prompt() : api.prompt
+                fs.writeFileSync(
+                  path.join(promptDir, `gg_${api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_')}.txt`),
+                  promptValue ?? ''
+                )
+                // 从 newConfig 中删除 prompt 字段
+                if (newConfig.gg_APIList && newConfig.gg_APIList[index]) {
+                  delete newConfig.gg_APIList[index].prompt
+                }
+              }
+            })
+          }
+        } else {
+          // 初始化时，只需要清理配置对象中的 getter 属性，不写入文件
+          if ('ss_Prompt' in config_data) {
+            delete newConfig.ss_Prompt
+          }
+          if ('gg_Prompt' in config_data) {
+            delete newConfig.gg_Prompt
+          }
+          if (newConfig.ss_APIList) {
+            newConfig.ss_APIList.forEach((api, index) => {
+              if (api && 'prompt' in api) {
                 delete newConfig.ss_APIList[index].prompt
               }
-            }
-          })
+            })
+          }
+          if (newConfig.gg_APIList) {
+            newConfig.gg_APIList.forEach((api, index) => {
+              if (api && 'prompt' in api) {
+                delete newConfig.gg_APIList[index].prompt
+              }
+            })
+          }
         }
 
-        // 保存gg接口prompt
-        if (config_data.gg_APIList) {
-          config_data.gg_APIList.forEach((api, index) => {
-            if (api.remark && 'prompt' in api) {
-              const promptValue = typeof api.prompt === 'function' ? api.prompt() : api.prompt
-              fs.writeFileSync(
-                path.join(promptDir, `gg_${api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_')}.txt`),
-                promptValue ?? ''
-              )
-              // 从 newConfig 中删除 prompt 字段
-              if (newConfig.gg_APIList && newConfig.gg_APIList[index]) {
-                delete newConfig.gg_APIList[index].prompt
+        // 清理已删除接口的prompt文件（仅在非初始化时执行）
+        if (!skipCleanup) {
+          const files = getAllFiles(promptDir).filter(f => f.endsWith('.txt'))
+          files.forEach(file => {
+            const fileName = path.basename(file, path.extname(file))
+            if (fileName === 'ss_default' || fileName === 'gg_default') {
+              return
+            }
+            // 处理ss接口文件
+            if (fileName.startsWith('ss_')) {
+              const remark = fileName.slice(3)
+              const exists = newConfig.ss_APIList?.some(api => api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_') === remark)
+              if (!exists) {
+                fs.unlinkSync(file)
+              }
+            }
+            // 处理gg接口文件
+            else if (fileName.startsWith('gg_')) {
+              const remark = fileName.slice(3)
+              const exists = newConfig.gg_APIList?.some(api => api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_') === remark)
+              if (!exists) {
+                fs.unlinkSync(file)
               }
             }
           })
         }
-      } else {
-        // 初始化时，只需要清理配置对象中的 getter 属性，不写入文件
-        if ('ss_Prompt' in config_data) {
-          delete newConfig.ss_Prompt
-        }
-        if ('gg_Prompt' in config_data) {
-          delete newConfig.gg_Prompt
-        }
-        if (newConfig.ss_APIList) {
-          newConfig.ss_APIList.forEach((api, index) => {
-            if (api && 'prompt' in api) {
-              delete newConfig.ss_APIList[index].prompt
-            }
-          })
-        }
-        if (newConfig.gg_APIList) {
-          newConfig.gg_APIList.forEach((api, index) => {
-            if (api && 'prompt' in api) {
-              delete newConfig.gg_APIList[index].prompt
-            }
-          })
-        }
-      }
-
-      // 清理已删除接口的prompt文件（仅在非初始化时执行）
-      if (!skipCleanup) {
-        const files = getAllFiles(promptDir).filter(f => f.endsWith('.txt'))
-        files.forEach(file => {
-          const fileName = path.basename(file, path.extname(file))
-          if (fileName === 'ss_default' || fileName === 'gg_default') {
-            return
-          }
-          // 处理ss接口文件
-          if (fileName.startsWith('ss_')) {
-            const remark = fileName.slice(3)
-            const exists = newConfig.ss_APIList?.some(api => api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_') === remark)
-            if (!exists) {
-              fs.unlinkSync(file)
-            }
-          }
-          // 处理gg接口文件
-          else if (fileName.startsWith('gg_')) {
-            const remark = fileName.slice(3)
-            const exists = newConfig.gg_APIList?.some(api => api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_') === remark)
-            if (!exists) {
-              fs.unlinkSync(file)
-            }
-          }
-        })
       }
 
       // 保存主配置

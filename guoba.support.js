@@ -2014,9 +2014,9 @@ export function supportGuoba() {
           // 注意: data 并不存在 data['config_presets'] ，仅存在 带点的路径
           if (keyPath.startsWith("config_presets.")) {
             lodash.set(config_presets, keyPath.replace(/^config_presets\./, ""), value);
-            continue;
+          } else {
+            lodash.set(config, keyPath, value)
           }
-          lodash.set(config, keyPath, value)
         }
 
         config = lodash.merge({}, Config.getConfig(), config)
@@ -2044,7 +2044,6 @@ export function supportGuoba() {
           return Result.error('配置验证失败: ' + err.message)
         }
 
-        // 其他处理保持不变
         config.sfBaseUrl = config.sfBaseUrl.replace(/\/$/, '')
         config.mj_apiBaseUrl = config.mj_apiBaseUrl.replace(/\/$/, '')
         config.mj_translationBaseUrl = config.mj_translationBaseUrl.replace(/\/$/, '')
