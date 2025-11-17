@@ -144,7 +144,7 @@ export class groupSayHello extends plugin {
                     logger.debug(`[群自动打招呼] 群 ${groupId} 概率判断未通过 (${randomValue.toFixed(2)} > ${replyRate})，跳过本次发送`)
                 }
             } catch (error) {
-                logger.error(`[群自动打招呼] 群 ${groupId} 发送失败: ${error}`)
+                logger.error(`[群自动打招呼] 群 ${groupConfig.groupId} 发送失败: ${error}`)
             }
         }
 
