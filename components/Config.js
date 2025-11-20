@@ -506,17 +506,17 @@ class Config {
 
   /** 验证配置文件 */
   validateConfig(config) {
-    const existingRemarks = new Set(['ss_default', 'gg_default']) // 预置的默认文件名
+    const existingRemarks = new Set(['ss_default', 'gg_default', 'dd_default']) // 预置的默认文件名
 
     // 检查ss_APIList
     if (config.ss_APIList && Array.isArray(config.ss_APIList)) {
       for (const api of config.ss_APIList) {
         if (!api.remark) {
-          throw new Error('SS接口配置缺少必填的备注(remark)字段')
+          throw new Error('SS接口 缺少 文件名')
         }
         const fileName = `ss_${api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_')}`
         if (existingRemarks.has(fileName)) {
-          throw new Error(`SS接口配置的备注"${api.remark}"重复`)
+          throw new Error(`SS接口配置的文件名"${api.remark}"重复`)
         }
         existingRemarks.add(fileName)
       }
@@ -526,11 +526,25 @@ class Config {
     if (config.gg_APIList && Array.isArray(config.gg_APIList)) {
       for (const api of config.gg_APIList) {
         if (!api.remark) {
-          throw new Error('GG接口配置缺少必填的备注(remark)字段')
+          throw new Error('GG接口 缺少 文件名')
         }
         const fileName = `gg_${api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_')}`
         if (existingRemarks.has(fileName)) {
-          throw new Error(`GG接口配置的备注"${api.remark}"重复`)
+          throw new Error(`GG接口配置的文件名"${api.remark}"重复`)
+        }
+        existingRemarks.add(fileName)
+      }
+    }
+
+    // 检查dd_APIList
+    if (config.dd_APIList && Array.isArray(config.dd_APIList)) {
+      for (const api of config.dd_APIList) {
+        if (!api.remark) {
+          throw new Error('DD接口 缺少 文件名')
+        }
+        const fileName = `dd_${api.remark.replace(/\\|\/|:|\*|\?|\"|<|>|\||\.$/g, '_')}`
+        if (existingRemarks.has(fileName)) {
+          throw new Error(`DD接口配置的文件名"${api.remark}"重复`)
         }
         existingRemarks.add(fileName)
       }
