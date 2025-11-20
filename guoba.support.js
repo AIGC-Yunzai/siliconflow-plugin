@@ -568,6 +568,7 @@ export function supportGuoba() {
                 required: true,
                 rules: [
                   { pattern: '^\\D', message: '自定义命令不能以数字开头（使用数字开头的指令将根据接口序号调用）' },
+                  { pattern: '^(?!(d|D))', message: '自定义命令不能与默认指令冲突' },
                 ],
                 bottomHelpMessage: "可选，设置后可用 #d命令名 来使用此接口，如设置为test则可用#dtest",
               },
@@ -628,7 +629,7 @@ export function supportGuoba() {
         {
           field: 'dd_usingAPI',
           label: '[#dd]使用接口',
-          bottomHelpMessage: "选择要使用的接口配置，必须选择一个接口才能使用绘图功能。其他用户可使用指令：#dd接口列表 #dd使用接口[数字]",
+          bottomHelpMessage: "选择要使用的接口配置，必须选择一个接口才能使用绘图功能。其他用户可使用指令：#sfdd接口列表 #sfdd使用接口[数字]",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.dd_APIList || []).map((item, index) => {
@@ -980,6 +981,7 @@ export function supportGuoba() {
                 required: true,
                 rules: [
                   { pattern: '^\\D', message: '自定义命令不能以数字开头（使用数字开头的指令将根据接口序号调用）' },
+                  { pattern: '^(?!(s|S))', message: '自定义命令不能与默认指令冲突' },
                 ],
                 bottomHelpMessage: "可选，设置后可用 #s命令名 来使用此接口，如设置为test则可用#stest，也可以使用#stest结束对话来结束此接口的对话",
               },
@@ -1286,6 +1288,7 @@ export function supportGuoba() {
                 required: true,
                 rules: [
                   { pattern: '^\\D', message: '自定义命令不能以数字开头（使用数字开头的指令将根据接口序号调用）' },
+                  { pattern: '^(?!(g|G))', message: '自定义命令不能与默认指令冲突' },
                 ],
                 bottomHelpMessage: "可选，设置后可用 #g命令名 来使用此接口，如设置为test则可用#gtest，也可以使用#gtest结束对话来结束此接口的对话",
               },
