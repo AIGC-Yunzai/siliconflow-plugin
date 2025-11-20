@@ -89,6 +89,8 @@ pip install aiohttp
 > 
 > 手办化ai生图配置教程：[gg&ss接口配置教程](./docs/openrouter_ai.md)
 > 
+> 魔塔绘画配置教程：[接入魔塔绘画API](./docs/moscope.md)
+> 
 > Gemini配置教程：已经内置[gemini](https://generativelanguage.googleapis.com)公益站，无需key直接使用
 > 
 

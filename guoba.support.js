@@ -1966,12 +1966,21 @@ export function supportGuoba() {
           }
         },
         {
-          field: 'mj_helper',
+          field: 'openrouter_helper',
           label: '手办化ai生图配置教程 🍉',
           component: 'Input',
           componentProps: {
             readonly: true,
             defaultValue: 'https://github.com/AIGC-Yunzai/siliconflow-plugin/blob/main/docs/openrouter_ai.md'
+          }
+        },
+        {
+          field: 'moscope_helper',
+          label: '魔塔绘画配置教程 🍇',
+          component: 'Input',
+          componentProps: {
+            readonly: true,
+            defaultValue: 'https://github.com/AIGC-Yunzai/siliconflow-plugin/blob/main/docs/moscope.md'
           }
         },
         {
