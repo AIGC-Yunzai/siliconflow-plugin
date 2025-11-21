@@ -5,6 +5,10 @@ import {
     getChatHistory_w,
     buildChatHistoryPrompt,
 } from '../utils/onebotUtils.js'
+import {
+    hidePrivacyInfo,
+    removeCQCode,
+} from '../utils/common.js'
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 const groupSayHello_Switch = Config.getConfig().groupSayHello?.enabled;
@@ -307,7 +311,7 @@ export class groupSayHello extends plugin {
             }
 
             // 调用generateGeminiPrompt
-            const { answer, sources, imageBase64, textImagePairs, isError } = await sfPainting.generateGeminiPrompt(
+            let { answer, sources, imageBase64, textImagePairs, isError } = await sfPainting.generateGeminiPrompt(
                 greetingPrompt,
                 ggBaseUrl,
                 ggKey,
@@ -319,9 +323,12 @@ export class groupSayHello extends plugin {
 
             // 如果返回错误,不发送打招呼消息
             if (isError) {
-                logger.error(`[群自动打招呼] Gemini 返回错误: ${answer}`)
+                logger.error(`[群自动打招呼] Gemini 返回错误: ${hidePrivacyInfo(answer)}`)
                 return false
             }
+
+            // 移除 CQ
+            answer = removeCQCode(answer);
 
             if (answer) {
                 // 构建消息数组

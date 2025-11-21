@@ -146,7 +146,7 @@ export function buildChatHistoryPrompt(chatHistory, prompt = "", botId = "") {
 
   prompt += `\n1. 你的ID号: ${botId}\n`
   prompt += `2. 当前时间: ${currentTime}\n`
-  prompt += `3. 你的回复中不要使用 CQ:reply\n`
+  // prompt += `3. 你的回复中不要使用 CQ:reply 或 CQ:image\n`
 
   if (chatHistory && chatHistory.length > 0) {
     prompt += `最近的聊天记录：\n`

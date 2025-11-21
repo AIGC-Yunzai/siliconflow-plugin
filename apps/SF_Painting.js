@@ -28,6 +28,10 @@ import {
     buildChatHistoryPrompt,
 } from '../utils/onebotUtils.js'
 import { applyPresets } from '../utils/applyPresets.js'
+import {
+    hidePrivacyInfo,
+    removeCQCode,
+} from '../utils/common.js'
 
 var Ws_Server = {};
 init_server();
@@ -912,13 +916,16 @@ export class SF_Painting extends plugin {
             mustReturnImgRetriesTimes: mustReturnImgRetriesTimes
         }
 
-        const { content: answer, imageBase64Array: generatedImageArray, isError } = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
+        let { content: answer, imageBase64Array: generatedImageArray, isError } = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
 
         // 如果是错误返回，不保存聊天记录，直接回复错误信息
         if (isError) {
-            await e.reply(answer, quoteMessage);
+            await e.reply(hidePrivacyInfo(answer), quoteMessage);
             return;
         }
+
+        // 移除 CQ
+        answer = removeCQCode(answer);
 
         // 处理思考过程
         let thinkingContent = '';
@@ -1659,13 +1666,16 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             mustReturnImgRetriesTimes: mustReturnImgRetriesTimes
         }
 
-        const { answer, sources, imageBase64, textImagePairs, isError } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
+        let { answer, sources, imageBase64, textImagePairs, isError } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
 
         // 如果是错误返回，不保存聊天记录，直接回复错误信息
         if (isError) {
-            await e.reply(answer, quoteMessage);
+            await e.reply(hidePrivacyInfo(answer), quoteMessage);
             return;
         }
+
+        // 移除 CQ
+        answer = removeCQCode(answer);
 
         // 保存AI回复
         if (config_date.gg_ss_useContext) {

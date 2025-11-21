@@ -4,6 +4,7 @@ import Config from '../components/Config.js'
 import common from '../../../lib/common/common.js';
 import { handleParam } from '../utils/parse.js'
 import { memberControlProcess } from '../utils/memberControl.js'
+import { hidePrivacyInfo } from '../utils/common.js'
 
 export class DD_Painting extends plugin {
     constructor() {
@@ -1003,7 +1004,7 @@ export class DD_Painting extends plugin {
             return true
         } catch (error) {
             logger.error('生成绘画时发生错误:', error)
-            await e.reply(`绘画生成失败: ${error.message || '未知错误'}`)
+            await e.reply(`绘画生成失败: ${hidePrivacyInfo(error.message) || '未知错误'}`)
             return false
         }
     }
@@ -1124,7 +1125,7 @@ export class DD_Painting extends plugin {
             return true
         } catch (error) {
             logger.error('生成绘画时发生错误:', error)
-            await e.reply(`绘画生成失败: ${error.message || '未知错误'}`, true)
+            await e.reply(`绘画生成失败: ${hidePrivacyInfo(error.message) || '未知错误'}`, true)
             return false
         }
     }
