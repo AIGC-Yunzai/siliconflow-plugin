@@ -701,7 +701,7 @@ export class SF_Painting extends plugin {
         const isMaster = e.isMaster
 
         // 获取接口配置
-        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false, enableImageUpload = true, mustNeedImgLength = 0, mustReturnImgRetriesTimes = 0
+        let use_sf_key = "", apiBaseUrl = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, forwardThinking = false, enableImageUpload = true, mustNeedImgLength = 0, mustReturnImgRetriesTimes = 0, paintModel = false
         let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], onlyGroupID = [], memberConfigName = 'ss_default', groupContextLength = 0
 
         // 根据用户身份选择使用的接口索引
@@ -731,6 +731,7 @@ export class SF_Painting extends plugin {
             forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
             mustNeedImgLength = (typeof apiConfig.mustNeedImgLength !== 'undefined') ? apiConfig.mustNeedImgLength : 0
             mustReturnImgRetriesTimes = (typeof apiConfig.mustReturnImgRetriesTimes !== 'undefined') ? apiConfig.mustReturnImgRetriesTimes : 0
+            paintModel = (typeof apiConfig.paintModel !== 'undefined') ? apiConfig.paintModel : false
             groupContextLength = (typeof apiConfig.groupContextLength !== 'undefined') ? apiConfig.groupContextLength : 0
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             forwardThinking = (typeof apiConfig.forwardThinking !== 'undefined') ? apiConfig.forwardThinking : false
@@ -837,6 +838,15 @@ export class SF_Painting extends plugin {
         result_member.record();
 
         let msg = e.msg.replace(/^#(ss|SS)/, '').trim()
+        /** 发送给AI的信息 */
+        let toAiMessage = msg;
+
+        // 处理预设
+        if (paintModel) {
+            const presetResult = applyPresets(toAiMessage, Config.getConfig("presets"))
+            toAiMessage = presetResult.processedText + "\n你将总是按照要求返回图片"
+            msg = presetResult.originalText
+        }
 
         // 如果有引用的文本,添加两个换行来分隔
         const quotedText = e.sourceMsg ? e.sourceMsg + '\n\n' : ''
@@ -847,7 +857,7 @@ export class SF_Painting extends plugin {
         let extractedContent = '';
         try {
             // 根据是否为图片模式决定是否在消息中显示提取的内容
-            const { message: processedMsg, extractedContent: extracted } = await processMessageWithUrls(msg, !config_date.ss_useMarkdown);
+            const { message: processedMsg, extractedContent: extracted } = await processMessageWithUrls(msg, false);
             msg = processedMsg;
             extractedContent = extracted;
 
@@ -859,9 +869,8 @@ export class SF_Painting extends plugin {
         } catch (error) {
             logger.error(`[SF插件][URL处理]处理URL时发生错误，将使用原始消息继续处理: ${error.message}`)
         }
-
-        // 如果是图片模式，在发送给AI时将提取的内容加回去
-        const aiMessage = config_date.ss_useMarkdown ? msg + extractedContent : msg;
+        // 发送给AI的信息（加上 url 提取的内容）
+        toAiMessage += extractedContent;
 
         // 保存用户消息到历史记录
         if (config_date.gg_ss_useContext) {
@@ -870,9 +879,9 @@ export class SF_Painting extends plugin {
             // 保存用户消息
             await saveContext(contextKey, {
                 role: 'user',
-                content: aiMessage,
-                extractedContent: extractedContent,
-                imageBase64: undefined,
+                content: toAiMessage,
+                // extractedContent: extractedContent, // 实际内容早就加在 toAiMessage 中了
+                // imageBase64: currentImages.length > 0 ? currentImages : undefined, // 不需要每次都让 AI 读取历史聊条的图片
                 sender: senderValue
             }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
         }
@@ -916,7 +925,8 @@ export class SF_Painting extends plugin {
             mustReturnImgRetriesTimes: mustReturnImgRetriesTimes
         }
 
-        let { content: answer, imageBase64Array: generatedImageArray, isError } = await this.generatePrompt(aiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
+        logger.info(`[sf prompt]${toAiMessage}`)
+        let { content: answer, imageBase64Array: generatedImageArray, isError } = await this.generatePrompt(toAiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
 
         // 如果是错误返回，不保存聊天记录，直接回复错误信息
         if (isError) {
@@ -954,7 +964,6 @@ export class SF_Painting extends plugin {
         }
 
         try {
-            // 如果有生成的图片，先发送图片
             if (generatedImageArray && generatedImageArray.length > 0) {
                 if (useMarkdown) {
                     // 在markdown模式下，将图片融入到markdown内容中
@@ -990,7 +999,9 @@ export class SF_Painting extends plugin {
                     }
                 } else {
                     // 非markdown模式，使用普通方式发送
-                    const replyArray = [cleanedAnswer];
+                    const replyArray = [];
+                    if (!paintModel)
+                        replyArray.push(cleanedAnswer)
                     generatedImageArray.forEach((imageBase64) => {
                         replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
                     });
@@ -1465,7 +1476,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         const isMaster = e.isMaster
 
         // 获取接口配置
-        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false, mustNeedImgLength = 0, mustReturnImgRetriesTimes = 0
+        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false, mustNeedImgLength = 0, mustReturnImgRetriesTimes = 0, paintModel = false
         let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], onlyGroupID = [], memberConfigName = 'gg_default', groupContextLength = 0
 
         // 根据用户身份选择使用的接口索引
@@ -1495,6 +1506,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             forwardMessage = (typeof apiConfig.forwardMessage !== 'undefined') ? apiConfig.forwardMessage : false
             mustNeedImgLength = (typeof apiConfig.mustNeedImgLength !== 'undefined') ? apiConfig.mustNeedImgLength : 0
             mustReturnImgRetriesTimes = (typeof apiConfig.mustReturnImgRetriesTimes !== 'undefined') ? apiConfig.mustReturnImgRetriesTimes : 0
+            paintModel = (typeof apiConfig.paintModel !== 'undefined') ? apiConfig.paintModel : false
             groupContextLength = (typeof apiConfig.groupContextLength !== 'undefined') ? apiConfig.groupContextLength : 0
             quoteMessage = (typeof apiConfig.quoteMessage !== 'undefined') ? apiConfig.quoteMessage : false
             useSearch = (typeof apiConfig.useSearch !== 'undefined') ? apiConfig.useSearch : false
@@ -1586,6 +1598,15 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         result_member.record();
 
         let msg = e.msg.replace(/^#(gg|GG)/, '').trim()
+        /** 发送给AI的信息 */
+        let toAiMessage = msg;
+
+        // 处理预设
+        if (paintModel) {
+            const presetResult = applyPresets(toAiMessage, Config.getConfig("presets"))
+            toAiMessage = presetResult.processedText + "\n你将总是按照要求返回图片"
+            msg = presetResult.originalText
+        }
 
         // 如果有引用的文本,添加两个换行来分隔
         const quotedText = e.sourceMsg ? e.sourceMsg + '\n\n' : ''
@@ -1596,7 +1617,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         let extractedContent = '';
         try {
             // 根据是否为图片模式决定是否在消息中显示提取的内容
-            const { message: processedMsg, extractedContent: extracted } = await processMessageWithUrls(msg, !config_date.gg_useMarkdown);
+            const { message: processedMsg, extractedContent: extracted } = await processMessageWithUrls(msg, false);
             msg = processedMsg;
             extractedContent = extracted;
 
@@ -1608,9 +1629,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         } catch (error) {
             logger.error(`[SF插件][URL处理]处理URL时发生错误，将使用原始消息继续处理: ${error.message}`)
         }
-
-        // 如果是图片模式，在发送给AI时将提取的内容加回去
-        const aiMessage = config_date.gg_useMarkdown ? msg + extractedContent : msg;
+        // 发送给AI的信息（加上 url 提取的内容）
+        toAiMessage += extractedContent;
 
         // 保存用户消息到历史记录
         if (config_date.gg_ss_useContext) {
@@ -1619,9 +1639,9 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             // 保存用户消息
             await saveContext(contextKey, {
                 role: 'user',
-                content: aiMessage,
-                extractedContent: extractedContent,
-                imageBase64: undefined,
+                content: toAiMessage,
+                // extractedContent: extractedContent, // 实际内容早就加在 toAiMessage 中了
+                // imageBase64: currentImages.length > 0 ? currentImages : undefined, // 不需要每次都让 AI 读取历史聊条的图片
                 sender: senderValue
             }, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
         }
@@ -1666,7 +1686,9 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             mustReturnImgRetriesTimes: mustReturnImgRetriesTimes
         }
 
-        let { answer, sources, imageBase64, textImagePairs, isError } = await this.generateGeminiPrompt(aiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
+        
+        logger.info(`[sf prompt]${toAiMessage}`)
+        let { answer, sources, imageBase64, textImagePairs, isError } = await this.generateGeminiPrompt(toAiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
 
         // 如果是错误返回，不保存聊天记录，直接回复错误信息
         if (isError) {
@@ -1688,7 +1710,6 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         }
 
         try {
-            // 如果有生成的图片，先发送图片
             if (imageBase64 && imageBase64.length > 0) {
                 if (useMarkdown) {
                     let imgMarkdown = "";
@@ -1745,8 +1766,17 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                         e.reply(await common.makeForwardMsg(e, forwardMsg, `回复${e.sender.card || e.sender.nickname || e.user_id}`));
                     }
                 } else {
+                    if (paintModel) {
+                        const replyArray = [];
+                        imageBase64.forEach((imageBase64) => {
+                            replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                        });
+                        await e.reply(replyArray, quoteMessage);
+                    }
                     // 非markdown模式，使用配对方式发送
-                    await this.sendPairedReply(e, textImagePairs, imageBase64, answer, quoteMessage);
+                    else {
+                        await this.sendPairedReply(e, textImagePairs, imageBase64, answer, quoteMessage);
+                    }
                 }
 
                 return true;

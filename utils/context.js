@@ -67,19 +67,19 @@ export async function saveContext(userId, message, promptNum = 0, type = '') {
 
         // 如果是群聊多人对话模式，添加用户信息
         if (config.groupMultiChat && message.role === 'user') {
-            const timestamp = new Date().toLocaleString('zh-CN', { 
-                year: 'numeric', 
-                month: '2-digit', 
+            const timestamp = new Date().toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
                 day: '2-digit',
-                hour: '2-digit', 
-                minute: '2-digit', 
+                hour: '2-digit',
+                minute: '2-digit',
                 second: '2-digit',
-                hour12: false 
+                hour12: false
             });
-            
+
             // 使用传入的sender信息
             const userName = message.sender || '未知用户';
-            
+
             // 在消息内容前添加用户信息和时间
             if (typeof message.content === 'string') {
                 message.content = `[${timestamp}] ${userName}：${message.content}`;
@@ -102,8 +102,8 @@ export async function saveContext(userId, message, promptNum = 0, type = '') {
         };
 
         // 记录要保存的消息内容
-        const content = typeof messageToSave.content === 'string' 
-            ? messageToSave.content 
+        const content = typeof messageToSave.content === 'string'
+            ? messageToSave.content
             : (messageToSave.content?.text || JSON.stringify(messageToSave.content));
         logger.debug(`[Context] ${content}`);
         if (messageToSave.imageBase64) {
@@ -150,7 +150,7 @@ export async function loadContext(userId, promptNum = 0, type = '') {
         // 使用新的pattern构造函数,传入type参数
         const pattern = buildRedisPattern(userId, promptNum, type)
         logger.debug(`[Context] 加载历史记录`);
-        
+
         const keys = await redis.keys(pattern)
         keys.sort((a, b) => {
             const timeA = parseInt(a.split(':')[3])
@@ -184,7 +184,7 @@ export async function clearContextByCount(userId, count = 1, promptNum = 0, type
         // 使用新的pattern构造函数,传入type参数
         const pattern = buildRedisPattern(userId, promptNum, type)
         logger.debug(`[Context] 清除${count}条历史记录`);
-        
+
         const keys = await redis.keys(pattern)
         keys.sort((a, b) => {
             const timeA = parseInt(a.split(':')[3])
@@ -192,16 +192,54 @@ export async function clearContextByCount(userId, count = 1, promptNum = 0, type
             return timeA - timeB // 按时间戳升序排序
         })
 
-        // 删除最近的 n 条消息
-        const keysToDelete = keys.slice(-count * 2)
+        // 获取最近的消息并检查配对情况
+        const recentKeys = keys.slice(-count * 2)
+        const keysToDelete = []
+
+        // 检查每条消息的角色
+        for (let i = recentKeys.length - 1; i >= 0 && keysToDelete.length < count * 2; i -= 2) {
+            const userKey = recentKeys[i]
+            const aiKey = recentKeys[i - 1]
+
+            // 获取用户消息
+            const userData = await redis.get(userKey)
+            if (!userData) continue
+
+            const userMsg = JSON.parse(userData)
+
+            // 检查是否为用户消息
+            if (userMsg.role === 'user') {
+                keysToDelete.push(userKey)
+
+                // 检查是否存在配对的AI回复
+                if (aiKey) {
+                    const aiData = await redis.get(aiKey)
+                    if (aiData) {
+                        const aiMsg = JSON.parse(aiData)
+                        if (aiMsg.role === 'assistant' || aiMsg.role === 'model') {
+                            // 存在配对的AI回复,一起删除
+                            keysToDelete.push(aiKey)
+                        }
+                    }
+                }
+            }
+
+            // 如果已经收集够数量,提前退出
+            if (keysToDelete.length >= count * 2 || (keysToDelete.length >= count && i === 0)) {
+                break
+            }
+        }
+
+        // 删除收集到的消息
         for (const key of keysToDelete) {
             await redis.del(key)
         }
 
-        logger.debug(`[Context] 已清除${keysToDelete.length}条记录`);
+        const actualDeletedCount = Math.ceil(keysToDelete.length / 2)
+        logger.debug(`[Context] 已清除${keysToDelete.length}条记录(${actualDeletedCount}轮对话)`);
         return {
             success: true,
-            deletedCount: keysToDelete.length / 2
+            deletedCount: actualDeletedCount
         }
     } catch (error) {
         logger.error('[Context] 清除历史对话失败:', error)
@@ -217,12 +255,12 @@ export async function clearUserContext(userId, promptNum = 0, type = '') {
     try {
         const pattern = buildRedisPattern(userId, promptNum, type)
         logger.debug(`[Context] 清除用户所有记录`);
-        
+
         const keys = await redis.keys(pattern)
         for (const key of keys) {
             await redis.del(key)
         }
-        
+
         logger.debug(`[Context] 已清除${keys.length}条记录`);
         return true
     } catch (error) {

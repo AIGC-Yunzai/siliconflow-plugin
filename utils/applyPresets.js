@@ -6,7 +6,7 @@
  * @returns {object} 返回对象包含:
  *   - processedText: 处理后的文本(预设名替换为预设文本)
  *   - usedPresets: 使用过的预设数组 [{name, prompt}]
- *   - originalText: 原始文本
+ *   - originalText: 处理后的文本(预设名替换为占位符： {sf预设: ${presetName}} )
  */
 export function applyPresets(text, config) {
     let originalText = text || '';

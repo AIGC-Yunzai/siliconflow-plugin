@@ -742,7 +742,7 @@ export function supportGuoba() {
         {
           field: "config_presets.presets",
           label: "绘画预设",
-          bottomHelpMessage: "绘画预设目前支持 #sf绘画 #即梦；可用指令：#sf预设列表 #sf预设添加 #sf预设删除",
+          bottomHelpMessage: "绘画预设目前支持 #sf绘画 #dd #即梦 #s（绘画模式） #g（绘画模式）；可用指令：#sf预设列表 #sf预设添加 #sf预设删除",
           component: "GSubForm",
           componentProps: {
             multiple: true,
@@ -954,6 +954,12 @@ export function supportGuoba() {
                   min: 0,
                   step: 1,
                 },
+              },
+              {
+                field: "paintModel",
+                label: "仅绘画模式",
+                component: "Switch",
+                bottomHelpMessage: "开启后改接口转为绘画模式：1.仅发送图片，不回复文字；2.可以使用 绘画功能-绘画全局设置-绘画预设；3.与图片对话模式不兼容",
               },
               {
                 field: "forwardThinking",
@@ -1269,6 +1275,12 @@ export function supportGuoba() {
                 },
               },
               {
+                field: "paintModel",
+                label: "仅绘画模式",
+                component: "Switch",
+                bottomHelpMessage: "开启后改接口转为绘画模式：1.仅发送图片，不回复文字；2.可以使用 绘画功能-绘画全局设置-绘画预设；3.与图片对话模式不兼容",
+              },
+              {
                 field: "useContext",
                 label: "上下文功能",
                 component: "Switch",
@@ -1567,7 +1579,7 @@ export function supportGuoba() {
               {
                 field: 'usingAPI',
                 label: '使用接口',
-                bottomHelpMessage: "选择要使用的Gemini接口配置，需要先在 对话功能标签页中设置-[#gg]接口；（如果更改了接口顺序的话，记得也要修改此选项）",
+                bottomHelpMessage: "选择要使用的Gemini接口配置，需要先在 对话功能标签页中设置-[#gg]接口，记得关闭接口中的“读取群聊天记录数”；（如果更改了接口顺序的话，记得也要修改此选项）",
                 component: 'Select',
                 componentProps: {
                   options: (Config.getConfig()?.gg_APIList || []).map((item, index) => {
