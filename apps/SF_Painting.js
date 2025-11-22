@@ -1060,6 +1060,7 @@ export class SF_Painting extends plugin {
     async generatePrompt(input, use_sf_key, config_date, forChat = false, apiBaseUrl = "", model = "", opt = {}, historyMessages = [], e) {
         // 获取重试次数配置
         const mustReturnImgRetriesTimes = opt.mustReturnImgRetriesTimes || 0;
+        const errorRetryTimes = opt.errorRetryTimes || 10; // 错误重试次数，默认10次
         const needRetryForImage = mustReturnImgRetriesTimes > 0;
 
         // 执行主要逻辑
@@ -1067,36 +1068,72 @@ export class SF_Painting extends plugin {
             return await this._generatePromptInternal(input, use_sf_key, config_date, forChat, apiBaseUrl, model, opt, historyMessages, e);
         };
 
-        // 如果需要重试检查图片
-        if (needRetryForImage) {
-            let lastResult = null;
-            for (let attempt = 0; attempt <= mustReturnImgRetriesTimes; attempt++) {
-                if (attempt > 0) {
-                    logger.info(`[sf插件][generatePrompt] 第 ${attempt} 次重试，原因：未返回图片`);
+        // 错误重试逻辑
+        let lastResult = null;
+        for (let errorAttempt = 0; errorAttempt <= errorRetryTimes; errorAttempt++) {
+            if (errorAttempt > 0) {
+                logger.info(`[sf插件][generatePrompt] 第 ${errorAttempt} 次错误重试`);
+                // 等待一段时间再重试，避免频繁请求
+                await new Promise(resolve => setTimeout(resolve, 1000 * errorAttempt));
+            }
+
+            // 如果需要重试检查图片
+            if (needRetryForImage) {
+                for (let attempt = 0; attempt <= mustReturnImgRetriesTimes; attempt++) {
+                    if (attempt > 0) {
+                        logger.info(`[sf插件][generatePrompt] 第 ${attempt} 次重试，原因：未返回图片`);
+                    }
+
+                    lastResult = await executeRequest();
+
+                    // 如果返回错误，跳出图片重试循环，进入错误重试
+                    if (lastResult.isError) {
+                        logger.warn(`[sf插件][generatePrompt] 检测到错误返回: ${lastResult.content}`);
+                        break;
+                    }
+
+                    // 如果返回了图片，直接返回结果
+                    if (lastResult.imageBase64Array && lastResult.imageBase64Array.length > 0) {
+                        if (attempt > 0) {
+                            logger.info(`[sf插件][generatePrompt] 重试成功，第 ${attempt} 次重试返回了图片`);
+                        }
+                        return lastResult;
+                    }
+
+                    // 如果还有重试次数，继续；否则返回最后的结果
+                    if (attempt < mustReturnImgRetriesTimes) {
+                        logger.debug(`[sf插件][generatePrompt] 未返回图片，准备重试 (${attempt + 1}/${mustReturnImgRetriesTimes})`);
+                    }
                 }
 
-                lastResult = await executeRequest();
-
-                // 如果返回了图片，直接返回结果
-                if (lastResult.imageBase64Array && lastResult.imageBase64Array.length > 0) {
-                    if (attempt > 0) {
-                        logger.info(`[sf插件][generatePrompt] 重试成功，第 ${attempt} 次重试返回了图片`);
+                // 如果不是错误，直接返回结果（可能是未返回图片的正常结果）
+                if (!lastResult.isError) {
+                    if (mustReturnImgRetriesTimes > 0) {
+                        logger.warn(`[sf插件][generatePrompt] 重试 ${mustReturnImgRetriesTimes} 次后仍未返回图片`);
                     }
                     return lastResult;
                 }
+            } else {
+                // 不需要检查图片，直接执行
+                lastResult = await executeRequest();
 
-                // 如果还有重试次数，继续；否则返回最后的结果
-                if (attempt < mustReturnImgRetriesTimes) {
-                    logger.debug(`[sf插件][generatePrompt] 未返回图片，准备重试 (${attempt + 1}/${mustReturnImgRetriesTimes})`);
+                // 如果没有错误，直接返回
+                if (!lastResult.isError) {
+                    return lastResult;
                 }
+
+                logger.warn(`[sf插件][generatePrompt] 检测到错误返回: ${lastResult.content}`);
             }
 
-            logger.warn(`[sf插件][generatePrompt] 重试 ${mustReturnImgRetriesTimes} 次后仍未返回图片`);
-            return lastResult;
+            // 如果还有错误重试次数，继续重试
+            if (errorAttempt < errorRetryTimes) {
+                logger.debug(`[sf插件][generatePrompt] 准备进行错误重试 (${errorAttempt + 1}/${errorRetryTimes})`);
+            }
         }
 
-        // 不需要重试，直接执行
-        return await executeRequest();
+        // 所有重试都失败了
+        logger.error(`[sf插件][generatePrompt] 错误重试 ${errorRetryTimes} 次后仍然失败`);
+        return lastResult;
     }
 
     /**
@@ -1686,7 +1723,6 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             mustReturnImgRetriesTimes: mustReturnImgRetriesTimes
         }
 
-        
         logger.info(`[sf prompt]${toAiMessage}`)
         let { answer, sources, imageBase64, textImagePairs, isError } = await this.generateGeminiPrompt(toAiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
 
@@ -1873,6 +1909,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
     async generateGeminiPrompt(input, ggBaseUrl, ggKey, config_date, opt = {}, historyMessages = [], e) {
         // 获取重试次数配置
         const mustReturnImgRetriesTimes = opt.mustReturnImgRetriesTimes || 0;
+        const errorRetryTimes = opt.errorRetryTimes || 10; // 错误重试次数，默认10次
         const needRetryForImage = mustReturnImgRetriesTimes > 0;
 
         // 执行主要逻辑
@@ -1880,36 +1917,72 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             return await this._generateGeminiPromptInternal(input, ggBaseUrl, ggKey, config_date, opt, historyMessages, e);
         };
 
-        // 如果需要重试检查图片
-        if (needRetryForImage) {
-            let lastResult = null;
-            for (let attempt = 0; attempt <= mustReturnImgRetriesTimes; attempt++) {
-                if (attempt > 0) {
-                    logger.info(`[sf插件][generateGeminiPrompt] 第 ${attempt} 次重试，原因：未返回图片`);
+        // 错误重试逻辑
+        let lastResult = null;
+        for (let errorAttempt = 0; errorAttempt <= errorRetryTimes; errorAttempt++) {
+            if (errorAttempt > 0) {
+                logger.info(`[sf插件][generateGeminiPrompt] 第 ${errorAttempt} 次错误重试`);
+                // 等待一段时间再重试，避免频繁请求
+                await new Promise(resolve => setTimeout(resolve, 1000 * errorAttempt));
+            }
+
+            // 如果需要重试检查图片
+            if (needRetryForImage) {
+                for (let attempt = 0; attempt <= mustReturnImgRetriesTimes; attempt++) {
+                    if (attempt > 0) {
+                        logger.info(`[sf插件][generateGeminiPrompt] 第 ${attempt} 次重试，原因：未返回图片`);
+                    }
+
+                    lastResult = await executeRequest();
+
+                    // 如果返回错误，跳出图片重试循环，进入错误重试
+                    if (lastResult.isError) {
+                        logger.warn(`[sf插件][generateGeminiPrompt] 检测到错误返回: ${lastResult.answer}`);
+                        break;
+                    }
+
+                    // 如果返回了图片，直接返回结果
+                    if (lastResult.imageBase64 && lastResult.imageBase64.length > 0) {
+                        if (attempt > 0) {
+                            logger.info(`[sf插件][generateGeminiPrompt] 重试成功，第 ${attempt} 次重试返回了图片`);
+                        }
+                        return lastResult;
+                    }
+
+                    // 如果还有重试次数，继续；否则返回最后的结果
+                    if (attempt < mustReturnImgRetriesTimes) {
+                        logger.debug(`[sf插件][generateGeminiPrompt] 未返回图片，准备重试 (${attempt + 1}/${mustReturnImgRetriesTimes})`);
+                    }
                 }
 
-                lastResult = await executeRequest();
-
-                // 如果返回了图片，直接返回结果
-                if (lastResult.imageBase64 && lastResult.imageBase64.length > 0) {
-                    if (attempt > 0) {
-                        logger.info(`[sf插件][generateGeminiPrompt] 重试成功，第 ${attempt} 次重试返回了图片`);
+                // 如果不是错误，直接返回结果（可能是未返回图片的正常结果）
+                if (!lastResult.isError) {
+                    if (mustReturnImgRetriesTimes > 0) {
+                        logger.warn(`[sf插件][generateGeminiPrompt] 重试 ${mustReturnImgRetriesTimes} 次后仍未返回图片`);
                     }
                     return lastResult;
                 }
+            } else {
+                // 不需要检查图片，直接执行
+                lastResult = await executeRequest();
 
-                // 如果还有重试次数，继续；否则返回最后的结果
-                if (attempt < mustReturnImgRetriesTimes) {
-                    logger.debug(`[sf插件][generateGeminiPrompt] 未返回图片，准备重试 (${attempt + 1}/${mustReturnImgRetriesTimes})`);
+                // 如果没有错误，直接返回
+                if (!lastResult.isError) {
+                    return lastResult;
                 }
+
+                logger.warn(`[sf插件][generateGeminiPrompt] 检测到错误返回: ${lastResult.answer}`);
             }
 
-            logger.warn(`[sf插件][generateGeminiPrompt] 重试 ${mustReturnImgRetriesTimes} 次后仍未返回图片`);
-            return lastResult;
+            // 如果还有错误重试次数，继续重试
+            if (errorAttempt < errorRetryTimes) {
+                logger.debug(`[sf插件][generateGeminiPrompt] 准备进行错误重试 (${errorAttempt + 1}/${errorRetryTimes})`);
+            }
         }
 
-        // 不需要重试，直接执行
-        return await executeRequest();
+        // 所有重试都失败了
+        logger.error(`[sf插件][generateGeminiPrompt] 错误重试 ${errorRetryTimes} 次后仍然失败`);
+        return lastResult;
     }
 
     /**
