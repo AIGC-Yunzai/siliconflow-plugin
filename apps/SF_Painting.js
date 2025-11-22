@@ -367,6 +367,8 @@ export class SF_Painting extends plugin {
         // 检查消息中是否包含搜索关键词
         const hasSearchKeyword = searchKeywords.some(keyword => msg.includes(keyword))
 
+        e.sf_is_from_first_person_call = true;
+
         // 根据配置和搜索关键词决定使用哪个命令
         return (config.defaultCommand === 'ss' && !hasSearchKeyword) ? this.sf_chat(e, config) : this.gg_chat(e, config)
     }
@@ -683,6 +685,8 @@ export class SF_Painting extends plugin {
             logger.warn(err)
         }
 
+        e.sf_is_from_first_person_call = true;
+
         return config.defaultCommand === 'ss' ? this.sf_chat(e, config) : this.gg_chat(e, config)
     }
 
@@ -705,7 +709,7 @@ export class SF_Painting extends plugin {
         let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], onlyGroupID = [], memberConfigName = 'ss_default', groupContextLength = 0
 
         // 根据用户身份选择使用的接口索引
-        const usingApiIndex = isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)
+        const usingApiIndex = (isMaster || e.sf_is_from_first_person_call) ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)
 
         // 处理群聊多人对话
         let contextKey = e.user_id;
@@ -720,6 +724,7 @@ export class SF_Painting extends plugin {
             // 检查接口是否仅限主人使用
             if (!isMaster && apiConfig.isOnlyMaster) {
                 // await e.reply('该接口仅限主人使用')
+                logger.info("[sf对话]该接口仅限主人使用默认配置");
                 return false
             }
             // 只有当APIList中的字段有值时才使用该值
@@ -745,7 +750,7 @@ export class SF_Painting extends plugin {
             // 检查默认配置是否仅限主人使用
             if (!isMaster && config_date.ss_isOnlyMaster) {
                 // await e.reply('默认配置仅限主人使用')
-                logger.info("已开启仅限主人使用默认配置");
+                logger.info("[sf对话]已开启仅限主人使用默认配置");
                 return false
             }
             // 使用默认配置
@@ -765,9 +770,11 @@ export class SF_Painting extends plugin {
             await e.reply('请先设置API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
             return false
         } else {
+            // 使用绘画配置中的 sf key
             use_sf_key = this.get_use_sf_key(config_date.sf_keys)
             apiBaseUrl = config_date.sfBaseUrl
             model = config_date.translateModel
+            systemPrompt = config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese"
             useMarkdown = config_date.ss_useMarkdown
             forwardMessage = config_date.ss_forwardMessage
             mustNeedImgLength = config_date.ss_mustNeedImgLength
@@ -883,13 +890,13 @@ export class SF_Painting extends plugin {
                 // extractedContent: extractedContent, // 实际内容早就加在 toAiMessage 中了
                 // imageBase64: currentImages.length > 0 ? currentImages : undefined, // 不需要每次都让 AI 读取历史聊条的图片
                 sender: senderValue
-            }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
+            }, (isMaster || e.sf_is_from_first_person_call) ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
         }
 
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_ss_useContext) {
-            historyMessages = await loadContext(contextKey, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
+            historyMessages = await loadContext(contextKey, (isMaster || e.sf_is_from_first_person_call) ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
             logger.debug(`[SF插件][ss]加载历史对话: ${historyMessages.length} 条`)
         }
 
@@ -960,7 +967,7 @@ export class SF_Painting extends plugin {
                 role: 'assistant',
                 content: cleanedAnswer,
                 imageBase64: undefined
-            }, isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
+            }, (isMaster || e.sf_is_from_first_person_call) ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
         }
 
         try {
@@ -1517,7 +1524,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], onlyGroupID = [], memberConfigName = 'gg_default', groupContextLength = 0
 
         // 根据用户身份选择使用的接口索引
-        const usingApiIndex = isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
+        const usingApiIndex = (isMaster|| e.sf_is_from_first_person_call ) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
 
         // 处理群聊多人对话
         let contextKey = e.user_id;
@@ -1532,6 +1539,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             // 检查接口是否仅限主人使用
             if (!isMaster && apiConfig.isOnlyMaster) {
                 // await e.reply('该接口仅限主人使用')
+                logger.info("[sf对话]该接口仅限主人使用默认配置");
                 return false
             }
             // 只有当APIList中的字段有值时才使用该值
@@ -1557,7 +1565,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             // 检查默认配置是否仅限主人使用
             if (!isMaster && config_date.gg_isOnlyMaster) {
                 // await e.reply('默认配置仅限主人使用')
-                logger.info("已开启仅限主人使用默认配置");
+                logger.info("[sf对话]已开启仅限主人使用默认配置");
                 return false
             }
             // 使用默认配置
@@ -1680,13 +1688,13 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                 // extractedContent: extractedContent, // 实际内容早就加在 toAiMessage 中了
                 // imageBase64: currentImages.length > 0 ? currentImages : undefined, // 不需要每次都让 AI 读取历史聊条的图片
                 sender: senderValue
-            }, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
+            }, (isMaster|| e.sf_is_from_first_person_call ) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
         }
 
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_ss_useContext) {
-            historyMessages = await loadContext(contextKey, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
+            historyMessages = await loadContext(contextKey, (isMaster|| e.sf_is_from_first_person_call ) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
             logger.debug(`[SF插件][gg]加载历史对话: ${historyMessages.length} 条`)
         }
 
@@ -1742,7 +1750,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                 content: answer,
                 sources: sources,
                 imageBase64: undefined
-            }, isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
+            }, (isMaster|| e.sf_is_from_first_person_call ) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
         }
 
         try {
@@ -2362,12 +2370,10 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         }
     }
 
+    /** ^#(sf|SF)结束((ss|gg|dd)?)对话(\\d+)?.*$ */
     async sf_end_chat(e, config_date) {
         if (!config_date)
             config_date = Config.getConfig()
-
-        // 判断用户身份
-        const isMaster = e.isMaster
 
         // 获取目标用户ID和系统类型
         const match = e.msg.match(/^#(sf|SF)结束((ss|gg|dd)?)对话(?:(\d+))?$/)
@@ -2433,16 +2439,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             }
         }
 
-        // 设置对应的promptNum
-        let promptNum = 0
-        if (systemType === 'ss') {
-            promptNum = isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)
-        } else if (systemType === 'gg') {
-            promptNum = isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
-        }
-
         // 清除对话记录
-        const success = await clearUserContext(contextKey, promptNum, systemType)
+        const success = await clearUserContext(contextKey, systemType)
         if (success) {
             const contextStatus = config_date.gg_ss_useContext ? '' : '\n（上下文功能未开启）'
             const systemName = systemType ? systemType.toUpperCase() : '默认'
@@ -2479,9 +2477,9 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             const systemType = match[4]?.toLowerCase() // ss或gg或undefined
             let promptNum = 0
             if (systemType === 'ss') {
-                promptNum = isMaster ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date)
+                promptNum = config_date.ss_usingAPI
             } else if (systemType === 'gg') {
-                promptNum = isMaster ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
+                promptNum = config_date.gg_usingAPI
             }
             // 如果未指定系统类型，则使用默认配置(promptNum=0)
 

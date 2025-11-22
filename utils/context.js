@@ -251,10 +251,19 @@ export async function clearContextByCount(userId, count = 1, promptNum = 0, type
 }
 
 /** 清除指定用户的上下文记录 */
-export async function clearUserContext(userId, promptNum = 0, type = '') {
+export async function clearUserContext(userId, type = '') {
     try {
-        const pattern = buildRedisPattern(userId, promptNum, type)
-        logger.debug(`[Context] 清除用户所有记录`);
+        // 构造pattern以匹配该用户的所有promptNum，但区分type
+        let pattern
+        if (type) {
+            // 如果指定了type，匹配该用户所有promptNum下该type的记录
+            pattern = `sfplugin:llm:${userId}:*:${type}:*`
+        } else {
+            // 如果没有指定type，匹配该用户的所有记录（包括share01和所有promptNum）
+            pattern = `sfplugin:llm:${userId}:*`
+        }
+        
+        logger.debug(`[Context] 清除用户所有记录 - 用户ID: ${userId}, 类型: ${type || '全部'}`);
 
         const keys = await redis.keys(pattern)
         for (const key of keys) {

@@ -1048,7 +1048,7 @@ export function supportGuoba() {
         {
           field: 'ss_usingAPI',
           label: '[#ss]主人使用接口',
-          bottomHelpMessage: "选择主人要使用的接口配置；其他用户可使用指令：#sfss接口列表 #sfss使用接口[数字]",
+          bottomHelpMessage: "选择主人/BOT名称触发时要使用的接口配置；其他用户可使用指令：#sfss接口列表 #sfss使用接口[数字]",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.ss_APIList || []).map((item, index) => {
@@ -1361,7 +1361,7 @@ export function supportGuoba() {
         {
           field: 'gg_usingAPI',
           label: '[#gg]主人使用接口',
-          bottomHelpMessage: "选择主人要使用的接口配置；其他用户可使用指令：#sfgg接口列表 #sfgg使用接口[数字]",
+          bottomHelpMessage: "选择主人/BOT名称触发时要使用的接口配置；其他用户可使用指令：#sfgg接口列表 #sfgg使用接口[数字]",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.gg_APIList || []).map((item, index) => {
