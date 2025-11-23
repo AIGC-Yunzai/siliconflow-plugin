@@ -2105,7 +2105,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         const requestBody = {
             "contents": [],
             // 只要开启了搜索功能就添加搜索工具，不再限制模型，需要模型支持才可以联网
-            "tools": useSearch ? [{
+            "tools": opt.useSearch ? [{
                 "googleSearch": {}
             }] : [],
             // 添加安全设置
@@ -2139,7 +2139,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         const currentParts = [];
 
         // 如果使用 Vertex AI 格式
-        if (useVertexAI) {
+        if (opt.useVertexAI) {
             // Vertex AI 使用扁平的 contents 数组格式，可以直接混合字符串和对象
             const vertexContents = [];
 
