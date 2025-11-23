@@ -1241,6 +1241,12 @@ export function supportGuoba() {
                 bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型及后续支持该功能的模型",
               },
               {
+                field: "useVertexAI",
+                label: "使用Vertex AI格式",
+                component: "Switch",
+                bottomHelpMessage: "开启后将使用Google Vertex AI的请求格式，适用于通过Vertex AI访问Gemini的场景",
+              },
+              {
                 field: "enableImageUpload",
                 label: "图片上传功能",
                 component: "Switch",
@@ -1434,6 +1440,12 @@ export function supportGuoba() {
           field: "gg_useSearch",
           label: "[#gg]搜索功能",
           bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型及后续支持该功能的模型",
+          component: "Switch",
+        },
+        {
+          field: "gg_useVertexAI",
+          label: "[#gg]使用Vertex AI格式",
+          bottomHelpMessage: "开启后将使用Google Vertex AI的请求格式，适用于通过Vertex AI访问Gemini的场景",
           component: "Switch",
         },
         {
