@@ -2127,16 +2127,15 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                     "IMAGE"
                 ]
             };
-            // 文生图模式下不使用systemInstruction，将系统提示词放在用户输入中
-            logger.debug("[sf插件]启用文生图功能，系统提示词将放在用户输入中");
-        } else {
-            // 非文生图模式下使用systemInstruction
-            requestBody.systemInstruction = {
-                "parts": [{
-                    "text": systemPrompt
-                }]
-            };
+            logger.debug("[sf插件]启用文生图功能");
         }
+        
+        // 统一使用systemInstruction（包括文生图模式）
+        requestBody.systemInstruction = {
+            "parts": [{
+                "text": systemPrompt
+            }]
+        };
 
         // 添加历史对话
         if (historyMessages.length > 0) {
@@ -2151,12 +2150,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             // Vertex AI 使用扁平的 contents 数组格式，可以直接混合字符串和对象
             const vertexContents = [];
             
-            // 添加文本
-            if (enableImageGeneration) {
-                vertexContents.push(systemPrompt + "\n\n" + input);
-            } else {
-                vertexContents.push(input);
-            }
+            // 添加用户输入文本
+            vertexContents.push(input);
 
             // 如果有图片，添加图片（Vertex AI 使用 inlineData，驼峰命名）
             if (opt.currentImages && opt.currentImages.length > 0) {
@@ -2171,7 +2166,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             }
 
             // 添加历史图片（Vertex AI 格式）
-            if (!enableImageGeneration && opt.historyImages && opt.historyImages.length > 0) {
+            if (opt.historyImages && opt.historyImages.length > 0) {
                 opt.historyImages.forEach(image => {
                     vertexContents.push({
                         "inlineData": {
@@ -2186,49 +2181,28 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             requestBody.contents = vertexContents;
         } else {
             // 标准 Gemini API 格式
-            // 如果启用了文生图功能，将系统提示词放在用户输入中
-            if (enableImageGeneration) {
-                currentParts.push({
-                    "text": systemPrompt + "\n\n" + input
-                });
-                // 如果有图片，添加图片
-                if (opt.currentImages && opt.currentImages.length > 0) {
-                    currentParts.push({
-                        "text": "\n当前引用的图片:"
-                    });
-                    opt.currentImages.forEach(image => {
-                        currentParts.push({
-                            "inline_data": {
-                                "mime_type": "image/jpeg",
-                                "data": image
-                            }
-                        });
-                    });
-                }
-            } else {
-                // 先添加用户输入文本
-                currentParts.push({
-                    "text": input
-                });
+            // 添加用户输入文本
+            currentParts.push({
+                "text": input
+            });
 
-                // 如果有图片，添加图片
-                if (opt.currentImages && opt.currentImages.length > 0) {
+            // 如果有图片，添加图片
+            if (opt.currentImages && opt.currentImages.length > 0) {
+                currentParts.push({
+                    "text": "\n当前引用的图片:"
+                });
+                opt.currentImages.forEach(image => {
                     currentParts.push({
-                        "text": "\n当前引用的图片:"
+                        "inline_data": {
+                            "mime_type": "image/jpeg",
+                            "data": image
+                        }
                     });
-                    opt.currentImages.forEach(image => {
-                        currentParts.push({
-                            "inline_data": {
-                                "mime_type": "image/jpeg",
-                                "data": image
-                            }
-                        });
-                    });
-                }
+                });
             }
 
             // 添加历史图片
-            if (!enableImageGeneration && opt.historyImages && opt.historyImages.length > 0) {
+            if (opt.historyImages && opt.historyImages.length > 0) {
                 currentParts.push({
                     "text": "\n历史对话中的图片:"
                 });
