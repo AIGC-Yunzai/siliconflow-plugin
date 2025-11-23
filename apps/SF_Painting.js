@@ -724,7 +724,7 @@ export class SF_Painting extends plugin {
             // 检查接口是否仅限主人使用
             if (!isMaster && apiConfig.isOnlyMaster) {
                 // await e.reply('该接口仅限主人使用')
-                logger.info("[sf对话]该接口仅限主人使用默认配置");
+                logger.info("[sf对话]该接口仅限主人使用");
                 return false
             }
             // 只有当APIList中的字段有值时才使用该值
@@ -1159,9 +1159,8 @@ export class SF_Painting extends plugin {
         const userName = e?.sender?.card || e?.sender?.nickname || "用户";
         logger.debug(`[sf插件] 生成提示词 - 用户名: ${userName}`);
 
-        const systemPrompt = !forChat ?
-            config_date.sf_textToPaint_Prompt :
-            (opt.systemPrompt || config_date.ss_Prompt || "You are a helpful assistant, you prefer to speak Chinese").replace(/{{user_name}}/g, userName);
+        const systemPrompt = (!forChat ? config_date.sf_textToPaint_Prompt : opt.systemPrompt)
+            .replace(/{{user_name}}/g, userName);
         //logger.mark(`[sf插件] 生成提示词 - 系统提示词: ${systemPrompt}`);
 
         // 构造请求体
@@ -1520,11 +1519,11 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         const isMaster = e.isMaster
 
         // 获取接口配置
-        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false, mustNeedImgLength = 0, mustReturnImgRetriesTimes = 0, paintModel = false
+        let ggBaseUrl = "", ggKey = "", model = "", systemPrompt = "", useMarkdown = false, forwardMessage = true, quoteMessage = true, useSearch = true, enableImageGeneration = false, mustNeedImgLength = 0, mustReturnImgRetriesTimes = 0, paintModel = false, useVertexAI = false
         let cdtime = 0, dailyLimit = 0, unlimitedUsers = [], onlyGroupID = [], memberConfigName = 'gg_default', groupContextLength = 0
 
         // 根据用户身份选择使用的接口索引
-        const usingApiIndex = (isMaster|| e.sf_is_from_first_person_call ) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
+        const usingApiIndex = (isMaster || e.sf_is_from_first_person_call) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date)
 
         // 处理群聊多人对话
         let contextKey = e.user_id;
@@ -1539,7 +1538,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             // 检查接口是否仅限主人使用
             if (!isMaster && apiConfig.isOnlyMaster) {
                 // await e.reply('该接口仅限主人使用')
-                logger.info("[sf对话]该接口仅限主人使用默认配置");
+                logger.info("[sf对话]该接口仅限主人使用");
                 return false
             }
             // 只有当APIList中的字段有值时才使用该值
@@ -1561,6 +1560,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             dailyLimit = (typeof apiConfig.dailyLimit !== 'undefined') ? apiConfig.dailyLimit : dailyLimit
             unlimitedUsers = (typeof apiConfig.unlimitedUsers !== 'undefined') ? apiConfig.unlimitedUsers : unlimitedUsers
             onlyGroupID = (typeof apiConfig.onlyGroupID !== 'undefined') ? apiConfig.onlyGroupID : onlyGroupID
+            useVertexAI = (typeof apiConfig.useVertexAI !== 'undefined') ? apiConfig.useVertexAI : useVertexAI
         } else {
             // 检查默认配置是否仅限主人使用
             if (!isMaster && config_date.gg_isOnlyMaster) {
@@ -1581,6 +1581,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             quoteMessage = config_date.gg_quoteMessage
             useSearch = config_date.gg_useSearch
             enableImageGeneration = config_date.gg_enableImageGeneration
+            useVertexAI = config_date.useVertexAI
         }
 
         // CD次数限制
@@ -1688,13 +1689,13 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                 // extractedContent: extractedContent, // 实际内容早就加在 toAiMessage 中了
                 // imageBase64: currentImages.length > 0 ? currentImages : undefined, // 不需要每次都让 AI 读取历史聊条的图片
                 sender: senderValue
-            }, (isMaster|| e.sf_is_from_first_person_call ) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
+            }, (isMaster || e.sf_is_from_first_person_call) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
         }
 
         // 获取历史对话
         let historyMessages = []
         if (config_date.gg_ss_useContext) {
-            historyMessages = await loadContext(contextKey, (isMaster|| e.sf_is_from_first_person_call ) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
+            historyMessages = await loadContext(contextKey, (isMaster || e.sf_is_from_first_person_call) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
             logger.debug(`[SF插件][gg]加载历史对话: ${historyMessages.length} 条`)
         }
 
@@ -1724,11 +1725,12 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         const opt = {
             currentImages: currentImages.length > 0 ? currentImages : undefined,
             historyImages: historyImages.length > 0 ? historyImages : undefined,
-            systemPrompt: systemPrompt,
-            model: model,
-            useSearch: useSearch,
-            enableImageGeneration: enableImageGeneration,
-            mustReturnImgRetriesTimes: mustReturnImgRetriesTimes
+            systemPrompt,
+            model,
+            useSearch,
+            enableImageGeneration,
+            mustReturnImgRetriesTimes,
+            useVertexAI,
         }
 
         logger.info(`[sf prompt]${toAiMessage}`)
@@ -1750,7 +1752,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                 content: answer,
                 sources: sources,
                 imageBase64: undefined
-            }, (isMaster|| e.sf_is_from_first_person_call ) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
+            }, (isMaster || e.sf_is_from_first_person_call) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
         }
 
         try {
@@ -2008,16 +2010,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
 
         // 获取用户名并替换prompt中的变量
         const userName = e?.sender?.card || e?.sender?.nickname || "用户";
-        const systemPrompt = (opt.systemPrompt || config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。").replace(/{{user_name}}/g, userName);
-
-        // 从opt中获取useSearch，如果未定义则从config_date中获取
-        const useSearch = typeof opt.useSearch !== 'undefined' ? opt.useSearch : config_date.gg_useSearch;
-
-        // 从opt中获取enableImageGeneration，如果未定义则从config_date中获取
-        const enableImageGeneration = typeof opt.enableImageGeneration !== 'undefined' ? opt.enableImageGeneration : config_date.gg_enableImageGeneration || false;
-
-        // 从opt中获取useVertexAI，如果未定义则从config_date中获取
-        const useVertexAI = typeof opt.useVertexAI !== 'undefined' ? opt.useVertexAI : config_date.gg_useVertexAI || false;
+        const systemPrompt = opt.systemPrompt.replace(/{{user_name}}/g, userName);
 
         // // 安全设置常量定义
         // const SAFETY_SETTINGS_STRICT = [
@@ -2120,7 +2113,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         };
 
         // 如果启用了文生图功能，添加generation_config字段
-        if (enableImageGeneration) {
+        if (opt.enableImageGeneration) {
             requestBody.generation_config = {
                 "response_modalities": [
                     "TEXT",
@@ -2129,7 +2122,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             };
             logger.debug("[sf插件]启用文生图功能");
         }
-        
+
         // 统一使用systemInstruction（包括文生图模式）
         requestBody.systemInstruction = {
             "parts": [{
@@ -2149,7 +2142,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         if (useVertexAI) {
             // Vertex AI 使用扁平的 contents 数组格式，可以直接混合字符串和对象
             const vertexContents = [];
-            
+
             // 添加用户输入文本
             vertexContents.push(input);
 

@@ -1244,7 +1244,7 @@ export function supportGuoba() {
                 field: "useVertexAI",
                 label: "使用Vertex AI格式",
                 component: "Switch",
-                bottomHelpMessage: "开启后将使用Google Vertex AI的请求格式，适用于通过Vertex AI访问Gemini的场景",
+                bottomHelpMessage: "开启后将使用Google Vertex AI的请求格式（在Google Cloud Vertex AI平台上调用Gemini API的请求和响应格式），不知道是什么的话就关闭",
               },
               {
                 field: "enableImageUpload",
@@ -1445,7 +1445,7 @@ export function supportGuoba() {
         {
           field: "gg_useVertexAI",
           label: "[#gg]使用Vertex AI格式",
-          bottomHelpMessage: "开启后将使用Google Vertex AI的请求格式，适用于通过Vertex AI访问Gemini的场景",
+          bottomHelpMessage: "开启后将使用Google Vertex AI的请求格式（在Google Cloud Vertex AI平台上调用Gemini API的请求和响应格式），不知道是什么的话就关闭",
           component: "Switch",
         },
         {
