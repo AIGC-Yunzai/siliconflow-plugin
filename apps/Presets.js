@@ -19,13 +19,13 @@ export class Jimeng extends plugin {
                     fnc: 'showPresetsList'
                 },
                 {
-                    reg: '^#sf预设(添加|删除)',
+                    reg: '^#sf预设(添加|删除|查看)',
                     fnc: 'managePresetsList',
                     permission: 'master'
                 },
             ]
         })
-        this.helpMsg = `\n可用指令：\n #sf预设列表 #sf预设添加 #sf预设删除`
+        this.helpMsg = `\n可用指令：\n #sf预设列表 #sf预设[添加|删除|查看]`
     }
 
     async showPresetsList(e) {
@@ -46,9 +46,54 @@ export class Jimeng extends plugin {
 
     async managePresetsList(e) {
         const presets_config = Config.getConfig("presets")
-        const action = e.msg.match(/^#sf预设(添加|删除)/)[1]
+        const action = e.msg.match(/^#sf预设(添加|删除|查看)/)[1]
 
-        if (action === '添加') {
+        if (action === '查看') {
+            if (!presets_config.presets || presets_config.presets.length === 0) {
+                await e.reply("暂无预设列表" + this.helpMsg, true)
+                return
+            }
+
+            // 获取要查看的预设名称或序号
+            let viewTarget = e.msg.replace(/^#sf预设查看/, '').trim()
+
+            if (!viewTarget) {
+                // 显示预设列表
+                const presetList = presets_config.presets.map((preset, index) => {
+                    return `${index + 1}. ${preset.name}`
+                }).join('\n')
+                await e.reply(`请在120秒内发送要查看的预设名称或序号：\n${presetList}`, true, { recallMsg: 119 })
+                const e_view = await this.awaitContext()
+                if (!e_view || !e_view.msg) {
+                    await e.reply('[sf预设查看]操作已取消', true)
+                    return
+                }
+                viewTarget = e_view.msg.trim()
+                if (!viewTarget) {
+                    await e.reply('[sf预设查看]输入不能为空，操作已取消', true)
+                    return
+                }
+            }
+
+            // 判断是序号还是名称
+            let viewIndex = -1
+            const targetNumber = parseInt(viewTarget)
+            if (!isNaN(targetNumber) && targetNumber > 0 && targetNumber <= presets_config.presets.length) {
+                viewIndex = targetNumber - 1
+            } else {
+                viewIndex = presets_config.presets.findIndex(p => p.name === viewTarget)
+            }
+
+            if (viewIndex === -1) {
+                await e.reply(`未找到预设"${viewTarget}"` + this.helpMsg, true)
+                return
+            }
+
+            const viewedPreset = presets_config.presets[viewIndex]
+            const message = `预设名称：${viewedPreset.name}\n预设内容：\n${viewedPreset.prompt}`
+            await e.reply(message + this.helpMsg, true)
+
+        } else if (action === '添加') {
             // 获取预设名称
             let presetName = e.msg.replace(/^#sf预设添加/, '').trim()
 

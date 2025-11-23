@@ -742,7 +742,7 @@ export function supportGuoba() {
         {
           field: "config_presets.presets",
           label: "绘画预设",
-          bottomHelpMessage: "绘画预设目前支持 #sf绘画 #dd #即梦 #s（绘画模式） #g（绘画模式）；可用指令：#sf预设列表 #sf预设添加 #sf预设删除",
+          bottomHelpMessage: "绘画预设目前支持 #sf绘画 #dd #即梦 #s（仅绘画模式） #g（仅绘画模式）；可用指令：#sf预设列表 #sf预设[添加|删除|查看]",
           component: "GSubForm",
           componentProps: {
             multiple: true,

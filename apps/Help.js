@@ -79,7 +79,7 @@ export class help extends plugin {
                     {
                         "icon": 10,
                         "title": "#sf预设列表",
-                        "desc": "#sf预设添加 #sf预设删除"
+                        "desc": "#sf预设[添加|删除|查看]"
                     },
                     {
                         "icon": 54,
