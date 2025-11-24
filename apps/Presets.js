@@ -90,8 +90,9 @@ export class Jimeng extends plugin {
             }
 
             const viewedPreset = presets_config.presets[viewIndex]
-            const message = `预设名称：${viewedPreset.name}\n预设内容：\n${viewedPreset.prompt}`
-            await e.reply(message + this.helpMsg, true)
+            // const message = `预设名称：${viewedPreset.name}\n预设内容：\n${viewedPreset.prompt}`
+            const message = `${viewedPreset.prompt}`
+            await e.reply(message, true)
 
         } else if (action === '添加') {
             // 获取预设名称
