@@ -122,3 +122,13 @@ Jimeng: {
     sessionid: "", # 支持轮询
     base_url: "http://localhost:5100",
   }
+Doubao: {
+    base_url: "http://localhost:8000",
+    sessionid: "",
+    cdtime: 60,
+    dailyLimit: 0,
+    unlimitedUsers: [],
+    onlyGroupID: [],
+    contextExpiryHours: 24,
+    maxContextLength: 20,
+  }
