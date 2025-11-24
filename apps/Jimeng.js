@@ -26,7 +26,13 @@ export class Jimeng extends plugin {
                     reg: '^#即梦(画图|绘图|绘画|视频)',
                     /** 执行方法 */
                     fnc: 'call_Jimeng_Api'
-                }
+                },
+                // {
+                //     /** 命令正则匹配 */
+                //     reg: '^#即梦(聊天|对话)',
+                //     /** 执行方法 */
+                //     fnc: 'call_Jimeng_Chat'
+                // }
             ]
         })
     }
@@ -327,4 +333,192 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
             return false
         }
     }
+
+// 可以正常调用 即梦 的 Agent 对话模式，然后效果还不如直接 绘画 呢！而且并不支持返回文本和视频，只返回4张图片，封印！
+//     async call_Jimeng_Chat(e) {
+//         const config_date = Config.getConfig()
+//         if (!config_date.Jimeng.sessionid && !config_date.Jimeng.sessionid_ITN) {
+//             await e.reply('请先使用锅巴设置即梦 Sessionid', true)
+//             return false
+//         }
+
+//         // CD次数限制
+//         const memberConfig = {
+//             feature: 'Jimeng',
+//             cdTime: config_date.Jimeng.cdtime,
+//             dailyLimit: config_date.Jimeng.dailyLimit,
+//             unlimitedUsers: config_date.Jimeng.unlimitedUsers,
+//             onlyGroupID: config_date.Jimeng.onlyGroupID,
+//         }
+//         const result_member = await memberControlProcess(e, memberConfig);
+//         if (!result_member.allowed) {
+//             if (result_member.message)
+//                 e.reply(result_member.message, true, { recallMsg: 60 });
+//             return false;
+//         }
+
+//         let msg = e.msg.replace(/^#即梦(聊天|对话)(\n*)?/, '').trim()
+//         if (!msg) {
+//             await e.reply('请输入聊天内容，例如：#即梦聊天 画一幅山水画', true)
+//             return false
+//         }
+
+//         if (msg === '帮助') {
+//             const helpMsg = `[sf插件][即梦聊天API]帮助：
+// 使用即梦AI进行对话交流
+
+// 示例：
+// #即梦聊天 画一幅山水画
+// #即梦对话 帮我写一首诗`
+//             e.reply(helpMsg, true);
+//             return false
+//         }
+
+//         try {
+//             // 选择 sessionid
+//             const combinedSessionids = [config_date.Jimeng.sessionid, config_date.Jimeng.sessionid_ITN]
+//                 .filter(Boolean)
+//                 .join(',');
+//             const sessionid = Config.get_random_Str(combinedSessionids, "Jimeng-Sessionid");
+
+//             if (!sessionid) {
+//                 e.reply('请先使用锅巴设置即梦 Sessionid', true)
+//                 return false
+//             }
+
+//             e.reply("正在思考中，请稍候...", true);
+//             logger.info(`[sf插件][即梦聊天]开始执行: ${msg}`)
+
+//             result_member.record();
+
+//             // 构造请求体
+//             const requestBody = {
+//                 "model": "jimeng-4.0",
+//                 "messages": [
+//                     {
+//                         "role": "user",
+//                         "content": msg
+//                     }
+//                 ]
+//             }
+
+//             // 发送API请求（设置5分钟超时）
+//             const controller = new AbortController();
+//             const timeoutId = setTimeout(() => controller.abort(), 5 * 60 * 1000);
+
+//             const apiEndpoint = `${config_date.Jimeng.base_url}/v1/chat/completions`
+//             const response = await fetch(apiEndpoint, {
+//                 method: 'POST',
+//                 headers: {
+//                     'Content-Type': 'application/json',
+//                     'Authorization': `Bearer ${sessionid}`
+//                 },
+//                 body: JSON.stringify(requestBody),
+//                 signal: controller.signal
+//             })
+//             clearTimeout(timeoutId);
+
+//             const data = await response.json()
+//             logger.mark(`[即梦聊天API]返回数据：\n${JSON.stringify(data)}`)
+
+//             // 检查返回数据
+//             if (data?.choices && Array.isArray(data.choices) && data.choices.length > 0) {
+//                 const assistantMessage = data.choices[0].message
+//                 const content = assistantMessage.content
+
+//                 if (!content) {
+//                     await e.reply('[sf插件]即梦AI返回内容为空', true)
+//                     return false
+//                 }
+
+//                 // 检查内容中是否包含图片链接（Markdown格式）
+//                 const imageRegex = /!\[.*?\]\((https?:\/\/[^\)]+)\)/g
+//                 const imageMatches = [...content.matchAll(imageRegex)]
+
+//                 if (imageMatches.length > 0) {
+//                     // 包含图片
+//                     const forwardMsgs = []
+//                     forwardMsgs.push(`@${e.sender.card || e.sender.nickname} 即梦AI为您生成了${imageMatches.length}张图片：`)
+
+//                     // 提取并去除图片标记后的文本内容
+//                     let textContent = content.replace(imageRegex, '').trim()
+//                     if (textContent) {
+//                         forwardMsgs.push(textContent)
+//                     }
+
+//                     // 添加图片
+//                     for (const match of imageMatches) {
+//                         const imageUrl = match[1]
+//                         forwardMsgs.push({
+//                             ...segment.image(imageUrl),
+//                             origin: true
+//                         })
+//                     }
+
+// //                     // 添加使用信息
+// //                     if (data.usage) {
+// //                         const usageInfo = `Token使用情况：
+// // 输入: ${data.usage.prompt_tokens}
+// // 输出: ${data.usage.completion_tokens}
+// // 总计: ${data.usage.total_tokens}`
+// //                         forwardMsgs.push(usageInfo)
+// //                     }
+
+//                     // 根据简洁模式决定回复方式
+//                     if (config_date.simpleMode) {
+//                         const msgx = await common.makeForwardMsg(
+//                             e,
+//                             forwardMsgs,
+//                             `${e.sender.card || e.sender.nickname} 的即梦对话`
+//                         )
+//                         await e.reply(msgx)
+//                     } else {
+//                         // 非简洁模式：先发送转发消息，再逐个发送图片
+//                         const infoMsgs = [forwardMsgs[0]]
+//                         if (textContent) {
+//                             infoMsgs.push(textContent)
+//                         }
+//                         if (data.usage) {
+//                             infoMsgs.push(`Token使用情况：
+// 输入: ${data.usage.prompt_tokens}
+// 输出: ${data.usage.completion_tokens}
+// 总计: ${data.usage.total_tokens}`)
+//                         }
+
+//                         const msgx = await common.makeForwardMsg(
+//                             e,
+//                             infoMsgs,
+//                             `${e.sender.card || e.sender.nickname} 的即梦对话`
+//                         )
+//                         await e.reply(msgx)
+
+//                         // 发送所有生成的图片
+//                         for (const match of imageMatches) {
+//                             const imageUrl = match[1]
+//                             await e.reply({
+//                                 ...segment.image(imageUrl),
+//                                 origin: true
+//                             })
+//                         }
+//                     }
+//                 } else {
+//                     // 纯文本回复
+//                     const replyMsg = `@${e.sender.card || e.sender.nickname}\n${content}`
+//                     await e.reply(replyMsg, true)
+//                 } return true
+//             } else {
+//                 logger.error("[sf插件][即梦聊天API]返回错误：\n", JSON.stringify(data, null, 2))
+//                 await e.reply(`[sf插件]聊天失败：${data.message || data.error || '未知错误'}`, true)
+//                 return false
+//             }
+//         } catch (error) {
+//             logger.error("[sf插件][即梦聊天API]调用失败\n", error)
+//             let errorMsg = `[sf插件]调用即梦聊天API时遇到错误：${error.message}`
+//             if (error.message.includes('fetch failed')) {
+//                 errorMsg += '\n\n请检查：\n1. API地址是否正确配置\n2. API服务器端口是否开放\n3. API服务是否正常运行\n4. 防火墙或代理设置是否阻止访问'
+//             }
+//             await e.reply(errorMsg, true)
+//             return false
+//         }
+//     }
 }
