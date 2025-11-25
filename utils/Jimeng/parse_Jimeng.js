@@ -76,19 +76,7 @@ function video_durationParam(text) {
 
     return { parameters, text };
 }
-/** 参考图片强度 */
-function reference_strengthParam(text) {
-    let parameters = {}
-    let reference_strength = text.match(/(reference_strength)\s?=\s?([-+]?\d+(\.)?(\d+)?)/i)?.[2]
-    if (reference_strength) {
-        parameters.reference_strength = parseFloat(Number(reference_strength).toFixed(1))
-        if (parameters.reference_strength < 0.1) parameters.reference_strength = 0.1
-        if (parameters.reference_strength > 1) parameters.reference_strength = 1
-        text = text.replace(/(reference_strength)\s?=\s?([-+]?\d+(\.)?(\d+)?)/ig, '')
-    }
-    return { parameters, text }
-}
-/** 参考图片强度 */
+/** 参考图片数量 */
 function callGetImgs(text) {
     let parameters = {}
     let upimgs = text.match(/(--)?(upimgs)\s?=?\s?([-+]?\d+(\.)?(\d+)?)/i)?.[3]
@@ -100,6 +88,7 @@ function callGetImgs(text) {
     }
     return { parameters, text }
 }
+/** 模型 */
 export function modelParam(text) {
     let parameters = {}
     let model = undefined
@@ -112,6 +101,48 @@ export function modelParam(text) {
         text = text.replace(/--jimeng-4.0/ig, '')
     }
     return { model, text, parameters }
+}
+/**
+ * @description: 高级传参方法
+ * @param {string} text
+ * @return {object}
+ */
+function advancedParam(text) {
+    const parameters = {};
+    const regex = /(?:\s+)?--([a-zA-Z0-9_\.]+)\s+([^\s]+)/g;
+    const KEY_MAP = { w: 'width', h: 'height', sa: 'sampler', st: 'steps', g: 'scale', gr: 'cfg_rescale', ns: 'noise_schedule' };
+    const BLOCKED_PARAMS = ['model', 'width', 'height', 'steps', 'upimgs', 'duration', 'ratio'];
+
+    text = text.replace(regex, (match, key, value) => {
+        const originalKey = key;
+        key = KEY_MAP[key] || key;
+
+        if (BLOCKED_PARAMS.includes(originalKey) || BLOCKED_PARAMS.includes(key)) {
+            return '';
+        }
+
+        const keys = key.split('.');
+        let current = parameters;
+
+        for (let i = 0; i < keys.length - 1; i++) {
+            const part = keys[i];
+            current[part] = current[part] || {};
+            current = current[part];
+        }
+
+        let finalValue = value.trim();
+        if (finalValue === 'true' || finalValue === 'false') {
+            finalValue = finalValue === 'true' ? true : false;
+        } else if (!isNaN(Number(finalValue))) {
+            finalValue = Number(finalValue);
+        }
+
+        current[keys[keys.length - 1]] = finalValue;
+
+        return '';
+    });
+
+    return { parameters, text };
 }
 
 /**
@@ -161,10 +192,6 @@ export async function handleParam(e, text) {
     // result = seedParam(text)
     // parameters = Object.assign(parameters, result.parameters)
     // text = result.text
-    // 参考图片强度
-    result = reference_strengthParam(text)
-    parameters = Object.assign(parameters, result.parameters)
-    text = result.text
     // 视频时长
     result = video_durationParam(text)
     parameters = Object.assign(parameters, result.parameters)
@@ -176,6 +203,10 @@ export async function handleParam(e, text) {
     // model
     result = modelParam(text)
     model = result.model
+    parameters = Object.assign(parameters, result.parameters)
+    text = result.text
+    // 风格处理
+    result = advancedParam(text)
     parameters = Object.assign(parameters, result.parameters)
     text = result.text
 

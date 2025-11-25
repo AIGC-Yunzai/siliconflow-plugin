@@ -36,7 +36,7 @@ export async function saveConversationId(userId, conversationId) {
     
     try {
         await redis.set(key, conversationId, { EX: expirySeconds })
-        logger.info(`[豆包上下文] 保存对话ID: userId=${userId}, conversationId=${conversationId}`)
+        logger.debug(`[豆包上下文] 保存对话ID: userId=${userId}, conversationId=${conversationId}`)
         return true
     } catch (error) {
         logger.error('[豆包上下文] 保存对话ID失败:', error)

@@ -32,27 +32,6 @@ export class Jimeng extends plugin {
     }
 
     async call_Jimeng_Api(e) {
-        const config_date = Config.getConfig()
-        if (!config_date.Jimeng.sessionid && !config_date.Jimeng.sessionid_ITN) {
-            await e.reply('请先使用锅巴设置即梦 Sessionid', true)
-            return false
-        }
-
-        // CD次数限制
-        const memberConfig = {
-            feature: 'Jimeng',
-            cdTime: config_date.Jimeng.cdtime,
-            dailyLimit: config_date.Jimeng.dailyLimit,
-            unlimitedUsers: config_date.Jimeng.unlimitedUsers,
-            onlyGroupID: config_date.Jimeng.onlyGroupID,
-        }
-        const result_member = await memberControlProcess(e, memberConfig);
-        if (!result_member.allowed) {
-            if (result_member.message)
-                e.reply(result_member.message, true, { recallMsg: 60 });
-            return false;
-        }
-
         // 判断是否为视频生成
         const isVideo = /^#即梦视频/.test(e.msg)
 
@@ -72,15 +51,36 @@ export class Jimeng extends plugin {
 #即梦视频 一个女人在花园里跳舞 --9:16 --5秒` : `[sf插件][即梦API]帮助：
 默认的resolution: 2k
 支持的ratio: 横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --3:2, --2:3, --21:9
-负面提示词: ntags = [tags]
 上传图片数: --upimgs 2
-参考图片强度: reference_strength = 0.8
+参考图片强度: --reference_strength 0.8
 国际站支持的模型: --nanobanana, --jimeng-4.0
+负面提示词: ntags = [tags]
 
 示例：
 #即梦绘画 美丽的小少女，胶片感, 竖图, reference_strength = 0.8, --nanobanana, ntags = 丑陋的`
             e.reply(helpMsg, true);
-            return
+            return true
+        }
+
+        const config_date = Config.getConfig()
+        if (!config_date.Jimeng.sessionid && !config_date.Jimeng.sessionid_ITN) {
+            await e.reply('请先使用锅巴设置即梦 Sessionid', true)
+            return true
+        }
+
+        // CD次数限制
+        const memberConfig = {
+            feature: 'Jimeng',
+            cdTime: config_date.Jimeng.cdtime,
+            dailyLimit: config_date.Jimeng.dailyLimit,
+            unlimitedUsers: config_date.Jimeng.unlimitedUsers,
+            onlyGroupID: config_date.Jimeng.onlyGroupID,
+        }
+        const result_member = await memberControlProcess(e, memberConfig);
+        if (!result_member.allowed) {
+            if (result_member.message)
+                e.reply(result_member.message, true, { recallMsg: 60 });
+            return true;
         }
 
         // 处理引用图片
@@ -89,7 +89,7 @@ export class Jimeng extends plugin {
             let souce_image_base64 = await url2Base64(e.img[0], false, true)
             if (!souce_image_base64) {
                 e.reply('引用的图片地址已失效，请重新发送图片', true)
-                return false
+                return true
             }
         }
 
@@ -257,7 +257,7 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
                 } else {
                     logger.error("[sf插件][即梦视频API]返回错误：\n", JSON.stringify(data, null, 2))
                     await e.reply(`[sf插件]生成视频失败：${data.message || data.error || '未知错误'}`, true)
-                    return false
+                    return true
                 }
             }
 
@@ -314,7 +314,7 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
             } else {
                 logger.error("[sf插件][即梦API]返回错误：\n", JSON.stringify(data, null, 2))
                 await e.reply(`[sf插件]生成图片失败：${data.message || data.error || '未知错误'}`, true)
-                return false
+                return true
             }
         } catch (error) {
             logger.error("[sf插件][即梦API]调用失败\n", error)
@@ -323,7 +323,7 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
                 errorMsg += '\n\n请检查：\n1. API地址是否正确配置\n2. API服务器端口是否开放\n3. API服务是否正常运行\n4. 防火墙或代理设置是否阻止访问'
             }
             await e.reply(errorMsg, true)
-            return false
+            return true
         }
     }
 

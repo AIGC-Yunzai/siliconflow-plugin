@@ -742,7 +742,7 @@ export function supportGuoba() {
         {
           field: "Doubao.base_url",
           label: "豆包API地址",
-          bottomHelpMessage: "该功能需要自行部署Api，请根据说明文档 https://github.com/Bitsea1/doubao-free-api 部署后填入地址（如：http://localhost:8000）；支持对话和绘画功能，指令：#豆包对话[内容] #豆包绘画[tags] #豆包结束对话",
+          bottomHelpMessage: "该功能需要自行部署Api，请根据说明文档 https://github.com/Bitsea1/doubao-free-api 部署后填入地址（如：http://localhost:8000）；支持对话和绘画功能，指令：#豆包对话帮助 #豆包绘画帮助 #豆包结束对话",
           component: "Input",
           componentProps: {
             placeholder: 'http://localhost:8000',
