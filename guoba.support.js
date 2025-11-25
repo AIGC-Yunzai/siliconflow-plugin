@@ -766,16 +766,6 @@ export function supportGuoba() {
           },
         },
         {
-          field: 'Doubao.maxContextLength',
-          label: '最大上下文条数',
-          bottomHelpMessage: '保留的最大对话上下文消息条数',
-          component: "InputNumber",
-          componentProps: {
-            min: 1,
-            step: 1,
-          },
-        },
-        {
           field: 'Doubao.cdtime',
           label: 'CD时间',
           helpMessage: '单位：秒',

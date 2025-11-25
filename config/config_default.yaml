@@ -130,5 +130,4 @@ Doubao: {
     unlimitedUsers: [],
     onlyGroupID: [],
     contextExpiryHours: 24,
-    maxContextLength: 20,
   }
