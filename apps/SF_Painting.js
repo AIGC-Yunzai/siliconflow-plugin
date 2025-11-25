@@ -853,6 +853,7 @@ export class SF_Painting extends plugin {
             const presetResult = applyPresets(toAiMessage, Config.getConfig("presets"))
             toAiMessage = presetResult.processedText + "\n你将总是按照要求返回图片"
             msg = presetResult.originalText
+            e.reply(`人家开始生成啦，请等待1-10分钟`, true);
         }
 
         // 如果有引用的文本,添加两个换行来分隔
@@ -880,7 +881,7 @@ export class SF_Painting extends plugin {
         toAiMessage += extractedContent;
 
         // 保存用户消息到历史记录
-        if (config_date.gg_ss_useContext) {
+        if (config_date.gg_ss_useContext && !paintModel) {
             const senderValue = e.sender ? `${e.sender.card || e.sender.nickname}(${e.user_id})` : undefined;
 
             // 保存用户消息
@@ -895,7 +896,7 @@ export class SF_Painting extends plugin {
 
         // 获取历史对话
         let historyMessages = []
-        if (config_date.gg_ss_useContext) {
+        if (config_date.gg_ss_useContext && !paintModel) {
             historyMessages = await loadContext(contextKey, (isMaster || e.sf_is_from_first_person_call) ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
             logger.debug(`[SF插件][ss]加载历史对话: ${historyMessages.length} 条`)
         }
@@ -962,7 +963,7 @@ export class SF_Painting extends plugin {
         }
 
         // 保存AI回复
-        if (config_date.gg_ss_useContext) {
+        if (config_date.gg_ss_useContext && !paintModel) {
             await saveContext(contextKey, {
                 role: 'assistant',
                 content: cleanedAnswer,
@@ -970,6 +971,7 @@ export class SF_Painting extends plugin {
             }, (isMaster || e.sf_is_from_first_person_call) ? config_date.ss_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "ss", config_date), 'ss')
         }
 
+        // 发送消息
         try {
             if (generatedImageArray && generatedImageArray.length > 0) {
                 if (useMarkdown) {
@@ -1652,6 +1654,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             const presetResult = applyPresets(toAiMessage, Config.getConfig("presets"))
             toAiMessage = presetResult.processedText + "\n你将总是按照要求返回图片"
             msg = presetResult.originalText
+            e.reply(`人家开始生成啦，请等待1-10分钟`, true);
         }
 
         // 如果有引用的文本,添加两个换行来分隔
@@ -1679,7 +1682,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         toAiMessage += extractedContent;
 
         // 保存用户消息到历史记录
-        if (config_date.gg_ss_useContext) {
+        if (config_date.gg_ss_useContext && !paintModel) {
             const senderValue = e.sender ? `${e.sender.card || e.sender.nickname}(${e.user_id})` : undefined;
 
             // 保存用户消息
@@ -1694,7 +1697,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
 
         // 获取历史对话
         let historyMessages = []
-        if (config_date.gg_ss_useContext) {
+        if (config_date.gg_ss_useContext && !paintModel) {
             historyMessages = await loadContext(contextKey, (isMaster || e.sf_is_from_first_person_call) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
             logger.debug(`[SF插件][gg]加载历史对话: ${historyMessages.length} 条`)
         }
@@ -1746,7 +1749,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         answer = removeCQCode(answer);
 
         // 保存AI回复
-        if (config_date.gg_ss_useContext) {
+        if (config_date.gg_ss_useContext && !paintModel) {
             await saveContext(contextKey, {
                 role: 'assistant',
                 content: answer,
@@ -1755,6 +1758,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             }, (isMaster || e.sf_is_from_first_person_call) ? config_date.gg_usingAPI : e.sf_llm_user_API || await findIndexByRemark(e, "gg", config_date), 'gg')
         }
 
+        // 发送消息
         try {
             if (imageBase64 && imageBase64.length > 0) {
                 if (useMarkdown) {
