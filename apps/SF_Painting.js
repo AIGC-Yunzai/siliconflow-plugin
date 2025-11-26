@@ -859,6 +859,7 @@ export class SF_Painting extends plugin {
         // 如果有引用的文本,添加两个换行来分隔
         const quotedText = e.sourceMsg ? e.sourceMsg + '\n\n' : ''
         msg = quotedText + msg
+        toAiMessage = quotedText + toAiMessage
 
         // 处理消息中的URL
         // logger.mark(`[SF插件][URL处理]开始处理消息中的URL: ${msg}`)
@@ -1660,6 +1661,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         // 如果有引用的文本,添加两个换行来分隔
         const quotedText = e.sourceMsg ? e.sourceMsg + '\n\n' : ''
         msg = quotedText + msg
+        toAiMessage = quotedText + toAiMessage
 
         // 处理消息中的URL
         // logger.mark(`[SF插件][URL处理]开始处理消息中的URL: ${msg}`)
