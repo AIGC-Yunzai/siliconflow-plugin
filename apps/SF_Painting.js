@@ -520,7 +520,7 @@ export class SF_Painting extends plugin {
                     return
             }
             Config.setConfig(config_date)
-            await e.reply(`${type}已设置：${value}`)
+            await e.reply(`${type}已设置：${value}`, true)
         }
         return
     }
@@ -531,7 +531,7 @@ export class SF_Painting extends plugin {
         e.sfRuntime = { config: config_date }
 
         if (config_date.sf_keys.length == 0) {
-            await e.reply('请先设置画图API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
+            await e.reply('请先设置画图API Key。使用命令：#sf设置画图key [值]（仅限主人设置）', true)
             return false
         }
 
@@ -600,18 +600,18 @@ export class SF_Painting extends plugin {
         const use_sf_key = this.get_use_sf_key(config_date.sf_keys)
         if (e.sfRuntime.isgeneratePrompt ?? config_date.generatePrompt) {
             if (!onleReplyOnce && !config_date.simpleMode) {
-                e.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成提示词并绘图...`)
+                e.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成提示词并绘图...`, true)
                 onleReplyOnce++
             }
             finalPrompt = (await this.generatePrompt(userPrompt, use_sf_key, config_date))?.content
             if (!finalPrompt) {
-                e.reply('生成提示词失败，请稍后再试。')
+                e.reply('生成提示词失败，请稍后再试。', true)
                 return false
             }
             logger.debug("[sf插件]自动提示词生成：" + finalPrompt);
         }
         if (!onleReplyOnce && !config_date.simpleMode) {
-            e.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成图片...`)
+            e.reply(`@${e.sender.card || e.sender.nickname} ${e.user_id}正在为您生成图片...`, true)
             onleReplyOnce++
         }
         return finalPrompt;
@@ -723,7 +723,7 @@ export class SF_Painting extends plugin {
 
             // 检查接口是否仅限主人使用
             if (!isMaster && apiConfig.isOnlyMaster) {
-                // await e.reply('该接口仅限主人使用')
+                // await e.reply('该接口仅限主人使用', true)
                 logger.info("[sf对话]该接口仅限主人使用");
                 return false
             }
@@ -749,7 +749,7 @@ export class SF_Painting extends plugin {
         } else if (config_date.ss_apiBaseUrl) {
             // 检查默认配置是否仅限主人使用
             if (!isMaster && config_date.ss_isOnlyMaster) {
-                // await e.reply('默认配置仅限主人使用')
+                // await e.reply('默认配置仅限主人使用', true)
                 logger.info("[sf对话]已开启仅限主人使用默认配置");
                 return false
             }
@@ -767,7 +767,7 @@ export class SF_Painting extends plugin {
             forwardThinking = config_date.ss_forwardThinking
             enableImageUpload = config_date.ss_enableImageUpload
         } else if (config_date.sf_keys.length == 0) {
-            await e.reply('请先设置API Key。使用命令：#sf设置画图key [值]（仅限主人设置）')
+            await e.reply('请先设置API Key。使用命令：#sf设置画图key [值]（仅限主人设置）', true)
             return false
         } else {
             // 使用绘画配置中的 sf key
@@ -853,7 +853,7 @@ export class SF_Painting extends plugin {
             const presetResult = applyPresets(toAiMessage, Config.getConfig("presets"))
             toAiMessage = presetResult.processedText + "\n你将总是按照要求返回图片"
             msg = presetResult.originalText
-            e.reply(`人家开始生成啦，请等待1-10分钟`, true);
+            e.reply(`人家开始生成啦，请等待1-10分钟`, true, { recallMsg: 60 });
         }
 
         // 如果有引用的文本,添加两个换行来分隔
@@ -933,12 +933,12 @@ export class SF_Painting extends plugin {
             mustReturnImgRetriesTimes: mustReturnImgRetriesTimes
         }
 
-        logger.info(`[sf prompt]${toAiMessage}`)
+        logger.info(`[sf prompt]${'[图片]'.repeat(e.img?.length || 0)}${toAiMessage}`)
         let { content: answer, imageBase64Array: generatedImageArray, isError } = await this.generatePrompt(toAiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
 
         // 如果是错误返回，不保存聊天记录，直接回复错误信息
         if (isError) {
-            await e.reply(hidePrivacyInfo(answer), quoteMessage);
+            await e.reply(hidePrivacyInfo(answer), true);
             return;
         }
 
@@ -1051,7 +1051,7 @@ export class SF_Painting extends plugin {
             }
         } catch (error) {
             logger.error('[sf插件] 回复消息时发生错误：', error)
-            await e.reply('消息处理失败，请稍后再试')
+            await e.reply('消息处理失败，请稍后再试', true)
         }
     }
 
@@ -1491,7 +1491,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                 if (e.ws) {
                     this.sendError(e.ws, `生成图片失败：${data.message || '未知错误'}`);
                 } else {
-                    e.reply(`生成图片失败：${data.message || '未知错误'}`);
+                    e.reply(`生成图片失败：${data.message || '未知错误'}`, true);
                 }
                 return false;
             }
@@ -1500,7 +1500,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             if (e.ws) {
                 this.sendError(e.ws, '生成图片时遇到了一个错误，请稍后再试。');
             } else {
-                e.reply('生成图片时遇到了一个错误，请稍后再试。');
+                e.reply('生成图片时遇到了一个错误，请稍后再试。', true);
             }
             return false;
         }
@@ -1539,7 +1539,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
 
             // 检查接口是否仅限主人使用
             if (!isMaster && apiConfig.isOnlyMaster) {
-                // await e.reply('该接口仅限主人使用')
+                // await e.reply('该接口仅限主人使用', true)
                 logger.info("[sf对话]该接口仅限主人使用");
                 return false
             }
@@ -1566,7 +1566,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         } else {
             // 检查默认配置是否仅限主人使用
             if (!isMaster && config_date.gg_isOnlyMaster) {
-                // await e.reply('默认配置仅限主人使用')
+                // await e.reply('默认配置仅限主人使用', true)
                 logger.info("[sf对话]已开启仅限主人使用默认配置");
                 return false
             }
@@ -1654,7 +1654,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             const presetResult = applyPresets(toAiMessage, Config.getConfig("presets"))
             toAiMessage = presetResult.processedText + "\n你将总是按照要求返回图片"
             msg = presetResult.originalText
-            e.reply(`人家开始生成啦，请等待1-10分钟`, true);
+            e.reply(`人家开始生成啦，请等待1-10分钟`, true, { recallMsg: 60 });
         }
 
         // 如果有引用的文本,添加两个换行来分隔
@@ -1736,12 +1736,12 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             useVertexAI,
         }
 
-        logger.info(`[sf prompt]${toAiMessage}`)
+        logger.info(`[sf prompt]${'[图片]'.repeat(e.img?.length || 0)}${toAiMessage}`)
         let { answer, sources, imageBase64, textImagePairs, isError } = await this.generateGeminiPrompt(toAiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
 
         // 如果是错误返回，不保存聊天记录，直接回复错误信息
         if (isError) {
-            await e.reply(hidePrivacyInfo(answer), quoteMessage);
+            await e.reply(hidePrivacyInfo(answer), true);
             return;
         }
 
@@ -1867,7 +1867,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             }
         } catch (error) {
             logger.error('[sf插件] 回复消息时发生错误：', error)
-            await e.reply('消息处理失败，请稍后再试')
+            await e.reply('消息处理失败，请稍后再试', true)
         }
     }
 
@@ -2595,7 +2595,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         if (msg.length > 12) { // 标题占一行，默认配置占1行，所以是12
             await e.reply(await common.makeForwardMsg(e, msg.filter(Boolean), `${baseType}接口列表`))
         } else {
-            await e.reply(msg.join('\n'))
+            await e.reply(msg.join('\n'), true)
         }
     }
 
@@ -2623,7 +2623,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         if (!isMaster && index > 0) {
             const api = apiList[index - 1]
             if (api.isOnlyMaster) {
-                // await e.reply('该接口仅限主人使用')
+                // await e.reply('该接口仅限主人使用', true)
                 return false
             }
         }
@@ -2632,7 +2632,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         if (!isMaster && index === 0) {
             if ((type === 'ss' && config_date.ss_isOnlyMaster) ||
                 (type === 'gg' && config_date.gg_isOnlyMaster)) {
-                // await e.reply('默认配置仅限主人使用')
+                // await e.reply('默认配置仅限主人使用', true)
                 logger.info("已开启仅限主人使用默认配置");
                 return
             }
@@ -2699,7 +2699,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
 
                 // 检查接口权限
                 if (apiIndex >= 0 && !e.isMaster && apiList[apiIndex].isOnlyMaster) {
-                    // await e.reply('该接口仅限主人使用');
+                    // await e.reply('该接口仅限主人使用', true);
                     return false;
                 }
 
@@ -2707,7 +2707,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                 if (apiIndex === -1 && !e.isMaster) {
                     if ((type === 'ss' && config_date.ss_isOnlyMaster) ||
                         (type === 'gg' && config_date.gg_isOnlyMaster)) {
-                        // await e.reply('默认配置仅限主人使用')
+                        // await e.reply('默认配置仅限主人使用', true)
                         logger.info("已开启仅限主人使用默认配置");
                         return false;
                     }
@@ -2820,7 +2820,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                 if (apiIndex > 0 && !e.isMaster) {
                     const apiList = config_date[`${type}_APIList`];
                     if (apiList[apiIndex - 1].isOnlyMaster) {
-                        // await e.reply('该接口仅限主人使用');
+                        // await e.reply('该接口仅限主人使用', true);
                         return false;
                     }
                 }
@@ -2829,7 +2829,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                 if (apiIndex === 0 && !e.isMaster) {
                     if ((type === 'ss' && config_date.ss_isOnlyMaster) ||
                         (type === 'gg' && config_date.gg_isOnlyMaster)) {
-                        // await e.reply('默认配置仅限主人使用')
+                        // await e.reply('默认配置仅限主人使用', true)
                         logger.info("已开启仅限主人使用默认配置");
                         return false;
                     }
@@ -2863,7 +2863,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             const index = parseInt(cmdPart);
             if (!isNaN(index)) {
                 if (!apiList || index < 0 || (index > 0 && index > apiList.length)) {
-                    await e.reply(`无效的接口索引，请使用 #sf${type}接口列表 查看可用的接口`);
+                    await e.reply(`无效的接口索引，请使用 #sf${type}接口列表 查看可用的接口`, true);
                     return false;
                 }
                 return await processEndChat(index);

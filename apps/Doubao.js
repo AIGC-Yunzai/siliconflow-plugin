@@ -139,7 +139,7 @@ export class Doubao extends plugin {
             }
 
             logger.info(`[sf插件][豆包对话]开始执行:\n${JSON.stringify(requestBody)}`)
-            // await e.reply("豆包正在思考中，请稍候...", true)
+            // e.reply("豆包正在思考中，请稍候...", true, { recallMsg: 60 })
 
             result_member.record()
 
@@ -275,7 +275,7 @@ export class Doubao extends plugin {
             }
 
             logger.info(`[sf插件][豆包绘画]开始执行:\n${JSON.stringify(requestBody)}`)
-            await e.reply("豆包开始绘画，请稍候...", true)
+            e.reply("人家开始生成啦，请等待1-5分钟", true, { recallMsg: 60 });
 
             result_member.record()
 
