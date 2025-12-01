@@ -800,6 +800,23 @@ export class SF_Painting extends plugin {
             return false;
         }
 
+        let msg = e.msg.replace(/^#(ss|SS)/, '').trim()
+        /** 发送给AI的信息 */
+        let toAiMessage = msg;
+
+        // 处理预设
+        if (paintModel) {
+            const presetResult = applyPresets(toAiMessage, Config.getConfig("presets"))
+            toAiMessage = presetResult.processedText
+            msg = presetResult.originalText
+            // 处理 msg
+            let param = await handleParam(e, toAiMessage)
+            if (param.parameters.upimgs) {
+                mustNeedImgLength = Math.max(mustNeedImgLength, param.parameters.upimgs)
+            }
+            e.reply(`人家开始生成啦，请等待1-10分钟`, true, { recallMsg: 60 });
+        }
+
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
         if (mustNeedImgLength) {
@@ -843,18 +860,6 @@ export class SF_Painting extends plugin {
         }
 
         result_member.record();
-
-        let msg = e.msg.replace(/^#(ss|SS)/, '').trim()
-        /** 发送给AI的信息 */
-        let toAiMessage = msg;
-
-        // 处理预设
-        if (paintModel) {
-            const presetResult = applyPresets(toAiMessage, Config.getConfig("presets"))
-            toAiMessage = presetResult.processedText + "\n你将总是按照要求返回图片"
-            msg = presetResult.originalText
-            e.reply(`人家开始生成啦，请等待1-10分钟`, true, { recallMsg: 60 });
-        }
 
         // 如果有引用的文本,添加两个换行来分隔
         const quotedText = e.sourceMsg ? e.sourceMsg + '\n\n' : ''
@@ -1602,6 +1607,23 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             return false;
         }
 
+        let msg = e.msg.replace(/^#(gg|GG)/, '').trim()
+        /** 发送给AI的信息 */
+        let toAiMessage = msg;
+
+        // 处理预设
+        if (paintModel) {
+            const presetResult = applyPresets(toAiMessage, Config.getConfig("presets"))
+            toAiMessage = presetResult.processedText
+            msg = presetResult.originalText
+            // 处理 msg
+            let param = await handleParam(e, toAiMessage)
+            if (param.parameters.upimgs) {
+                mustNeedImgLength = Math.max(mustNeedImgLength, param.parameters.upimgs)
+            }
+            e.reply(`人家开始生成啦，请等待1-10分钟`, true, { recallMsg: 60 });
+        }
+
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
         if (mustNeedImgLength) {
@@ -1645,18 +1667,6 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         }
 
         result_member.record();
-
-        let msg = e.msg.replace(/^#(gg|GG)/, '').trim()
-        /** 发送给AI的信息 */
-        let toAiMessage = msg;
-
-        // 处理预设
-        if (paintModel) {
-            const presetResult = applyPresets(toAiMessage, Config.getConfig("presets"))
-            toAiMessage = presetResult.processedText + "\n你将总是按照要求返回图片"
-            msg = presetResult.originalText
-            e.reply(`人家开始生成啦，请等待1-10分钟`, true, { recallMsg: 60 });
-        }
 
         // 如果有引用的文本,添加两个换行来分隔
         const quotedText = e.sourceMsg ? e.sourceMsg + '\n\n' : ''

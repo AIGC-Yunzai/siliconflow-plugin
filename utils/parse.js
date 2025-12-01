@@ -119,6 +119,18 @@ function isGeneratePrompt(text, e) {
     return { parameters, text }
 }
 
+/** 参考图片数量 */
+function callGetImgs(text) {
+    let parameters = {}
+    let upimgs = text.match(/(--)?(upimgs)\s?=?\s?([-+]?\d+(\.)?(\d+)?)/i)?.[3]
+    if (upimgs) {
+        parameters.upimgs = parseInt(Number(upimgs))
+        if (parameters.upimgs < 1) parameters.upimgs = 0
+        if (parameters.upimgs > 5) parameters.upimgs = 5
+        text = text.replace(/(--)?(upimgs)\s?=?\s?([-+]?\d+(\.)?(\d+)?)/ig, '')
+    }
+    return { parameters, text }
+}
 
 /**
  * @description: 处理prompt
@@ -182,6 +194,10 @@ export async function handleParam(e, text, skipImgModel = false) {
     text = result.text
     // 种子处理
     result = seedParam(text)
+    parameters = Object.assign(parameters, result.parameters)
+    text = result.text
+    // 上传图片数量
+    result = callGetImgs(text)
     parameters = Object.assign(parameters, result.parameters)
     text = result.text
     // 自动提示词处理
