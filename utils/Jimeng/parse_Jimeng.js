@@ -88,20 +88,7 @@ function callGetImgs(text) {
     }
     return { parameters, text }
 }
-/** 模型 */
-export function modelParam(text) {
-    let parameters = {}
-    let model = undefined
-    if (text.match(/--nanobanana/i)) {
-        model = "nanobanana"
-        text = text.replace(/--nanobanana/ig, '')
-    }
-    else if (text.match(/--jimeng-4.0/i)) {
-        model = "jimeng-4.0"
-        text = text.replace(/--jimeng-4.0/ig, '')
-    }
-    return { model, text, parameters }
-}
+
 /**
  * @description: 高级传参方法
  * @param {string} text
@@ -109,13 +96,19 @@ export function modelParam(text) {
  */
 function advancedParam(text) {
     const parameters = {};
+    let model = undefined
     const regex = /(?:\s+)?--([a-zA-Z0-9_\.]+)\s+([^\s]+)/g;
     const KEY_MAP = { w: 'width', h: 'height', sa: 'sampler', st: 'steps', g: 'scale', gr: 'cfg_rescale', ns: 'noise_schedule' };
-    const BLOCKED_PARAMS = ['model', 'width', 'height', 'steps', 'upimgs', 'duration', 'ratio'];
+    const BLOCKED_PARAMS = ['width', 'height', 'steps', 'upimgs', 'duration', 'ratio'];
 
     text = text.replace(regex, (match, key, value) => {
         const originalKey = key;
         key = KEY_MAP[key] || key;
+
+        if (key === 'model') {
+            model = value.trim();
+            return '';
+        }
 
         if (BLOCKED_PARAMS.includes(originalKey) || BLOCKED_PARAMS.includes(key)) {
             return '';
@@ -142,7 +135,7 @@ function advancedParam(text) {
         return '';
     });
 
-    return { parameters, text };
+    return { model, parameters, text };
 }
 
 /**
@@ -200,13 +193,9 @@ export async function handleParam(e, text) {
     result = callGetImgs(text)
     parameters = Object.assign(parameters, result.parameters)
     text = result.text
-    // model
-    result = modelParam(text)
-    model = result.model
-    parameters = Object.assign(parameters, result.parameters)
-    text = result.text
-    // 风格处理
+    // 高级传参
     result = advancedParam(text)
+    model = result.model
     parameters = Object.assign(parameters, result.parameters)
     text = result.text
 

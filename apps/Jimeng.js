@@ -53,7 +53,8 @@ export class Jimeng extends plugin {
 支持的ratio: 横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --3:2, --2:3, --21:9
 上传图片数: --upimgs 2
 参考图片强度: --reference_strength 0.8
-国际站支持的模型: --nanobanana, --jimeng-4.0
+更换模型: --model [nanobanana|nanobananapro|jimeng-4.1]
+启用智能画幅比例: --intelligent_ratio true
 负面提示词: ntags = [tags]
 
 示例：
@@ -128,23 +129,25 @@ export class Jimeng extends plugin {
             // 图生图模式
             apiEndpoint = `${config_date.Jimeng.base_url}/v1/images/compositions`
             requestBody = {
-                "model": param.model || "jimeng-4.0",
+                "model": param.model || config_date.Jimeng.model || "jimeng-4.1",
                 "prompt": param.input || "美丽的少女，胶片感",
                 "images": e.img.slice(0, 2),
                 "ratio": param.parameters.ratio || "1:1",
                 "resolution": param.parameters.resolution || "2k",
                 "negative_prompt": param.parameters.negative_prompt || undefined,
                 "sample_strength": param.parameters.reference_strength || undefined,
+                "intelligent_ratio": param.parameters.intelligent_ratio || undefined,
             }
         } else {
             // 文生图模式
             apiEndpoint = `${config_date.Jimeng.base_url}/v1/images/generations`
             requestBody = {
-                "model": param.model || "jimeng-4.0",
+                "model": param.model || config_date.Jimeng.model || "jimeng-4.1",
                 "prompt": param.input || "美丽的少女，胶片感",
                 "ratio": param.parameters.ratio || "1:1",
                 "resolution": param.parameters.resolution || "2k",
                 "negative_prompt": param.parameters.negative_prompt || undefined,
+                "intelligent_ratio": param.parameters.intelligent_ratio || undefined,
             }
         }
 
@@ -161,6 +164,13 @@ export class Jimeng extends plugin {
                 sessionid = Config.get_random_Str(config_date.Jimeng.sessionid_ITN, "Jimeng-Sessionid-ITN");
                 if (!sessionid) {
                     e.reply('请先使用锅巴设置即梦国际站 Sessionid', true)
+                    return
+                }
+            } else if (requestBody.model === "jimeng-4.1") {
+                // jimeng-4.1 模型只使用 sessionid
+                sessionid = Config.get_random_Str(config_date.Jimeng.sessionid, "Jimeng-Sessionid");
+                if (!sessionid) {
+                    e.reply('请先使用锅巴设置即梦国内站 Sessionid', true)
                     return
                 }
             } else {

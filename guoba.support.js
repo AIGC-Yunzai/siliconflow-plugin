@@ -681,6 +681,12 @@ export function supportGuoba() {
           component: "Input",
         },
         {
+          field: "Jimeng.model",
+          label: "绘画模型",
+          bottomHelpMessage: "即梦绘画使用的模型，可选: jimeng-4.1, jimeng-4.0, jimeng-3.0, nanobanana, nanobananapro ；也可以在绘画中使用参数例如 --model nanobanana 实时更换模型",
+          component: "Input",
+        },
+        {
           field: "Jimeng.sessionid_ITN",
           label: "国际站Sessionid",
           bottomHelpMessage: "同上，访问国际站 https://dreamina.capcut.com/ ；需要自行加上不同的前缀 us-your_session_id 或 hk- 或 jp- 或 sg- ；仅当使用nanobanana时强制选择国际站Sessionid，否则Sessionid与国际站Sessionid共同轮询；若有多个 sessionid 用英文逗号分割",
