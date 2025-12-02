@@ -9,12 +9,12 @@
  *   - originalText: 处理后的文本(预设名替换为占位符： {sf预设: ${presetName}} )
  */
 export function applyPresets(text, config) {
-    let originalText = text || '';
+    const originalTextInput = text || '';
     if (!text || typeof text !== 'string') {
         return {
             processedText: text || '',
             usedPresets: [],
-            originalText
+            originalText: originalTextInput
         }
     }
 
@@ -23,40 +23,75 @@ export function applyPresets(text, config) {
         return {
             processedText: text,
             usedPresets: [],
-            originalText
+            originalText: originalTextInput
         }
     }
 
+    // 按预设名长度降序排序,优先匹配较长的预设名
+    const sortedPresets = [...presets]
+        .filter(p => p.name && p.prompt)
+        .map(p => ({
+            name: p.name.trim(),
+            prompt: p.prompt.trim(),
+            regex: new RegExp(escapeRegExp(p.name.trim()), 'gi')
+        }))
+        .sort((a, b) => b.name.length - a.name.length)
+
+    // 收集所有匹配项并按位置排序
+    const allMatches = []
+    for (const preset of sortedPresets) {
+        let match
+        preset.regex.lastIndex = 0
+        while ((match = preset.regex.exec(text)) !== null) {
+            allMatches.push({
+                start: match.index,
+                end: match.index + match[0].length,
+                preset
+            })
+        }
+    }
+
+    // 按起始位置排序，位置相同时长的优先
+    allMatches.sort((a, b) => {
+        if (a.start !== b.start) return a.start - b.start
+        return (b.end - b.start) - (a.end - a.start)
+    })
+
+    // 过滤掉重叠的匹配，只保留不重叠的
+    const validMatches = []
+    let lastEnd = -1
+    for (const match of allMatches) {
+        if (match.start >= lastEnd) {
+            validMatches.push(match)
+            lastEnd = match.end
+        }
+    }
+
+    // 从后向前替换，避免位置偏移问题
+    validMatches.reverse()
+
     let processedText = text
+    let originalText = text
     const usedPresets = []
+    const usedPresetNames = new Set()
 
-    // 遍历所有预设,查找并替换
-    for (const preset of presets) {
-        if (!preset.name || !preset.prompt) {
-            continue
+    for (const match of validMatches) {
+        const { start, end, preset } = match
+
+        // 记录使用的预设
+        if (!usedPresetNames.has(preset.name)) {
+            usedPresetNames.add(preset.name)
+            usedPresets.push({
+                name: preset.name,
+                prompt: preset.prompt
+            })
         }
 
-        const presetName = preset.name.trim()
-        const presetPrompt = preset.prompt.trim()
+        // 替换 processedText
+        processedText = processedText.slice(0, start) + preset.prompt + processedText.slice(end)
 
-        // 1. 检查文本中是否包含预设名(支持中文和英文) 2. 使用非贪婪匹配，确保精确匹配预设名
-        const regex = new RegExp(escapeRegExp(presetName), 'gi')
-
-        if (regex.test(processedText)) {
-            // 记录使用的预设
-            if (!usedPresets.some(p => p.name === presetName)) {
-                usedPresets.push({
-                    name: presetName,
-                    prompt: presetPrompt
-                })
-            }
-
-            // 替换预设名为预设文本(用于API请求)
-            processedText = processedText.replace(regex, presetPrompt)
-
-            // 标记使用的预设
-            originalText = originalText.replace(regex, `{sf预设: ${presetName}}`)
-        }
+        // 替换 originalText
+        originalText = originalText.slice(0, start) + `{sf预设: ${preset.name}}` + originalText.slice(end)
     }
 
     return {
