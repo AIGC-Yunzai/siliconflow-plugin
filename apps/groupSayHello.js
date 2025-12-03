@@ -348,12 +348,12 @@ export class groupSayHello extends plugin {
                                     messages.push(pair.text)
                                 }
                             }
-                            messages.push(segment.image(`base64://${pair.image.replace(/data:image\/\w+;base64,/g, "")}`))
+                            messages.push(segment.image(`base64://${pair.image.replace(/^data:image\/\w+;base64,/, "")}`))
                         })
                     } else {
                         // 没有配对信息，先发送所有图片，再发送文本
                         imageBase64.forEach((imgData) => {
-                            messages.push(segment.image(`base64://${imgData.replace(/data:image\/\w+;base64,/g, "")}`))
+                            messages.push(segment.image(`base64://${imgData.replace(/^data:image\/\w+;base64,/, "")}`))
                         })
                         // 处理文本中的 CQ at 码
                         if (groupConfig.trueAtUser) {

@@ -995,7 +995,7 @@ export class SF_Painting extends plugin {
                         // 如果markdown生成失败，使用普通方式发送
                         const replyArray = [cleanedAnswer];
                         generatedImageArray.forEach((imageBase64) => {
-                            replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                            replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
                         });
                         await e.reply(replyArray, quoteMessage);
                     }
@@ -1003,7 +1003,7 @@ export class SF_Painting extends plugin {
                     if (forwardMessage) {
                         const forwardMsg = [];
                         generatedImageArray.forEach((imageBase64) => {
-                            forwardMsg.push({ ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                            forwardMsg.push({ ...segment.image(`base64://${imageBase64.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
                         });
                         forwardMsg.push(cleanedAnswer);
                         // 如果有思考过程且开启了转发思考
@@ -1018,7 +1018,7 @@ export class SF_Painting extends plugin {
                     if (!paintModel)
                         replyArray.push(cleanedAnswer)
                     generatedImageArray.forEach((imageBase64) => {
-                        replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                        replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
                     });
                     await e.reply(replyArray, quoteMessage);
 
@@ -1810,11 +1810,11 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                                 if (pair.text) {
                                     forwardMsg.push(pair.text);
                                 }
-                                forwardMsg.push({ ...segment.image(`base64://${pair.image.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                                forwardMsg.push({ ...segment.image(`base64://${pair.image.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
                             });
                         } else {
                             imageBase64.forEach((imgData) => {
-                                forwardMsg.push({ ...segment.image(`base64://${imgData.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                                forwardMsg.push({ ...segment.image(`base64://${imgData.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
                             });
                             forwardMsg.push(answer);
                         }
@@ -1831,7 +1831,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                     if (paintModel) {
                         const replyArray = [];
                         imageBase64.forEach((imageBase64) => {
-                            replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                            replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
                         });
                         await e.reply(replyArray, quoteMessage);
                     }
@@ -1900,14 +1900,14 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                     if (pair.text) {
                         replyArray.push(pair.text);
                     }
-                    replyArray.push({ ...segment.image(`base64://${pair.image.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                    replyArray.push({ ...segment.image(`base64://${pair.image.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
                     await e.reply(replyArray, quoteMessage);
                 }
             } else {
                 // 没有配对信息时使用原来的方式
                 const replyArray = [answer];
                 imageBase64.forEach((imgData) => {
-                    replyArray.push({ ...segment.image(`base64://${imgData.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                    replyArray.push({ ...segment.image(`base64://${imgData.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
                 });
                 await e.reply(replyArray, quoteMessage);
             }
@@ -1916,7 +1916,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             // 如果配对发送失败，使用普通方式
             const replyArray = [answer];
             imageBase64.forEach((imgData) => {
-                replyArray.push({ ...segment.image(`base64://${imgData.replace(/data:image\/\w+;base64,/g, "")}`), origin: true });
+                replyArray.push({ ...segment.image(`base64://${imgData.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
             });
             await e.reply(replyArray, quoteMessage);
         }
