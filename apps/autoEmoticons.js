@@ -315,7 +315,7 @@ export class autoEmoticons extends plugin {
 
                         if (!canBeStored) continue
                         // 保存表情
-                        logger.mark(`[autoEmoticons] 保存表情: ${filename}`)
+                        // logger.mark(`[autoEmoticons] 保存表情: ${filename}`)
 
                         // 使用URL下载图片
                         const downloadResult = await downloadImageFile(

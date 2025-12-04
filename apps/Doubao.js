@@ -166,6 +166,12 @@ export class Doubao extends plugin {
                     await saveConversationId(userId, newConversationId)
                 }
 
+                // 检查回复内容是否为空
+                if (!reply || reply.trim() === '') {
+                    await e.reply('[sf插件]豆包返回了空回复', true)
+                    return true
+                }
+
                 // 发送回复
                 await e.reply(reply, true)
                 return true
