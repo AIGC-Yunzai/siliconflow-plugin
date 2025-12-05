@@ -883,6 +883,12 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: 'switch_ChatCooldown',
+          label: '不允许并发对话',
+          bottomHelpMessage: 'BOT名称触发对话时，不允许并发对话，用户要等待上一次对话完成后才可以触发下一次对话；每个群单独计算，主人不受限制',
+          component: 'Switch'
+        },
+        {
           field: "enablePrivateChatAI",
           label: "私聊AI对话开关",
           bottomHelpMessage: "开启/关闭私聊模式下的AI对话功能",

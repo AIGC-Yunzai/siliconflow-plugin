@@ -32,6 +32,7 @@ import {
     hidePrivacyInfo,
     removeCQCode,
 } from '../utils/common.js'
+import ChatCooldown from '../utils/chatCooldown.js'
 
 var Ws_Server = {};
 init_server();
@@ -368,6 +369,16 @@ export class SF_Painting extends plugin {
         const hasSearchKeyword = searchKeywords.some(keyword => msg.includes(keyword))
 
         e.sf_is_from_first_person_call = true;
+
+        /** 检查对话冷却 */
+        const cooldownResult = await ChatCooldown.check(e.user_id, e.group_id, e.isMaster)
+        if (!cooldownResult.canChat) {
+            logger.info(`[SF插件][ChatCooldown]${e.user_id}上一次对话未完成，跳过此次对话，超时时间剩余 ${cooldownResult.remainingTime} 秒`)
+            return false
+        }
+        // 标记对话开始
+        if (config.switch_ChatCooldown)
+            await ChatCooldown.start(e.user_id, e.group_id)
 
         // 根据配置和搜索关键词决定使用哪个命令
         return (config.defaultCommand === 'ss' && !hasSearchKeyword) ? this.sf_chat(e, config) : this.gg_chat(e, config)
@@ -942,6 +953,7 @@ export class SF_Painting extends plugin {
         logger.info(`[sf prompt]${'[图片]'.repeat(e.img?.length || 0)}${toAiMessage}`)
         let { content: answer, imageBase64Array: generatedImageArray, isError } = await this.generatePrompt(toAiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
 
+        ChatCooldown.end(e.user_id, e.group_id)
         // 如果是错误返回，不保存聊天记录，直接回复错误信息
         if (isError) {
             await e.reply(hidePrivacyInfo(answer), true);
@@ -1751,6 +1763,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         logger.info(`[sf prompt]${'[图片]'.repeat(e.img?.length || 0)}${toAiMessage}`)
         let { answer, sources, imageBase64, textImagePairs, isError } = await this.generateGeminiPrompt(toAiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
 
+        ChatCooldown.end(e.user_id, e.group_id)
         // 如果是错误返回，不保存聊天记录，直接回复错误信息
         if (isError) {
             await e.reply(hidePrivacyInfo(answer), true);
