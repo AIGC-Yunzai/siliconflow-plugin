@@ -1328,7 +1328,7 @@ export class SF_Painting extends plugin {
                     isError: false
                 };
             } else {
-                logger.error("[sf插件]LLM调用错误：\n", JSON.stringify(data, null, 2))
+                logger.warn("[sf插件]LLM调用错误：\n", JSON.stringify(data))
                 const errorMessage = !forChat ? input : data.error?.message || data.message || "[sf插件]LLM调用错误，详情请查阅控制台。";
                 return {
                     content: errorMessage,
@@ -1505,7 +1505,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
 
                 return true;
             } else {
-                logger.error("[sf插件]返回错误：\n", JSON.stringify(data, null, 2))
+                logger.warn("[sf插件]返回错误：\n", JSON.stringify(data))
                 if (e.ws) {
                     this.sendError(e.ws, `生成图片失败：${data.message || '未知错误'}`);
                 } else {
@@ -2330,7 +2330,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                     isError: false
                 };
             } else {
-                logger.error("[sf插件]gg调用错误：\n", JSON.stringify(data, null, 2))
+                logger.warn("[sf插件]gg调用错误：\n", JSON.stringify(data))
 
                 // 构造详细的错误消息
                 let errorMessage = "[sf插件]";

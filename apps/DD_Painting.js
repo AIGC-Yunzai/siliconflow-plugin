@@ -285,7 +285,7 @@ export class DD_Painting extends plugin {
                 const response = await fetch(requestUrl, {
                     method: 'POST',
                     headers: headers,
-                    body: JSON.stringify(payload, null, 0)
+                    body: JSON.stringify(payload, null, 2)
                 });
 
                 if (!response.ok) {
