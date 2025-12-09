@@ -953,7 +953,8 @@ export class SF_Painting extends plugin {
         logger.info(`[sf prompt]${'[图片]'.repeat(e.img?.length || 0)}${toAiMessage}`)
         let { content: answer, imageBase64Array: generatedImageArray, isError } = await this.generatePrompt(toAiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
 
-        ChatCooldown.end(e.user_id, e.group_id)
+        if (e.sf_is_from_first_person_call)
+            ChatCooldown.end(e.user_id, e.group_id)
         // 如果是错误返回，不保存聊天记录，直接回复错误信息
         if (isError) {
             await e.reply(hidePrivacyInfo(answer), true);
@@ -1763,7 +1764,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         logger.info(`[sf prompt]${'[图片]'.repeat(e.img?.length || 0)}${toAiMessage}`)
         let { answer, sources, imageBase64, textImagePairs, isError } = await this.generateGeminiPrompt(toAiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
 
-        ChatCooldown.end(e.user_id, e.group_id)
+        if (e.sf_is_from_first_person_call)
+            ChatCooldown.end(e.user_id, e.group_id)
         // 如果是错误返回，不保存聊天记录，直接回复错误信息
         if (isError) {
             await e.reply(hidePrivacyInfo(answer), true);

@@ -9,6 +9,7 @@ import {
 import { handleParam } from '../utils/Jimeng/parse_Jimeng.js'
 import { memberControlProcess } from '../utils/memberControl.js'
 import { applyPresets } from '../utils/applyPresets.js'
+import axios from 'axios'
 
 export class Jimeng extends plugin {
     constructor() {
@@ -182,27 +183,22 @@ export class Jimeng extends plugin {
             }
 
             // if (!config_date.simpleMode)
-            e.reply("人家开始生成啦，请等待1-5分钟", true, { recallMsg: 60 });
+            e.reply("人家开始生成啦，请等待1-10分钟", true, { recallMsg: 60 });
             logger.info(`[sf插件][Jimeng]开始执行:\n` + JSON.stringify(requestBody))
 
             result_member.record();
 
             // 发送API请求（设置20分钟超时）
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 20 * 60 * 1000); // 20分钟，否则默认5分钟不够等待
-
-            const response = await fetch(apiEndpoint, {
-                method: 'POST',
+            const response = await axios.post(apiEndpoint, requestBody, {
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${sessionid}`
                 },
-                body: JSON.stringify(requestBody),
-                signal: controller.signal
+                timeout: 60 * 60 * 1000, // 60分钟
+                validateStatus: () => true
             })
-            clearTimeout(timeoutId);
 
-            const data = await response.json()
+            const data = response.data
             logger.mark(`[即梦API]返回数据：\n${JSON.stringify(data)}`)
 
             // 检查是否为视频生成
@@ -244,18 +240,21 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
                     // 下载视频并发送
                     try {
                         logger.info(`[即梦视频]开始下载视频: ${videoUrl}`)
-                        const videoResponse = await fetch(videoUrl, {
+                        const videoResponse = await axios.get(videoUrl, {
                             headers: {
                                 'referer': 'https://jimeng.jianying.com/',
                                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                            }
+                            },
+                            responseType: 'arraybuffer',
+                            timeout: 60 * 60 * 1000,
+                            validateStatus: () => true
                         })
 
-                        if (!videoResponse.ok) {
+                        if (videoResponse.status !== 200) {
                             throw new Error(`视频下载失败: HTTP ${videoResponse.status}`)
                         }
 
-                        const videoBuffer = Buffer.from(await videoResponse.arrayBuffer())
+                        const videoBuffer = Buffer.from(videoResponse.data)
                         // logger.info(`[即梦视频]视频下载成功，大小: ${(videoBuffer.length / 1024 / 1024).toFixed(2)}MB`)
                         await e.reply(segment.video(videoBuffer))
                     } catch (videoError) {
