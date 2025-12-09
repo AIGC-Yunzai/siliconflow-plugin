@@ -147,6 +147,6 @@ pip install aiohttp
 
 ### 🎨 让AI绘画成为日常，让创意永不枯竭！✨
 
-**[📚 查看插件主页](/) | [💬 加入交流群](https://qm.qq.com/q/unjAw930RO) | [⭐ 给个Star](/)**
+**[📚 查看插件主页](/) | [💬 加入交流群1](https://qm.qq.com/q/unjAw930RO) [💬 加入交流群2](https://qm.qq.com/q/tEqFnH0kTe) | [⭐ 给个Star](/)**
 
 </div>

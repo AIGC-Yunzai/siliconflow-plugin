@@ -683,7 +683,7 @@ export function supportGuoba() {
         {
           field: "Jimeng.model",
           label: "绘画模型",
-          bottomHelpMessage: "即梦绘画使用的模型，可选: jimeng-4.1, jimeng-4.0, jimeng-3.0, nanobanana, nanobananapro ；也可以在绘画中使用参数例如 --model nanobanana 实时更换模型",
+          bottomHelpMessage: "即梦绘画使用的模型，可选: jimeng-4.5, jimeng-4.0, jimeng-3.0, nanobanana, nanobananapro ；也可以在绘画中使用参数例如 --model nanobanana 实时更换模型",
           component: "Input",
         },
         {
@@ -737,85 +737,85 @@ export function supportGuoba() {
             valueParser: ((value) => value.split(',') || []),
           },
         },
-        {
-          component: "Divider",
-          label: "Doubao-API",
-          componentProps: {
-            orientation: "left",
-            plain: true,
-          },
-        },
-        {
-          field: "Doubao.base_url",
-          label: "豆包API地址",
-          bottomHelpMessage: "该功能需要自行部署Api，请根据说明文档 https://github.com/Bitsea1/doubao-free-api 部署后填入地址（如：http://localhost:8000）；支持对话和绘画功能，指令：#豆包对话帮助 #豆包绘画帮助 #豆包结束对话",
-          component: "Input",
-          componentProps: {
-            placeholder: 'http://localhost:8000',
-          },
-        },
-        {
-          field: "Doubao.sessionid",
-          label: "Sessionid",
-          bottomHelpMessage: "豆包的sessionid，若有多个sessionid用英文逗号分割进行轮询",
-          component: "Input",
-        },
-        {
-          field: 'Doubao.contextExpiryHours',
-          label: '上下文过期时间',
-          helpMessage: '单位：小时',
-          bottomHelpMessage: '对话上下文的过期时间，超过此时间后对话上下文将被清除',
-          component: "InputNumber",
-          componentProps: {
-            min: 1,
-            step: 1,
-          },
-        },
-        {
-          field: 'Doubao.cdtime',
-          label: 'CD时间',
-          helpMessage: '单位：秒',
-          bottomHelpMessage: '豆包功能的CD时间，设置为0则无限制',
-          component: "InputNumber",
-          componentProps: {
-            min: 0,
-            step: 1,
-          },
-        },
-        {
-          field: 'Doubao.dailyLimit',
-          label: '次数限制',
-          bottomHelpMessage: '豆包功能的每日限制次数，设置为0则无限制，设置为-1则仅限无限制用户使用',
-          component: "InputNumber",
-          componentProps: {
-            min: -1,
-            step: 1,
-          },
-        },
-        {
-          field: 'Doubao.unlimitedUsers',
-          label: '无限制用户ID',
-          bottomHelpMessage: '主人与无限制用户无CD次数限制，填写用户ID/QQ号',
-          component: "GTags",
-          componentProps: {
-            placeholder: '请输入用户ID/QQ号',
-            allowAdd: true,
-            allowDel: true,
-            valueParser: ((value) => value.split(',') || []),
-          },
-        },
-        {
-          field: 'Doubao.onlyGroupID',
-          label: '白名单群',
-          bottomHelpMessage: '仅白名单群可以使用豆包功能，留空则所有群可用；私聊用群号8888代替',
-          component: "GTags",
-          componentProps: {
-            placeholder: '请输入群号',
-            allowAdd: true,
-            allowDel: true,
-            valueParser: ((value) => value.split(',') || []),
-          },
-        },
+        // {
+        //   component: "Divider",
+        //   label: "Doubao-API",
+        //   componentProps: {
+        //     orientation: "left",
+        //     plain: true,
+        //   },
+        // },
+        // {
+        //   field: "Doubao.base_url",
+        //   label: "豆包API地址",
+        //   bottomHelpMessage: "该功能需要自行部署Api，请根据说明文档 https://github.com/Bitsea1/doubao-free-api 部署后填入地址（如：http://localhost:8000）；支持对话和绘画功能，指令：#豆包对话帮助 #豆包绘画帮助 #豆包结束对话",
+        //   component: "Input",
+        //   componentProps: {
+        //     placeholder: 'http://localhost:8000',
+        //   },
+        // },
+        // {
+        //   field: "Doubao.sessionid",
+        //   label: "Sessionid",
+        //   bottomHelpMessage: "豆包的sessionid，若有多个sessionid用英文逗号分割进行轮询",
+        //   component: "Input",
+        // },
+        // {
+        //   field: 'Doubao.contextExpiryHours',
+        //   label: '上下文过期时间',
+        //   helpMessage: '单位：小时',
+        //   bottomHelpMessage: '对话上下文的过期时间，超过此时间后对话上下文将被清除',
+        //   component: "InputNumber",
+        //   componentProps: {
+        //     min: 1,
+        //     step: 1,
+        //   },
+        // },
+        // {
+        //   field: 'Doubao.cdtime',
+        //   label: 'CD时间',
+        //   helpMessage: '单位：秒',
+        //   bottomHelpMessage: '豆包功能的CD时间，设置为0则无限制',
+        //   component: "InputNumber",
+        //   componentProps: {
+        //     min: 0,
+        //     step: 1,
+        //   },
+        // },
+        // {
+        //   field: 'Doubao.dailyLimit',
+        //   label: '次数限制',
+        //   bottomHelpMessage: '豆包功能的每日限制次数，设置为0则无限制，设置为-1则仅限无限制用户使用',
+        //   component: "InputNumber",
+        //   componentProps: {
+        //     min: -1,
+        //     step: 1,
+        //   },
+        // },
+        // {
+        //   field: 'Doubao.unlimitedUsers',
+        //   label: '无限制用户ID',
+        //   bottomHelpMessage: '主人与无限制用户无CD次数限制，填写用户ID/QQ号',
+        //   component: "GTags",
+        //   componentProps: {
+        //     placeholder: '请输入用户ID/QQ号',
+        //     allowAdd: true,
+        //     allowDel: true,
+        //     valueParser: ((value) => value.split(',') || []),
+        //   },
+        // },
+        // {
+        //   field: 'Doubao.onlyGroupID',
+        //   label: '白名单群',
+        //   bottomHelpMessage: '仅白名单群可以使用豆包功能，留空则所有群可用；私聊用群号8888代替',
+        //   component: "GTags",
+        //   componentProps: {
+        //     placeholder: '请输入群号',
+        //     allowAdd: true,
+        //     allowDel: true,
+        //     valueParser: ((value) => value.split(',') || []),
+        //   },
+        // },
         {
           component: "Divider",
           label: "绘画全局设置",

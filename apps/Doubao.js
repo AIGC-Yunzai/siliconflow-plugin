@@ -24,18 +24,18 @@ export class Doubao extends plugin {
             event: 'message',
             priority: 1011,
             rule: [
-                {
-                    reg: '^#豆包(对话|聊天)',
-                    fnc: 'doubaoChat'
-                },
-                {
-                    reg: '^#豆包绘画',
-                    fnc: 'doubaoPainting'
-                },
-                {
-                    reg: '^#豆包结束对话',
-                    fnc: 'endConversation'
-                },
+                // { // 该API已失效，将于一个月后移除源码和配置文件
+                //     reg: '^#豆包(对话|聊天)',
+                //     fnc: 'doubaoChat'
+                // },
+                // {
+                //     reg: '^#豆包绘画',
+                //     fnc: 'doubaoPainting'
+                // },
+                // {
+                //     reg: '^#豆包结束对话',
+                //     fnc: 'endConversation'
+                // },
             ]
         })
     }
