@@ -1000,7 +1000,7 @@ export class SF_Painting extends plugin {
                         imgMarkdown += `![生成的图片${index + 1}](${imageBase64})\n\n`;
                     });
 
-                    const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, imgMarkdown);
+                    const img = await markdown_screenshot(e.user_id, e.self_id, currentImages.length > 0 ? currentImages.map(base64 => `<img src="data:image/png;base64,${base64}" width="256">`).join('\n') + "\n\n" + msg : msg, imgMarkdown);
                     if (img) {
                         await e.reply({ ...img, origin: true }, quoteMessage);
                     } else {
@@ -1046,7 +1046,7 @@ export class SF_Painting extends plugin {
             }
 
             if (useMarkdown) {
-                const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, cleanedAnswer);
+                const img = await markdown_screenshot(e.user_id, e.self_id, currentImages.length > 0 ? currentImages.map(base64 => `<img src="data:image/png;base64,${base64}" width="256">`).join('\n') + "\n\n" + msg : msg, cleanedAnswer);
                 if (img) {
                     await e.reply({ ...img, origin: true }, quoteMessage)
                 } else {
@@ -1808,7 +1808,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                     }
 
                     // 生成markdown图片
-                    const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, imgMarkdown);
+                    const img = await markdown_screenshot(e.user_id, e.self_id, currentImages.length > 0 ? currentImages.map(base64 => `<img src="data:image/png;base64,${base64}" width="256">`).join('\n') + "\n\n" + msg : msg, imgMarkdown);
                     if (img) {
                         await e.reply({ ...img, origin: true }, quoteMessage);
                     } else {
@@ -1861,7 +1861,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
 
             if (useMarkdown) {
                 // 如果开启了markdown，生成图片并将回答放入转发消息
-                const img = await markdown_screenshot(e.user_id, e.self_id, e.img ? e.img.map(url => `<img src="${url}" width="256">`).join('\n') + "\n\n" + msg : msg, answer);
+                const img = await markdown_screenshot(e.user_id, e.self_id, currentImages.length > 0 ? currentImages.map(base64 => `<img src="data:image/png;base64,${base64}" width="256">`).join('\n') + "\n\n" + msg : msg, answer);
                 if (img) {
                     await e.reply({ ...img, origin: true }, quoteMessage)
                 } else {
