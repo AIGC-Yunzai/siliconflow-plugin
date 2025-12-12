@@ -879,7 +879,7 @@ export function supportGuoba() {
         {
           field: "toggleAtMode",
           label: "At模式",
-          bottomHelpMessage: "开启At模式后，可以直接At Bot使用默认命令对话；更改后重启生效",
+          bottomHelpMessage: "开启At模式后，可以直接At Bot使用默认命令对话",
           component: "Switch",
         },
         {

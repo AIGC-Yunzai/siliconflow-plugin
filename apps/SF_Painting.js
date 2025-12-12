@@ -291,7 +291,7 @@ export class SF_Painting extends plugin {
             }
             ws.send(JSON.stringify(message));
         } catch (error) {
-            logger.error('发送消息失败:', error);
+            logger.warn('发送消息失败:', error);
             this.sendError(ws, '发送消息失败: ' + error.message);
         }
     }
@@ -341,24 +341,24 @@ export class SF_Painting extends plugin {
 
         // 检查是否为私聊且私聊AI对话未启用
         if (!e.isGroup && !config.enablePrivateChatAI) {
-            logger.info('私聊模式AI对话未启用，不予理会')
+            logger.info('[sf插件]私聊模式AI对话未启用，不予理会')
             return false
         }
 
         // 检查消息是否包含 "自动回复"
         if (!e.isGroup && e.msg && e.msg.includes("自动回复")) {
-            logger.info("消息包含自动回复，不触发AI对话")
+            logger.info("[sf插件]消息包含自动回复，不触发AI对话")
             return false
         }
 
         // 检查消息内容
         let msg = e.msg
         if (!msg || msg.startsWith('#')) {
-            logger.info('消息以#开头，，不予理会')
+            logger.info('[sf插件]消息以#开头，，不予理会')
             return false
         }
         if (e.user_id == getUin(e)) {
-            logger.info('机器人自己发出来的消息，不予理会')
+            logger.info('[sf插件]机器人自己发出来的消息，不予理会')
             return false
         }
 
@@ -635,7 +635,7 @@ export class SF_Painting extends plugin {
 
         // 检查是否为私聊且私聊AI对话未启用
         if (!e.isGroup && !config.enablePrivateChatAI) {
-            logger.info('私聊模式AI对话未启用，不予理会')
+            logger.info('[sf插件]私聊模式AI对话未启用，不予理会')
             return false
         }
 
@@ -653,7 +653,7 @@ export class SF_Painting extends plugin {
                 const randomValue = Math.random()
                 if (randomValue < (groupConfig.probability || 0.1)) {
                     shouldAutoReply = true
-                    logger.info(`[SF插件][自动回复] 群${e.group_id}触发自动回复`)
+                    logger.info(`[sf插件][自动回复] 群${e.group_id}触发自动回复`)
                 }
             }
         }
@@ -892,7 +892,7 @@ export class SF_Painting extends plugin {
                 logger.debug(`[SF插件][URL处理]消息中未发现需要处理的URL`)
             }
         } catch (error) {
-            logger.error(`[SF插件][URL处理]处理URL时发生错误，将使用原始消息继续处理: ${error.message}`)
+            logger.warn(`[SF插件][URL处理]处理URL时发生错误，将使用原始消息继续处理: ${error.message}`)
         }
         // 发送给AI的信息（加上 url 提取的内容）
         toAiMessage += extractedContent;
@@ -1338,7 +1338,7 @@ export class SF_Painting extends plugin {
                 };
             }
         } catch (error) {
-            logger.error("[sf插件]LLM调用失败\n", error)
+            logger.warn("[sf插件]LLM调用失败\n", error)
             const errorMessage = !forChat ? ("[sf插件]LLM调用失败:\n" + input) : ("[sf插件]LLM调用失败:\n" + error.message);
             return {
                 content: errorMessage,
@@ -1515,7 +1515,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                 return false;
             }
         } catch (error) {
-            logger.error("[sf插件]API调用失败\n", error)
+            logger.warn("[sf插件]API调用失败\n", error)
             if (e.ws) {
                 this.sendError(e.ws, '生成图片时遇到了一个错误，请稍后再试。');
             } else {
@@ -1762,7 +1762,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         }
 
         logger.info(`[sf prompt]${'[图片]'.repeat(e.img?.length || 0)}${toAiMessage}`)
-        let { answer, sources, imageBase64, textImagePairs, isError } = await this.generateGeminiPrompt(toAiMessage, ggBaseUrl, ggKey, config_date, opt, historyMessages, e)
+        let { answer, sources, imageBase64, textImagePairs, isError } = await this.generateGeminiPrompt(toAiMessage, ggBaseUrl, ggKey, opt, historyMessages, e)
 
         if (e.sf_is_from_first_person_call)
             ChatCooldown.end(e.user_id, e.group_id)
@@ -1787,6 +1787,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
 
         // 发送消息
         try {
+            // 如果有图片，发送图文配对
             if (imageBase64 && imageBase64.length > 0) {
                 if (useMarkdown) {
                     let imgMarkdown = "";
@@ -1942,12 +1943,11 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
      * @param {string} input 用户输入
      * @param {string} ggBaseUrl API 基础 URL
      * @param {string} ggKey API 密钥
-     * @param {Object} config_date 配置信息
      * @param {Object} opt 可选参数
      * @param {Array} historyMessages 历史对话记录
      * @return {Object} 包含答案和来源的对象
      */
-    async generateGeminiPrompt(input, ggBaseUrl, ggKey, config_date, opt = {}, historyMessages = [], e) {
+    async generateGeminiPrompt(input, ggBaseUrl, ggKey, opt = {}, historyMessages = [], e) {
         // 获取重试次数配置
         const mustReturnImgRetriesTimes = opt.mustReturnImgRetriesTimes || 0;
         const errorRetryTimes = opt.errorRetryTimes || 10; // 错误重试次数，默认10次
@@ -1955,7 +1955,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
 
         // 执行主要逻辑
         const executeRequest = async () => {
-            return await this._generateGeminiPromptInternal(input, ggBaseUrl, ggKey, config_date, opt, historyMessages, e);
+            return await this._generateGeminiPromptInternal(input, ggBaseUrl, ggKey, opt, historyMessages, e);
         };
 
         // 错误重试逻辑
@@ -2031,12 +2031,11 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
      * @param {string} input 用户输入
      * @param {string} ggBaseUrl API 基础 URL
      * @param {string} ggKey API 密钥
-     * @param {Object} config_date 配置信息
      * @param {Object} opt 可选参数
      * @param {Array} historyMessages 历史对话记录
      * @return {Object} 包含答案和来源的对象
      */
-    async _generateGeminiPromptInternal(input, ggBaseUrl, ggKey, config_date, opt = {}, historyMessages = [], e) {
+    async _generateGeminiPromptInternal(input, ggBaseUrl, ggKey, opt = {}, historyMessages = [], e) {
         logger.debug("[sf插件]API调用Gemini msg：\n" + input)
 
         // 获取用户名并替换prompt中的变量
@@ -2398,7 +2397,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                 };
             }
         } catch (error) {
-            logger.error("[sf插件]gg调用失败\n", error)
+            logger.warn("[sf插件]gg调用失败\n", error)
             // 隐藏错误信息中的key
             let errorMsg = "[sf插件]gg调用失败:\n" + error.message;
             if (ggKey && errorMsg.includes(ggKey)) {
