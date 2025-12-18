@@ -258,13 +258,13 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
                         // logger.info(`[即梦视频]视频下载成功，大小: ${(videoBuffer.length / 1024 / 1024).toFixed(2)}MB`)
                         await e.reply(segment.video(videoBuffer))
                     } catch (videoError) {
-                        logger.error("[sf插件][即梦视频]视频下载失败\n", videoError)
+                        logger.warn("[sf插件][即梦视频]视频下载失败\n", videoError)
                         await e.reply(`视频生成成功，但下载失败。视频链接：${videoUrl}`, true)
                     }
 
                     return true
                 } else {
-                    logger.error("[sf插件][即梦视频API]返回错误：\n", JSON.stringify(data, null, 2))
+                    logger.warn("[sf插件][即梦视频API]返回错误：\n", JSON.stringify(data, null, 2))
                     await e.reply(`[sf插件]生成视频失败：${data.message || data.error || '未知错误'}`, true)
                     return true
                 }
@@ -321,12 +321,12 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
 
                 return true
             } else {
-                logger.error("[sf插件][即梦API]返回错误：\n", JSON.stringify(data, null, 2))
+                logger.warn("[sf插件][即梦API]返回错误：\n", JSON.stringify(data, null, 2))
                 await e.reply(`[sf插件]生成图片失败：${data.message || data.error || '未知错误'}`, true)
                 return true
             }
         } catch (error) {
-            logger.error("[sf插件][即梦API]调用失败\n", error)
+            logger.warn("[sf插件][即梦API]调用失败\n", error)
             let errorMsg = `[sf插件]调用即梦API时遇到错误：${error.message}`
             if (error.message.includes('fetch failed')) {
                 errorMsg += '\n\n请检查：\n1. API地址是否正确配置\n2. API服务器端口是否开放\n3. API服务是否正常运行\n4. 防火墙或代理设置是否阻止访问'

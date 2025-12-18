@@ -295,13 +295,6 @@ export class groupSayHello extends plugin {
                 return false
             }
 
-            // 配置对象
-            const config_date = {
-                gg_Prompt: systemPrompt,
-                gg_useSearch: false,
-                gg_enableImageGeneration: false
-            }
-
             // 调用参数
             const opt = {
                 model: model,
@@ -315,7 +308,6 @@ export class groupSayHello extends plugin {
                 greetingPrompt,
                 ggBaseUrl,
                 ggKey,
-                config_date,
                 opt,
                 [],
                 eventObj
