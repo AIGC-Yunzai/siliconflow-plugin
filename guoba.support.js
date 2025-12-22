@@ -6,6 +6,14 @@ import { pluginRoot } from "./model/path.js";
 const geminiModelsByFetch = Config.getConfig()?.geminiModelsByFetch
 
 export function supportGuoba() {
+  // /** 群列表（每个Bot-qq单独设置） */
+  // let groupList_botUni = Array.from(Bot.gl.values())
+  // groupList_botUni = groupList_botUni.map(item => item = { label: `${item.bot_id || Bot.uin}-${item.group_name}-${item.group_id}`, value: `${item.bot_id || Bot.uin}:${item.group_id}` })
+  /** 群列表（仅群号） */
+  let groupList_total = Array.from(Bot.gl.values())
+  groupList_total = groupList_total.map(item => item = { label: `${item.group_name} - ${item.group_id}`, value: item.group_id.toString() })
+  /** 私聊 - 8888 */
+  // groupList_total = [{ label: "私聊 - 8888", value: "8888" }, ...groupList_total]
   return {
     pluginInfo: {
       name: 'SF-plugin',
@@ -316,13 +324,13 @@ export function supportGuoba() {
           field: 'sf_onlyGroupID',
           label: '白名单群',
           bottomHelpMessage: '仅白名单群可以使用此接口，留空则所有群可用；私聊用群号8888代替',
-          component: "GTags",
+          component: 'Select',
           componentProps: {
-            placeholder: '请输入群号',
             allowAdd: true,
             allowDel: true,
-            valueParser: ((value) => value.split(',') || []),
-          },
+            mode: 'multiple',
+            options: [{ label: "私聊 - 8888", value: "8888" }, ...groupList_total]
+          }
         },
         {
           component: "Divider",
@@ -615,13 +623,13 @@ export function supportGuoba() {
                 field: 'dd_onlyGroupID',
                 label: '白名单群',
                 bottomHelpMessage: '仅白名单群可以使用此接口，留空则所有群可用；私聊用群号8888代替',
-                component: "GTags",
+                component: 'Select',
                 componentProps: {
-                  placeholder: '请输入群号',
                   allowAdd: true,
                   allowDel: true,
-                  valueParser: ((value) => value.split(',') || []),
-                },
+                  mode: 'multiple',
+                  options: [{ label: "私聊 - 8888", value: "8888" }, ...groupList_total]
+                }
               },
             ],
           },
@@ -729,12 +737,12 @@ export function supportGuoba() {
           field: 'Jimeng.onlyGroupID',
           label: '白名单群',
           bottomHelpMessage: '仅白名单群可以使用此接口，留空则所有群可用；私聊用群号8888代替',
-          component: "GTags",
+          component: 'Select',
           componentProps: {
-            placeholder: '请输入群号',
             allowAdd: true,
             allowDel: true,
-            valueParser: ((value) => value.split(',') || []),
+            mode: 'multiple',
+            options: [{ label: "私聊 - 8888", value: "8888" }, ...groupList_total]
           },
         },
         // {
@@ -808,12 +816,12 @@ export function supportGuoba() {
         //   field: 'Doubao.onlyGroupID',
         //   label: '白名单群',
         //   bottomHelpMessage: '仅白名单群可以使用豆包功能，留空则所有群可用；私聊用群号8888代替',
-        //   component: "GTags",
+        //   component: 'Select',
         //   componentProps: {
-        //     placeholder: '请输入群号',
         //     allowAdd: true,
         //     allowDel: true,
-        //     valueParser: ((value) => value.split(',') || []),
+        //     mode: 'multiple',
+        //     options: [{ label: "私聊 - 8888", value: "8888" }, ...groupList_total]
         //   },
         // },
         {
@@ -1125,13 +1133,13 @@ export function supportGuoba() {
                 field: 'onlyGroupID',
                 label: '白名单群',
                 bottomHelpMessage: '仅白名单群可以使用此接口，留空则所有群可用；私聊用群号8888代替',
-                component: "GTags",
+                component: 'Select',
                 componentProps: {
-                  placeholder: '请输入群号',
                   allowAdd: true,
                   allowDel: true,
-                  valueParser: ((value) => value.split(',') || []),
-                },
+                  mode: 'multiple',
+                  options: [{ label: "私聊 - 8888", value: "8888" }, ...groupList_total]
+                }
               },
             ],
           },
@@ -1444,13 +1452,13 @@ export function supportGuoba() {
                 field: 'onlyGroupID',
                 label: '白名单群',
                 bottomHelpMessage: '仅白名单群可以使用此接口，留空则所有群可用；私聊用群号8888代替',
-                component: "GTags",
+                component: 'Select',
                 componentProps: {
-                  placeholder: '请输入群号',
                   allowAdd: true,
                   allowDel: true,
-                  valueParser: ((value) => value.split(',') || []),
-                },
+                  mode: 'multiple',
+                  options: [{ label: "私聊 - 8888", value: "8888" }, ...groupList_total]
+                }
               },
             ],
           },
@@ -1785,13 +1793,13 @@ export function supportGuoba() {
           field: 'autoEmoticons.allowGroups',
           label: '表情包白名单群',
           bottomHelpMessage: '需要保存和发送表情包的群号列表，为空数组时表示所有群；（推荐设置该选项，设置后支持无触发自动发送表情包，否则只能接受任意信息后概率触发表情包）',
-          component: "GTags",
+          component: 'Select',
           componentProps: {
-            placeholder: '请输入qq群号',
             allowAdd: true,
             allowDel: true,
-            valueParser: (value) => value.split(',') || []
-          },
+            mode: 'multiple',
+            options: groupList_total
+          }
         },
         {
           field: 'autoEmoticons.getBotByQQ_targetQQArr',
@@ -2133,8 +2141,8 @@ export function supportGuoba() {
       },
 
       setConfigData(data, { Result }) {
-        let config = {}
-        let config_presets = {}
+        let config = Config.getConfig()
+        let config_presets = Config.getConfig("presets")
 
         // 根据 带点的路径 对 config 赋值
         for (let [keyPath, value] of Object.entries(data)) {
@@ -2145,26 +2153,6 @@ export function supportGuoba() {
             lodash.set(config, keyPath, value)
           }
         }
-
-        config = lodash.merge({}, Config.getConfig(), config)
-        config_presets = lodash.merge({}, Config.getConfig("presets"), config_presets)
-
-        // 直接赋值所有数组类型的配置项，否则只可以添加不可以删除： lodash.merge 的机制问题，但是全局直接赋值会导致 1. 丢失未修改的字段；2. 破坏嵌套结构
-        config.sf_keys = data['sf_keys']
-        config.ss_APIList = data['ss_APIList']
-        config.gg_APIList = data['gg_APIList']
-        config.dd_APIList = data['dd_APIList']
-        config.fish_text_blacklist = data['fish_text_blacklist']
-        config.groupSayHello.allowGroups = data['groupSayHello.allowGroups']
-        config.autoEmoticons.allowGroups = data['autoEmoticons.allowGroups']
-        config.autoEmoticons.getBotByQQ_targetQQArr = data['autoEmoticons.getBotByQQ_targetQQArr']
-        config.autoRepeat_config = data['autoRepeat_config']
-        config.Jimeng.unlimitedUsers = data['Jimeng.unlimitedUsers']
-        config.Jimeng.onlyGroupID = data['Jimeng.onlyGroupID']
-        config.Doubao.unlimitedUsers = data['Doubao.unlimitedUsers']
-        config.Doubao.onlyGroupID = data['Doubao.onlyGroupID']
-
-        config_presets.presets = data['config_presets.presets']
 
         // 验证配置
         try {
