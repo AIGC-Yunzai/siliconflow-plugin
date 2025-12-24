@@ -191,20 +191,39 @@ class Config {
         })
       }
 
-      // 为默认 prompt 添加 getter
+      // 为默认 prompt 添加 getter 和 setter
+      // 使用闭包存储临时值
+      let ss_PromptValue = null
       Object.defineProperty(config, 'ss_Prompt', {
         get: () => {
+          // 如果有临时值，返回临时值；否则从文件读取
+          if (ss_PromptValue !== null) {
+            return ss_PromptValue
+          }
           // console.log(`[SF插件] 正在读取 ss 默认 prompt`)
           return this.getPrompt('ss', 'default')
+        },
+        set: (value) => {
+          // 保存到临时存储
+          ss_PromptValue = value
         },
         enumerable: true,
         configurable: true
       })
 
+      let gg_PromptValue = null
       Object.defineProperty(config, 'gg_Prompt', {
         get: () => {
+          // 如果有临时值，返回临时值；否则从文件读取
+          if (gg_PromptValue !== null) {
+            return gg_PromptValue
+          }
           // console.log(`[SF插件] 正在读取 gg 默认 prompt`)
           return this.getPrompt('gg', 'default')
+        },
+        set: (value) => {
+          // 保存到临时存储
+          gg_PromptValue = value
         },
         enumerable: true,
         configurable: true
