@@ -1058,7 +1058,7 @@ export function supportGuoba() {
                 field: "paintModel",
                 label: "仅绘画模式",
                 component: "Switch",
-                bottomHelpMessage: "开启后改接口转为绘画模式：1.仅发送图片，不回复文字；2.可以使用 绘画功能-绘画全局设置-绘画预设；3.与图片对话模式不兼容；4.不保存上下文；5.将发送绘画开始信息；6.支持使用 --upimgs [num] 控制必需图片张数",
+                bottomHelpMessage: "开启后改接口转为绘画模式：1.仅发送图片，不回复文字；2.可以使用 绘画功能-绘画全局设置-绘画预设；3.与图片对话模式兼容；4.不保存上下文；5.将发送绘画开始信息；6.支持使用 --upimgs [num] 控制必需图片张数",
               },
               {
                 field: "forwardThinking",
@@ -1383,7 +1383,7 @@ export function supportGuoba() {
                 field: "paintModel",
                 label: "仅绘画模式",
                 component: "Switch",
-                bottomHelpMessage: "开启后改接口转为绘画模式：1.仅发送图片，不回复文字；2.可以使用 绘画功能-绘画全局设置-绘画预设；3.与图片对话模式不兼容；4.不保存上下文；5.将发送绘画开始信息；6.支持使用  --upimgs [num] 控制必需图片张数",
+                bottomHelpMessage: "开启后改接口转为绘画模式：1.仅发送图片，不回复文字；2.可以使用 绘画功能-绘画全局设置-绘画预设；3.与图片对话模式兼容；4.不保存上下文；5.将发送绘画开始信息；6.支持使用  --upimgs [num] 控制必需图片张数",
               },
               {
                 field: "useContext",

@@ -31,6 +31,8 @@ import { applyPresets } from '../utils/applyPresets.js'
 import {
     hidePrivacyInfo,
     removeCQCode,
+    splitString_Enter,
+    extractBase64Images,
 } from '../utils/common.js'
 import ChatCooldown from '../utils/chatCooldown.js'
 
@@ -947,7 +949,9 @@ export class SF_Painting extends plugin {
             currentImages: currentImages.length > 0 ? currentImages : undefined,
             historyImages: historyImages.length > 0 ? historyImages : undefined,
             systemPrompt: systemPrompt,
-            mustReturnImgRetriesTimes: mustReturnImgRetriesTimes
+            mustReturnImgRetriesTimes: mustReturnImgRetriesTimes,
+            useMarkdown: useMarkdown,
+            paintModel: paintModel
         }
 
         logger.info(`[sf prompt]${'[图片]'.repeat(e.img?.length || 0)}${toAiMessage}`)
@@ -1120,6 +1124,25 @@ export class SF_Painting extends plugin {
                         break;
                     }
 
+                    // 尝试从返回的文本内容中提取 base64 图片
+                    if (!lastResult.imageBase64Array || lastResult.imageBase64Array.length === 0) {
+                        // 如果是 useMarkdown 模式，仅检查是否有图片而不提取
+                        const checkOnly = opt.useMarkdown === true;
+                        const extracted = extractBase64Images(lastResult.content, checkOnly);
+
+                        if (checkOnly) {
+                            // useMarkdown 模式：仅检查是否有图片
+                            if (extracted.hasImages) {
+                                // 标记为有图片，但不修改 content
+                                lastResult.imageBase64Array = ['__HAS_IMAGES__']; // 使用一个特殊标记
+                            }
+                        } else if (extracted.imageBase64Array && extracted.imageBase64Array.length > 0) {
+                            // 非 useMarkdown 模式：提取并清理图片
+                            lastResult.imageBase64Array = extracted.imageBase64Array;
+                            lastResult.content = extracted.cleanedText;
+                        }
+                    }
+
                     // 如果返回了图片，直接返回结果
                     if (lastResult.imageBase64Array && lastResult.imageBase64Array.length > 0) {
                         if (attempt > 0) {
@@ -1147,6 +1170,24 @@ export class SF_Painting extends plugin {
 
                 // 如果没有错误，直接返回
                 if (!lastResult.isError) {
+                    // 即使不需要重试，也尝试提取文本中的 base64 图片（如果还没有图片的话）
+                    if ((!lastResult.imageBase64Array || lastResult.imageBase64Array.length === 0) && lastResult.content) {
+                        // 如果是 useMarkdown 模式，仅检查是否有图片而不提取
+                        const checkOnly = opt.useMarkdown === true;
+                        const extracted = extractBase64Images(lastResult.content, checkOnly);
+
+                        if (checkOnly) {
+                            // useMarkdown 模式：仅检查是否有图片
+                            if (extracted.hasImages) {
+                                // 标记为有图片，但不修改 content
+                                lastResult.imageBase64Array = ['__HAS_IMAGES__']; // 使用一个特殊标记
+                            }
+                        } else if (extracted.imageBase64Array && extracted.imageBase64Array.length > 0) {
+                            // 非 useMarkdown 模式：提取并清理图片
+                            lastResult.imageBase64Array = extracted.imageBase64Array;
+                            lastResult.content = extracted.cleanedText;
+                        }
+                    }
                     return lastResult;
                 }
 
@@ -1759,6 +1800,8 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             enableImageGeneration,
             mustReturnImgRetriesTimes,
             useVertexAI,
+            useMarkdown: useMarkdown,
+            paintModel: paintModel
         }
 
         logger.info(`[sf prompt]${'[图片]'.repeat(e.img?.length || 0)}${toAiMessage}`)

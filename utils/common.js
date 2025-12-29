@@ -119,7 +119,7 @@ export function removeCQCode(msg) {
   if (!msg) return ''
   // 如果是数组,递归处理每个元素
   if (Array.isArray(msg)) {
-    return msg.map(item => 
+    return msg.map(item =>
       typeof item === 'string' ? item.replace(/\[CQ:[^\]]+\]/g, '').trim() : item
     )
   }
@@ -127,4 +127,127 @@ export function removeCQCode(msg) {
   if (typeof msg !== 'string') return msg
   // 匹配 [CQ:...] 格式的 CQ 码
   return msg.replace(/\[CQ:[^\]]+\]/g, '').trim()
+}
+
+/**
+ * @description: 把超长字符串按照每 回车 与 chunkSize 字分割成数组
+ * @param {string|Array} str
+ * @param {number} chunkSize
+ * @return {Array}
+ */
+export function splitString_Enter(str, chunkSize = 2000) {
+  // 如果 str 是数组,先转换为字符串
+  if (Array.isArray(str)) {
+    str = str.join('\n');
+  }
+  const result = [];
+  const lines = str.split('\n');
+  let currentChunk = '';
+  for (const line of lines) {
+    // 如果当前行加上当前块不超过限制,就追加
+    if ((currentChunk + line + '\n').length <= chunkSize) {
+      currentChunk += (currentChunk ? '\n' : '') + line;
+    } else {
+      // 如果当前块不为空,先保存
+      if (currentChunk) {
+        result.push(currentChunk);
+        currentChunk = '';
+      }
+      // 如果单行就超过限制,需要强制分割
+      if (line.length > chunkSize) {
+        for (let i = 0; i < line.length; i += chunkSize) {
+          result.push(line.slice(i, i + chunkSize));
+        }
+      } else {
+        currentChunk = line;
+      }
+    }
+  }
+  // 保存最后一个块
+  if (currentChunk) {
+    result.push(currentChunk);
+  }
+  return result;
+}
+
+/**
+ * @description: 从文本中提取 base64 格式的图片
+ * @param {string} text 包含图片的文本内容
+ * @param {boolean} checkOnly 仅检查是否存在图片，不提取和清理文本（用于 useMarkdown 模式）
+ * @return {Object} 返回 { cleanedText: 清理后的文本, imageBase64Array: 图片数组, hasImages: 是否有图片 }
+ */
+export function extractBase64Images(text, checkOnly = false) {
+  if (!text || typeof text !== 'string') {
+    return { cleanedText: text, imageBase64Array: null, hasImages: false };
+  }
+
+  const imageBase64Array = [];
+  let cleanedText = text;
+
+  // 匹配多种可能的 base64 图片格式
+  // 1. data:image/png;base64,... 或 data:image/png:;base64,... (注意有冒号)
+  // 2. 可能在markdown图片格式中: ![...](data:image/...)
+  // 3. 可能有引号包裹或空格
+  const patterns = [
+    // Markdown 图片格式: ![alt](data:image/...)
+    /!\[[^\]]*\]\(\s*(data:image\/[a-zA-Z]+[:;]base64,[a-zA-Z0-9+\/=]+)\s*\)/gi,
+    // 直接的 data:image 格式 (可能有冒号或分号)
+    /data:image\/[a-zA-Z]+[:;]base64,[a-zA-Z0-9+\/=]+/gi,
+  ];
+
+  // 如果仅检查模式，只需要知道是否有图片即可
+  if (checkOnly) {
+    for (const pattern of patterns) {
+      if (pattern.test(text)) {
+        logger.debug(`[sf插件] 检测到文本中包含 base64 格式图片`);
+        return { cleanedText: text, imageBase64Array: null, hasImages: true };
+      }
+    }
+    return { cleanedText: text, imageBase64Array: null, hasImages: false };
+  }
+
+  // 完整提取模式
+  patterns.forEach(pattern => {
+    const matches = text.match(pattern);
+    if (matches) {
+      matches.forEach(match => {
+        // 提取实际的 data:image URL
+        let dataUrl;
+        if (match.startsWith('![')) {
+          // 从 markdown 格式中提取
+          const urlMatch = match.match(/data:image\/[a-zA-Z]+[:;]base64,[a-zA-Z0-9+\/=]+/i);
+          if (urlMatch) {
+            dataUrl = urlMatch[0];
+          }
+        } else {
+          dataUrl = match;
+        }
+
+        if (dataUrl) {
+          // 标准化格式: 将 data:image/png:;base64 转换为 data:image/png;base64
+          dataUrl = dataUrl.replace(/data:image\/([a-zA-Z]+):;base64,/, 'data:image/$1;base64,');
+
+          // 避免重复添加
+          if (!imageBase64Array.includes(dataUrl)) {
+            imageBase64Array.push(dataUrl);
+            logger.debug(`[sf插件] 提取到 base64 图片，大小: ${Math.round(dataUrl.length / 1024)}KB`);
+          }
+        }
+
+        // 从文本中移除图片数据
+        cleanedText = cleanedText.replace(match, '');
+      });
+    }
+  });
+
+  // 清理多余的空行
+  cleanedText = cleanedText.replace(/\n{3,}/g, '\n\n').trim();
+
+  const hasImages = imageBase64Array.length > 0;
+  if (hasImages) {
+    logger.info(`[sf插件] 从文本中提取到 ${imageBase64Array.length} 张 base64 格式图片`);
+    return { cleanedText, imageBase64Array, hasImages };
+  }
+
+  return { cleanedText, imageBase64Array: null, hasImages: false };
 }
