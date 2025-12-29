@@ -1022,10 +1022,10 @@ export class SF_Painting extends plugin {
                         generatedImageArray.forEach((imageBase64) => {
                             forwardMsg.push({ ...segment.image(`base64://${imageBase64.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
                         });
-                        forwardMsg.push(cleanedAnswer);
+                        forwardMsg.push(...(splitString_Enter(cleanedAnswer)));
                         // 如果有思考过程且开启了转发思考
                         if (thinkingContent && forwardThinking) {
-                            forwardMsg.push('[thinking]', thinkingContent);
+                            forwardMsg.push('[thinking]', ...(splitString_Enter(thinkingContent)));
                         }
                         e.reply(await common.makeForwardMsg(e, forwardMsg, `${e.sender.card || e.sender.nickname || e.user_id}的对话`));
                     }
@@ -1041,7 +1041,7 @@ export class SF_Painting extends plugin {
 
                     // 如果有思考过程且开启了转发思考，单独发送转发消息
                     if (thinkingContent && forwardThinking) {
-                        const forwardMsg = ['[thinking]', thinkingContent];
+                        const forwardMsg = ['[thinking]', ...(splitString_Enter(thinkingContent))];
                         e.reply(await common.makeForwardMsg(e, forwardMsg, `思考过程`));
                     }
                 }
@@ -1057,10 +1057,10 @@ export class SF_Painting extends plugin {
                     logger.error('[sf插件] markdown图片生成失败')
                 }
                 if (forwardMessage) {
-                    const forwardMsg = [cleanedAnswer];
+                    const forwardMsg = splitString_Enter(cleanedAnswer);
                     // 如果有思考过程且开启了转发思考
                     if (thinkingContent && forwardThinking) {
-                        forwardMsg.unshift('[thinking]', thinkingContent);
+                        forwardMsg.unshift('[thinking]', ...(splitString_Enter(thinkingContent)));
                     }
                     e.reply(await common.makeForwardMsg(e, forwardMsg, `${e.sender.card || e.sender.nickname || e.user_id}的对话`));
                 }
@@ -1068,7 +1068,7 @@ export class SF_Painting extends plugin {
                 await e.reply(cleanedAnswer, quoteMessage)
                 // 如果有思考过程且开启了转发思考，单独发送转发消息
                 if (thinkingContent && forwardThinking) {
-                    const forwardMsg = ['[thinking]', thinkingContent];
+                    const forwardMsg = ['[thinking]', ...(splitString_Enter(thinkingContent))];
                     e.reply(await common.makeForwardMsg(e, forwardMsg, `思考过程`));
                 }
             }
@@ -1867,7 +1867,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                         if (textImagePairs && textImagePairs.length > 0) {
                             textImagePairs.forEach((pair) => {
                                 if (pair.text) {
-                                    forwardMsg.push(pair.text);
+                                    forwardMsg.push(...(splitString_Enter(pair.text)));
                                 }
                                 forwardMsg.push({ ...segment.image(`base64://${pair.image.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
                             });
@@ -1875,7 +1875,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                             imageBase64.forEach((imgData) => {
                                 forwardMsg.push({ ...segment.image(`base64://${imgData.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
                             });
-                            forwardMsg.push(answer);
+                            forwardMsg.push(...(splitString_Enter(answer)));
                         }
 
                         if (sources && sources.length > 0) {
