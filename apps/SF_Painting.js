@@ -33,6 +33,7 @@ import {
     removeCQCode,
     splitString_Enter,
     extractBase64Images,
+    removeTrailingSlash,
 } from '../utils/common.js'
 import ChatCooldown from '../utils/chatCooldown.js'
 
@@ -1307,12 +1308,7 @@ export class SF_Painting extends plugin {
         logger.debug("[sf插件]API调用LLM msg：\n" + input + "\nrequestBody:\n" + JSON.stringify(requestBody))
         try {
             // 处理API URL，移除末尾斜杠并确保正确路径
-            let apiUrl = apiBaseUrl || config_date.sfBaseUrl;
-
-            // 移除末尾的斜杠
-            if (apiUrl.endsWith('/')) {
-                apiUrl = apiUrl.slice(0, -1);
-            }
+            let apiUrl = removeTrailingSlash(apiBaseUrl || config_date.sfBaseUrl);
 
             // 如果不包含 /chat/completions 就添加
             if (!apiUrl.match(/\/chat\/completions$/)) {
@@ -1461,7 +1457,7 @@ export class SF_Painting extends plugin {
 
     async sf_send_pic(e, finalPrompt, use_sf_key, config_date, param, canImg2Img, souce_image_base64, userPrompt) {
         try {
-            const response = await fetch(`${config_date.sfBaseUrl}/image/generations`, {
+            const response = await fetch(`${removeTrailingSlash(config_date.sfBaseUrl)}/image/generations`, {
                 method: 'POST',
                 headers: {
                     'Authorization': `Bearer ${use_sf_key}`,
@@ -2286,7 +2282,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         // };
 
         try {
-            const response = await fetch(`${ggBaseUrl}/v1beta/models/${opt.model}:generateContent`, {
+            const response = await fetch(`${removeTrailingSlash(ggBaseUrl)}/v1beta/models/${opt.model}:generateContent`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',

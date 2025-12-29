@@ -969,7 +969,7 @@ export function supportGuoba() {
                 field: "apiBaseUrl",
                 label: "接口地址",
                 component: "Input",
-                bottomHelpMessage: "设置#ss[对话]的API接口地址，兼容所有OpenAI格式的API接口",
+                bottomHelpMessage: "设置#ss[对话]的API接口地址，兼容所有OpenAI格式的API接口；通常是以 /v1 结尾",
                 componentProps: {
                   placeholder: 'https://api.siliconflow.cn/v1',
                 },

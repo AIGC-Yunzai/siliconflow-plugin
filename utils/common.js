@@ -251,3 +251,8 @@ export function extractBase64Images(text, checkOnly = false) {
 
   return { cleanedText, imageBase64Array: null, hasImages: false };
 }
+
+/** 移除末尾的斜杠 */
+export function removeTrailingSlash(url) {
+    return url.endsWith('/') ? url.slice(0, -1) : url;
+}
