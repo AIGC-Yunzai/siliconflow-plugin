@@ -199,7 +199,7 @@ export function extractBase64Images(text, checkOnly = false) {
   if (checkOnly) {
     for (const pattern of patterns) {
       if (pattern.test(text)) {
-        logger.debug(`[sf插件] 检测到文本中包含 base64 格式图片`);
+        // logger.debug(`[sf插件] 检测到文本中包含 base64 格式图片`);
         return { cleanedText: text, imageBase64Array: null, hasImages: true };
       }
     }
@@ -230,7 +230,7 @@ export function extractBase64Images(text, checkOnly = false) {
           // 避免重复添加
           if (!imageBase64Array.includes(dataUrl)) {
             imageBase64Array.push(dataUrl);
-            logger.debug(`[sf插件] 提取到 base64 图片，大小: ${Math.round(dataUrl.length / 1024)}KB`);
+            // logger.debug(`[sf插件] 提取到 base64 图片，大小: ${Math.round(dataUrl.length / 1024)}KB`);
           }
         }
 

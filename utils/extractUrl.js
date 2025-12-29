@@ -74,16 +74,16 @@ async function extractUrlContent(url) {
     }
 
     try {
-        logger.debug(`[URL提取]开始从URL获取内容: ${url}`)
+        logger.info(`[SF插件][URL内容提取]开始从URL获取内容: ${url}`)
         const response = await fetch(`https://lbl.news/api/extract?url=${encodeURIComponent(url)}`);
         if (!response.ok) {
             throw new Error(`提取内容失败: ${response.statusText}`);
         }
         const data = await response.json();
-        logger.debug(`[URL提取]成功获取URL内容: ${url}`)
+        logger.debug(`[SF插件][URL内容提取]成功获取URL内容: ${url}`)
         return data;
     } catch (error) {
-        logger.error(`[URL提取]提取内容失败: ${error.message}, URL: ${url}`);
+        logger.error(`[SF插件][URL内容提取]提取内容失败: ${error.message}, URL: ${url}`);
         return null;
     }
 }

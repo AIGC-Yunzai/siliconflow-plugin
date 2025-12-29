@@ -1125,18 +1125,14 @@ export class SF_Painting extends plugin {
                     }
 
                     // 尝试从返回的文本内容中提取 base64 图片
+                    let hasIMAGES = false;
                     if (!lastResult.imageBase64Array || lastResult.imageBase64Array.length === 0) {
                         // 如果是 useMarkdown 模式，仅检查是否有图片而不提取
                         const checkOnly = opt.useMarkdown === true;
                         const extracted = extractBase64Images(lastResult.content, checkOnly);
 
-                        if (checkOnly) {
-                            // useMarkdown 模式：仅检查是否有图片
-                            if (extracted.hasImages) {
-                                // 标记为有图片，但不修改 content
-                                lastResult.imageBase64Array = ['__HAS_IMAGES__']; // 使用一个特殊标记
-                            }
-                        } else if (extracted.imageBase64Array && extracted.imageBase64Array.length > 0) {
+                        hasIMAGES = extracted.hasImages
+                        if (!checkOnly && extracted.imageBase64Array && extracted.imageBase64Array.length > 0) {
                             // 非 useMarkdown 模式：提取并清理图片
                             lastResult.imageBase64Array = extracted.imageBase64Array;
                             lastResult.content = extracted.cleanedText;
@@ -1144,7 +1140,7 @@ export class SF_Painting extends plugin {
                     }
 
                     // 如果返回了图片，直接返回结果
-                    if (lastResult.imageBase64Array && lastResult.imageBase64Array.length > 0) {
+                    if (hasIMAGES || lastResult.imageBase64Array && lastResult.imageBase64Array.length > 0) {
                         if (attempt > 0) {
                             logger.info(`[sf插件][generatePrompt] 重试成功，第 ${attempt} 次重试返回了图片`);
                         }
@@ -1176,13 +1172,7 @@ export class SF_Painting extends plugin {
                         const checkOnly = opt.useMarkdown === true;
                         const extracted = extractBase64Images(lastResult.content, checkOnly);
 
-                        if (checkOnly) {
-                            // useMarkdown 模式：仅检查是否有图片
-                            if (extracted.hasImages) {
-                                // 标记为有图片，但不修改 content
-                                lastResult.imageBase64Array = ['__HAS_IMAGES__']; // 使用一个特殊标记
-                            }
-                        } else if (extracted.imageBase64Array && extracted.imageBase64Array.length > 0) {
+                        if (!checkOnly && extracted.imageBase64Array && extracted.imageBase64Array.length > 0) {
                             // 非 useMarkdown 模式：提取并清理图片
                             lastResult.imageBase64Array = extracted.imageBase64Array;
                             lastResult.content = extracted.cleanedText;
