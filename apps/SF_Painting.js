@@ -1590,7 +1590,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                 return false
             }
             // 只有当APIList中的字段有值时才使用该值
-            ggBaseUrl = apiConfig.apiBaseUrl || config_date.ggBaseUrl || "https://sfgemini.vledx.ggff.net" || "https://gemini.maliy.top"
+            ggBaseUrl = apiConfig.apiBaseUrl || config_date.ggBaseUrl || "https://sfgemini.vledx.ggff.net" || "https://a.geminiproxy.ggff.net"
             ggKey = this.get_random_key(apiConfig.apiKey) || this.get_random_key(config_date.ggKey) || "sf-plugin" || this.get_random_key(this.ggKeyFreeDecode(config_date.ggKey_free_250825))
             model = apiConfig.model || config_date.gg_model || "gemini-2.0-flash-exp"
             systemPrompt = apiConfig.prompt || config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"
@@ -1617,7 +1617,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                 return false
             }
             // 使用默认配置
-            ggBaseUrl = config_date.ggBaseUrl || "https://sfgemini.vledx.ggff.net" || "https://gemini.maliy.top"
+            ggBaseUrl = config_date.ggBaseUrl || "https://sfgemini.vledx.ggff.net" || "https://a.geminiproxy.ggff.net"
             ggKey = this.get_random_key(config_date.ggKey) || "sf-plugin" || this.get_random_key(this.ggKeyFreeDecode(config_date.ggKey_free_250825))
             model = config_date.gg_model || "gemini-2.0-flash-exp"
             systemPrompt = config_date.gg_Prompt || "你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。"

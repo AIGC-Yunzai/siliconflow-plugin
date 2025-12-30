@@ -1276,9 +1276,9 @@ export function supportGuoba() {
                 field: "apiBaseUrl",
                 label: "接口地址",
                 component: "Input",
-                bottomHelpMessage: "设置#gg[对话]的API接口地址，对https://generativelanguage.googleapis.com 反代，内置反代不可用时可选用： https://gemini.maliy.top",
+                bottomHelpMessage: "设置#gg[对话]的API接口地址，对https://generativelanguage.googleapis.com 反代，内置反代不可用时可选用： https://a.geminiproxy.ggff.net",
                 componentProps: {
-                  placeholder: 'https://gemini.maliy.top',
+                  placeholder: 'https://a.geminiproxy.ggff.net',
                 },
               },
               {
@@ -1477,10 +1477,10 @@ export function supportGuoba() {
         {
           field: "ggBaseUrl",
           label: "[#gg]Gemini反代地址",
-          bottomHelpMessage: "设置#gg[对话] 的API接口地址，对https://generativelanguage.googleapis.com 反代；留空则使用内置地址，内置反代不可用时可选用： https://gemini.maliy.top",
+          bottomHelpMessage: "设置#gg[对话] 的API接口地址，对https://generativelanguage.googleapis.com 反代；留空则使用内置地址，内置反代不可用时可选用： https://a.geminiproxy.ggff.net",
           component: "Input",
           componentProps: {
-            placeholder: 'https://gemini.maliy.top',
+            placeholder: 'https://a.geminiproxy.ggff.net',
           },
         },
         {

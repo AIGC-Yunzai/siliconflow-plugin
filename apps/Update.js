@@ -333,7 +333,7 @@ export class update extends plugin {
       const config_date = Config.getConfig()
       const m = await import('./SF_Painting.js');
       const sf = new m.SF_Painting();
-      const geminiModelsByFetch = await getGeminiModelsByFetch(sf.get_random_key(config_date.ggKey) || sf.get_random_key(sf.ggKeyFreeDecode(config_date.ggKey_free_250825) || "sf-plugin"), config_date.ggBaseUrl || sf.get_random_key(sf.ggKeyFreeDecode(config_date.ggReProxy)) || "https://gemini.maliy.top" || "https://sfgemini.vledx.ggff.net");
+      const geminiModelsByFetch = await getGeminiModelsByFetch(sf.get_random_key(config_date.ggKey) || sf.get_random_key(sf.ggKeyFreeDecode(config_date.ggKey_free_250825) || "sf-plugin"), config_date.ggBaseUrl || sf.get_random_key(sf.ggKeyFreeDecode(config_date.ggReProxy)) || "https://a.geminiproxy.ggff.net" || "https://sfgemini.vledx.ggff.net");
       if (geminiModelsByFetch && Array.isArray(geminiModelsByFetch)) {
         writeYaml(`${pluginRoot}/config/config/geminiModelsByFetch.yaml`, geminiModelsByFetch);
         logger.info('[sf插件自动任务] 成功更新 Gemini 模型列表');
