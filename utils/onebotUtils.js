@@ -33,6 +33,15 @@ export async function getChatHistory_w(target, count, seq = null, duration_hours
   const endTime = Math.floor(date_end.getTime() / 1000); // 将 Date 对象转换为秒级时间戳
   const cutoffTime = duration_hours > 0 ? endTime - (duration_hours * 60 * 60) : 0;
 
+  // 辅助函数：对消息数组按时间排序（从旧到新）
+  const sortMessagesByTime = (messages) => {
+    return messages.sort((a, b) => {
+      const timeA = a.time || 0;
+      const timeB = b.time || 0;
+      return timeA - timeB; // 升序：最早的消息在前
+    });
+  };
+
   if (!seq) {
     let latestChat = await target.getChatHistory(undefined, 1)
     seq = latestChat[0].seq || latestChat[0].message_id
@@ -50,8 +59,8 @@ export async function getChatHistory_w(target, count, seq = null, duration_hours
         const result = await target.getChatHistory(currentSeq, currentCount);
 
         if (!result || !Array.isArray(result) || result.length === 0) {
-          // 如果没有更多消息了，返回已获取的消息
-          return allResults;
+          // 如果没有更多消息了，返回已获取的消息（排序后）
+          return sortMessagesByTime(allResults);
         }
 
         // 如果设置了时间范围，过滤消息
@@ -67,7 +76,7 @@ export async function getChatHistory_w(target, count, seq = null, duration_hours
             // 检查是否有消息时间小于截止时间，如果有则说明已经超出时间范围
             const hasOlderMsg = result.some(msg => (msg.time || 0) < cutoffTime);
             if (hasOlderMsg) {
-              return allResults;
+              return sortMessagesByTime(allResults);
             }
           }
         }
@@ -80,7 +89,7 @@ export async function getChatHistory_w(target, count, seq = null, duration_hours
 
         // 如果获取的消息数量少于请求数量，说明已经没有更多消息了
         if (result.length < currentCount) {
-          return allResults;
+          return sortMessagesByTime(allResults);
         }
 
         // 如果设置了时间范围且过滤后的消息数量为0但原始消息有内容，可能需要继续获取
@@ -90,7 +99,7 @@ export async function getChatHistory_w(target, count, seq = null, duration_hours
           const lastMsgTime = lastMessage.time || 0;
           if (lastMsgTime < cutoffTime) {
             // 已经超出时间范围，停止获取
-            return allResults;
+            return sortMessagesByTime(allResults);
           }
         }
 
@@ -110,7 +119,7 @@ export async function getChatHistory_w(target, count, seq = null, duration_hours
           if (allResults.length > 0) {
             logger.info(`[派蒙nai辅助]部分获取聊天历史失败，返回已获取的${allResults.length}条消息`);
             logger.info(`[派蒙nai辅助]部分获取聊天历史失败 err: ${err}`);
-            return allResults;
+            return sortMessagesByTime(allResults);
           }
           // throw new Error(`获取聊天历史失败，已重试到count=1仍然失败`, err);
         }
@@ -118,7 +127,7 @@ export async function getChatHistory_w(target, count, seq = null, duration_hours
     }
   }
 
-  return allResults;
+  return sortMessagesByTime(allResults);
 }
 
 
