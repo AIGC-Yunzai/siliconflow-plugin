@@ -14,6 +14,7 @@ import {
     saveContext,
     loadContext,
     formatContextForGemini,
+    formatContextForOpenAI,
     clearUserContext,
     clearAllContext,
     clearContextByCount,
@@ -1229,83 +1230,15 @@ export class SF_Painting extends plugin {
         };
         logger.debug(`[sf插件] 生成提示词 - 使用模型: ${requestBody.model}`);
 
-        // 添加历史对话
-        if (historyMessages && historyMessages.length > 0) {
-            historyMessages.forEach(msg => {
-                if (msg.role === 'user') {
-                    requestBody.messages.push({
-                        role: 'user',
-                        content: msg.content
-                    });
-                } else if (msg.role === 'assistant') {
-                    requestBody.messages.push({
-                        role: 'assistant',
-                        content: msg.content
-                    });
-                }
-            });
-        }
+        // 统一使用 formatContextForOpenAI 函数处理历史对话和首次对话
+        const userMessages = formatContextForOpenAI(historyMessages, {
+            currentInput: historyMessages.length > 0 ? null : input,
+            currentImages: opt.currentImages,
+            historyImages: opt.historyImages
+        });
 
-        // 构造当前消息
-        try {
-            if (opt.currentImages?.length > 0 || opt.historyImages?.length > 0) {
-                // 有图片时使用数组格式
-                let allContent = [];
+        requestBody.messages.push(...userMessages);
 
-                // 添加当前引用的图片
-                if (opt.currentImages && opt.currentImages.length > 0) {
-                    allContent.push({
-                        type: "text",
-                        text: "当前引用的图片:\n" + input
-                    });
-                    opt.currentImages.forEach(image => {
-                        allContent.push({
-                            type: "image_url",
-                            image_url: {
-                                url: `data:image/jpeg;base64,${image}`
-                            }
-                        });
-                    });
-                }
-
-                // 添加历史图片
-                if (opt.historyImages && opt.historyImages.length > 0) {
-                    allContent.push({
-                        type: "text",
-                        text: "\n历史对话中的图片:"
-                    });
-                    opt.historyImages.forEach(image => {
-                        allContent.push({
-                            type: "image_url",
-                            image_url: {
-                                url: `data:image/jpeg;base64,${image}`
-                            }
-                        });
-                    });
-                }
-
-                // 带图片的消息格式
-                requestBody.messages.push({
-                    role: "user",
-                    content: allContent
-                });
-            } else {
-                // 纯文本消息使用简单格式
-                requestBody.messages.push({
-                    role: "user",
-                    content: input
-                });
-            }
-        } catch (error) {
-            logger.error("[sf插件]消息处理失败\n", error);
-            // 如果处理失败，至少保留用户输入
-            requestBody.messages.push({
-                role: "user",
-                content: input
-            });
-        }
-
-        logger.debug("[sf插件]API调用LLM msg：\n" + input + "\nrequestBody:\n" + JSON.stringify(requestBody))
         try {
             // 处理API URL，移除末尾斜杠并确保正确路径
             let apiUrl = removeTrailingSlash(apiBaseUrl || config_date.sfBaseUrl);
@@ -2189,90 +2122,14 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             }]
         };
 
-        // 添加历史对话
-        if (historyMessages.length > 0) {
-            requestBody.contents = formatContextForGemini(historyMessages)
-        }
+        // 统一使用 formatContextForGemini 函数处理历史对话和首次对话
+        requestBody.contents = formatContextForGemini(historyMessages, {
+            useVertexAI: opt.useVertexAI,
+            currentInput: historyMessages.length > 0 ? null : input,
+            currentImages: opt.currentImages,
+            historyImages: opt.historyImages
+        });
 
-        // 添加当前用户输入和图片
-        const currentParts = [];
-
-        // 如果使用 Vertex AI 格式
-        if (opt.useVertexAI) {
-            // Vertex AI 使用扁平的 contents 数组格式，可以直接混合字符串和对象
-            const vertexContents = [];
-
-            // 添加用户输入文本
-            vertexContents.push(input);
-
-            // 如果有图片，添加图片（Vertex AI 使用 inlineData，驼峰命名）
-            if (opt.currentImages && opt.currentImages.length > 0) {
-                opt.currentImages.forEach(image => {
-                    vertexContents.push({
-                        "inlineData": {
-                            "mimeType": "image/jpeg",
-                            "data": image
-                        }
-                    });
-                });
-            }
-
-            // 添加历史图片（Vertex AI 格式）
-            if (opt.historyImages && opt.historyImages.length > 0) {
-                opt.historyImages.forEach(image => {
-                    vertexContents.push({
-                        "inlineData": {
-                            "mimeType": "image/jpeg",
-                            "data": image
-                        }
-                    });
-                });
-            }
-
-            // Vertex AI 的 contents 是扁平数组
-            requestBody.contents = vertexContents;
-        } else {
-            // 标准 Gemini API 格式
-            // 添加用户输入文本
-            currentParts.push({
-                "text": input
-            });
-
-            // 如果有图片，添加图片
-            if (opt.currentImages && opt.currentImages.length > 0) {
-                currentParts.push({
-                    "text": "\n当前引用的图片:"
-                });
-                opt.currentImages.forEach(image => {
-                    currentParts.push({
-                        "inline_data": {
-                            "mime_type": "image/jpeg",
-                            "data": image
-                        }
-                    });
-                });
-            }
-
-            // 添加历史图片
-            if (opt.historyImages && opt.historyImages.length > 0) {
-                currentParts.push({
-                    "text": "\n历史对话中的图片:"
-                });
-                opt.historyImages.forEach(image => {
-                    currentParts.push({
-                        "inline_data": {
-                            "mime_type": "image/jpeg",
-                            "data": image
-                        }
-                    });
-                });
-            }
-
-            requestBody.contents.push({
-                "parts": currentParts,
-                "role": "user"
-            });
-        }
 
         // // TODO: nano banana 生成图片的宽高比设置，考虑到 #gg 主要用于LLM对话，宽高比应该仅在 #dd 中控制，参考： https://ai.google.dev/gemini-api/docs/image-generation?hl=zh-cn#rest_14
         // requestBody.generationConfig = {

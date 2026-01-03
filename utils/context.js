@@ -1,36 +1,239 @@
 import Config from '../components/Config.js'
 
-/** 格式化上下文消息为Gemini API格式 */
-export function formatContextForGemini(messages) {
-    return messages.map(msg => {
-        // 构造基本消息结构
-        const formattedMsg = {
-            // 将assistant转换为model,其他保持不变
-            role: msg.role === 'assistant' ? 'model' : msg.role,
-            parts: []
-        }
+/** 
+ * 格式化上下文消息为Gemini API格式
+ * @param {Array} messages 消息数组
+ * @param {Object} options 配置选项
+ * @param {boolean} options.useVertexAI 是否使用 Vertex AI 格式（驼峰命名）
+ * @param {string} options.currentInput 当前用户输入（如果没有历史消息时使用）
+ * @param {Array} options.currentImages 当前消息的图片数组
+ * @param {Array} options.historyImages 历史消息的图片数组
+ * @return {Array} 格式化后的消息数组
+ */
+export function formatContextForGemini(messages, options = {}) {
+    const { useVertexAI = false, currentInput = null, currentImages = null, historyImages = null } = options;
 
-        // 添加文本内容
-        if (typeof msg.content === 'object') {
-            formattedMsg.parts.push({ text: msg.content.text })
-        } else {
-            formattedMsg.parts.push({ text: msg.content })
-        }
+    // 如果有历史消息，格式化历史消息
+    if (messages && messages.length > 0) {
+        return messages.map(msg => {
+            // 构造基本消息结构
+            const formattedMsg = {
+                // 将assistant转换为model,其他保持不变
+                role: msg.role === 'assistant' ? 'model' : msg.role,
+                parts: []
+            }
 
-        // 只从 imageBase64 字段获取图片
-        if (msg.imageBase64 && Array.isArray(msg.imageBase64)) {
-            msg.imageBase64.forEach(base64 => {
-                formattedMsg.parts.push({
-                    inline_data: {
-                        mime_type: "image/jpeg",
-                        data: base64
+            // 添加文本内容
+            if (typeof msg.content === 'object') {
+                formattedMsg.parts.push({ text: msg.content.text })
+            } else {
+                formattedMsg.parts.push({ text: msg.content })
+            }
+
+            // 只从 imageBase64 字段获取图片
+            if (msg.imageBase64 && Array.isArray(msg.imageBase64)) {
+                msg.imageBase64.forEach(base64 => {
+                    if (useVertexAI) {
+                        // Vertex AI 格式：使用驼峰命名
+                        formattedMsg.parts.push({
+                            inlineData: {
+                                mimeType: "image/jpeg",
+                                data: base64
+                            }
+                        })
+                    } else {
+                        // 标准 Gemini API 格式：使用下划线命名
+                        formattedMsg.parts.push({
+                            inline_data: {
+                                mime_type: "image/jpeg",
+                                data: base64
+                            }
+                        })
                     }
                 })
-            })
-        }
+            }
 
-        return formattedMsg
-    })
+            return formattedMsg
+        })
+    }
+
+    // 如果没有历史消息，构造首次对话消息
+    if (currentInput) {
+        if (useVertexAI) {
+            // Vertex AI 使用扁平的 contents 数组格式，可以直接混合字符串和对象
+            const vertexContents = [];
+
+            // 添加用户输入文本
+            vertexContents.push(currentInput);
+
+            // 如果有图片，添加图片（Vertex AI 使用 inlineData，驼峰命名）
+            if (currentImages && currentImages.length > 0) {
+                currentImages.forEach(image => {
+                    vertexContents.push({
+                        inlineData: {
+                            mimeType: "image/jpeg",
+                            data: image
+                        }
+                    });
+                });
+            }
+
+            // 添加历史图片（Vertex AI 格式）
+            if (historyImages && historyImages.length > 0) {
+                historyImages.forEach(image => {
+                    vertexContents.push({
+                        inlineData: {
+                            mimeType: "image/jpeg",
+                            data: image
+                        }
+                    });
+                });
+            }
+
+            return vertexContents;
+        } else {
+            // 标准 Gemini API 格式
+            const currentParts = [];
+
+            // 添加用户输入文本
+            currentParts.push({
+                text: currentInput
+            });
+
+            // 如果有图片，添加图片
+            if (currentImages && currentImages.length > 0) {
+                currentParts.push({
+                    text: "\n当前引用的图片:"
+                });
+                currentImages.forEach(image => {
+                    currentParts.push({
+                        inline_data: {
+                            mime_type: "image/jpeg",
+                            data: image
+                        }
+                    });
+                });
+            }
+
+            // 添加历史图片
+            if (historyImages && historyImages.length > 0) {
+                currentParts.push({
+                    text: "\n历史对话中的图片:"
+                });
+                historyImages.forEach(image => {
+                    currentParts.push({
+                        inline_data: {
+                            mime_type: "image/jpeg",
+                            data: image
+                        }
+                    });
+                });
+            }
+
+            return [{
+                parts: currentParts,
+                role: "user"
+            }];
+        }
+    }
+
+    // 如果既没有历史消息也没有当前输入，返回空数组
+    return [];
+}
+
+/** 
+ * 格式化上下文消息为 OpenAI API 格式
+ * @param {Array} messages 消息数组
+ * @param {Object} options 配置选项
+ * @param {string} options.currentInput 当前用户输入（如果没有历史消息时使用）
+ * @param {Array} options.currentImages 当前消息的图片数组
+ * @param {Array} options.historyImages 历史消息的图片数组
+ * @return {Array} 格式化后的消息数组
+ */
+export function formatContextForOpenAI(messages, options = {}) {
+    const { currentInput = null, currentImages = null, historyImages = null } = options;
+    const formattedMessages = [];
+
+    // 如果有历史消息，格式化历史消息
+    if (messages && messages.length > 0) {
+        messages.forEach(msg => {
+            if (msg.role === 'user') {
+                formattedMessages.push({
+                    role: 'user',
+                    content: msg.content
+                });
+            } else if (msg.role === 'assistant') {
+                formattedMessages.push({
+                    role: 'assistant',
+                    content: msg.content
+                });
+            }
+        });
+        return formattedMessages;
+    }
+
+    // 如果没有历史消息，构造首次对话消息
+    if (currentInput) {
+        try {
+            if (currentImages?.length > 0 || historyImages?.length > 0) {
+                // 有图片时使用数组格式
+                let allContent = [];
+
+                // 添加当前引用的图片
+                if (currentImages && currentImages.length > 0) {
+                    allContent.push({
+                        type: "text",
+                        text: "当前引用的图片:\n" + currentInput
+                    });
+                    currentImages.forEach(image => {
+                        allContent.push({
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/jpeg;base64,${image}`
+                            }
+                        });
+                    });
+                }
+
+                // 添加历史图片
+                if (historyImages && historyImages.length > 0) {
+                    allContent.push({
+                        type: "text",
+                        text: "\n历史对话中的图片:"
+                    });
+                    historyImages.forEach(image => {
+                        allContent.push({
+                            type: "image_url",
+                            image_url: {
+                                url: `data:image/jpeg;base64,${image}`
+                            }
+                        });
+                    });
+                }
+
+                // 带图片的消息格式
+                formattedMessages.push({
+                    role: "user",
+                    content: allContent
+                });
+            } else {
+                // 纯文本消息使用简单格式
+                formattedMessages.push({
+                    role: "user",
+                    content: currentInput
+                });
+            }
+        } catch (error) {
+            logger.error("[Context] 消息处理失败", error);
+            // 如果处理失败，至少保留用户输入
+            formattedMessages.push({
+                role: "user",
+                content: currentInput
+            });
+        }
+    }
+
+    return formattedMessages;
 }
 
 /** 构造Redis key */
@@ -262,7 +465,7 @@ export async function clearUserContext(userId, type = '') {
             // 如果没有指定type，匹配该用户的所有记录（包括share01和所有promptNum）
             pattern = `sfplugin:llm:${userId}:*`
         }
-        
+
         logger.debug(`[Context] 清除用户所有记录 - 用户ID: ${userId}, 类型: ${type || '全部'}`);
 
         const keys = await redis.keys(pattern)
