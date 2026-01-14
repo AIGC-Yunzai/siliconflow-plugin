@@ -851,7 +851,7 @@ export function supportGuoba() {
                 field: "prompt",
                 label: "预设文本",
                 component: "InputTextArea",
-                bottomHelpMessage: "支持的固定参数: 横图, 竖图, 方图, --1:1, --16:9, --9:16, --upimgs 2, reference_strength = 0.8 等",
+                bottomHelpMessage: "1.支持的固定参数: 横图, 竖图, 方图, --1:1, --16:9, --9:16, --upimgs 2, reference_strength = 0.8 等；2.meme制作：支持将预设文本中的 _sender_name_ 替换为 被At的用户或当前用户昵称； _sender_id_ 替换为 被At的用户或当前用户qq； _sender_groupid_ 替换为 当前群号； _date_ 替换为 当前日期； _time_ 替换为 当前时间；",
               },
             ],
           },

@@ -243,7 +243,7 @@ export class Doubao extends plugin {
         }
 
         // 处理预设
-        const presetResult = applyPresets(msg, Config.getConfig("presets"))
+        const presetResult = applyPresets(msg, Config.getConfig("presets"), e)
         msg = presetResult.processedText
 
         // 处理 msg，使用 handleParam 解析参数

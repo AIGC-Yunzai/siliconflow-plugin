@@ -1,14 +1,16 @@
+import _ from 'lodash'
+
 /**
  * 应用预设到文本中
  * @param {string} text - 原始输入文本
  * @param {object} config - 配置对象,包含 presets 数组
- * @param {Array} config.presets - 预设数组,每个预设包含 name 和 prompt
+ * @param {object} e 需要 e.sender
  * @returns {object} 返回对象包含:
  *   - processedText: 处理后的文本(预设名替换为预设文本)
  *   - usedPresets: 使用过的预设数组 [{name, prompt}]
  *   - originalText: 处理后的文本(预设名替换为占位符： {sf预设: ${presetName}} )
  */
-export function applyPresets(text, config) {
+export function applyPresets(text, config, e = {}) {
     const originalTextInput = text || '';
     if (!text || typeof text !== 'string') {
         return {
@@ -94,6 +96,9 @@ export function applyPresets(text, config) {
         originalText = originalText.slice(0, start) + `{sf预设: ${preset.name}}` + originalText.slice(end)
     }
 
+    // 应用设定拓展
+    processedText = replacePromptForSenderMsg(e, processedText);
+
     return {
         processedText: processedText.trim(),
         usedPresets,
@@ -122,4 +127,46 @@ export function generatePresetInfo(usedPresets) {
 
     const presetNames = usedPresets.map(p => p.name).join('、')
     return `\n使用预设：${presetNames}`
+}
+
+/** 在 prompt 中替换文本使用 e.sender 信息 */
+function replacePromptForSenderMsg(e, systemMsg = "") {
+    if (!e.sender || !e.message)
+        return systemMsg;
+
+    /** at或当前用户昵称 */
+    let name = ''
+    if (e.message.filter(m => m.type === 'at').length > 0) {
+        name = _.trim(e.message.filter(m => m.type === 'at')[0].text, '@')
+
+        systemMsg = systemMsg.replace(/_sender_id_/igm, e.self_id)
+    } else {
+        name = e.sender.card || e.sender.nickname
+
+        systemMsg = systemMsg.replace(/_sender_id_/igm, e.sender.user_id)
+        systemMsg = systemMsg.replace(/_sender_gender_/igm, e.sender.sex)
+        systemMsg = systemMsg.replace(/_sender_age_/igm, e.sender.age)
+        systemMsg = systemMsg.replace(/_sender_area_/igm, e.sender.area)
+        systemMsg = systemMsg.replace(/_sender_role_/igm, `${e.sender.role == "owner" ? '群主' : `${e.sender.role == "admin" ? '管理员' : ''}`}`)
+        systemMsg = systemMsg.replace(/_sender_title_/igm, e.sender.title)
+    }
+
+    const getCurrentDate = () => {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    };
+    const getCurrentTime = () => {
+        const date = new Date();
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
+        return `${hours}:${minutes}`;
+    };
+    systemMsg = systemMsg.replace(/_sender_name_/igm, name)
+    systemMsg = systemMsg.replace(/_date_/igm, getCurrentDate())
+    systemMsg = systemMsg.replace(/_time_/igm, getCurrentTime())
+    systemMsg = systemMsg.replace(/_sender_groupid_/igm, e.group_id)
+    return systemMsg;
 }
