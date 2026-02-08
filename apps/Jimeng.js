@@ -17,7 +17,7 @@ export class Jimeng extends plugin {
             /** 功能名称 */
             name: 'sf插件-即梦api',
             /** 功能描述 */
-            dsc: '绘画/视频',
+            dsc: '绘画/视频/积分管理',
             event: 'message',
             /** 优先级，数字越小等级越高 */
             priority: 1011,
@@ -28,21 +28,38 @@ export class Jimeng extends plugin {
                     /** 执行方法 */
                     fnc: 'call_Jimeng_Api'
                 },
+                // {
+                //     reg: '^#即梦(检查|检测)?账号$',
+                //     fnc: 'check_Jimeng_Token',
+                //     permission: 'master'
+                // },
+                {
+                    reg: '^#即梦查?看?积分$',
+                    fnc: 'get_Jimeng_Points',
+                    permission: 'master'
+                },
+                {
+                    reg: '^#即梦(签到|领取积分)$',
+                    fnc: 'receive_Jimeng_Points',
+                    permission: 'master'
+                }
             ]
         })
     }
 
+    /** ^#即梦(画图|绘图|绘画|视频) */
     async call_Jimeng_Api(e) {
         // 判断是否为视频生成
         const isVideo = /^#即梦视频/.test(e.msg)
 
         let msg = e.msg.replace(/^#即梦(画图|绘图|绘画|视频)(\n*)?/, '').trim()
         if (msg === '帮助') {
-            const helpMsg = isVideo ? `[sf插件][即梦视频API]帮助：
+            const helpMsg = isVideo ?
+                `[sf插件][即梦视频API]帮助：
 支持的ratio: 横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --21:9
  注意：在图生视频模式下（有图片输入时），ratio参数将被忽略，视频比例由输入图片的实际比例决定。
-上传图片数: --upimgs 2
-更换模型: --model [jimeng-video-4.0-pro|jimeng-video-4.0|jimeng-video-3.5-pro|jimeng-video-veo3|jimeng-video-sora2]
+上传图片数: --upimgs [1|2]
+更换模型: --model [jimeng-video-4.0-pro|jimeng-video-4.0|jimeng-video-3.5-pro|jimeng-video-veo3|jimeng-video-veo3.1|jimeng-video-sora2|jimeng-video-3.0-pro|jimeng-video-3.0|jimeng-video-3.0-fast]
 更改时长：--duration [5|8|10|15]
 更改分辨率：--resolution [720p|1080p]
 引用图片：
@@ -51,17 +68,22 @@ export class Jimeng extends plugin {
  2张图片 → 首尾帧视频模式
 
 示例：
-#即梦视频 一个女人在花园里跳舞 --9:16 --5秒` : `[sf插件][即梦API]帮助：
-默认的resolution: 2k
+#即梦视频 一个女人在花园里跳舞 --model jimeng-video-4.0 --9:16 --duration 5 --upimgs 1` :
+                `[sf插件][即梦API]帮助：
 支持的ratio: 横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --3:2, --2:3, --21:9
-上传图片数: --upimgs 2
+上传图片数: --upimgs [1|2]
+更改分辨率：--resolution [1k|2k|4k]
 参考图片强度: --reference_strength 0.8
-更换模型: --model [nanobanana|nanobananapro|jimeng-4.5]
+更换模型: --model [nanobanana|nanobananapro|jimeng-4.5|jimeng-4.1|jimeng-4.0|jimeng-3.1|jimeng-3.0]
 启用智能画幅比例: --intelligent_ratio true
 负面提示词: ntags = [tags]
 
+其他指令：
+ #即梦积分
+ #即梦签到
+
 示例：
-#即梦绘画 美丽的小少女，胶片感, 竖图, reference_strength = 0.8, --nanobanana, ntags = 丑陋的`
+#即梦绘画 美丽的小少女，胶片感, 竖图, --model nanobanana --resolution 2k, ntags = 丑陋的`
             e.reply(helpMsg, true);
             return true
         }
@@ -335,6 +357,133 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
             }
             await e.reply(errorMsg, true)
             return true
+        }
+    }
+
+    /** 获取所有配置的Token */
+    _getAllTokens() {
+        const config_date = Config.getConfig()
+        const tokens1 = config_date.Jimeng.sessionid ? config_date.Jimeng.sessionid.split(',') : []
+        const tokens2 = config_date.Jimeng.sessionid_ITN ? config_date.Jimeng.sessionid_ITN.split(',') : []
+        // 合并并去重，过滤空值
+        const allTokens = [...new Set([...tokens1, ...tokens2])].filter(t => t && t.trim() !== '')
+        return { allTokens, baseUrl: config_date.Jimeng.base_url }
+    }
+
+    /** Token脱敏显示 */
+    _maskToken(token) {
+        if (!token || token.length < 10) return token
+        return token.substring(0, 6) + '...' + token.substring(token.length - 4)
+    }
+
+    /** ^#即梦(检查|检测)?账号$ */
+    async check_Jimeng_Token(e) {
+        const { allTokens, baseUrl } = this._getAllTokens()
+        if (allTokens.length === 0) {
+            return e.reply('配置文件中未找到任何 Token', true)
+        }
+
+        await e.reply(`开始检查 ${allTokens.length} 个 Token 的状态...`, true)
+        const statusList = []
+
+        for (const token of allTokens) {
+            try {
+                const res = await axios.post(`${baseUrl}/token/check`, { token: token.trim() }, {
+                    timeout: 10000,
+                    validateStatus: () => true
+                })
+                console.log("测试：res.data: " + JSON.stringify(res.data, null, 2))
+                const isLive = res.data?.live === true
+                statusList.push(`Token: ${this._maskToken(token)}\n状态: ${isLive ? '✅ 有效' : '❌ 无效'}`)
+            } catch (error) {
+                statusList.push(`Token: ${this._maskToken(token)}\n状态: ⚠️ 请求失败 (${error.message})`)
+            }
+        }
+
+        const msg = await common.makeForwardMsg(e, statusList, '即梦Token状态检查')
+        await e.reply(msg)
+    }
+
+    /** ^#即梦查?看?积分$ */
+    async get_Jimeng_Points(e) {
+        const { allTokens, baseUrl } = this._getAllTokens()
+        if (allTokens.length === 0) return e.reply('未配置 Token', true)
+
+        try {
+            // 构造 Bearer Token 字符串（多个用逗号分隔）
+            const authHeader = allTokens.join(',')
+
+            const res = await axios.post(`${baseUrl}/token/points`, {}, {
+                headers: { 'Authorization': `Bearer ${authHeader}` },
+                timeout: 15000,
+                validateStatus: () => true
+            })
+
+            const data = res.data
+            if (!Array.isArray(data)) {
+                return e.reply(`获取失败，返回格式错误: ${JSON.stringify(data)}`, true)
+            }
+
+            const msgList = data.map(item => {
+                const pts = item.points || {}
+                return `Token: ${this._maskToken(item.token)}\n` +
+                    `总积分: ${pts.totalCredit || 0}\n` +
+                    `赠送积分: ${pts.giftCredit || 0}\n` +
+                    `购买积分: ${pts.purchaseCredit || 0}\n` +
+                    `VIP积分: ${pts.vipCredit || 0}`
+            })
+
+            const msg = await common.makeForwardMsg(e, msgList, `即梦积分查询 (${data.length}个)`)
+            await e.reply(msg)
+
+        } catch (error) {
+            logger.error('[即梦查积分] Error:', error)
+            await e.reply(`查询失败: ${error.message}`, true)
+        }
+    }
+
+    /** ^#即梦(签到|领取积分)$ */
+    async receive_Jimeng_Points(e) {
+        const { allTokens, baseUrl } = this._getAllTokens()
+        if (allTokens.length === 0) return e.reply('未配置 Token', true)
+
+        await e.reply('开始批量签到，请稍候...', true)
+
+        try {
+            const authHeader = allTokens.join(',')
+
+            const res = await axios.post(`${baseUrl}/token/receive`, {}, {
+                headers: { 'Authorization': `Bearer ${authHeader}` },
+                timeout: 30000, // 签到可能较慢
+                validateStatus: () => true
+            })
+
+            const data = res.data
+            if (!Array.isArray(data)) {
+                return e.reply(`签到请求异常: ${JSON.stringify(data)}`, true)
+            }
+
+            let successCount = 0
+            const msgList = data.map(item => {
+                const pts = item.credits || {}
+                const statusIcon = item.received ? '✅ 领取成功' : (item.error ? '❌ 失败' : '⚪ 无需领取/已领')
+                if (item.received) successCount++
+
+                let detail = `Token: ${this._maskToken(item.token)}\n结果: ${statusIcon}`
+                if (item.error) detail += `\n错误: ${item.error}`
+                detail += `\n当前总积分: ${pts.totalCredit || 0}`
+                return detail
+            })
+
+            const summary = `批量签到完成\n总数: ${allTokens.length}\n成功领取: ${successCount}`
+            msgList.unshift(summary)
+
+            const msg = await common.makeForwardMsg(e, msgList, '即梦每日签到结果')
+            await e.reply(msg)
+
+        } catch (error) {
+            logger.error('[即梦签到] Error:', error)
+            await e.reply(`签到请求失败: ${error.message}`, true)
         }
     }
 

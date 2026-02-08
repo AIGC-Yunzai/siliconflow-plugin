@@ -685,7 +685,7 @@ export function supportGuoba() {
         {
           field: "Jimeng.sessionid",
           label: "Sessionid",
-          bottomHelpMessage: "获取Sessionid：打开浏览器，访问 https://jimeng.jianying.com/ai-tool/home/ 登录你的账号，按F12打开开发者工具，切换到 `Application`或 `Storage` 标签页，在左侧展开`Cookies`，点击 `https://jimeng.jianying.com` 找到名为sessionid的cookie值；若有多个 sessionid 用英文逗号分割",
+          bottomHelpMessage: "获取Sessionid：打开浏览器，访问 https://jimeng.jianying.com/ai-tool/home/ 登录你的账号，按F12打开开发者工具，切换到 `Application`或 `Storage` 标签页，在左侧展开`Cookies`，点击 `https://jimeng.jianying.com` 找到名为sessionid的cookie值；若有多个 sessionid 用英文逗号分割；可用指令: #即梦积分 #即梦签到",
           component: "Input",
         },
         {

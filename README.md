@@ -64,7 +64,7 @@ pip install aiohttp
 
 <img decoding="async" align=right src="https://github.com/user-attachments/assets/9698e837-49e7-4c19-8dab-6aa17d1faed4" width="35%">
 
-请使用 `#sf帮助` 获取完整帮
+请使用 `#sf帮助` 获取完整帮助
 - [x] `#sf绘画[tags][引用图片]` 使用sf接口绘画
 - [x] `#mjp[tags]` 使用MJ接口绘画
 - [x] `#gg[gemini提问/实时搜索]`
