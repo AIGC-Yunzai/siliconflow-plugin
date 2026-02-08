@@ -41,8 +41,10 @@ export class Jimeng extends plugin {
             const helpMsg = isVideo ? `[sf插件][即梦视频API]帮助：
 支持的ratio: 横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --21:9
  注意：在图生视频模式下（有图片输入时），ratio参数将被忽略，视频比例由输入图片的实际比例决定。
-支持的时长：--5秒, --10秒
 上传图片数: --upimgs 2
+更换模型: --model [jimeng-video-4.0-pro|jimeng-video-4.0|jimeng-video-3.5-pro|jimeng-video-veo3|jimeng-video-sora2]
+更改时长：--duration [5|8|10|15]
+更改分辨率：--resolution [720p|1080p]
 引用图片：
  无图片 → 文生视频模式
  1张图片 → 图生视频模式
@@ -122,8 +124,8 @@ export class Jimeng extends plugin {
                 "model": param.model || "jimeng-video-3.0",
                 "prompt": param.input || "一个女人在花园里跳舞",
                 "ratio": param.parameters.ratio || "16:9",
-                // "resolution": param.parameters.resolution || "720p",
-                "duration": param.parameters.video_duration || undefined,
+                "resolution": param.parameters.resolution || "720p",
+                "duration": param.parameters.duration || undefined,
                 "filePaths": e.img && e.img.length > 0 ? e.img.slice(0, 2) : undefined, // 最多支持2张图片
             }
         } else if (isImg2Img) {
@@ -160,14 +162,14 @@ export class Jimeng extends plugin {
         try {
             // 根据模型选择 sessionid
             let sessionid;
-            if (requestBody.model === "nanobanana") {
+            if (requestBody.model === "nanobanana" || requestBody.model === "jimeng-video-veo3" || requestBody.model === "jimeng-video-veo3.1" || requestBody.model === "jimeng-video-sora2") {
                 // nanobanana 模型只使用 sessionid_ITN
                 sessionid = Config.get_random_Str(config_date.Jimeng.sessionid_ITN, "Jimeng-Sessionid-ITN");
                 if (!sessionid) {
                     e.reply('请先使用锅巴设置即梦国际站 Sessionid', true)
                     return
                 }
-            } else if (requestBody.model === "jimeng-4.5" || requestBody.model === "jimeng-4.1") {
+            } else if (requestBody.model === "jimeng-4.5" || requestBody.model === "jimeng-4.1" || requestBody.model === "jimeng-video-4.0-pro" || requestBody.model === "jimeng-video-4.0") {
                 // jimeng-4.5 模型只使用 sessionid
                 sessionid = Config.get_random_Str(config_date.Jimeng.sessionid, "Jimeng-Sessionid");
                 if (!sessionid) {
