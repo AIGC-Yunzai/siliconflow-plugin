@@ -1701,7 +1701,7 @@ export function supportGuoba() {
               {
                 field: "groupPrompt",
                 label: "群单独提示词",
-                bottomHelpMessage: '除了接口中的系统提示词外，还可以在这里设置输入提示词。',
+                bottomHelpMessage: '除了接口中的系统提示词(System Prompt)外，还可以在这里设置输入提示词(Input)。',
                 component: "Input",
                 componentProps: {
                   placeholder: '请根据以下最近的群聊记录，生成一条像真人一样的回复，长度控制在50字以内，直接输出内容，不要加任何前缀或解释。',

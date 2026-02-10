@@ -319,12 +319,9 @@ export class groupSayHello extends plugin {
                 return false
             }
 
-            // 移除 CQ
-            answer = removeCQCode(answer);
-
             if (answer) {
                 // 构建消息数组
-                const messages = []
+                let messages = []
 
                 // 如果有生成的图片,根据是否有配对信息来处理
                 if (imageBase64 && imageBase64.length > 0) {
@@ -365,6 +362,9 @@ export class groupSayHello extends plugin {
                         messages.push(answer)
                     }
                 }
+
+                // 移除 CQ
+                messages = removeCQCode(messages);
 
                 // 发送打招呼消息
                 await group.sendMsg(messages)
