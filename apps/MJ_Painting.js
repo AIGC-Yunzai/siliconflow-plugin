@@ -7,7 +7,7 @@ import {
     url2Base64,
 } from '../utils/getImg.js'
 import { LinkPlugin } from './link.js'
-import { uploadImage } from '../utils/uploadImage.js'
+import { uploadMedia } from '../utils/uploadImage.js'
 import { memberControlProcess } from '../utils/memberControl.js'
 
 export class MJ_Painting extends plugin {
@@ -705,8 +705,8 @@ MJP插件帮助：
             const imgUrl = e.img[0]
             logger.info('[MJ_Painting] Original image URL:', imgUrl)
 
-            // 使用 uploadImage 获取直链
-            const uploadedUrl = await uploadImage(imgUrl, config_date)
+            // 使用 uploadMedia 获取直链
+            const uploadedUrl = await uploadMedia(imgUrl, config_date)
             logger.info('[MJ_Painting] Uploaded image URL:', uploadedUrl)
 
             if (!uploadedUrl) {
