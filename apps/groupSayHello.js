@@ -58,6 +58,21 @@ function processCQAtCode(text) {
         }
     }
 
+    // 在 At 后面的文本前添加空格
+    for (let i = 0; i < result.length - 1; i++) {
+        const currentItem = result[i];
+        const nextItem = result[i + 1];
+        // 判断当前是否为 at 对象
+        const isAtSegment = typeof currentItem === 'object' && currentItem.type === 'at';
+        // 如果当前是 At，且下一个是字符串
+        if (isAtSegment && typeof nextItem === 'string') {
+            // 如果字符串不是以空格开头，则补充空格
+            if (!nextItem.startsWith(' ')) {
+                result[i + 1] = ' ' + nextItem;
+            }
+        }
+    }
+
     return result
 }
 

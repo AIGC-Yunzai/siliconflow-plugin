@@ -117,13 +117,24 @@ export function hidePrivacyInfo(text) {
  */
 export function removeCQCode(msg) {
   if (!msg) return ''
-  // 如果是数组,递归处理每个元素
+  // 如果是数组, 使用 reduce 进行处理和过滤
   if (Array.isArray(msg)) {
-    return msg.map(item =>
-      typeof item === 'string' ? item.replace(/\[CQ:[^\]]+\]/g, '').trim() : item
-    )
+    return msg.reduce((acc, item) => {
+      if (typeof item === 'string') {
+        // 替换 CQ 码
+        const cleanedText = item.replace(/\[CQ:[^\]]+\]/g, '').trim()
+        // 只有当文本不为空时才推入结果数组
+        if (cleanedText) {
+          acc.push(cleanedText)
+        }
+      } else {
+        // 非字符串对象（如图片、表情对象）直接保留
+        acc.push(item)
+      }
+      return acc
+    }, [])
   }
-  // 如果不是字符串,直接返回原值
+  // 如果不是字符串, 直接返回原值
   if (typeof msg !== 'string') return msg
   // 匹配 [CQ:...] 格式的 CQ 码
   return msg.replace(/\[CQ:[^\]]+\]/g, '').trim()
@@ -254,5 +265,5 @@ export function extractBase64Images(text, checkOnly = false) {
 
 /** 移除末尾的斜杠 */
 export function removeTrailingSlash(url) {
-    return url.endsWith('/') ? url.slice(0, -1) : url;
+  return url.endsWith('/') ? url.slice(0, -1) : url;
 }
