@@ -156,19 +156,27 @@ export class Jimeng extends plugin {
         if (isVideo) {
             // 视频生成模式
             apiEndpoint = `${config_data.Jimeng.base_url}/v1/videos/generations`
+            // 传递图片和视频url
+            const images = e.img || [];
+            const videos = (e.get_Video || []).map(v => v.url);
+            const useMultiParams = images.length > 2 || videos.length > 0;
+
             requestBody = {
                 "model": param.model || "jimeng-video-3.0",
                 "prompt": param.input || "一个女人在花园里跳舞",
                 "ratio": param.parameters.ratio || undefined,
                 "resolution": param.parameters.resolution || undefined,
                 "duration": param.parameters.duration || undefined,
-                "filePaths": (() => {
-                    const images = (e.img || []).slice(0, config_data.Jimeng.max_upimgs || 2);
-                    const videos = (e.get_Video || []).map(v => v.url);
-                    const result = [...images, ...videos];
-                    return result.length > 0 ? result : undefined;
-                })(),
                 "functionMode": param.parameters.functionMode || undefined,
+            };
+
+            if (useMultiParams) {
+                // 使用 image_file_1, video_file_1 的形式
+                images.forEach((url, i) => requestBody[`image_file_${i + 1}`] = url);
+                videos.forEach((url, i) => requestBody[`video_file_${i + 1}`] = url);
+            } else if (images.length > 0) {
+                // 使用 filePaths
+                requestBody.filePaths = images.slice(0, config_data.Jimeng.max_upimgs || 2);
             }
         } else if (isImg2Img) {
             // 图生图模式
