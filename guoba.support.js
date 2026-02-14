@@ -701,6 +701,17 @@ export function supportGuoba() {
           component: "Input",
         },
         {
+          field: 'Jimeng.max_upimgs',
+          label: '上传图片限制',
+          helpMessage: '单位：张',
+          bottomHelpMessage: '允许用户在图生图、图生视频时最大的上传参考图片数量',
+          component: "InputNumber",
+          componentProps: {
+            min: 1,
+            step: 1,
+          },
+        },
+        {
           field: 'Jimeng.cdtime',
           label: 'CD时间',
           helpMessage: '单位：秒',
@@ -1702,7 +1713,7 @@ export function supportGuoba() {
                 field: "groupPrompt",
                 label: "群单独提示词",
                 bottomHelpMessage: '除了接口中的系统提示词(System Prompt)外，还可以在这里设置输入提示词(Input)。',
-                component: "Input",
+                component: "InputTextArea",
                 componentProps: {
                   placeholder: '请根据以下最近的群聊记录，生成一条像真人一样的回复，长度控制在50字以内，直接输出内容，不要加任何前缀或解释。',
                 },

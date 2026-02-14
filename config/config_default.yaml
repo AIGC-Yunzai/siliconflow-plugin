@@ -122,6 +122,7 @@ Jimeng: {
     onlyGroupID: [],
     sessionid: "", # 支持轮询
     base_url: "http://localhost:5100",
+    max_upimgs: 2,
   }
 Doubao: {
     base_url: "http://localhost:8000",

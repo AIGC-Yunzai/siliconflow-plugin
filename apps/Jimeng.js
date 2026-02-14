@@ -28,11 +28,11 @@ export class Jimeng extends plugin {
                     /** 执行方法 */
                     fnc: 'call_Jimeng_Api'
                 },
-                // {
-                //     reg: '^#即梦(检查|检测)?账号$',
-                //     fnc: 'check_Jimeng_Token',
-                //     permission: 'master'
-                // },
+                {
+                    reg: '^#即梦(检查|检测)?账号$',
+                    fnc: 'check_Jimeng_Token',
+                    permission: 'master'
+                },
                 {
                     reg: '^#即梦查?看?积分$',
                     fnc: 'get_Jimeng_Points',
@@ -59,28 +59,34 @@ export class Jimeng extends plugin {
 支持的ratio: 横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --21:9
  注意：在图生视频模式下（有图片输入时），ratio参数将被忽略，视频比例由输入图片的实际比例决定。
 上传图片数: --upimgs [1|2]
-更换模型: --model [jimeng-video-4.0-pro|jimeng-video-4.0|jimeng-video-3.5-pro|jimeng-video-veo3|jimeng-video-veo3.1|jimeng-video-sora2|jimeng-video-3.0-pro|jimeng-video-3.0|jimeng-video-3.0-fast]
+更换模型: --model [jimeng-video-seedance-2.0|jimeng-video-seedance-2.0-fast|jimeng-video-3.5-pro|jimeng-video-veo3|jimeng-video-veo3.1|jimeng-video-sora2|jimeng-video-3.0-pro|jimeng-video-3.0|jimeng-video-3.0-fast]
+全能模式：--functionMode omni_reference
 更改时长：--duration [5|8|10|15]
 更改分辨率：--resolution [720p|1080p]
+指定使用账号：--ssid [序号|1|2]
 引用图片：
  无图片 → 文生视频模式
  1张图片 → 图生视频模式
  2张图片 → 首尾帧视频模式
+ 全能模式（Omni Reference）：混合图片+视频作为参考素材，仅 jimeng-video-seedance-2.0 模型支持；在 prompt 中通过 @字段名 引用素材并描述其作用，其中字段名为的写法为 image_file_1 ~ image_file_9（图片）、video_file_1 ~ video_file_3（视频）
 
 示例：
-#即梦视频 一个女人在花园里跳舞 --model jimeng-video-4.0 --9:16 --duration 5 --upimgs 1` :
+[引用一个不超过15秒的视频]
+#即梦视频 @image_file_1作为首帧，@image_file_2作为尾帧，运动动作模仿@video_file --model jimeng-video-seedance-2.0 --functionMode omni_reference --16:9 --duration 5 --upimgs 2` :
                 `[sf插件][即梦API]帮助：
 支持的ratio: 横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --3:2, --2:3, --21:9
 上传图片数: --upimgs [1|2]
 更改分辨率：--resolution [1k|2k|4k]
 参考图片强度: --reference_strength 0.8
-更换模型: --model [nanobanana|nanobananapro|jimeng-4.5|jimeng-4.1|jimeng-4.0|jimeng-3.1|jimeng-3.0]
+更换模型: --model [nanobanana|nanobananapro|jimeng-5.0|jimeng-4.6|jimeng-4.5|jimeng-4.1|jimeng-4.0|jimeng-3.1|jimeng-3.0]
 启用智能画幅比例: --intelligent_ratio true
 负面提示词: ntags = [tags]
+指定使用账号：--ssid [序号|1|2]
 
 其他指令：
  #即梦积分
  #即梦签到
+ #即梦账号
 
 示例：
 #即梦绘画 美丽的小少女，胶片感, 竖图, --model nanobanana --resolution 2k, ntags = 丑陋的`
@@ -88,19 +94,21 @@ export class Jimeng extends plugin {
             return true
         }
 
-        const config_date = Config.getConfig()
-        if (!config_date.Jimeng.sessionid && !config_date.Jimeng.sessionid_ITN) {
-            await e.reply('请先使用锅巴设置即梦 Sessionid', true)
+        const config_data = Config.getConfig()
+        const accountList = this._getAccountList()
+
+        if (accountList.length === 0) {
+            await e.reply('请先使用锅巴设置即梦 Sessionid (国内站或国际站)', true)
             return true
         }
 
         // CD次数限制
         const memberConfig = {
             feature: 'Jimeng',
-            cdTime: config_date.Jimeng.cdtime,
-            dailyLimit: config_date.Jimeng.dailyLimit,
-            unlimitedUsers: config_date.Jimeng.unlimitedUsers,
-            onlyGroupID: config_date.Jimeng.onlyGroupID,
+            cdTime: config_data.Jimeng.cdtime,
+            dailyLimit: config_data.Jimeng.dailyLimit,
+            unlimitedUsers: config_data.Jimeng.unlimitedUsers,
+            onlyGroupID: config_data.Jimeng.onlyGroupID,
         }
         const result_member = await memberControlProcess(e, memberConfig);
         if (!result_member.allowed) {
@@ -127,9 +135,15 @@ export class Jimeng extends plugin {
         let param = await handleParam(e, msg)
 
         // 要求上传更多图片
-        if (param.parameters.upimgs) {
-            await getImgFrom_awaitContext(e, param.parameters.upimgs, "upimgs", this)
-            if (e.img.length < param.parameters.upimgs)
+        let upimgs_num = parseInt(param.parameters.upimgs);
+        console.log("测试01" + upimgs_num)
+        if (!isNaN(upimgs_num) && upimgs_num > 0) {
+            console.log("测试02" + upimgs_num)
+            // 根据配置文件指定用户最大可上传的图片数量
+            upimgs_num = Math.min(upimgs_num, config_data.Jimeng.max_upimgs || 2)
+
+            await getImgFrom_awaitContext(e, upimgs_num, "upimgs", this)
+            if (e.img.length < upimgs_num)
                 return true;
         }
 
@@ -141,37 +155,44 @@ export class Jimeng extends plugin {
 
         if (isVideo) {
             // 视频生成模式
-            apiEndpoint = `${config_date.Jimeng.base_url}/v1/videos/generations`
+            apiEndpoint = `${config_data.Jimeng.base_url}/v1/videos/generations`
             requestBody = {
                 "model": param.model || "jimeng-video-3.0",
                 "prompt": param.input || "一个女人在花园里跳舞",
-                "ratio": param.parameters.ratio || "16:9",
-                "resolution": param.parameters.resolution || "720p",
+                "ratio": param.parameters.ratio || undefined,
+                "resolution": param.parameters.resolution || undefined,
                 "duration": param.parameters.duration || undefined,
-                "filePaths": e.img && e.img.length > 0 ? e.img.slice(0, 2) : undefined, // 最多支持2张图片
+                "filePaths": (() => {
+                    const images = (e.img || []).slice(0, config_data.Jimeng.max_upimgs || 2);
+                    const videos = (e.get_Video || []).map(v => v.url);
+                    const result = [...images, ...videos];
+                    return result.length > 0 ? result : undefined;
+                })(),
+                "functionMode": param.parameters.functionMode || undefined,
             }
         } else if (isImg2Img) {
             // 图生图模式
-            apiEndpoint = `${config_date.Jimeng.base_url}/v1/images/compositions`
+            apiEndpoint = `${config_data.Jimeng.base_url}/v1/images/compositions`
             requestBody = {
-                "model": param.model || config_date.Jimeng.model || "jimeng-4.5",
+                "model": param.model || config_data.Jimeng.model || "jimeng-5.0",
                 "prompt": param.input || "美丽的少女，胶片感",
-                "images": e.img.slice(0, 2),
-                "ratio": param.parameters.ratio || "1:1",
-                "resolution": param.parameters.resolution || "2k",
+                "images": e.img.slice(0, config_data.Jimeng.max_upimgs || 2),
+                "ratio": param.parameters.ratio || undefined,
+                "resolution": param.parameters.resolution || undefined,
                 "negative_prompt": param.parameters.negative_prompt || undefined,
                 "sample_strength": param.parameters.reference_strength || undefined,
                 "intelligent_ratio": param.parameters.intelligent_ratio || undefined,
             }
         } else {
             // 文生图模式
-            apiEndpoint = `${config_date.Jimeng.base_url}/v1/images/generations`
+            apiEndpoint = `${config_data.Jimeng.base_url}/v1/images/generations`
             requestBody = {
-                "model": param.model || config_date.Jimeng.model || "jimeng-4.5",
+                "model": param.model || config_data.Jimeng.model || "jimeng-5.0",
                 "prompt": param.input || "美丽的少女，胶片感",
-                "ratio": param.parameters.ratio || "1:1",
-                "resolution": param.parameters.resolution || "2k",
+                "ratio": param.parameters.ratio || undefined,
+                "resolution": param.parameters.resolution || undefined,
                 "negative_prompt": param.parameters.negative_prompt || undefined,
+                "sample_strength": param.parameters.reference_strength || undefined,
                 "intelligent_ratio": param.parameters.intelligent_ratio || undefined,
             }
         }
@@ -182,33 +203,33 @@ export class Jimeng extends plugin {
         )
 
         try {
-            // 根据模型选择 sessionid
+            // 选择 sessionid
             let sessionid;
-            if (requestBody.model === "nanobanana" || requestBody.model === "jimeng-video-veo3" || requestBody.model === "jimeng-video-veo3.1" || requestBody.model === "jimeng-video-sora2") {
-                // nanobanana 模型只使用 sessionid_ITN
-                sessionid = Config.get_random_Str(config_date.Jimeng.sessionid_ITN, "Jimeng-Sessionid-ITN");
-                if (!sessionid) {
-                    e.reply('请先使用锅巴设置即梦国际站 Sessionid', true)
-                    return
+            let usedAccount; // 用于记录使用的账号信息以便日志
+
+            const ssidParam = param.parameters.ssid;
+            const targetIndex = parseInt(ssidParam);
+
+            if (ssidParam && !isNaN(targetIndex) && targetIndex !== 0) {
+                // 指定了序号
+                usedAccount = accountList.find(acc => acc.index === targetIndex);
+
+                if (!usedAccount) {
+                    await e.reply(`指定的账号序号 [${targetIndex}] 不存在，当前共有 ${accountList.length} 个账号。\n请使用 #即梦查看积分 查看可用账号。`, true);
+                    return true;
                 }
-            } else if (requestBody.model === "jimeng-4.5" || requestBody.model === "jimeng-4.1" || requestBody.model === "jimeng-video-4.0-pro" || requestBody.model === "jimeng-video-4.0") {
-                // jimeng-4.5 模型只使用 sessionid
-                sessionid = Config.get_random_Str(config_date.Jimeng.sessionid, "Jimeng-Sessionid");
-                if (!sessionid) {
-                    e.reply('请先使用锅巴设置即梦国内站 Sessionid', true)
-                    return
-                }
+                sessionid = usedAccount.token;
             } else {
-                // 其他模型可以从 sessionid 和 sessionid_ITN 中随机选择
-                const combinedSessionids = [config_date.Jimeng.sessionid, config_date.Jimeng.sessionid_ITN]
-                    .filter(Boolean)
-                    .join(',');
-                sessionid = Config.get_random_Str(combinedSessionids, "Jimeng-Sessionid");
+                // 未指定或为0，随机选择
+                usedAccount = accountList[Math.floor(Math.random() * accountList.length)];
+                sessionid = usedAccount.token;
             }
+
+            logger.info(`[sf插件][Jimeng] 使用账号: [${usedAccount.index}] ${usedAccount.type}`);
 
             // if (!config_date.simpleMode)
             e.reply("人家开始生成啦，请等待1-10分钟", true, { recallMsg: 60 });
-            logger.info(`[sf插件][Jimeng]开始执行:\n` + JSON.stringify(requestBody))
+            logger.info(`[sf插件][Jimeng] 开始执行:\n` + JSON.stringify(requestBody))
 
             result_member.record();
 
@@ -234,14 +255,15 @@ export class Jimeng extends plugin {
                     // 构造回复消息
                     const str_1 = `@${e.sender.card || e.sender.nickname} 您的视频已生成完成：`
                     const str_2 = `提示词：\n${presetResult.originalText}`
-                    const imageCountStr = requestBody.filePaths ? `参考图片：${requestBody.filePaths.length}张` : '文生视频'
+                    const imageCountStr = requestBody.filePaths ? `参考文件：${requestBody.filePaths.length} 份` : '文生视频'
                     const str_3 = `模型：${requestBody.model}
 比例：${requestBody.ratio}
 模式：${imageCountStr}
+账号：[${usedAccount.index}] ${usedAccount.type}
 ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString('zh-CN')}` : ''}`
 
                     // 根据简洁模式决定回复方式
-                    if (config_date.simpleMode) {
+                    if (config_data.simpleMode) {
                         // 简洁模式：转发消息包含所有内容
                         const forwardMsgs = [str_1, str_2, str_3]
 
@@ -305,10 +327,11 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
 比例：${requestBody.ratio}
 分辨率：${requestBody.resolution}${requestBody.images ? `\n参考图片：${requestBody.images.length}张` : ''}
 ${isImg2Img ? `合成强度：${requestBody.sample_strength || 1.0}\n` : ''}生成图片数量：${imageUrls.length}张
+账号：[${usedAccount.index}] ${usedAccount.type}
 ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString('zh-CN')}` : ''}`
 
                 // 根据简洁模式决定回复方式
-                if (config_date.simpleMode) {
+                if (config_data.simpleMode) {
                     // 简洁模式：转发消息包含所有内容
                     const forwardMsgs = [str_1]
                     imageUrls.forEach((url, index) => {
@@ -360,14 +383,41 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
         }
     }
 
-    /** 获取所有配置的Token */
-    _getAllTokens() {
+    /** 统一获取并结构化所有账号信息 */
+    _getAccountList() {
         const config_date = Config.getConfig()
-        const tokens1 = config_date.Jimeng.sessionid ? config_date.Jimeng.sessionid.split(',') : []
-        const tokens2 = config_date.Jimeng.sessionid_ITN ? config_date.Jimeng.sessionid_ITN.split(',') : []
-        // 合并并去重，过滤空值
-        const allTokens = [...new Set([...tokens1, ...tokens2])].filter(t => t && t.trim() !== '')
-        return { allTokens, baseUrl: config_date.Jimeng.base_url }
+        const domesticTokens = config_date.Jimeng.sessionid ? config_date.Jimeng.sessionid.split(',') : []
+        const internationalTokens = config_date.Jimeng.sessionid_ITN ? config_date.Jimeng.sessionid_ITN.split(',') : []
+
+        let accountList = []
+
+        // 处理国内站
+        domesticTokens.forEach(t => {
+            if (t && t.trim()) {
+                accountList.push({
+                    token: t.trim(),
+                    type: '国内站',
+                    origin: 'Jimeng-Sessionid'
+                })
+            }
+        })
+
+        // 处理国际站
+        internationalTokens.forEach(t => {
+            if (t && t.trim()) {
+                accountList.push({
+                    token: t.trim(),
+                    type: '国际站',
+                    origin: 'Jimeng-Sessionid-ITN'
+                })
+            }
+        })
+
+        // 添加序号 (1-based index)
+        return accountList.map((item, index) => ({
+            ...item,
+            index: index + 1
+        }))
     }
 
     /** Token脱敏显示 */
@@ -378,25 +428,26 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
 
     /** ^#即梦(检查|检测)?账号$ */
     async check_Jimeng_Token(e) {
-        const { allTokens, baseUrl } = this._getAllTokens()
-        if (allTokens.length === 0) {
+        const accountList = this._getAccountList()
+        const baseUrl = Config.getConfig().Jimeng.base_url
+
+        if (accountList.length === 0) {
             return e.reply('配置文件中未找到任何 Token', true)
         }
 
-        await e.reply(`开始检查 ${allTokens.length} 个 Token 的状态...`, true)
+        await e.reply(`开始检查 ${accountList.length} 个 Token 的状态...`, true)
         const statusList = []
 
-        for (const token of allTokens) {
+        for (const account of accountList) {
             try {
-                const res = await axios.post(`${baseUrl}/token/check`, { token: token.trim() }, {
-                    timeout: 10000,
+                const res = await axios.post(`${baseUrl}/token/check`, { token: account.token }, {
+                    timeout: 60000,
                     validateStatus: () => true
                 })
-                console.log("测试：res.data: " + JSON.stringify(res.data, null, 2))
                 const isLive = res.data?.live === true
-                statusList.push(`Token: ${this._maskToken(token)}\n状态: ${isLive ? '✅ 有效' : '❌ 无效'}`)
+                statusList.push(`[${account.index}] ${account.type}\nToken: ${this._maskToken(account.token)}\n状态: ${isLive ? '✅ 有效' : '❌ 无效'}`)
             } catch (error) {
-                statusList.push(`Token: ${this._maskToken(token)}\n状态: ⚠️ 请求失败 (${error.message})`)
+                statusList.push(`[${account.index}] ${account.type}\nToken: ${this._maskToken(account.token)}\n状态: ⚠️ 请求失败 (${error.message})`)
             }
         }
 
@@ -406,16 +457,17 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
 
     /** ^#即梦查?看?积分$ */
     async get_Jimeng_Points(e) {
-        const { allTokens, baseUrl } = this._getAllTokens()
-        if (allTokens.length === 0) return e.reply('未配置 Token', true)
+        const accountList = this._getAccountList()
+        const baseUrl = Config.getConfig().Jimeng.base_url
+        if (accountList.length === 0) return e.reply('未配置 Token', true)
 
         try {
-            // 构造 Bearer Token 字符串（多个用逗号分隔）
-            const authHeader = allTokens.join(',')
+            // 构造 Bearer Token 字符串（多个用逗号分隔，后端支持批量查询）
+            const authHeader = accountList.map(a => a.token).join(',')
 
             const res = await axios.post(`${baseUrl}/token/points`, {}, {
                 headers: { 'Authorization': `Bearer ${authHeader}` },
-                timeout: 15000,
+                timeout: 60000,
                 validateStatus: () => true
             })
 
@@ -424,16 +476,30 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
                 return e.reply(`获取失败，返回格式错误: ${JSON.stringify(data)}`, true)
             }
 
-            const msgList = data.map(item => {
-                const pts = item.points || {}
-                return `Token: ${this._maskToken(item.token)}\n` +
-                    `总积分: ${pts.totalCredit || 0}\n` +
-                    `赠送积分: ${pts.giftCredit || 0}\n` +
-                    `购买积分: ${pts.purchaseCredit || 0}\n` +
-                    `VIP积分: ${pts.vipCredit || 0}`
-            })
+            const msgList = []
 
-            const msg = await common.makeForwardMsg(e, msgList, `即梦积分查询 (${data.length}个)`)
+            // 遍历每个账号，尝试在返回数据中找到对应的信息
+            // 假设返回的数据顺序与 header 顺序一致，或者包含 token 信息用于匹配
+            for (const account of accountList) {
+                // 尝试通过 token 匹配返回数据
+                const result = data.find(item => item.token === account.token) || {}
+                const pts = result.points || {}
+
+                let info = `[${account.index}] ${account.type}\n` +
+                    `Token: ${this._maskToken(account.token)}\n`
+
+                if (result.points) {
+                    info += `总积分: ${pts.totalCredit || 0}\n` +
+                        `赠送积分: ${pts.giftCredit || 0}\n` +
+                        `购买积分: ${pts.purchaseCredit || 0}\n` +
+                        `VIP积分: ${pts.vipCredit || 0}`
+                } else {
+                    info += `获取失败: 未找到返回数据`
+                }
+                msgList.push(info)
+            }
+
+            const msg = await common.makeForwardMsg(e, msgList, `即梦积分查询 (${accountList.length}个)`)
             await e.reply(msg)
 
         } catch (error) {
@@ -444,17 +510,18 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
 
     /** ^#即梦(签到|领取积分)$ */
     async receive_Jimeng_Points(e) {
-        const { allTokens, baseUrl } = this._getAllTokens()
-        if (allTokens.length === 0) return e.reply('未配置 Token', true)
+        const accountList = this._getAccountList()
+        const baseUrl = Config.getConfig().Jimeng.base_url
+        if (accountList.length === 0) return e.reply('未配置 Token', true)
 
         await e.reply('开始批量签到，请稍候...', true)
 
         try {
-            const authHeader = allTokens.join(',')
+            const authHeader = accountList.map(a => a.token).join(',')
 
             const res = await axios.post(`${baseUrl}/token/receive`, {}, {
                 headers: { 'Authorization': `Bearer ${authHeader}` },
-                timeout: 30000, // 签到可能较慢
+                timeout: 60000, // 签到可能较慢
                 validateStatus: () => true
             })
 
@@ -464,18 +531,25 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
             }
 
             let successCount = 0
-            const msgList = data.map(item => {
+            const msgList = []
+
+            for (const account of accountList) {
+                const item = data.find(d => d.token === account.token) || {}
                 const pts = item.credits || {}
                 const statusIcon = item.received ? '✅ 领取成功' : (item.error ? '❌ 失败' : '⚪ 无需领取/已领')
                 if (item.received) successCount++
 
-                let detail = `Token: ${this._maskToken(item.token)}\n结果: ${statusIcon}`
-                if (item.error) detail += `\n错误: ${item.error}`
-                detail += `\n当前总积分: ${pts.totalCredit || 0}`
-                return detail
-            })
+                let detail = `[${account.index}] ${account.type}\n` +
+                    `Token: ${this._maskToken(account.token)}\n` +
+                    `结果: ${statusIcon}`
 
-            const summary = `批量签到完成\n总数: ${allTokens.length}\n成功领取: ${successCount}`
+                if (item.error) detail += `\n错误: ${item.error}`
+                if (item.credits) detail += `\n当前总积分: ${pts.totalCredit || 0}`
+
+                msgList.push(detail)
+            }
+
+            const summary = `批量签到完成\n总数: ${accountList.length}\n成功领取: ${successCount}`
             msgList.unshift(summary)
 
             const msg = await common.makeForwardMsg(e, msgList, '即梦每日签到结果')

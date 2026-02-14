@@ -99,7 +99,7 @@ function advancedParam(text) {
     let model = undefined
     const regex = /(?:\s+)?--([a-zA-Z0-9_\.]+)\s+([^\s]+)/g;
     const KEY_MAP = { w: 'width', h: 'height', sa: 'sampler', st: 'steps', g: 'scale', gr: 'cfg_rescale', ns: 'noise_schedule' };
-    const BLOCKED_PARAMS = ['width', 'height', 'steps', 'upimgs', 'ratio'];
+    const BLOCKED_PARAMS = ['width', 'height', 'steps', 'ratio'];
 
     text = text.replace(regex, (match, key, value) => {
         const originalKey = key;
@@ -189,10 +189,10 @@ export async function handleParam(e, text) {
     // result = video_durationParam(text)
     // parameters = Object.assign(parameters, result.parameters)
     // text = result.text
-    // 上传图片数量
-    result = callGetImgs(text)
-    parameters = Object.assign(parameters, result.parameters)
-    text = result.text
+    // // 上传图片数量
+    // result = callGetImgs(text)
+    // parameters = Object.assign(parameters, result.parameters)
+    // text = result.text
     // 高级传参
     result = advancedParam(text)
     model = result.model
