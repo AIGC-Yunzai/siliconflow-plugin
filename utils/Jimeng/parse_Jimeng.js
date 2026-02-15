@@ -99,7 +99,7 @@ function advancedParam(text) {
     let model = undefined
     const regex = /(?:\s+)?--([a-zA-Z0-9_\.]+)\s+([^\s]+)/g;
     const KEY_MAP = { w: 'width', h: 'height', sa: 'sampler', st: 'steps', g: 'scale', gr: 'cfg_rescale', ns: 'noise_schedule' };
-    const BLOCKED_PARAMS = ['width', 'height', 'steps', 'ratio'];
+    const BLOCKED_PARAMS = ['nothing_BLOCKED'];
 
     text = text.replace(regex, (match, key, value) => {
         const originalKey = key;

@@ -691,7 +691,7 @@ export function supportGuoba() {
         {
           field: "Jimeng.model",
           label: "绘画模型",
-          bottomHelpMessage: "即梦绘画使用的模型，可选: jimeng-4.5, jimeng-4.0, jimeng-3.0, nanobanana, nanobananapro ；也可以在绘画中使用参数例如 --model nanobanana 实时更换模型",
+          bottomHelpMessage: "即梦绘画使用的模型；也可以在绘画中使用参数例如 --model nanobanana 实时更换模型",
           component: "Input",
         },
         {

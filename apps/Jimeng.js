@@ -54,43 +54,70 @@ export class Jimeng extends plugin {
 
         let msg = e.msg.replace(/^#即梦(画图|绘图|绘画|视频)(\n*)?/, '').trim()
         if (msg === '帮助') {
-            const helpMsg = isVideo ?
-                `[sf插件][即梦视频API]帮助：
-支持的ratio: 横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --21:9
- 注意：在图生视频模式下（有图片输入时），ratio参数将被忽略，视频比例由输入图片的实际比例决定。
-上传图片数: --upimgs [1|2]
-更换模型: --model [jimeng-video-seedance-2.0|jimeng-video-seedance-2.0-fast|jimeng-video-3.5-pro|jimeng-video-veo3|jimeng-video-veo3.1|jimeng-video-sora2|jimeng-video-3.0-pro|jimeng-video-3.0|jimeng-video-3.0-fast]
-全能模式：--functionMode omni_reference
-更改时长：--duration [5|8|10|15]
-更改分辨率：--resolution [720p|1080p]
-指定使用账号：--ssid [序号|1|2]
-引用图片：
+            const helpMsg = isVideo ? [
+                `支持的ratio（在图生视频模式下（有图片输入时），ratio参数将被忽略，视频比例由输入图片的实际比例决定）: 
+横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --21:9`,
+                `上传图片数:
+--upimgs [1|2|10]`,
+                `更换模型:
+--model [jimeng-video-seedance-2.0|jimeng-video-seedance-2.0-fast|jimeng-video-3.5-pro|jimeng-video-veo3|jimeng-video-veo3.1|jimeng-video-sora2|jimeng-video-3.0-pro|jimeng-video-3.0|jimeng-video-3.0-fast]`,
+                `全能模式:
+--functionMode omni_reference`,
+                `更改时长:
+--duration [5|8|10|15]`,
+                `更改分辨率:
+--resolution [720p|1080p]`,
+                `指定使用账号:
+--ssid [序号|1|2]`,
+                `🖼️ 引用图片/视频逻辑:
  无图片 → 文生视频模式
  1张图片 → 图生视频模式
  2张图片 → 首尾帧视频模式
- 全能模式（Omni Reference）：混合图片+视频作为参考素材，仅 jimeng-video-seedance-2.0 模型支持；在 prompt 中通过 @字段名 引用素材并描述其作用，其中字段名为的写法为 image_file_1 ~ image_file_9（图片）、video_file_1 ~ video_file_3（视频）
 
-示例：
+ 🌟 全能模式（Omni Reference）:
+ 混合图片+视频作为参考素材，仅 jimeng-video-seedance-2.0 模型支持；
+ 在 prompt 中通过 @字段名 引用素材并描述其作用。
+ 字段名写法:
+ image_file_1 ~ image_file_9（图片）
+ video_file_1 ~ video_file_3（视频）`,
+                `📝 示例:
 [引用一个不超过15秒的视频]
-#即梦视频 @image_file_1作为首帧，@image_file_2作为尾帧，运动动作模仿@video_file --model jimeng-video-seedance-2.0 --functionMode omni_reference --16:9 --duration 5 --upimgs 2` :
-                `[sf插件][即梦API]帮助：
-支持的ratio: 横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --3:2, --2:3, --21:9
-上传图片数: --upimgs [1|2]
-更改分辨率：--resolution [1k|2k|4k]
-参考图片强度: --reference_strength 0.8
-更换模型: --model [nanobanana|nanobananapro|jimeng-5.0|jimeng-4.6|jimeng-4.5|jimeng-4.1|jimeng-4.0|jimeng-3.1|jimeng-3.0]
-启用智能画幅比例: --intelligent_ratio true
-负面提示词: ntags = [tags]
-指定使用账号：--ssid [序号|1|2]
-
-其他指令：
+#即梦视频 @image_file_1作为首帧，@image_file_2作为尾帧，运动动作模仿@video_file --model jimeng-video-seedance-2.0-fast --functionMode omni_reference --16:9 --duration 5 --upimgs 2`,
+                `其他指令:
  #即梦积分
  #即梦签到
- #即梦账号
+ #即梦账号`
+            ] : [
+                `支持的ratio: 
+横图, 竖图, 方图, --1:1, --4:3, --3:4, --16:9, --9:16, --3:2, --2:3, --21:9`,
+                `上传图片数:
+--upimgs [1|2|10]`,
+                `更改分辨率:
+--resolution [1k|2k|4k]`,
+                `参考图片强度:
+--sample_strength 0.8`,
+                `更换模型:
+--model [nanobanana|nanobananapro|jimeng-5.0|jimeng-4.6|jimeng-4.5|jimeng-4.1|jimeng-4.0|jimeng-3.1|jimeng-3.0]`,
+                `启用智能画幅比例:
+--intelligent_ratio true`,
+                `负面提示词:
+ntags = [tags]`,
+                `指定使用账号:
+--ssid [序号|1|2]`,
+                `📝 示例:
+#即梦绘画 美丽的小少女，胶片感, 竖图, --model jimeng-5.0 --resolution 2k, ntags = 丑陋的`,
+                `其他指令:
+ #即梦积分
+ #即梦签到
+ #即梦账号`
+            ];
 
-示例：
-#即梦绘画 美丽的小少女，胶片感, 竖图, --model nanobanana --resolution 2k, ntags = 丑陋的`
-            e.reply(helpMsg, true);
+            const msgx = await common.makeForwardMsg(
+                e,
+                helpMsg,
+                isVideo ? "[sf插件][即梦视频API]帮助" : "[sf插件][即梦绘画API]帮助"
+            );
+            await e.reply(msgx);
             return true
         }
 
@@ -188,7 +215,7 @@ export class Jimeng extends plugin {
                 "ratio": param.parameters.ratio || undefined,
                 "resolution": param.parameters.resolution || undefined,
                 "negative_prompt": param.parameters.negative_prompt || undefined,
-                "sample_strength": param.parameters.reference_strength || undefined,
+                "sample_strength": param.parameters.sample_strength || undefined,
                 "intelligent_ratio": param.parameters.intelligent_ratio || undefined,
             }
         } else {
@@ -200,7 +227,7 @@ export class Jimeng extends plugin {
                 "ratio": param.parameters.ratio || undefined,
                 "resolution": param.parameters.resolution || undefined,
                 "negative_prompt": param.parameters.negative_prompt || undefined,
-                "sample_strength": param.parameters.reference_strength || undefined,
+                "sample_strength": param.parameters.sample_strength || undefined,
                 "intelligent_ratio": param.parameters.intelligent_ratio || undefined,
             }
         }
