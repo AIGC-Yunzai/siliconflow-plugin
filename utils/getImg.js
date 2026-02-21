@@ -7,16 +7,16 @@ import axios from 'axios'
  * 文本放入 e.sourceMsg
  * @param {*} e
  * @param {*} alsoGetAtAvatar 开启使用At用户头像作为图片，默认 true
- * @return {*}处理过后的e
+ * @return {*} e.img e.sourceMsg 和 e.theImgIsGetFromSource ，当图片是从引用中获取的则 e.theImgIsGetFromSource 为 true
  */
 export async function parseSourceImg(e, alsoGetAtAvatar = true) {
   let reply;
   // 1. 尝试获取头像作为图片 (如果没有 source/reply/img 且有 at)
   if (alsoGetAtAvatar && e.at && !e.source && !e.reply_id && !e.img) {
-    if (e.atBot) {
-      e.img = [];
-      e.img[0] = e.bot.avatar || `https://q1.qlogo.cn/g?b=qq&s=0&nk=${e.self_id}`;
-    }
+    // if (e.atBot) { // 不获取Bot的头像，无意义
+    //   e.img = [];
+    //   e.img[0] = e.bot.avatar || `https://q1.qlogo.cn/g?b=qq&s=0&nk=${getUin(e)}`;
+    // }
     if (e.at) {
       try {
         e.img = [await e.group.pickMember(e.at).getAvatarUrl()];
@@ -45,13 +45,24 @@ export async function parseSourceImg(e, alsoGetAtAvatar = true) {
     let text = [] // 用于存储文本消息
     let get_Video = [] // [新增] 用于存储视频消息
     let senderNickname = '' // 存储发送者昵称
+    let senderUser_id = '' // 存储发送者昵称
 
     // 获取发送者昵称
-    if (e.source) {
+    if (e.reply_id) {
+      try {
+        const replyObj = await e.getReply(e.reply_id)
+        senderNickname = replyObj.sender?.card || replyObj.sender?.nickname
+        senderUser_id = replyObj.sender?.user_id;
+      } catch (error) {
+        logger.error('[sf插件]获取回复消息发送者信息失败:', error)
+      }
+    }
+    else if (e.source) {
       if (e.isGroup) {
         try {
           const sender = await e.group.pickMember(e.source.user_id)
           senderNickname = sender.card || sender.nickname
+          senderUser_id = e.source.user_id
         } catch (error) {
           logger.error('[sf插件]获取群成员信息失败:', error)
         }
@@ -59,18 +70,10 @@ export async function parseSourceImg(e, alsoGetAtAvatar = true) {
         try {
           const friend = e.bot.fl.get(e.source.user_id)
           senderNickname = friend?.nickname
+          senderUser_id = e.source.user_id
         } catch (error) {
           logger.error('[sf插件]获取好友信息失败:', error)
         }
-      }
-    }
-    // 添加OneBotv11适配器的处理
-    else if (e.reply_id) {
-      try {
-        const replyObj = await e.getReply(e.reply_id)
-        senderNickname = replyObj.sender?.card || replyObj.sender?.nickname
-      } catch (error) {
-        logger.error('[sf插件]获取回复消息发送者信息失败:', error)
       }
     }
 
@@ -90,11 +93,12 @@ export async function parseSourceImg(e, alsoGetAtAvatar = true) {
       }
       if (val.type == "file") {
         e.reply("不支持消息中的文件，请将该文件以图片发送...", true);
-        return;
+        return e.img;
       }
     }
     if (Boolean(i.length)) {
-      e.img = i
+      e.img = i;
+      e.theImgIsGetFromSource = true;
     }
     if (Boolean(get_Video.length)) {
       e.get_Video = get_Video
@@ -107,8 +111,15 @@ export async function parseSourceImg(e, alsoGetAtAvatar = true) {
         `> ##### ${senderNickname}：\n> ---\n${quotedLines}` :
         quotedLines;
     }
+    // 收集引用消息的 message_id
+    e.source_message_id = e.reply_id || e.source.seq || e.source.time;
+    // 收集引用者信息
+    if (senderNickname) {
+      e.senderNickname = senderNickname;
+      e.senderUser_id = senderUser_id;
+    }
   }
-  return e;
+  return e.img;
 }
 
 export async function url2Base64(url, isReturnBuffer = false, onlyCheck = false) {
