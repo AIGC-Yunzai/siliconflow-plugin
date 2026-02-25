@@ -152,32 +152,61 @@ export async function url2Base64(url, isReturnBuffer = false, onlyCheck = false)
 }
 
 /**
- * @description: 请在120秒内发送图片
+ * @description: 请在120秒内发送图片或视频
  * @param {*} e
- * @param {*} needImgLength 需要的图片数量
- * @param {*} featureName 显示的名称
  * @param {*} context
+ * @param {*} needLength 需要的图片或视频总数量
+ * @param {*} featureName 显示的名称
  * @return {*}
  */
-export async function getImgFrom_awaitContext(e, needImgLength, featureName = "", context = null) {
+export async function getMediaFrom_awaitContext(e, context = null, needLength = 1, featureName = "") {
   // 初始化图片数组
   if (!e.img) {
     e.img = [];
   }
-  featureName = featureName.replace(/_default$/, '') || e.msg.replace(/^[#\/]/, '').substring(0, 2)
-  // 检查当前图片数量是否满足要求
-  while (e.img.length < needImgLength) {
-    const currentCount = e.img.length;
-    const stillNeed = needImgLength - currentCount;
-    await e.reply(`[${featureName}]当前已有${currentCount}张图片，还需要${stillNeed}张图片，请在120秒内发送图片喵~`, true, { recallMsg: 119 });
+  // 初始化视频数组
+  if (!e.get_Video) {
+    e.get_Video = [];
+  }
+
+  featureName = featureName.replace(/_default$/, '') || e.msg.replace(/^[#\/]/, '').substring(0, 2);
+
+  // 检查当前图片和视频总数量是否满足要求
+  while ((e.img.length + e.get_Video.length) < needLength) {
+    const currentCount = e.img.length + e.get_Video.length;
+    const stillNeed = needLength - currentCount;
+
+    await e.reply(`[${featureName}]当前已有${currentCount}个文件，还需要${stillNeed}个，请在120秒内发送图片或视频喵~`, true, { recallMsg: 119 });
+
     const e_new = await context.awaitContext();
+    let hasMedia = false;
+
+    // 1. 处理图片
     if (e_new.img && e_new.img.length > 0) {
-      // 将新获取的图片添加到现有图片数组中
       e.img.push(...e_new.img);
-    } else {
-      e.reply(`[${featureName}]未获取到图片，操作已取消`, true);
+      hasMedia = true;
+    }
+
+    // 2. 处理视频
+    if (e_new.message) {
+      for (const val of e_new.message) {
+        if (val.type === "video") {
+          e.get_Video.push({
+            url: val.url,
+            file_size: val.file_size,
+            file_name: val.file
+          });
+          hasMedia = true;
+        }
+      }
+    }
+
+    // 如果当前消息既没有图片也没有视频，判定为取消操作
+    if (!hasMedia) {
+      e.reply(`[${featureName}]未获取到图片或视频，操作已取消`, true);
       return e;
     }
   }
+
   return e;
 }

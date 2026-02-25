@@ -4,7 +4,7 @@ import common from '../../../lib/common/common.js'
 import {
     parseSourceImg,
     url2Base64,
-    getImgFrom_awaitContext,
+    getMediaFrom_awaitContext,
 } from '../utils/getImg.js'
 import { memberControlProcess } from '../utils/memberControl.js'
 import { applyPresets } from '../utils/applyPresets.js'
@@ -251,7 +251,7 @@ export class Doubao extends plugin {
 
         // 要求上传更多图片
         if (param.parameters.upimgs) {
-            await getImgFrom_awaitContext(e, param.parameters.upimgs, "upimgs", this)
+            await getMediaFrom_awaitContext(e, this, param.parameters.upimgs, "upimgs")
             if (e.img.length < param.parameters.upimgs)
                 return true
         }

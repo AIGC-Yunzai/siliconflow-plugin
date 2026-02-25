@@ -4,7 +4,7 @@ import common from '../../../lib/common/common.js';
 import {
     parseSourceImg,
     url2Base64,
-    getImgFrom_awaitContext,
+    getMediaFrom_awaitContext,
 } from '../utils/getImg.js'
 import { handleParam } from '../utils/Jimeng/parse_Jimeng.js'
 import { memberControlProcess } from '../utils/memberControl.js'
@@ -169,7 +169,7 @@ ntags = [tags]`,
             // 根据配置文件指定用户最大可上传的图片数量
             upimgs_num = Math.min(upimgs_num, config_data.Jimeng.max_upimgs || 2)
 
-            await getImgFrom_awaitContext(e, upimgs_num, "upimgs", this)
+            await getMediaFrom_awaitContext(e, this, upimgs_num, "upimgs")
             if (e.img.length < upimgs_num)
                 return true;
         }

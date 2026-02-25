@@ -5,7 +5,7 @@ import common from '../../../lib/common/common.js';
 import {
     parseSourceImg,
     url2Base64,
-    getImgFrom_awaitContext,
+    getMediaFrom_awaitContext,
 } from '../utils/getImg.js'
 import { handleParam } from '../utils/parse.js'
 import { markdown_screenshot } from '../utils/markdownPic.js'
@@ -835,7 +835,7 @@ export class SF_Painting extends plugin {
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
         if (mustNeedImgLength) {
-            await getImgFrom_awaitContext(e, mustNeedImgLength, memberConfigName, this)
+            await getMediaFrom_awaitContext(e, this, mustNeedImgLength, memberConfigName)
             if (e.img.length < mustNeedImgLength)
                 return true;
         }
@@ -1600,7 +1600,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
         if (mustNeedImgLength) {
-            await getImgFrom_awaitContext(e, mustNeedImgLength, memberConfigName, this)
+            await getMediaFrom_awaitContext(e, this, mustNeedImgLength, memberConfigName)
             if (e.img.length < mustNeedImgLength)
                 return true;
         }
