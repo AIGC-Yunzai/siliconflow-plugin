@@ -157,9 +157,10 @@ export async function url2Base64(url, isReturnBuffer = false, onlyCheck = false)
  * @param {*} context
  * @param {*} needLength 需要的图片或视频总数量
  * @param {*} featureName 显示的名称
- * @return {*}
+ * @param {boolean} countVideo 是否将视频计入总数 (默认为 false)
+ * @return {boolean} 成功获取到指定数量返回 true，否则返回 false
  */
-export async function getMediaFrom_awaitContext(e, context = null, needLength = 1, featureName = "") {
+export async function getMediaFrom_awaitContext(e, context = null, needLength = 1, featureName = "", countVideo = false) {
   // 初始化图片数组
   if (!e.img) {
     e.img = [];
@@ -171,12 +172,15 @@ export async function getMediaFrom_awaitContext(e, context = null, needLength = 
 
   featureName = featureName.replace(/_default$/, '') || e.msg.replace(/^[#\/]/, '').substring(0, 2);
 
+  // 动态生成提示语中的媒体名称
+  const mediaTypeName = countVideo ? "图片或视频" : "图片";
+
   // 检查当前图片和视频总数量是否满足要求
-  while ((e.img.length + e.get_Video.length) < needLength) {
-    const currentCount = e.img.length + e.get_Video.length;
+  while ((e.img.length + (countVideo ? e.get_Video.length : 0)) < needLength) {
+    const currentCount = e.img.length + (countVideo ? e.get_Video.length : 0);
     const stillNeed = needLength - currentCount;
 
-    await e.reply(`[${featureName}]当前已有${currentCount}个文件，还需要${stillNeed}个，请在120秒内发送图片或视频喵~`, true, { recallMsg: 119 });
+    await e.reply(`[${featureName}]当前已有${currentCount}份${mediaTypeName}，还需要${stillNeed}个，请在120秒内发送${mediaTypeName}喵~`, true, { recallMsg: 119 });
 
     const e_new = await context.awaitContext();
     let hasMedia = false;
@@ -187,8 +191,8 @@ export async function getMediaFrom_awaitContext(e, context = null, needLength = 
       hasMedia = true;
     }
 
-    // 2. 处理视频
-    if (e_new.message) {
+    // 2. 处理视频（仅当允许视频计数时，才提取视频并标记为有效输入）
+    if (countVideo && e_new.message) {
       for (const val of e_new.message) {
         if (val.type === "video") {
           e.get_Video.push({
@@ -201,12 +205,13 @@ export async function getMediaFrom_awaitContext(e, context = null, needLength = 
       }
     }
 
-    // 如果当前消息既没有图片也没有视频，判定为取消操作
+    // 如果当前消息既没有图片也没有（被允许的）视频，判定为取消操作
     if (!hasMedia) {
-      e.reply(`[${featureName}]未获取到图片或视频，操作已取消`, true);
-      return e;
+      e.reply(`[${featureName}]未获取到${mediaTypeName}，操作已取消`, true);
+      return false;
     }
   }
 
-  return e;
+  // 循环结束说明已获取到指定数量的媒体文件
+  return true;
 }

@@ -163,14 +163,11 @@ ntags = [tags]`,
 
         // 要求上传更多图片
         let upimgs_num = parseInt(param.parameters.upimgs);
-        console.log("测试01" + upimgs_num)
         if (!isNaN(upimgs_num) && upimgs_num > 0) {
-            console.log("测试02" + upimgs_num)
             // 根据配置文件指定用户最大可上传的图片数量
             upimgs_num = Math.min(upimgs_num, config_data.Jimeng.max_upimgs || 2)
 
-            await getMediaFrom_awaitContext(e, this, upimgs_num, "upimgs")
-            if (e.img.length < upimgs_num)
+            if (!(await getMediaFrom_awaitContext(e, this, upimgs_num, "upimgs", param.parameters.functionMode === "omni_reference")))
                 return true;
         }
 

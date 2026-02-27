@@ -835,8 +835,7 @@ export class SF_Painting extends plugin {
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
         if (mustNeedImgLength) {
-            await getMediaFrom_awaitContext(e, this, mustNeedImgLength, memberConfigName)
-            if (e.img.length < mustNeedImgLength)
+            if (!(await getMediaFrom_awaitContext(e, this, mustNeedImgLength, memberConfigName)))
                 return true;
         }
         let currentImages = [];
@@ -1600,8 +1599,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         // 处理引用消息,获取图片和文本
         await parseSourceImg(e)
         if (mustNeedImgLength) {
-            await getMediaFrom_awaitContext(e, this, mustNeedImgLength, memberConfigName)
-            if (e.img.length < mustNeedImgLength)
+            if (!(await getMediaFrom_awaitContext(e, this, mustNeedImgLength, memberConfigName)))
                 return true;
         }
         let currentImages = [];
