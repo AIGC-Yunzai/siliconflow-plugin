@@ -251,8 +251,7 @@ export class Doubao extends plugin {
 
         // 要求上传更多图片
         if (param.parameters.upimgs) {
-            await getMediaFrom_awaitContext(e, this, param.parameters.upimgs, "upimgs")
-            if (e.img.length < param.parameters.upimgs)
+            if (!(await getMediaFrom_awaitContext(e, this, param.parameters.upimgs, "upimgs")))
                 return true
         }
 
