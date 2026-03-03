@@ -88,6 +88,7 @@ ggKey_free_250825: QUl6YVN5QzctdEZNdUx4X0NVbWc4dTR3SkRMZkVqbkdRSEtfNjdJLEFJemFTe
 ggReProxy: aHR0cHM6Ly9iLmdlbWluaXByb3h5LmdnZmYubmV0LGh0dHBzOi8vZC5nZW1pbmlwcm94eS5nZ2ZmLm5ldC9nZW1pbmksaHR0cHM6Ly9lLmdlbWluaXByb3h5LmdnZmYubmV0
 sf_cdtime: 0
 sf_dailyLimit: 0
+mediaMaxSizeInMB: 10
 sf_unlimitedUsers: []
 sf_onlyGroupID: []
 groupSayHello: {}

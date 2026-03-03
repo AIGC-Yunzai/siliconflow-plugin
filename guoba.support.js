@@ -1634,6 +1634,17 @@ export function supportGuoba() {
           },
         },
         {
+          field: "mediaMaxSizeInMB",
+          label: "媒体识别最大体积",
+          helpMessage: '单位：MB',
+          bottomHelpMessage: "[#gg]图片/视频内容识别时最大体积，目前仅支持 Gemini",
+          component: "InputNumber",
+          componentProps: {
+            min: 1,
+            step: 1,
+          },
+        },
+        {
           field: "groupMultiChat",
           label: "群聊多人对话",
           bottomHelpMessage: "开启后群聊中的用户可以在同一话题中与AI聊天，每个群聊都有独立的对话上下文",

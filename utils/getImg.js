@@ -215,3 +215,29 @@ export async function getMediaFrom_awaitContext(e, context = null, needLength = 
   // 循环结束说明已获取到指定数量的媒体文件
   return true;
 }
+
+/**
+ * 从传入的对象中提取目标URL和类型，优先返回单个视频URL，无视频时返回单个图片URL
+ * @param {Object} e - 包含视频/图片URL的源对象
+ * @returns {Object} 包含目标URL和类型的对象 { targetUrl: string|null, isVideo: boolean }
+ */
+export function getMediaTargetUrl(e) {
+  let targetUrl = null
+  let isVideo = false
+
+  const videoUrl = e.get_Video && Array.isArray(e.get_Video) && e.get_Video.length > 0
+    ? e.get_Video[0].url
+    : null;
+
+  if (videoUrl) {
+    targetUrl = videoUrl
+    isVideo = true
+  } else {
+    if (e.img && Array.isArray(e.img) && e.img.length > 0) {
+      targetUrl = e.img[0]
+      isVideo = false
+    }
+  }
+
+  return { targetUrl, isVideo }
+}

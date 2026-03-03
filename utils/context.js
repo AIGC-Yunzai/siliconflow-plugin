@@ -1,17 +1,17 @@
 import Config from '../components/Config.js'
 
 /** 
- * 格式化上下文消息为Gemini API格式
+ * 添加历史对话 - 格式化上下文消息为Gemini API格式
  * @param {Array} messages 消息数组
  * @param {Object} options 配置选项
  * @param {boolean} options.useVertexAI 是否使用 Vertex AI 格式（驼峰命名）
  * @param {string} options.currentInput 当前用户输入（如果没有历史消息时使用）
  * @param {Array} options.currentImages 当前消息的图片数组
- * @param {Array} options.historyImages 历史消息的图片数组
+ * @param {Array} options.historyImages 历史消息的图片数组 - 注意：根据呆毛协议，已经不再保存历史图片base64 - options.historyImages
  * @return {Array} 格式化后的消息数组
  */
 export function formatContextForGemini(messages, options = {}) {
-    const { useVertexAI = false, currentInput = null, currentImages = null, historyImages = null } = options;
+    const { useVertexAI = false, currentInput = null, currentImages = null, historyImages = null, currentMedia = null } = options;
 
     // 如果有历史消息，格式化历史消息
     if (messages && messages.length > 0) {
@@ -30,29 +30,18 @@ export function formatContextForGemini(messages, options = {}) {
                 formattedMsg.parts.push({ text: msg.content })
             }
 
-            // 只从 imageBase64 字段获取图片
+            // 从 imageBase64 字段获取图片
             if (msg.imageBase64 && Array.isArray(msg.imageBase64)) {
                 msg.imageBase64.forEach(base64 => {
                     if (useVertexAI) {
                         // Vertex AI 格式：使用驼峰命名
-                        formattedMsg.parts.push({
-                            inlineData: {
-                                mimeType: "image/jpeg",
-                                data: base64
-                            }
-                        })
+                        formattedMsg.parts.push({ inlineData: { mimeType: "image/jpeg", data: base64 } })
                     } else {
                         // 标准 Gemini API 格式：使用下划线命名
-                        formattedMsg.parts.push({
-                            inline_data: {
-                                mime_type: "image/jpeg",
-                                data: base64
-                            }
-                        })
+                        formattedMsg.parts.push({ inline_data: { mime_type: "image/jpeg", data: base64 } })
                     }
                 })
             }
-
             return formattedMsg
         })
     }
@@ -66,27 +55,28 @@ export function formatContextForGemini(messages, options = {}) {
             // 添加用户输入文本
             vertexContents.push(currentInput);
 
-            // 如果有图片，添加图片（Vertex AI 使用 inlineData，驼峰命名）
-            if (currentImages && currentImages.length > 0) {
-                currentImages.forEach(image => {
+            // 处理多媒体 (包含正确的 mimeType)
+            if (currentMedia && currentMedia.length > 0) {
+                currentMedia.forEach(media => {
                     vertexContents.push({
                         inlineData: {
-                            mimeType: "image/jpeg",
-                            data: image
+                            mimeType: media.mimeType, // 动态使用传入的 mimeType，如 video/mp4
+                            data: media.data
                         }
                     });
                 });
             }
 
-            // 添加历史图片（Vertex AI 格式）
+            // 兼容旧版 currentImages
+            if (currentImages && currentImages.length > 0) {
+                currentImages.forEach(image => {
+                    vertexContents.push({ inlineData: { mimeType: "image/jpeg", data: image } });
+                });
+            }
+            // 兼容旧版 historyImages
             if (historyImages && historyImages.length > 0) {
                 historyImages.forEach(image => {
-                    vertexContents.push({
-                        inlineData: {
-                            mimeType: "image/jpeg",
-                            data: image
-                        }
-                    });
+                    vertexContents.push({ inlineData: { mimeType: "image/jpeg", data: image } });
                 });
             }
 
@@ -94,39 +84,33 @@ export function formatContextForGemini(messages, options = {}) {
         } else {
             // 标准 Gemini API 格式
             const currentParts = [];
+            currentParts.push({ text: currentInput });
 
-            // 添加用户输入文本
-            currentParts.push({
-                text: currentInput
-            });
-
-            // 如果有图片，添加图片
-            if (currentImages && currentImages.length > 0) {
-                currentParts.push({
-                    text: "\n当前引用的图片:"
-                });
-                currentImages.forEach(image => {
+            // 处理多媒体 (包含正确的 mimeType)
+            if (currentMedia && currentMedia.length > 0) {
+                currentParts.push({ text: "\n当前引用的媒体内容:" });
+                currentMedia.forEach(media => {
                     currentParts.push({
                         inline_data: {
-                            mime_type: "image/jpeg",
-                            data: image
+                            mime_type: media.mimeType, // 动态使用传入的 mime_type
+                            data: media.data
                         }
                     });
                 });
             }
 
-            // 添加历史图片
-            if (historyImages && historyImages.length > 0) {
-                currentParts.push({
-                    text: "\n历史对话中的图片:"
+            // 兼容旧版 currentImages
+            if (currentImages && currentImages.length > 0) {
+                currentParts.push({ text: "\n当前引用的图片:" });
+                currentImages.forEach(image => {
+                    currentParts.push({ inline_data: { mime_type: "image/jpeg", data: image } });
                 });
+            }
+            // 兼容旧版 historyImages
+            if (historyImages && historyImages.length > 0) {
+                currentParts.push({ text: "\n历史对话中的图片:" });
                 historyImages.forEach(image => {
-                    currentParts.push({
-                        inline_data: {
-                            mime_type: "image/jpeg",
-                            data: image
-                        }
-                    });
+                    currentParts.push({ inline_data: { mime_type: "image/jpeg", data: image } });
                 });
             }
 
@@ -136,8 +120,6 @@ export function formatContextForGemini(messages, options = {}) {
             }];
         }
     }
-
-    // 如果既没有历史消息也没有当前输入，返回空数组
     return [];
 }
 
