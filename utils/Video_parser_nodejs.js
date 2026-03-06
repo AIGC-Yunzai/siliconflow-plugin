@@ -46,22 +46,65 @@ class DouyinParser {
                     reject(new Error('Python script execution timeout (30s)'));
                 }, 30000);
 
-                child.stdout.on('data', (data) => {
-                    stdout += data.toString();
-                });
-
-                child.stderr.on('data', (data) => {
-                    stderr += data.toString();
-                });
+                child.stdout.on('data', (data) => { stdout += data.toString(); });
+                child.stderr.on('data', (data) => { stderr += data.toString(); });
 
                 child.on('close', (code) => {
                     clearTimeout(timeout);
-
                     if (code !== 0) {
                         reject(new Error(`Python script execution failed with code ${code}: ${stderr}`));
                         return;
                     }
+                    try {
+                        const result = JSON.parse(stdout);
+                        resolve(result);
+                    } catch (parseError) {
+                        reject(new Error(`Failed to parse Python output: ${parseError.message}\nOutput: ${stdout}`));
+                    }
+                });
+                child.on('error', (error) => {
+                    clearTimeout(timeout);
+                    reject(new Error(`Failed to start Python process: ${error.message}`));
+                });
+            } catch (error) {
+                reject(error);
+            }
+        });
+    }
+}
 
+class KuaishouParser {
+    constructor(pythonPath = 'python3', scriptPath = path.join(pluginRoot, 'utils', 'kuaishou_parser_standalone.py')) {
+        this.pythonPath = pythonPath;
+        this.scriptPath = scriptPath;
+    }
+
+    async parse(text) {
+        return new Promise((resolve, reject) => {
+            try {
+                const child = spawn(this.pythonPath, [this.scriptPath, text], {
+                    stdio: ['pipe', 'pipe', 'pipe'],
+                    windowsHide: true
+                });
+
+                let stdout = '';
+                let stderr = '';
+
+                // 设置超时 30秒
+                const timeout = setTimeout(() => {
+                    child.kill();
+                    reject(new Error('Python script execution timeout (30s)'));
+                }, 30000);
+
+                child.stdout.on('data', (data) => { stdout += data.toString(); });
+                child.stderr.on('data', (data) => { stderr += data.toString(); });
+
+                child.on('close', (code) => {
+                    clearTimeout(timeout);
+                    if (code !== 0) {
+                        reject(new Error(`Python script execution failed with code ${code}: ${stderr}`));
+                        return;
+                    }
                     try {
                         const result = JSON.parse(stdout);
                         resolve(result);
@@ -80,28 +123,7 @@ class DouyinParser {
             }
         });
     }
-
-    /**
-     * 批量解析多个文本
-     * @param {string[]} texts - 文本数组
-     * @returns {Promise<Object[]>} 解析结果数组
-     */
-    async parseMultiple(texts) {
-        const results = [];
-        for (const text of texts) {
-            try {
-                const result = await this.parse(text);
-                results.push(result);
-            } catch (error) {
-                results.push({
-                    success: false,
-                    error: error.message,
-                    input: text
-                });
-            }
-        }
-        return results;
-    }
 }
 
 export const Douyin_parser = new DouyinParser();
+export const Kuaishou_parser = new KuaishouParser();

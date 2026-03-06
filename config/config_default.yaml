@@ -81,6 +81,7 @@ zhilOnlyMaster: false
 groupMultiChat: false # 是否启用群聊多人对话功能
 enablePrivateChatAI: true # 是否启用私聊模式的AI对话
 douyinTV: true # 开启抖音解析
+kuaishouTV: true # 开启快手解析
 video_maxSizeMB: 50 # 抖音解析视频最大容量 MB
 turnOnBilitv: true # 开启bili解析
 switch_ChatCooldown: true # 不允许并发对话

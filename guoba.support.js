@@ -2064,6 +2064,12 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
+          field: "kuaishouTV",
+          label: "快手解析",
+          bottomHelpMessage: "启用快手解析；需要安装 Python3 和 依赖 pip3 install requests ；此开关重启生效",
+          component: "Switch",
+        },
+        {
           field: 'turnOnBilitv',
           label: 'b站解析',
           bottomHelpMessage: '开启b站后，将会解析并发送bilibili链接或小程序关联的视频；此开关重启生效',

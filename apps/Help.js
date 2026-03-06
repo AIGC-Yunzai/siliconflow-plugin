@@ -116,6 +116,11 @@ export class help extends plugin {
                         "title": "#直链 #删除直链[图链]",
                         "desc": "获取/删除图片的直链地址"
                     },
+                    {
+                        "icon": 29,
+                        "title": "#即梦绘画帮助",
+                        "desc": "#即梦视频帮助"
+                    },
                 ],
             },
             {

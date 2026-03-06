@@ -52,7 +52,7 @@ sudo apt update
 sudo apt install python3  # 安装最新 Python 3
 sudo apt install python3-venv python3-pip  # 安装虚拟环境和 pip
 # 安装依赖（依赖约5MB）
-pip install aiohttp
+pip install aiohttp requests
 ```
 
 ## 插件配置
@@ -136,6 +136,7 @@ pip install aiohttp
 - [midjourney-proxy](https://github.com/trueai-org/midjourney-proxy)：一个开源的MJ代理项目，同时提供了免费的公益API站点，让更多人能够体验AI绘画的乐趣！
 - [Aliorpse](https://gitee.com/Aliorpse/Yunzai-AliorpsePlugins/blob/master/bilitv.js)：Aliorpse 开发的云崽上轻量，快速的b站解析插件
 - [astrbot_plugin_douyin_bot](https://github.com/drdon1234/astrbot_plugin_douyin_bot)：AstrBot插件，自动识别抖音链接并转换为直链发送
+- [astrbot_plugin_parser](https://github.com/Zhalslar/astrbot_plugin_parser)：AstrBot插件，高性能低耦合的万能链接解析器。支持的类型：视频、图集、音频。 支持的平台：A站、B站、抖音、tiktok、微博、小红书、快手、油管、推特
 
 ## 许可证
 
