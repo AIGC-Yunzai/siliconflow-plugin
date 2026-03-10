@@ -1757,54 +1757,13 @@ export function supportGuoba() {
         {
           field: 'autoEmoticons.useEmojiSave',
           label: '启用表情保存',
-          bottomHelpMessage: '是否启用表情保存/偷取/发送；更改后重启生效；会自动发送保存在 /data/autoEmoticons/emoji_save/群号/ 和 /data/autoEmoticons/PaimonChuoYiChouPictures/ 目录下的表情包；群单独指令：#哒咩 #自动表情包[开启|关闭] #表情包配置',
+          bottomHelpMessage: '是否启用表情保存/偷取/发送；更改后重启生效；自动偷取保存并发送表情包目录： /data/autoEmoticons/emoji_save/群号/ ； 手动下载自定义表情包目录（支持子文件夹）： /data/autoEmoticons/PaimonChuoYiChouPictures/ ；群单独指令：#哒咩 #自动表情包[开启|关闭] #表情包配置',
           component: 'Switch'
-        },
-        {
-          field: 'autoEmoticons.confirmCount',
-          label: '表情确认次数',
-          bottomHelpMessage: '在记录时间内接收多少次才保存表情包',
-          component: 'InputNumber',
-          componentProps: {
-            min: 0,
-            step: 1
-          }
-        },
-        {
-          field: 'autoEmoticons.replyRate',
-          label: '发送表情概率',
-          bottomHelpMessage: '发送偷取表情的概率',
-          component: 'InputNumber',
-          componentProps: {
-            min: 0,
-            max: 1,
-            step: 0.01
-          }
-        },
-        {
-          field: 'autoEmoticons.sendCD',
-          label: '发送表情冷却时间',
-          bottomHelpMessage: '发送表情的冷却时间（秒）',
-          component: 'InputNumber',
-          componentProps: {
-            min: 1,
-            step: 1
-          }
-        },
-        {
-          field: 'autoEmoticons.maxEmojiCount',
-          label: '表情包最大数量',
-          bottomHelpMessage: '每个群最大的表情包储存数量，储存在 data/autoEmoticons/emoji_save/ 文件夹下',
-          component: 'InputNumber',
-          componentProps: {
-            min: 0,
-            step: 1
-          }
         },
         {
           field: 'autoEmoticons.maxEmojiSize',
           label: '表情大小限制',
-          bottomHelpMessage: '表情包文件大小限制 (MB)',
+          bottomHelpMessage: '表情包文件大小限制 (MB)，全局生效',
           component: 'InputNumber',
           componentProps: {
             min: 0,
@@ -1813,14 +1772,67 @@ export function supportGuoba() {
         },
         {
           field: 'autoEmoticons.allowGroups',
-          label: '表情包白名单群',
-          bottomHelpMessage: '需要保存和发送表情包的群号列表，为空数组时表示所有群；（推荐设置该选项，设置后支持无触发自动发送表情包，否则只能接受任意信息后概率触发表情包）',
-          component: 'Select',
+          label: '🥝群单独设置',
+          bottomHelpMessage: '填写需要保存和发送表情包的群号，每个群可单独配置参数；（推荐设置该选项，设置后支持定时发送表情包，否则只能通过群内消息概率触发）；也可在群内使用 #自动表情包开启/关闭',
+          component: 'GSubForm',
           componentProps: {
-            allowAdd: true,
-            allowDel: true,
-            mode: 'multiple',
-            options: groupList_total
+            multiple: true,
+            schemas: [
+              {
+                field: 'groupId',
+                label: '群号',
+                required: true,
+                bottomHelpMessage: '需要启用表情包功能的群号',
+                component: 'Input',
+              },
+              {
+                field: 'switchOn',
+                label: '开启自动表情包',
+                bottomHelpMessage: '开启或关闭该群的自动表情包',
+                component: 'Switch'
+              },
+              {
+                field: 'replyRate',
+                label: '发送表情概率',
+                bottomHelpMessage: '每次触发时发送偷取表情的概率（0~1）；每5分钟判断一次是否触发 与 每次接受到消息后是否触发；默认0.05',
+                component: 'InputNumber',
+                componentProps: {
+                  min: 0,
+                  max: 1,
+                  step: 0.001
+                }
+              },
+              {
+                field: 'sendCD',
+                label: '发送冷却时间(秒)',
+                bottomHelpMessage: '本群发送表情后的冷却时间（秒），默认299秒',
+                component: 'InputNumber',
+                componentProps: {
+                  min: 1,
+                  step: 1
+                }
+              },
+              {
+                field: 'confirmCount',
+                label: '表情确认次数',
+                bottomHelpMessage: '在记录时间内收到多少次同一图片才保存为表情包，默认3次',
+                component: 'InputNumber',
+                componentProps: {
+                  min: 1,
+                  step: 1
+                }
+              },
+              {
+                field: 'maxEmojiCount',
+                label: '表情包最大数量',
+                bottomHelpMessage: '本群最多保存多少个表情包，超出后随机删除旧表情，默认100',
+                component: 'InputNumber',
+                componentProps: {
+                  min: 1,
+                  step: 10
+                }
+              },
+            ]
           }
         },
         {
