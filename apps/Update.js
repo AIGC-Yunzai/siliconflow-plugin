@@ -95,7 +95,7 @@ export class update extends plugin {
 
     if (isForce && isDevUpdate) {
       // dev分支强制更新
-      command = 'git -C ./plugins/siliconflow-plugin/ reset --hard HEAD && git -C ./plugins/siliconflow-plugin/ clean -fd && git -C ./plugins/siliconflow-plugin/ checkout dev && git -C ./plugins/siliconflow-plugin/ fetch --all && git -C ./plugins/siliconflow-plugin/ reset --hard origin/dev'
+      command = "git -C ./plugins/siliconflow-plugin/ config remote.origin.fetch '+refs/heads/*:refs/remotes/origin/*' && git -C ./plugins/siliconflow-plugin/ fetch origin && git -C ./plugins/siliconflow-plugin/ reset --hard HEAD && git -C ./plugins/siliconflow-plugin/ clean -fd && git -C ./plugins/siliconflow-plugin/ checkout dev && git -C ./plugins/siliconflow-plugin/ fetch --all && git -C ./plugins/siliconflow-plugin/ reset --hard origin/dev"
       this.e.reply('正在执行dev分支强制更新操作，请稍等')
     } else if (isForce && isMainUpdate) {
       // main分支强制更新
