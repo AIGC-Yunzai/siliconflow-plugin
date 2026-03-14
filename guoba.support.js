@@ -1679,7 +1679,7 @@ export function supportGuoba() {
         },
         {
           field: "groupSayHello.allowGroups",
-          label: "🥝群单独设置",
+          label: "🍓群单独设置",
           bottomHelpMessage: "填写允许自动打招呼的群号列表，留空则不在任何群打招呼；可在群内使用 #自动打招呼开启/关闭 来管理",
           component: "GSubForm",
           componentProps: {
@@ -1772,7 +1772,7 @@ export function supportGuoba() {
         },
         {
           field: 'autoEmoticons.allowGroups',
-          label: '🥝群单独设置',
+          label: '🍓群单独设置',
           bottomHelpMessage: '填写需要保存和发送表情包的群号，每个群可单独配置参数；（推荐设置该选项，设置后支持定时发送表情包，否则只能通过群内消息概率触发）；也可在群内使用 #自动表情包开启/关闭',
           component: 'GSubForm',
           componentProps: {

@@ -131,26 +131,8 @@ export function generatePresetInfo(usedPresets) {
 
 /** 在 prompt 中替换文本使用 e.sender 信息 */
 function replacePromptForSenderMsg(e, systemMsg = "") {
-    if (!e.sender || !e.message)
+    if (!e.sender)
         return systemMsg;
-
-    /** at或当前用户昵称 */
-    let name = ''
-    if (e.message.filter(m => m.type === 'at').length > 0) {
-        name = _.trim(e.message.filter(m => m.type === 'at')[0].text, '@')
-
-        systemMsg = systemMsg.replace(/_sender_id_/igm, e.self_id)
-    } else {
-        name = e.sender.card || e.sender.nickname
-
-        systemMsg = systemMsg.replace(/_sender_id_/igm, e.sender.user_id)
-        systemMsg = systemMsg.replace(/_sender_gender_/igm, e.sender.sex)
-        systemMsg = systemMsg.replace(/_sender_age_/igm, e.sender.age)
-        systemMsg = systemMsg.replace(/_sender_area_/igm, e.sender.area)
-        systemMsg = systemMsg.replace(/_sender_role_/igm, `${e.sender.role == "owner" ? '群主' : `${e.sender.role == "admin" ? '管理员' : ''}`}`)
-        systemMsg = systemMsg.replace(/_sender_title_/igm, e.sender.title)
-    }
-
     const getCurrentDate = () => {
         const date = new Date();
         const year = date.getFullYear();
@@ -164,9 +146,15 @@ function replacePromptForSenderMsg(e, systemMsg = "") {
         const minutes = String(date.getMinutes()).padStart(2, '0');
         return `${hours}:${minutes}`;
     };
-    systemMsg = systemMsg.replace(/_sender_name_/igm, name)
+    systemMsg = systemMsg.replace(/_sender_name_/igm, e.sender.card || e.sender.nickname)
+    systemMsg = systemMsg.replace(/_sender_id_/igm, e.sender.user_id)
+    systemMsg = systemMsg.replace(/_sender_gender_/igm, e.sender.sex)
+    systemMsg = systemMsg.replace(/_sender_age_/igm, e.sender.age)
+    systemMsg = systemMsg.replace(/_sender_area_/igm, e.sender.area)
+    systemMsg = systemMsg.replace(/_sender_role_/igm, `${e.sender.role == "owner" ? '群主' : `${e.sender.role == "admin" ? '管理员' : ''}`}`)
+    systemMsg = systemMsg.replace(/_sender_title_/igm, e.sender.title)
     systemMsg = systemMsg.replace(/_date_/igm, getCurrentDate())
     systemMsg = systemMsg.replace(/_time_/igm, getCurrentTime())
-    systemMsg = systemMsg.replace(/_sender_groupid_/igm, e.group_id)
+    systemMsg = systemMsg.replace(/_sender_groupid_/igm, e.group_id || e.sender.user_id)
     return systemMsg;
 }

@@ -11,7 +11,7 @@
   - 🗣️ 语音合成：集成Fishaudio的高质量TTS服务
   - 📊 资源管理：支持多key负载均衡，提供图片直链获取等功能
   - 🔗 链接处理：自动提取和处理消息中的URL
-  - 📱 视频解析：支持抖音、哔哩哔哩视频解析
+  - 📱 视频解析：支持抖音、快手、哔哩哔哩视频解析
   - 🌡️ 暖群功能：群自动Gemini打招呼、群自动偷取发送表情包、复读 & 打断等功能
   - ⚡ WebSocket：支持WebSocket与前端通信实现实时对话与绘图，详情看[前端地址](https://sf.maliy.top)，[部署教程](https://github.com/AIGC-Yunzai/SF-WEB)
   - 📀 Jimeng-Api接口：支持调用即梦Api免费文生图、图生图、视频生成等
@@ -44,7 +44,7 @@ pnpm install --filter=siliconflow-plugin
 
 #### 3. 安装 Python 与依赖（可选）
 
-- `抖音解析` 功能将调用 Python 对 抖音视频进行解析
+- `抖音解析` `快手解析` 功能将调用 Python 对 抖音、快手进行解析
 
 ```sh
 # Ubuntu 中安装 Python 的方法
@@ -73,7 +73,7 @@ pip install aiohttp requests
 - [x] `#直链[引用图片]` 图片直链获取
 - [X] 支持接口列表，方便快速切换预设，预设具有独立的上下文
   - 例如自定义一个生成图片prompt的命令 `#gtag 一个美丽的女孩`
-- [X] 自动抖音/b站视频解析
+- [X] 自动抖音/快手/b站视频解析
 - [X] 群自动Gemini打招呼、群自动偷取发送表情包、复读 & 打断
 - [ ] LLM接入MCP
 - [ ] TODO..
@@ -114,7 +114,7 @@ pip install aiohttp requests
 ## 常见问题
 
 1.  在锅巴中点击保存时提示 `PayloadTooLargeError` 怎么办?
-    - 最新版的锅巴插件[已经修复](https://github.com/guoba-yunzai/guoba-plugin/commit/50f3a847fdba22534d37b97f2ac62b8fdb5c4d41)这个问题了，如果你已经更新到最新版的锅巴插件依然出现这个问题，考虑是你的平台更改了`bodyParser`值，可以[查看这里](https://github.com/AIGC-Yunzai/Trss-Yunzai-lagrange)进行修复。
+    - 最新版的锅巴插件[已经修复](https://github.com/guoba-yunzai/guoba-plugin/commit/50f3a847fdba22534d37b97f2ac62b8fdb5c4d41)这个问题了，如果你已经更新到最新版的锅巴插件依然出现这个问题，考虑是你的平台更改了`bodyParser`值，可以[查看这里](https://github.com/AIGC-Yunzai/TRSS-Yunzai-NapC)进行修复。
 2. 如果是低版本的icqq，图生图和直链无法获取图链怎么办？
    
    - 请使用以下脚本，在 Yunzai 根目录执行即可
@@ -131,12 +131,12 @@ pip install aiohttp requests
 ## 感谢
 
 - [Fish-Audio](https://fish.audio)：Brand new TTS solution
-- [vits-plugin](https://github.com/erzaozi/vits-plugin)：一个适用于 Yunzai 系列机器人框架 的的 AI 语音合成插件，让你能够在机器人中使用 AI 语音合成功能；Fishaudio语音同传的方式绝大部分参考了该项目的实现方法，Fish-Audio.json也是直接用的该项目的，很是感谢！
-- [paimonnai-plugin](https://github.com/misaka20002/paimonnai-plugin)：借鉴其 Config.js 优化超大 Prompts 时的硬盘读写、成员管理、 Bot 操作源码等。
-- [midjourney-proxy](https://github.com/trueai-org/midjourney-proxy)：一个开源的MJ代理项目，同时提供了免费的公益API站点，让更多人能够体验AI绘画的乐趣！
+- [vits-plugin](https://github.com/erzaozi/vits-plugin)：一个适用于 Yunzai 系列机器人框架 的的 AI 语音合成插件，让你能够在机器人中使用 AI 语音合成功能
+- [paimonnai-plugin](https://github.com/misaka20002/paimonnai-plugin)：借鉴其 Config.js 优化超大 Prompts 时的硬盘读写、成员管理、 Bot 操作源码等
+- [midjourney-proxy](https://github.com/trueai-org/midjourney-proxy)：一个开源的MJ代理项目，同时提供了免费的公益API站点，让更多人能够体验AI绘画的乐趣
 - [Aliorpse](https://gitee.com/Aliorpse/Yunzai-AliorpsePlugins/blob/master/bilitv.js)：Aliorpse 开发的云崽上轻量，快速的b站解析插件
 - [astrbot_plugin_douyin_bot](https://github.com/drdon1234/astrbot_plugin_douyin_bot)：AstrBot插件，自动识别抖音链接并转换为直链发送
-- [astrbot_plugin_parser](https://github.com/Zhalslar/astrbot_plugin_parser)：AstrBot插件，高性能低耦合的万能链接解析器。支持的类型：视频、图集、音频。 支持的平台：A站、B站、抖音、tiktok、微博、小红书、快手、油管、推特
+- [astrbot_plugin_parser](https://github.com/Zhalslar/astrbot_plugin_parser)：AstrBot插件，高性能低耦合的万能链接解析器。支持的类型：视频、图集、音频
 
 ## 许可证
 
