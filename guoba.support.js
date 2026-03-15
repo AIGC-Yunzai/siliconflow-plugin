@@ -962,7 +962,7 @@ export function supportGuoba() {
         },
         {
           component: "Divider",
-          label: "[#ss]对话相关配置",
+          label: " 模型提供商-OpenAi [#ss]指令",
           componentProps: {
             orientation: "left",
             plain: true,
@@ -1269,7 +1269,7 @@ export function supportGuoba() {
         },
         {
           component: "Divider",
-          label: "[#gg]Gemini API配置",
+          label: " 模型提供商-Gemini [#gg]指令",
           componentProps: {
             orientation: "left",
             plain: true,
@@ -1355,12 +1355,6 @@ export function supportGuoba() {
                 label: "使用Vertex AI格式",
                 component: "Switch",
                 bottomHelpMessage: "开启后将使用Google Vertex AI的请求格式（在Google Cloud Vertex AI平台上调用Gemini API的请求和响应格式），不知道是什么的话就关闭",
-              },
-              {
-                field: "enableImageUpload",
-                label: "图片上传功能",
-                component: "Switch",
-                bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
               },
               {
                 field: "mustNeedImgLength",
@@ -1559,12 +1553,6 @@ export function supportGuoba() {
           component: "Switch",
         },
         {
-          field: "gg_enableImageUpload",
-          label: "[#gg]图片上传功能",
-          bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
-          component: "Switch",
-        },
-        {
           field: "gg_mustNeedImgLength",
           label: "[#gg]必需图片",
           bottomHelpMessage: "填写该接口必须使用的图片张数，若用户使用该接口时必须附带/引用图片的图片不足，则要求用户发送图片，常用于图生图/图片鉴赏/ControlNet",
@@ -1647,7 +1635,7 @@ export function supportGuoba() {
         {
           field: "groupMultiChat",
           label: "群聊多人对话",
-          bottomHelpMessage: "开启后群聊中的用户可以在同一话题中与AI聊天，每个群聊都有独立的对话上下文",
+          bottomHelpMessage: "开启后群聊中的用户可以在同一话题中与AI聊天，每个群聊都有独立的对话上下文；需要开启“上下文功能”",
           component: "Switch",
         },
         {
