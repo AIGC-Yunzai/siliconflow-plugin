@@ -1,4 +1,4 @@
-import Config from "./components/Config.js";
+﻿import Config from "./components/Config.js";
 import lodash from "lodash";
 import path from "path";
 import { pluginRoot } from "./model/path.js";
@@ -1831,7 +1831,7 @@ export function supportGuoba() {
               {
                 field: 'timeRestrictionEnabled',
                 label: '启用生效时间限制',
-                bottomHelpMessage: '（本群）是否启用时间限制，启用后“限制定时任务”与“限制消息触发”至少开启1项',
+                bottomHelpMessage: '（本群）是否启用时间限制',
                 component: 'Switch'
               },
               {
@@ -1855,13 +1855,13 @@ export function supportGuoba() {
               {
                 field: 'restrictScheduledTask',
                 label: '限制定时任务',
-                bottomHelpMessage: '（本群）开启后，在非活跃时间段不会由定时任务触发表情包',
+                bottomHelpMessage: '（本群）是否限制由定时任务触发的表情包',
                 component: 'Switch'
               },
               {
                 field: 'restrictMessageTrigger',
                 label: '限制消息触发',
-                bottomHelpMessage: '（本群）开启后，在非活跃时间段不会由群聊消息触发表情包',
+                bottomHelpMessage: '（本群）是否限制由消息触发的表情包',
                 component: 'Switch'
               },
             ]
