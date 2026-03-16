@@ -105,6 +105,14 @@ autoEmoticons: {
     getBotByQQ_targetQQArr: [],
     # 发送表情时的延迟 (毫秒)
     replyDelay: { min: 1000, max: 240000 },
+    # 时间限制配置（全局配置）
+    timeRestrictionEnabled: false,      # 是否启用时间限制（防止半夜"闹鬼"）
+    activeStartTime: "08:00",           # 活跃开始时间（HH:mm格式）
+    activeEndTime: "23:00",             # 活跃结束时间（HH:mm格式，支持跨夜如 22:00-06:00）
+    restrictScheduledTask: true,        # 是否限制定时任务（cron每5分钟触发）
+    restrictMessageTrigger: true,       # 是否限制消息触发（收到消息后概率触发）
+    timezoneMode: "beijing",            # 时区模式：beijing=北京时间(UTC+8), server=服务器本地时区, custom=自定义
+    customTimezoneOffset: 8,            # 自定义时区偏移（小时，相对于UTC，如东八区为8）
   }
 autoRepeat_config: []
 autoReply: []
