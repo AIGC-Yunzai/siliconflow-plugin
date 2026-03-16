@@ -22,6 +22,7 @@ let sharedPicturesWatcher = null
 
 /**
  * 兼容旧版配置：将旧版的字符串数组转换为对象数组
+ * 同时确保时间限制相关字段有默认值
  */
 function getNormalizedAllowGroups(config) {
     const groups = config.autoEmoticons?.allowGroups || [];
@@ -31,6 +32,123 @@ function getNormalizedAllowGroups(config) {
         }
         return g;
     });
+}
+
+/**
+ * 获取当前时间（根据配置的时区模式）
+ * @param {Object} timeConfig 时间配置对象
+ * @returns {Date} 根据时区调整后的时间
+ */
+function getTimeWithTimezone(timeConfig) {
+    const mode = timeConfig?.timezoneMode || 'beijing';
+    const now = new Date();
+    
+    switch (mode) {
+        case 'server':
+            // 使用服务器本地时区（不做调整）
+            return now;
+        case 'custom': {
+            // 自定义时区偏移
+            const offset = timeConfig?.customTimezoneOffset ?? 8;
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            return new Date(utc + (3600000 * offset));
+        }
+        case 'beijing':
+        default:
+            // 北京时间（UTC+8）
+            const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+            return new Date(utc + (3600000 * 8));
+    }
+}
+
+/**
+ * 获取时区显示名称（用于日志）
+ * @param {Object} timeConfig 时间配置对象
+ * @returns {string} 时区名称
+ */
+function getTimezoneLabel(timeConfig) {
+    const mode = timeConfig?.timezoneMode || 'beijing';
+    switch (mode) {
+        case 'server': return '服务器本地时区';
+        case 'custom': return `UTC${(timeConfig?.customTimezoneOffset ?? 8) >= 0 ? '+' : ''}${timeConfig?.customTimezoneOffset ?? 8}`;
+        case 'beijing':
+        default: return '北京时间(UTC+8)';
+    }
+}
+
+/**
+ * 检查当前时间是否在允许的活跃时间范围内
+ * 支持跨夜时间段，如 22:00-06:00
+ * @param {Object} timeConfig 时间限制配置对象（可以是全局或群单独配置）
+ * @returns {boolean} 是否在活跃时间内
+ */
+function isWithinActiveTime(timeConfig) {
+    // 如果时间限制未启用，直接返回 true
+    if (!timeConfig?.timeRestrictionEnabled) return true;
+
+    // 获取根据时区调整后的当前时间
+    const currentDate = getTimeWithTimezone(timeConfig);
+    const currentTime = currentDate.getHours() * 60 + currentDate.getMinutes();
+
+    /**
+     * 解析时间字符串为分钟数
+     * @param {string|number} timeVal 时间值（如 "08:00" 或纯数字小时）
+     * @returns {number} 从0点开始的分钟数
+     */
+    const parseTime = (timeVal) => {
+        if (!timeVal) return 0;
+        const timeStr = String(timeVal);
+        if (!timeStr.includes(':')) {
+            return (Number(timeStr) || 0) * 60;
+        }
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return (hours || 0) * 60 + (minutes || 0);
+    };
+
+    const startTime = parseTime(timeConfig.activeStartTime || "08:00");
+    const endTime = parseTime(timeConfig.activeEndTime || "23:00");
+
+    if (startTime <= endTime) {
+        // 正常白天区间：如 08:00 - 23:00
+        return currentTime >= startTime && currentTime <= endTime;
+    } else {
+        // 跨夜区间：如 22:00 - 06:00 (大于晚上10点，或小于早上6点)
+        return currentTime >= startTime || currentTime <= endTime;
+    }
+}
+
+/**
+ * 获取群的时间限制配置（优先使用群单独配置，如果没有则使用全局配置）
+ * @param {Object} config 全局配置
+ * @param {Object} groupConfItem 群单独配置项
+ * @returns {Object} 合并后的时间限制配置
+ */
+function getGroupTimeConfig(config, groupConfItem) {
+    const global = config.autoEmoticons;
+    
+    // 如果群配置指定使用全局配置，或群没有自定义时间配置
+    if (groupConfItem?.useGlobalTimeRestriction !== false) {
+        return {
+            timeRestrictionEnabled: global?.timeRestrictionEnabled ?? false,
+            activeStartTime: global?.activeStartTime ?? "08:00",
+            activeEndTime: global?.activeEndTime ?? "23:00",
+            restrictScheduledTask: global?.restrictScheduledTask ?? true,
+            restrictMessageTrigger: global?.restrictMessageTrigger ?? true,
+            timezoneMode: global?.timezoneMode ?? "beijing",
+            customTimezoneOffset: global?.customTimezoneOffset ?? 8,
+        };
+    }
+    
+    // 使用群单独配置（覆盖全局）
+    return {
+        timeRestrictionEnabled: groupConfItem?.timeRestrictionEnabled ?? global?.timeRestrictionEnabled ?? false,
+        activeStartTime: groupConfItem?.activeStartTime ?? global?.activeStartTime ?? "08:00",
+        activeEndTime: groupConfItem?.activeEndTime ?? global?.activeEndTime ?? "23:00",
+        restrictScheduledTask: groupConfItem?.restrictScheduledTask ?? global?.restrictScheduledTask ?? true,
+        restrictMessageTrigger: groupConfItem?.restrictMessageTrigger ?? global?.restrictMessageTrigger ?? true,
+        timezoneMode: groupConfItem?.timezoneMode ?? global?.timezoneMode ?? "beijing",
+        customTimezoneOffset: groupConfItem?.customTimezoneOffset ?? global?.customTimezoneOffset ?? 8,
+    };
 }
 
 /**
@@ -397,6 +515,13 @@ export class autoEmoticons extends plugin {
             return false
         }
 
+        // 【时间限制检查】如果消息触发被限制且不在活跃时间内，直接终止发送逻辑
+        const timeConfig = getGroupTimeConfig(config, groupConfItem);
+        if (timeConfig.restrictMessageTrigger !== false && !isWithinActiveTime(timeConfig)) {
+            logger.debug(`[autoEmoticons] 群 ${groupId} 消息触发：当前不在活跃时间范围内（${getTimezoneLabel(timeConfig)}），跳过发送`);
+            return false;
+        }
+
         // 随机发送表情包（包含共享图片）
         const availablePictures = getAvailablePictures(groupId)
         if (Math.random() < groupConf.replyRate && availablePictures.length > 0) {
@@ -491,6 +616,14 @@ export class autoEmoticons extends plugin {
                 if (g.switchOn === false) continue;
 
                 const groupId = String(g.groupId);
+                
+                // 【时间限制检查】获取该群的时间配置，检查是否允许定时任务
+                const timeConfig = getGroupTimeConfig(config, g);
+                if (timeConfig.restrictScheduledTask !== false && !isWithinActiveTime(timeConfig)) {
+                    logger.debug(`[autoEmoticons] 群 ${groupId} 定时任务：当前不在活跃时间范围内（${getTimezoneLabel(timeConfig)}），跳过`);
+                    continue;
+                }
+                
                 const groupConf = {
                     sendCD: g.sendCD ?? 299,
                     replyRate: g.replyRate ?? 0.05
@@ -704,6 +837,10 @@ export class autoEmoticons extends plugin {
             cooldownStatus = `冷却中 (${formatTime(remainingTime)})`
         }
 
+        // 获取该群的时间限制配置
+        const timeConfig = getGroupTimeConfig(config, groupConfItem);
+        const isUsingGlobalTime = groupConfItem?.useGlobalTimeRestriction !== false;
+        
         const configMsg = [
             '📊 表情包插件配置状态',
             '━━━━━━━━━━━━━━━━━━',
@@ -716,6 +853,9 @@ export class autoEmoticons extends plugin {
             `　⏰ 发送冷却: ${cooldownStatus}`,
             '',
             '⚙️ 当前群生效参数:',
+            `　🕐 活跃时间: ${timeConfig.timeRestrictionEnabled ? `${timeConfig.activeStartTime} ~ ${timeConfig.activeEndTime} (${getTimezoneLabel(timeConfig)})${isUsingGlobalTime ? '[全局]' : '[自定义]'}` : '全天24小时'}`,
+            timeConfig.timeRestrictionEnabled ? `　🔒 限制定时任务: ${timeConfig.restrictScheduledTask !== false ? '✅ 是' : '❌ 否'}` : '',
+            timeConfig.timeRestrictionEnabled ? `　💬 限制消息触发: ${timeConfig.restrictMessageTrigger !== false ? '✅ 是' : '❌ 否'}` : '',
             `　⏱️ 记录时长: ${formatTime(config.autoEmoticons.expireTimeInSeconds)}`,
             `　🔢 确认次数: ${groupConf.confirmCount} 次`,
             `　🎲 发送概率: ${(groupConf.replyRate * 100).toFixed(1)}%`,
