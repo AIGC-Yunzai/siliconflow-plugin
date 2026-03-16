@@ -281,6 +281,14 @@ export class autoEmoticons extends plugin {
                     fnc: 'deleteEmoji',
                 },
                 {
+                    reg: '^#?(哒|达)咩记录(第\\d+页|\\d+)?$',
+                    fnc: 'showDamieRecord',
+                },
+                {
+                    reg: '^#?(哒|达)咩恢复(\\d+)?$',
+                    fnc: 'restoreDamie',
+                },
+                {
                     reg: '^#表情包配置$',
                     fnc: 'showConfig',
                 },
@@ -644,7 +652,7 @@ export class autoEmoticons extends plugin {
     }
 
     /**
-     * 删除表情包（需要修改以支持共享图片）
+     * 删除表情包（支持回收站功能）
      */
     async deleteEmoji(e) {
         const groupId = String(e.group_id)
@@ -663,13 +671,13 @@ export class autoEmoticons extends plugin {
 
         try {
             let filePath;
-            let canDelete = true;
             let fileUnique = null;
 
             if (fileInfo.startsWith('shared:')) {
-                // 共享图片 - 不允许删除
-                canDelete = false;
-                await e.reply('[autoEmoticons] 这是共享目录图片，不能删除哦~', true);
+                // 共享图片
+                const relPath = fileInfo.substring(7);
+                filePath = path.join(process.cwd(), 'data', 'autoEmoticons', 'PaimonChuoYiChouPictures', relPath);
+                fileUnique = path.basename(fileInfo, path.extname(fileInfo));
             } else {
                 // 群专属表情
                 filePath = path.join(process.cwd(), 'data', 'autoEmoticons', 'emoji_save', groupId, fileInfo);
@@ -677,10 +685,48 @@ export class autoEmoticons extends plugin {
                 fileUnique = path.basename(fileInfo, path.extname(fileInfo));
             }
 
-            if (canDelete && filePath && fs.existsSync(filePath)) {
+            if (filePath && fs.existsSync(filePath)) {
                 const filename = path.basename(filePath);
-                fs.unlinkSync(filePath);
+                const config = Config.getConfig();
+                const allowGroups = getNormalizedAllowGroups(config);
+                const groupConfItem = allowGroups.find(g => String(g.groupId) === groupId);
+                
+                // 获取群的回收站配置
+                const recycleBinConf = this.getGroupRecycleBinConfig(config, groupConfItem);
+                const recycleBinEnabled = recycleBinConf.enable;
 
+                if (recycleBinEnabled) {
+                    // 启用了回收站，移入回收站
+                    const recycleBinDir = path.join(process.cwd(), 'data', 'autoEmoticons', 'recycle_bin');
+                    if (!fs.existsSync(recycleBinDir)) {
+                        fs.mkdirSync(recycleBinDir, { recursive: true });
+                    }
+
+                    // 检查并清理超出上限的文件（使用群配置的上限）
+                    await this.cleanRecycleBin(recycleBinConf);
+
+                    // 移入回收站（添加时间戳前缀）
+                    const timestamp = Date.now();
+                    const targetPath = path.join(recycleBinDir, `${timestamp}_${filename}`);
+                    fs.renameSync(filePath, targetPath);
+
+                    // 记录原位置信息，用于恢复
+                    const recycleInfoPath = path.join(recycleBinDir, `${timestamp}_${fileUnique}.json`);
+                    fs.writeFileSync(recycleInfoPath, JSON.stringify({
+                        originalPath: filePath,
+                        groupId: groupId,
+                        filename: filename,
+                        recycleTime: timestamp
+                    }));
+
+                    logger.mark(`[autoEmoticons] 表情已移入回收站: ${filename}`);
+                } else {
+                    // 未启用回收站，直接删除
+                    fs.unlinkSync(filePath);
+                    logger.mark(`[autoEmoticons] 表情已直接删除: ${filename}`);
+                }
+
+                // 从缓存中移除
                 const emojiList = emojiListCache.get(groupId) || [];
                 const index = emojiList.indexOf(filename);
                 if (index > -1) {
@@ -695,7 +741,7 @@ export class autoEmoticons extends plugin {
                     await redis.set(blockKey, '1', {
                         EX: ONE_MONTH_IN_SECONDS
                     })
-                    logger.mark(`[autoEmoticons] 表情被删除，已加入黑名单: ${fileUnique}，30天内不再下载`)
+                    logger.mark(`[autoEmoticons] 表情已加入黑名单: ${fileUnique}，30天内不再下载`)
                 }
 
                 let res = await e.group.recallMsg(replyMsgId)
@@ -703,7 +749,11 @@ export class autoEmoticons extends plugin {
                     this.reply("人家不是管理员，不能撤回超过2分钟的消息呢~")
                 }
 
-                await e.reply(`呜呜呜~人家错了，以后不发了~呜`);
+                if (recycleBinEnabled) {
+                    await e.reply(`呜呜呜~表情已移入回收站，可以使用"#哒咩记录"查看或"#哒咩恢复 [编号]"恢复~`);
+                } else {
+                    await e.reply(`呜呜呜~人家错了，以后不发了~呜`);
+                }
             }
 
             await redis.del(`Yz:autoEmoticons.sent:pic_filePath:${groupId}:${replyMsgId}`);
@@ -711,6 +761,277 @@ export class autoEmoticons extends plugin {
             logger.error(`[autoEmoticons] 删除表情失败: ${error}`);
         }
 
+        return true;
+    }
+
+    /**
+     * 获取群的回收站配置（优先使用群单独配置）
+     * @param {Object} config 全局配置
+     * @param {Object} groupConfItem 群单独配置项
+     * @returns {Object} 回收站配置
+     */
+    getGroupRecycleBinConfig(config, groupConfItem) {
+        const global = config.autoEmoticons?.recycleBin;
+        
+        // 如果群配置指定使用全局配置
+        if (groupConfItem?.useGlobalRecycleBin !== false) {
+            return {
+                enable: global?.enable ?? false,
+                maxItems: global?.maxItems ?? 100
+            };
+        }
+        
+        // 使用群单独配置
+        return {
+            enable: groupConfItem?.recycleBinEnable ?? global?.enable ?? false,
+            maxItems: groupConfItem?.recycleBinMaxItems ?? global?.maxItems ?? 100
+        };
+    }
+
+    /**
+     * 清理回收站，保持不超过上限
+     * @param {Object} recycleBinConf 回收站配置对象
+     */
+    async cleanRecycleBin(recycleBinConf) {
+        const maxItems = recycleBinConf?.maxItems ?? 100;
+        const recycleBinDir = path.join(process.cwd(), 'data', 'autoEmoticons', 'recycle_bin');
+        
+        if (!fs.existsSync(recycleBinDir)) return;
+
+        // 获取所有文件（图片和json信息文件）
+        const files = fs.readdirSync(recycleBinDir);
+        const items = files
+            .filter(f => !f.endsWith('.json')) // 只统计非json文件（图片）
+            .map(f => {
+                const parts = f.split('_');
+                const ts = parseInt(parts[0]) || 0;
+                return { name: f, time: ts };
+            })
+            .sort((a, b) => b.time - a.time); // 按时间倒序，最新的在前
+
+        // 如果超出上限，删除最早的记录
+        if (items.length > maxItems) {
+            const itemsToDelete = items.slice(maxItems);
+            for (const item of itemsToDelete) {
+                const filePath = path.join(recycleBinDir, item.name);
+                const jsonPath = path.join(recycleBinDir, item.name.replace(/\.[^.]+$/, '.json'));
+                
+                try {
+                    fs.unlinkSync(filePath);
+                    if (fs.existsSync(jsonPath)) {
+                        fs.unlinkSync(jsonPath);
+                    }
+                    logger.mark(`[autoEmoticons] 回收站超出上限，删除最早记录: ${item.name}`);
+                } catch (err) {
+                    logger.error(`[autoEmoticons] 清理回收站失败: ${err}`);
+                }
+            }
+        }
+    }
+
+    /**
+     * 显示哒咩记录（支持分页查看）
+     */
+    async showDamieRecord(e) {
+        const config = Config.getConfig();
+        const groupId = String(e.group_id);
+        const allowGroups = getNormalizedAllowGroups(config);
+        const groupConfItem = allowGroups.find(g => String(g.groupId) === groupId);
+        
+        // 获取群的回收站配置
+        const recycleBinConf = this.getGroupRecycleBinConfig(config, groupConfItem);
+        const recycleBinEnabled = recycleBinConf.enable;
+        
+        if (!recycleBinEnabled) {
+            await e.reply('回收站功能未开启，无法查看哒咩记录~\n如需开启请在锅巴配置中设置"哒咩回收站"');
+            return true;
+        }
+
+        const recycleBinDir = path.join(process.cwd(), 'data', 'autoEmoticons', 'recycle_bin');
+        if (!fs.existsSync(recycleBinDir)) {
+            await e.reply('📭 回收站空空如也，还没有被哒咩的表情~');
+            return true;
+        }
+
+        // 解析页码
+        const msg = e.msg;
+        const pageMatch = msg.match(/第(\d+)页/);
+        let page = pageMatch ? parseInt(pageMatch[1]) : 1;
+        const pageSize = 10;
+
+        // 获取所有图片文件
+        const files = fs.readdirSync(recycleBinDir);
+        const images = files
+            .filter(f => ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'].includes(path.extname(f).toLowerCase()))
+            .map(f => {
+                const parts = f.split('_');
+                const ts = parseInt(parts[0]) || 0;
+                return { name: f, time: ts, fullPath: path.join(recycleBinDir, f) };
+            })
+            .sort((a, b) => b.time - a.time); // 按时间倒序，最新的在前
+
+        const totalItems = images.length;
+        const maxPage = Math.ceil(totalItems / pageSize) || 1;
+        
+        // 校验页码
+        page = Math.max(1, Math.min(page, maxPage));
+        
+        if (totalItems === 0) {
+            await e.reply('📭 回收站空空如也，还没有被哒咩的表情~');
+            return true;
+        }
+
+        // 计算当前页的数据
+        const start = (page - 1) * pageSize;
+        const end = Math.min(start + pageSize, totalItems);
+        const pageItems = images.slice(start, end);
+
+        // 构建消息
+        let forwardMsg = [];
+        
+        // 标题
+        forwardMsg.push(`📊 哒咩回收站\n━━━━━━━━━━━━━━\n🖼️ 总计: ${totalItems} 张 | 第 ${page}/${maxPage} 页\n💡 提示: #哒咩记录第X页 翻页 | #哒咩恢复编号 恢复`);
+
+        // 图片列表
+        for (let i = 0; i < pageItems.length; i++) {
+            const item = pageItems[i];
+            const globalIndex = start + i + 1;
+            const date = new Date(item.time).toLocaleString('zh-CN', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            forwardMsg.push([`编号 ${globalIndex} | ${date}\n`, segment.image(item.fullPath)]);
+        }
+
+        // 构建合并转发消息
+        let forwardNode = [];
+        for (let msgItem of forwardMsg) {
+            forwardNode.push({
+                user_id: Bot.uin,
+                nickname: Bot.nickname,
+                message: msgItem
+            });
+        }
+
+        try {
+            let replyMsg;
+            if (e.isGroup) {
+                replyMsg = await e.group.makeForwardMsg(forwardNode);
+            } else {
+                replyMsg = await e.friend.makeForwardMsg(forwardNode);
+            }
+            await e.reply(replyMsg);
+        } catch (err) {
+            logger.error(`[哒咩记录] 生成合并转发失败: ${err}`);
+            await e.reply("生成记录失败，可能是当前框架或协议端暂不支持合并转发消息。");
+        }
+        
+        return true;
+    }
+
+    /**
+     * 恢复哒咩的图片
+     */
+    async restoreDamie(e) {
+        const config = Config.getConfig();
+        const groupId = String(e.group_id);
+        const allowGroups = getNormalizedAllowGroups(config);
+        const groupConfItem = allowGroups.find(g => String(g.groupId) === groupId);
+        
+        // 获取群的回收站配置
+        const recycleBinConf = this.getGroupRecycleBinConfig(config, groupConfItem);
+        const recycleBinEnabled = recycleBinConf.enable;
+        
+        if (!recycleBinEnabled) {
+            await e.reply('回收站功能未开启，无法恢复表情~');
+            return true;
+        }
+
+        // 解析恢复编号
+        const msg = e.msg;
+        const numMatch = msg.match(/(\d+)/);
+        if (!numMatch) {
+            await e.reply('请指定要恢复的编号，例如：#哒咩恢复 5');
+            return true;
+        }
+        
+        const restoreIndex = parseInt(numMatch[1]);
+        if (restoreIndex < 1) {
+            await e.reply('编号必须大于0哦~');
+            return true;
+        }
+
+        const recycleBinDir = path.join(process.cwd(), 'data', 'autoEmoticons', 'recycle_bin');
+        if (!fs.existsSync(recycleBinDir)) {
+            await e.reply('回收站为空，没有可恢复的表情~');
+            return true;
+        }
+
+        // 获取所有图片文件（按时间倒序）
+        const files = fs.readdirSync(recycleBinDir);
+        const images = files
+            .filter(f => ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'].includes(path.extname(f).toLowerCase()))
+            .map(f => {
+                const parts = f.split('_');
+                const ts = parseInt(parts[0]) || 0;
+                return { name: f, time: ts, fullPath: path.join(recycleBinDir, f) };
+            })
+            .sort((a, b) => b.time - a.time);
+
+        if (restoreIndex > images.length) {
+            await e.reply(`编号 ${restoreIndex} 不存在，当前回收站只有 ${images.length} 个表情~\n使用 #哒咩记录 查看列表`);
+            return true;
+        }
+
+        // 获取要恢复的文件
+        const targetItem = images[restoreIndex - 1];
+        const jsonPath = path.join(recycleBinDir, targetItem.name.replace(/\.[^.]+$/, '.json'));
+        
+        try {
+            // 读取原位置信息
+            let originalInfo = null;
+            if (fs.existsSync(jsonPath)) {
+                originalInfo = JSON.parse(fs.readFileSync(jsonPath, 'utf-8'));
+            }
+
+            // 确定恢复目标路径
+            let targetPath;
+            if (originalInfo && originalInfo.originalPath) {
+                targetPath = originalInfo.originalPath;
+            } else {
+                // 如果没有记录原位置，恢复到默认群目录
+                const groupId = String(e.group_id);
+                targetPath = path.join(process.cwd(), 'data', 'autoEmoticons', 'emoji_save', groupId, targetItem.name.replace(/^\d+_/, ''));
+            }
+
+            // 确保目标目录存在
+            const targetDir = path.dirname(targetPath);
+            if (!fs.existsSync(targetDir)) {
+                fs.mkdirSync(targetDir, { recursive: true });
+            }
+
+            // 移动文件
+            fs.renameSync(targetItem.fullPath, targetPath);
+            
+            // 删除json信息文件
+            if (fs.existsSync(jsonPath)) {
+                fs.unlinkSync(jsonPath);
+            }
+
+            // 从黑名单中移除（解除30天限制）
+            const fileUnique = path.basename(targetItem.name.replace(/^\d+_/, ''), path.extname(targetItem.name));
+            const blockKey = `Yz:autoEmoticons:blocked:${fileUnique}`;
+            await redis.del(blockKey);
+
+            // 刷新缓存
+            const groupId = String(e.group_id);
+            initWatcher(groupId);
+
+            await e.reply(`✅ 成功恢复表情 [编号 ${restoreIndex}]！\n已移出黑名单，可以正常使用啦~`);
+            logger.mark(`[autoEmoticons] 表情已从回收站恢复: ${targetItem.name} -> ${targetPath}`);
+
+        } catch (err) {
+            logger.error(`[autoEmoticons] 恢复表情失败: ${err}`);
+            await e.reply(`恢复失败: ${err.message}`);
+        }
+        
         return true;
     }
 
@@ -755,6 +1076,20 @@ export class autoEmoticons extends plugin {
         const allowGroups = getNormalizedAllowGroups(config)
         const groupConfItem = allowGroups.find(g => String(g.groupId) === groupId)
 
+        // 获取回收站信息
+        let recycleBinCount = 0;
+        const recycleBinConf = this.getGroupRecycleBinConfig(config, groupConfItem);
+        const recycleBinEnabled = recycleBinConf.enable;
+        const isUsingGlobalRecycleBin = groupConfItem?.useGlobalRecycleBin !== false;
+        
+        if (recycleBinEnabled) {
+            const recycleBinDir = path.join(process.cwd(), 'data', 'autoEmoticons', 'recycle_bin');
+            if (fs.existsSync(recycleBinDir)) {
+                const files = fs.readdirSync(recycleBinDir);
+                recycleBinCount = files.filter(f => !f.endsWith('.json')).length;
+            }
+        }
+
         // 检查当前群是否在允许列表中
         const isGroupAllowed = allowGroups.length === 0 || (groupConfItem && groupConfItem.switchOn !== false)
 
@@ -789,6 +1124,7 @@ export class autoEmoticons extends plugin {
             '📈 统计信息:',
             `　🖼️ 当前群表情: ${groupEmojiCount} 个`,
             `　🌐 共享图片: ${sharedPictureCount} 个`,
+            recycleBinEnabled ? `　🗑️ 回收站: ${recycleBinCount} 张 (上限 ${recycleBinConf.maxItems})${isUsingGlobalRecycleBin ? '[全局]' : '[自定义]'}` : '',
             `　⏰ 发送冷却: ${cooldownStatus}`,
             '',
             '⚙️ 当前群生效参数:',

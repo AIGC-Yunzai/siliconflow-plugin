@@ -1759,6 +1759,89 @@ export function supportGuoba() {
           }
         },
         {
+          field: 'autoEmoticons.timeRestrictionEnabled',
+          label: '启用生效时间限制',
+          bottomHelpMessage: '（全局）开启后，机器人仅在指定的活跃时间内发送表情包，防止半夜"闹鬼"',
+          component: 'Switch'
+        },
+        {
+          field: 'autoEmoticons.activeStartTime',
+          label: '活跃开始时间',
+          bottomHelpMessage: '（全局）格式：HH:mm，例如：08:00',
+          component: 'Input',
+          componentProps: {
+            placeholder: '08:00',
+          }
+        },
+        {
+          field: 'autoEmoticons.activeEndTime',
+          label: '活跃结束时间',
+          bottomHelpMessage: '（全局）格式：HH:mm，例如：23:00（支持跨夜，如 22:00 到 06:00）',
+          component: 'Input',
+          componentProps: {
+            placeholder: '23:00',
+          }
+        },
+        {
+          field: 'autoEmoticons.restrictScheduledTask',
+          label: '限制定时任务',
+          bottomHelpMessage: '（全局，默认开启）开启后，定时任务（每5分钟执行）在非活跃时间段不会发送表情包',
+          component: 'Switch',
+          componentProps: {
+            defaultValue: true
+          }
+        },
+        {
+          field: 'autoEmoticons.restrictMessageTrigger',
+          label: '限制消息触发',
+          bottomHelpMessage: '（全局）开启后，消息触发（收到群消息后概率发送）在非活跃时间段不会发送表情包',
+          component: 'Switch'
+        },
+        {
+          field: 'autoEmoticons.timezoneMode',
+          label: '时区模式',
+          bottomHelpMessage: '（全局，默认北京时间）选择使用哪个时区来判断活跃时间',
+          component: 'Select',
+          componentProps: {
+            options: [
+              { label: '🕐 北京时间 (UTC+8)', value: 'beijing' },
+              { label: '🖥️ 服务器本地时区', value: 'server' },
+              { label: '⚙️ 自定义时区偏移', value: 'custom' },
+            ],
+            defaultValue: 'beijing'
+          }
+        },
+        {
+          field: 'autoEmoticons.customTimezoneOffset',
+          label: '自定义时区偏移',
+          bottomHelpMessage: '（全局）当时区模式选择"自定义"时生效。相对于UTC的小时偏移量，如东八区填8，西五区填-5',
+          component: 'InputNumber',
+          componentProps: {
+            min: -12,
+            max: 14,
+            step: 1,
+            placeholder: '8'
+          }
+        },
+        {
+          field: 'autoEmoticons.recycleBin.enable',
+          label: '启用哒咩回收站',
+          bottomHelpMessage: '开启后，使用#哒咩删除的表情会移入回收站而非直接删除，可通过#哒咩记录查看和#哒咩恢复找回',
+          component: 'Switch'
+        },
+        {
+          field: 'autoEmoticons.recycleBin.maxItems',
+          label: '回收站上限',
+          bottomHelpMessage: '回收站最大容量（张），超出后自动删除最早的记录',
+          component: 'InputNumber',
+          componentProps: {
+            min: 10,
+            max: 500,
+            step: 10,
+            defaultValue: 100
+          }
+        },
+        {
           field: 'autoEmoticons.allowGroups',
           label: '🍓群单独设置',
           bottomHelpMessage: '填写需要保存和发送表情包的群号，每个群可单独配置参数；（推荐设置该选项，设置后支持定时发送表情包，否则只能通过群内消息概率触发）；也可在群内使用 #自动表情包开启/关闭',
@@ -1863,6 +1946,67 @@ export function supportGuoba() {
                 label: '限制消息触发',
                 bottomHelpMessage: '（本群）是否限制由消息触发的表情包',
                 component: 'Switch'
+              },
+              {
+                field: 'timezoneMode',
+                label: '时区模式',
+                bottomHelpMessage: '（本群）使用的时区模式（仅在"应用全局配置"关闭时生效）',
+                component: 'Select',
+                componentProps: {
+                  options: [
+                    { label: '🕐 北京时间 (UTC+8)', value: 'beijing' },
+                    { label: '🖥️ 服务器本地时区', value: 'server' },
+                    { label: '⚙️ 自定义时区偏移', value: 'custom' },
+                  ],
+                  placeholder: '使用全局设置'
+                }
+              },
+              {
+                field: 'customTimezoneOffset',
+                label: '自定义时区偏移',
+                bottomHelpMessage: '（本群）相对于UTC的小时偏移量（仅在"应用全局配置"关闭且时区模式为"自定义"时生效）',
+                component: 'InputNumber',
+                componentProps: {
+                  min: -12,
+                  max: 14,
+                  step: 1,
+                  placeholder: '使用全局设置'
+                }
+              },
+              {
+                component: 'Divider',
+                label: '🗑️ 哒咩回收站（本群）',
+                componentProps: {
+                  orientation: 'left',
+                  plain: true,
+                },
+              },
+              {
+                field: 'useGlobalRecycleBin',
+                label: '🌐 应用全局回收站配置',
+                bottomHelpMessage: '（本群）开启则使用上方【全局哒咩回收站】的设置；关闭则为本群自定义独立配置',
+                component: 'Switch',
+                componentProps: {
+                  defaultValue: true
+                }
+              },
+              {
+                field: 'recycleBinEnable',
+                label: '启用哒咩回收站',
+                bottomHelpMessage: '（本群）是否启用回收站（仅在"应用全局配置"关闭时生效）',
+                component: 'Switch'
+              },
+              {
+                field: 'recycleBinMaxItems',
+                label: '回收站上限',
+                bottomHelpMessage: '（本群）回收站最大容量（张）（仅在"应用全局配置"关闭时生效）',
+                component: 'InputNumber',
+                componentProps: {
+                  min: 10,
+                  max: 500,
+                  step: 10,
+                  placeholder: '使用全局设置'
+                }
               },
             ]
           }
