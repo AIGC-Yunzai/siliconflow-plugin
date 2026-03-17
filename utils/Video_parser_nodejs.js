@@ -2,8 +2,11 @@ import { spawn } from 'child_process';
 import path from "path";
 import { pluginRoot } from "../model/path.js";
 
+// 根据操作系统判断：Windows(win32) 下默认使用 'python'，其他系统(如 linux/macOS) 使用 'python3'
+const defaultPythonPath = process.platform === 'win32' ? 'python' : 'python3';
+
 class DouyinParser {
-    constructor(pythonPath = 'python3', scriptPath = path.join(pluginRoot, 'utils', 'douyin_parser_standalone.py')) {
+    constructor(pythonPath = defaultPythonPath, scriptPath = path.join(pluginRoot, 'utils', 'douyin_parser_standalone.py')) {
         this.pythonPath = pythonPath;
         this.scriptPath = scriptPath;
     }
@@ -34,7 +37,9 @@ class DouyinParser {
                 // 使用spawn代替execSync，避免shell解析问题
                 const child = spawn(this.pythonPath, [this.scriptPath, text], {
                     stdio: ['pipe', 'pipe', 'pipe'],
-                    windowsHide: true
+                    windowsHide: true,
+                    // 强制设置环境变量，让Python输出UTF-8
+                    env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
                 });
 
                 let stdout = '';
@@ -46,8 +51,17 @@ class DouyinParser {
                     reject(new Error('Python script execution timeout (30s)'));
                 }, 30000);
 
-                child.stdout.on('data', (data) => { stdout += data.toString(); });
-                child.stderr.on('data', (data) => { stderr += data.toString(); });
+                // 指定编码为utf8读取stdout
+                child.stdout.setEncoding('utf8');
+                child.stdout.on('data', (data) => {
+                    stdout += data;
+                });
+
+                // stderr也指定utf8编码
+                child.stderr.setEncoding('utf8');
+                child.stderr.on('data', (data) => {
+                    stderr += data;
+                });
 
                 child.on('close', (code) => {
                     clearTimeout(timeout);
@@ -74,7 +88,7 @@ class DouyinParser {
 }
 
 class KuaishouParser {
-    constructor(pythonPath = 'python3', scriptPath = path.join(pluginRoot, 'utils', 'kuaishou_parser_standalone.py')) {
+    constructor(pythonPath = defaultPythonPath, scriptPath = path.join(pluginRoot, 'utils', 'kuaishou_parser_standalone.py')) {
         this.pythonPath = pythonPath;
         this.scriptPath = scriptPath;
     }
@@ -84,7 +98,9 @@ class KuaishouParser {
             try {
                 const child = spawn(this.pythonPath, [this.scriptPath, text], {
                     stdio: ['pipe', 'pipe', 'pipe'],
-                    windowsHide: true
+                    windowsHide: true,
+                    // 强制设置环境变量，让Python输出UTF-8
+                    env: { ...process.env, PYTHONIOENCODING: 'utf-8' }
                 });
 
                 let stdout = '';
@@ -96,8 +112,17 @@ class KuaishouParser {
                     reject(new Error('Python script execution timeout (30s)'));
                 }, 30000);
 
-                child.stdout.on('data', (data) => { stdout += data.toString(); });
-                child.stderr.on('data', (data) => { stderr += data.toString(); });
+                // 指定编码为utf8读取stdout
+                child.stdout.setEncoding('utf8');
+                child.stdout.on('data', (data) => {
+                    stdout += data;
+                });
+
+                // stderr也指定utf8编码
+                child.stderr.setEncoding('utf8');
+                child.stderr.on('data', (data) => {
+                    stderr += data;
+                });
 
                 child.on('close', (code) => {
                     clearTimeout(timeout);
