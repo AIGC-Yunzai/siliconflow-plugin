@@ -2098,6 +2098,83 @@ export function supportGuoba() {
           },
         },
         {
+          component: "Divider",
+          label: "WebUI服务配置（新版，推荐）",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "webUI.enable",
+          label: "启用WebUI服务",
+          bottomHelpMessage: "是否启用WebUI服务，启用后可通过 http://服务器IP:端口 直接访问对话界面，支持IPv6，无需代理；重启或执行#sf设置webui 开后生效",
+          component: "Switch",
+        },
+        {
+          field: "webUI.host",
+          label: "监听地址",
+          bottomHelpMessage: "WebUI服务监听的地址，0.0.0.0表示监听所有接口（允许外部访问），127.0.0.1仅允许本机访问；重启生效",
+          component: "Input",
+          componentProps: {
+            placeholder: "0.0.0.0",
+          },
+        },
+        {
+          field: "webUI.port",
+          label: "WebUI端口",
+          bottomHelpMessage: "WebUI服务监听的端口号，默认8082，请确保服务器防火墙开放此端口；重启生效",
+          component: "InputNumber",
+          componentProps: {
+            min: 1,
+            max: 65535,
+            step: 1,
+          },
+        },
+        {
+          field: "webUI.basePath",
+          label: "挂载路径",
+          bottomHelpMessage: "WebUI服务的挂载路径，默认为根路径/；重启生效",
+          component: "Input",
+          componentProps: {
+            placeholder: "/",
+          },
+        },
+        {
+          field: "webUI.auth.type",
+          label: "认证方式",
+          bottomHelpMessage: "WebUI服务的认证方式，password为密码认证，none为无认证（不推荐用于公网）；重启生效",
+          component: "Select",
+          componentProps: {
+            options: [
+              { label: "密码认证", value: "password" },
+              { label: "无认证", value: "none" },
+            ],
+          },
+        },
+        {
+          field: "webUI.auth.password",
+          label: "WebUI访问密码",
+          bottomHelpMessage: "设置WebUI服务的访问密码，留空表示不设置密码；重启生效",
+          component: "InputPassword",
+          componentProps: {
+            placeholder: "请输入访问密码",
+          },
+        },
+        {
+          field: "webUI.logLevel",
+          label: "WebUI日志级别",
+          bottomHelpMessage: "WebUI服务的日志记录级别；重启生效",
+          component: "Select",
+          componentProps: {
+            options: [
+              { label: "调试", value: "debug" },
+              { label: "信息", value: "info" },
+              { label: "错误", value: "error" },
+            ],
+          },
+        },
+        {
           label: '视频解析',
           component: 'SOFT_GROUP_BEGIN'
         },
