@@ -1,8 +1,40 @@
 import yaml from 'yaml'
 import fs from 'fs'
+import os from 'os'
+
 /** 读取YAML文件 */
 export function readYaml(filePath) {
   return yaml.parse(fs.readFileSync(filePath, 'utf8'))
+}
+
+/**
+ * 获取服务器访问地址
+ * @param {object} config 配置对象
+ * @returns {string} 服务器地址
+ */
+export function getServerAddress(config) {
+  const webUI = config?.webUI || {}
+  const port = webUI.port || 8082
+  const basePath = webUI.basePath || '/'
+  
+  // 判断是否使用 HTTPS
+  const isHttps = webUI.tls?.enable
+  const protocol = isHttps ? 'https' : 'http'
+  
+  // 获取本机 IP
+  const interfaces = os.networkInterfaces()
+  let localIP = '127.0.0.1'
+  
+  for (const name in interfaces) {
+    for (const iface of interfaces[name]) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        localIP = iface.address
+        break
+      }
+    }
+  }
+  
+  return `${protocol}://${localIP}:${port}${basePath}`
 }
 
 /** 写入YAML文件 */

@@ -1,18 +1,18 @@
-const CACHE_NAME = 'sfchat-v1';
+const CACHE_NAME = 'sfchat-v16';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/public/css/github.min.css',
-  '/public/js/marked.min.js',
-  '/public/js/highlight.min.js',
-  '/public/js/mathjax/tex-mml-chtml.js',
-  '/public/fonts/LXGWWenKai-Regular-9375313a.ttf',
-  '/public/fonts/HYWH-65W.ttf',
-  '/public/fonts/SpaceMono-Regular.ttf',
-  '/public/images/bot-avatar.png',
-  '/public/images/user-avatar.png',
-  '/public/images/icon-192x192.png',
-  '/public/images/icon-512x512.png'
+  '/css/github.min.css',
+  '/js/marked.min.js',
+  '/js/highlight.min.js',
+  '/js/mathjax/tex-mml-chtml.js',
+  '/fonts/LXGWWenKai-Regular-9375313a.ttf',
+  '/fonts/HYWH-65W.ttf',
+  '/fonts/SpaceMono-Regular.ttf',
+  '/images/bot-avatar.png',
+  '/images/user-avatar.png',
+  '/images/icon-192x192.png',
+  '/images/icon-512x512.png'
 ];
 
 self.addEventListener('install', event => {
