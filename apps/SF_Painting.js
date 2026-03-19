@@ -2,6 +2,8 @@ import plugin from '../../../lib/plugins/plugin.js'
 import fetch from 'node-fetch'
 import Config from '../components/Config.js'
 import common from '../../../lib/common/common.js';
+import * as auth from '../utils/auth.js'
+import * as userManager from '../utils/userManager.js'
 import {
     parseSourceImg,
     url2Base64,
@@ -65,6 +67,26 @@ export class SF_Painting extends plugin {
                     reg: '^#(sf|SF|siliconflow|硅基流动)设置(画图key|翻译key|翻译baseurl|翻译模型|生成提示词|推理步数|fish发音人|ss图片模式|ggkey|ggbaseurl|gg图片模式|上下文|ss转发消息|gg转发消息|gg搜索|ss引用原消息|gg引用原消息|ws服务|ss转发思考|群聊多人对话|ss图片上传|gg图片上传|webui服务|webui端口|webui密码)',
                     fnc: 'sf_setConfig',
                     permission: 'master'
+                },
+                {
+                    reg: '^#(sf|SF)生成密码哈希(.+)',
+                    fnc: 'sf_hashPassword',
+                    permission: 'master'
+                },
+                {
+                    reg: '^#(sf|SF)登录$',
+                    fnc: 'sf_login'
+                    // 所有人可用，用于获取 WebUI 登录验证码
+                },
+                {
+                    reg: '^#(sf|SF)设置密码(.+)',
+                    fnc: 'sf_setUserPassword'
+                    // 所有人可用，设置自己的 WebUI 密码
+                },
+                {
+                    reg: '^#(sf|SF)重置密码$',
+                    fnc: 'sf_resetPassword'
+                    // 所有人可用，重置 WebUI 密码
                 },
                 {
                     reg: '^#(sf|SF|siliconflow|硅基流动)(设置|管理)帮助$',
@@ -564,6 +586,180 @@ export class SF_Painting extends plugin {
             await e.reply(`${type}已设置：${value}`, true)
         }
         return
+    }
+
+    /**
+     * 生成密码哈希
+     */
+    async sf_hashPassword(e) {
+        const match = e.msg.match(/^#(sf|SF)生成密码哈希(.+)/)
+        if (!match) return
+        
+        const password = match[2].trim()
+        if (!password) {
+            await e.reply('请提供要生成哈希的密码，格式：#sf生成密码哈希 your_password')
+            return
+        }
+        
+        try {
+            const { createHash } = await import('crypto')
+            const hash = createHash('sha256').update(password).digest('hex')
+            await e.reply(`密码哈希值：\n${hash}\n\n请将上述哈希值配置到 webUI.auth.passwordHash 字段\n注意：配置哈希值后，原明文密码将失效`, true)
+        } catch (error) {
+            await e.reply('生成密码哈希失败：' + error.message)
+        }
+    }
+
+    /**
+     * 生成 WebUI 登录验证码（绑定用户 QQ 号）
+     * 支持一键登录链接
+     */
+    async sf_login(e) {
+        const userQQ = String(e.user_id)
+        const config = Config.getConfig()
+        
+        // 检查 WebUI 是否启用
+        if (!config.webUI?.enable) {
+            await e.reply('WebUI 服务未启用，请联系管理员开启', true)
+            return
+        }
+        
+        // 检查是否已有未过期的验证码
+        if (auth.hasValidCode(userQQ)) {
+            const remaining = auth.getCodeRemainingTime(userQQ)
+            await e.reply(`当前验证码还未失效，请 ${remaining} 秒后再试`, true)
+            return
+        }
+        
+        // 生成新的验证码（绑定用户 QQ 号）
+        const code = auth.generateLoginCode(userQQ)
+        
+        // 自动注册或获取用户
+        const user = userManager.getOrCreateUser(userQQ)
+        
+        // 检查审批模式，如果是 approval 模式且用户未授权，自动提交申请
+        const approvalMode = config.webUI?.security?.approvalMode || 'auto'
+        if (approvalMode === 'approval') {
+            const { checkPermission, submitRequest } = await import('../utils/approvalManager.js')
+            const permission = checkPermission(userQQ, approvalMode)
+            
+            if (!permission.allowed) {
+                // 用户未授权，自动提交申请
+                const nickname = e.sender?.nickname || ''
+                const groupId = e.group_id ? String(e.group_id) : 'private'
+                const result = submitRequest(userQQ, groupId, nickname)
+                
+                if (result.success) {
+                    // 通知主人有新的申请
+                    const WebUIServer = (await import('../components/WebUIServer.js')).default
+                    const masters = WebUIServer.getMasterList()
+                    if (masters.length > 0) {
+                        const notifyMsg = [
+                            `📋 新的 WebUI 使用申请（自动）`,
+                            `申请人: ${nickname} (${userQQ})`,
+                            `来源: ${e.group_id ? '群聊' : '私聊'}`,
+                            `时间: ${new Date().toLocaleString()}`,
+                            ``,
+                            `发送 #sf批准列表 查看待审批申请`,
+                            `发送 #sf批准 ${userQQ} 批准该申请`
+                        ].join('\n')
+                        
+                        for (const master of masters) {
+                            try {
+                                await e.bot.sendPrivateMsg(master, notifyMsg)
+                            } catch (err) {
+                                logger.debug(`[sf插件] 通知主人 ${master} 失败:`, err)
+                            }
+                        }
+                    }
+                    
+                    await e.reply(`⚠️ 检测到您尚未获得 WebUI 使用权限，已自动为您提交申请，请等待主人审批。\n\n审批通过后即可使用此验证码登录。`, true)
+                }
+            }
+        }
+        
+        // 生成一键登录短链接（使用 16 位验证码）
+        const { getServerAddress } = await import('../utils/common.js')
+        const serverAddr = getServerAddress(config)
+        
+        // 确保没有双斜杠（basePath 可能以 / 结尾）
+        const baseUrl = serverAddr.endsWith('/') ? serverAddr.slice(0, -1) : serverAddr
+        // 短链接格式: http://IP:Port/login/CODE (16位大写验证码)
+        const quickLoginUrl = `${baseUrl}/login/${code}`
+        
+        // 在日志中打印验证码（带醒目提示）
+        logger.mark('[sf插件] ' + '\x1b[33m您正在请求 WebUI 验证码登录\x1b[0m')
+        logger.info('#'.repeat(60))
+        logger.info('# ' + '\x1b[32m[sf插件] WebUI 验证码登录请求\x1b[0m' + '                           #')
+        logger.info('# QQ: ' + '\x1b[36m' + userQQ + '\x1b[0m' + '                                          #')
+        logger.info('# 您的登录验证码为：' + '\x1b[33m' + code + '\x1b[0m' + '                 #')
+        logger.info('# 验证码五分钟内有效且失效前不会再次打印，请尽快输入   #')
+        logger.info('# ' + '\x1b[31m若非本人操作请忽略并考虑是否泄露了登录地址\x1b[0m' + '           #')
+        logger.info('#'.repeat(60))
+        
+        // 回复用户
+        const msg = [
+            `验证码已生成并绑定 QQ: ${userQQ}`,
+            ``,
+            `验证码: ${code}`,
+            `有效期: 5分钟`,
+            ``,
+            `一键登录链接（点击直达）:`,
+            quickLoginUrl,
+            ``,
+            `或手动访问: ${serverAddr}`,
+            `输入 QQ: ${userQQ}`,
+            `输入验证码: ${code}`
+        ].join('\n')
+        
+        await e.reply(msg, true)
+    }
+
+    /**
+     * 设置 WebUI 登录密码
+     */
+    async sf_setUserPassword(e) {
+        const match = e.msg.match(/^#(sf|SF)设置密码(.+)/)
+        if (!match) return
+        
+        const password = match[2].trim()
+        if (!password) {
+            await e.reply('请提供要设置的密码，格式：#sf设置密码 your_password', true)
+            return
+        }
+        
+        if (password.length < 6) {
+            await e.reply('密码长度至少为6位', true)
+            return
+        }
+        
+        const userQQ = String(e.user_id)
+        
+        // 确保用户存在
+        userManager.getOrCreateUser(userQQ)
+        
+        // 设置密码
+        const success = userManager.setUserPassword(userQQ, password)
+        if (success) {
+            await e.reply('密码设置成功！\n您现在可以使用 QQ 号和密码登录 WebUI', true)
+        } else {
+            await e.reply('密码设置失败，请重试', true)
+        }
+    }
+
+    /**
+     * 重置 WebUI 登录密码
+     */
+    async sf_resetPassword(e) {
+        const userQQ = String(e.user_id)
+        
+        // 清除密码
+        const success = userManager.clearUserPassword(userQQ)
+        if (success) {
+            await e.reply('密码已重置！\n您可以使用验证码登录，或重新设置密码', true)
+        } else {
+            await e.reply('您尚未设置密码，无需重置', true)
+        }
     }
 
     async sf_draw(e) {

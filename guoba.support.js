@@ -2121,17 +2121,6 @@ export function supportGuoba() {
           },
         },
         {
-          field: "webUI.port",
-          label: "WebUI端口",
-          bottomHelpMessage: "WebUI服务监听的端口号，默认8082，请确保服务器防火墙开放此端口；重启生效",
-          component: "InputNumber",
-          componentProps: {
-            min: 1,
-            max: 65535,
-            step: 1,
-          },
-        },
-        {
           field: "webUI.basePath",
           label: "挂载路径",
           bottomHelpMessage: "WebUI服务的挂载路径，默认为根路径/；重启生效",
@@ -2148,6 +2137,7 @@ export function supportGuoba() {
           componentProps: {
             options: [
               { label: "密码认证", value: "password" },
+              { label: "验证码登录", value: "code" },
               { label: "无认证", value: "none" },
             ],
           },
@@ -2172,6 +2162,217 @@ export function supportGuoba() {
               { label: "信息", value: "info" },
               { label: "错误", value: "error" },
             ],
+          },
+        },
+        {
+          component: "Divider",
+          label: "HTTP 配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "webUI.http.enable",
+          label: "启用 HTTP",
+          bottomHelpMessage: "是否启用 HTTP 服务。可单独使用，或与 HTTPS 同时使用（实现自动跳转）；重启生效",
+          component: "Switch",
+        },
+        {
+          field: "webUI.http.port",
+          label: "HTTP 端口",
+          bottomHelpMessage: "HTTP 服务监听端口，默认 8082。如开启 HTTPS 跳转，建议保持 80；重启生效",
+          component: "InputNumber",
+          componentProps: {
+            min: 1,
+            max: 65535,
+            step: 1,
+          },
+        },
+        {
+          field: "webUI.http.redirectToHttps",
+          label: "HTTP 跳转到 HTTPS",
+          bottomHelpMessage: "开启后，HTTP 请求会自动 301 跳转到 HTTPS（需要先启用 HTTPS）；重启生效",
+          component: "Switch",
+        },
+        {
+          component: "Divider",
+          label: "HTTPS/TLS 配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "webUI.tls.enable",
+          label: "启用 HTTPS",
+          bottomHelpMessage: "是否启用 HTTPS 加密传输；可与 HTTP 同时使用；重启生效",
+          component: "Switch",
+        },
+        {
+          field: "webUI.tls.port",
+          label: "HTTPS 端口",
+          bottomHelpMessage: "HTTPS 服务监听端口，默认 8443。如有域名证书，建议改为 443；重启生效",
+          component: "InputNumber",
+          componentProps: {
+            min: 1,
+            max: 65535,
+            step: 1,
+          },
+        },
+        {
+          field: "webUI.tls.autoGenerate",
+          label: "自动生成自签名证书",
+          bottomHelpMessage: "无域名时自动生成证书（浏览器会显示'不安全'，但数据已加密）。如已配置证书路径，此项失效；重启生效",
+          component: "Switch",
+        },
+        {
+          field: "webUI.tls.cert",
+          label: "SSL 证书路径（可选）",
+          bottomHelpMessage: "SSL 证书文件(.pem/.crt)的绝对路径。留空且开启自动生成时会自动创建；重启生效",
+          component: "Input",
+          componentProps: {
+            placeholder: "/path/to/cert.pem",
+          },
+        },
+        {
+          field: "webUI.tls.key",
+          label: "SSL 私钥路径（可选）",
+          bottomHelpMessage: "SSL 私钥文件(.key/.pem)的绝对路径。留空且开启自动生成时会自动创建；重启生效",
+          component: "Input",
+          componentProps: {
+            placeholder: "/path/to/key.pem",
+          },
+        },
+        {
+          component: "Divider",
+          label: "证书管理",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "webUI._certTip",
+          label: "证书生成提示",
+          bottomHelpMessage: "使用自动生成证书时，证书会保存在 data/sf-plugin/certs/ 目录下。首次访问会显示'不安全'，点击'高级'→'继续前往'即可",
+          component: "Input",
+          componentProps: {
+            disabled: true,
+            placeholder: "无需填写，仅作提示",
+          },
+        },
+        {
+          component: "Divider",
+          label: "安全配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "webUI.security.allowedHosts",
+          label: "允许的域名",
+          bottomHelpMessage: '允许访问的域名列表，留空表示允许所有；示例：["example.com", "www.example.com"]；重启生效',
+          component: "GTags",
+          componentProps: {
+            placeholder: "输入域名后回车",
+            allowAdd: true,
+            allowClear: true,
+          },
+        },
+        {
+          field: "webUI.security.blacklist",
+          label: "IP 黑名单",
+          bottomHelpMessage: "禁止访问的 IP 地址列表；重启生效",
+          component: "GTags",
+          componentProps: {
+            placeholder: "输入 IP 后回车",
+            allowAdd: true,
+            allowClear: true,
+          },
+        },
+        {
+          field: "webUI.security.maxAuthAttempts",
+          label: "最大认证失败次数",
+          bottomHelpMessage: "允许的最大密码错误次数，超过将被锁定；0 表示不限制；重启生效",
+          component: "InputNumber",
+          componentProps: {
+            min: 0,
+            max: 10,
+            step: 1,
+          },
+        },
+        {
+          field: "webUI.security.lockoutDuration",
+          label: "认证锁定时间(秒)",
+          bottomHelpMessage: "认证失败次数超过限制后的锁定时间（秒）；重启生效",
+          component: "InputNumber",
+          componentProps: {
+            min: 30,
+            max: 3600,
+            step: 30,
+          },
+        },
+        {
+          field: "webUI.masters",
+          label: "WebUI 主人列表",
+          bottomHelpMessage: "指定哪些 QQ 号是 WebUI 主人（与 Bot 主人独立），可添加多个 QQ 号，主人有管理权限；留空则自动使用 Bot 配置中的主人；重启生效",
+          component: "GTags",
+          componentProps: {
+            placeholder: "输入 QQ 号后回车",
+            allowAdd: true,
+            allowClear: true,
+          },
+        },
+        {
+          field: "webUI.security.onlyMaster",
+          label: "仅主人可登录",
+          bottomHelpMessage: "开启后只有 Bot 主人可以使用 WebUI，其他用户无法登录；重启生效",
+          component: "Switch",
+        },
+        {
+          field: "webUI.security.accessLog",
+          label: "启用访问日志",
+          bottomHelpMessage: "是否记录访问日志，日志文件保存在 data/sf-plugin/logs/webui-access.log；重启生效",
+          component: "Switch",
+        },
+        {
+          field: "webUI.security.approvalMode",
+          label: "权限模式",
+          bottomHelpMessage: "WebUI 使用权限模式：auto=所有人可用，approval=需要主人审批，master_only=仅主人可用；重启生效。approval模式下审批命令：#sf批准列表 #sf批准 编号/QQ号 #sf批准 全部 #sf拒绝 编号/QQ号",
+          component: "Select",
+          componentProps: {
+            options: [
+              { label: "所有人可用（无需审批）", value: "auto" },
+              { label: "需要审批（主人批准后才能使用）", value: "approval" },
+              { label: "仅主人可用", value: "master_only" },
+            ],
+          },
+        },
+        {
+          component: "Divider",
+          label: "CORS 跨域配置",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          field: "webUI.security.cors.enable",
+          label: "启用 CORS",
+          bottomHelpMessage: "是否启用跨域支持，启用后可指定允许的源域名；重启生效",
+          component: "Switch",
+        },
+        {
+          field: "webUI.security.cors.origins",
+          label: "允许的源域名",
+          bottomHelpMessage: '允许跨域访问的源域名列表，留空表示允许所有（不建议），示例：["https://example.com"]；重启生效',
+          component: "GTags",
+          componentProps: {
+            placeholder: "输入域名后回车",
+            allowAdd: true,
+            allowClear: true,
           },
         },
         {

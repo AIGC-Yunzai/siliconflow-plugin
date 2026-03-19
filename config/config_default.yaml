@@ -18,15 +18,52 @@ wsPassword: "sf_plugin_2024" # WebSocket服务密码,默认密码
 webUI:
   enable: false # 是否启用WebUI服务
   host: "0.0.0.0" # 监听地址，0.0.0.0表示所有接口
-  port: 8082 # 监听端口
   basePath: "/" # 挂载路径
   logLevel: "info" # 日志级别：debug/info/error
   auth:
-    type: "password" # 认证方式：password/none
+    type: "password" # 认证方式：password/code/none
+    # password: 密码登录，需要设置 password 或 passwordHash
+    # code: 验证码登录，在QQ发送 #sf登录 获取验证码（推荐，更安全）
+    # none: 无认证（不推荐用于公网）
     password: "" # 访问密码，空字符串表示不设置
+    # passwordHash: "" # 密码的 SHA-256 哈希值（可选，如果设置则优先使用）
   websocket:
     enable: true # 是否启用WebSocket
     path: "/ws" # WebSocket路径
+  # HTTP 配置（可选）
+  http:
+    enable: true # 是否启用 HTTP（可同时启用 HTTPS，实现 HTTP 自动跳转）
+    port: 8082 # HTTP 端口
+    redirectToHttps: false # HTTP 是否自动跳转到 HTTPS（需要同时启用 HTTPS）
+  # HTTPS/TLS 配置（可选）
+  tls:
+    enable: false # 是否启用 HTTPS
+    port: 8443 # HTTPS 端口（与 HTTP 端口不同）
+    cert: "" # SSL 证书文件路径（绝对路径，留空则使用自动生成）
+    key: "" # SSL 私钥文件路径（绝对路径，留空则使用自动生成）
+    autoGenerate: false # 是否自动生成自签名证书（无域名时使用，证书保存到 data/sf-plugin/certs/）
+  # 安全配置
+  security:
+    allowedHosts: [] # 允许的域名列表（空数组表示允许所有）
+    blacklist: [] # IP 黑名单
+    maxAuthAttempts: 5 # 最大认证失败次数
+    lockoutDuration: 300000 # 认证锁定时间（毫秒），默认 5 分钟
+    rateLimit: true # 是否启用请求频率限制
+    maxRequests: 100 # 每分钟最大请求数
+    rateLimitWindow: 60000 # 频率限制窗口（毫秒）
+    onlyMaster: false # 是否仅允许主人登录 WebUI（true=仅主人可用，false=所有人可用）
+    accessLog: true # 是否启用访问日志
+    # 审批模式配置
+    approvalMode: "auto" # 权限模式：auto=所有人可用，approval=需要审批，master_only=仅主人
+    # auto: 所有人都可以使用（无需审批）
+    # approval: 需要主人批准后才能使用
+    # master_only: 仅主人可以使用（等同于 onlyMaster: true）
+    # JWT Secret 轮换配置
+    jwtRotateInterval: 2592000000 # JWT Secret 自动轮换间隔（毫秒），默认 30 天 (30*24*60*60*1000)
+    # CORS 跨域配置
+    cors:
+      enable: false # 是否启用 CORS
+      origins: [] # 允许的源域名列表（空数组表示允许所有，建议设置为具体域名）
 # 机器人名字触发配置
 botName: "" # 机器人的名字
 defaultCommand: "gg" # 默认使用的命令，可选 ss 或 gg

@@ -156,6 +156,96 @@ export class help extends plugin {
                         "title": "#sf更新",
                         "desc": "更新本插件"
                     },
+                    {
+                        "icon": 64,
+                        "title": "#sf登录",
+                        "desc": "获取 WebUI 登录验证码"
+                    },
+                    {
+                        "icon": 65,
+                        "title": "#sf申请webui",
+                        "desc": "申请 WebUI 使用权限"
+                    },
+                    {
+                        "icon": 66,
+                        "title": "#sf我的webui状态",
+                        "desc": "查看自己的 WebUI 状态"
+                    },
+                ]
+            },
+            {
+                "group": "WebUI 审批管理（主人）",
+                "list": [
+                    {
+                        "icon": 67,
+                        "title": "#sf批准列表",
+                        "desc": "查看待审批的申请（带编号）"
+                    },
+                    {
+                        "icon": 68,
+                        "title": "#sf批准 编号/QQ号",
+                        "desc": "批准指定用户，支持批量"
+                    },
+                    {
+                        "icon": 69,
+                        "title": "#sf拒绝 编号/QQ号",
+                        "desc": "拒绝指定用户，支持批量"
+                    },
+                    {
+                        "icon": 70,
+                        "title": "#sf拉黑 QQ号",
+                        "desc": "将用户加入黑名单"
+                    },
+                    {
+                        "icon": 71,
+                        "title": "#sf解封 QQ号",
+                        "desc": "将用户移出黑名单"
+                    },
+                    {
+                        "icon": 72,
+                        "title": "#sf白名单",
+                        "desc": "查看已通过审批的用户"
+                    },
+                    {
+                        "icon": 73,
+                        "title": "#sf黑名单",
+                        "desc": "查看黑名单用户"
+                    },
+                    {
+                        "icon": 74,
+                        "title": "#sf批准 全部",
+                        "desc": "一键批准所有待审批申请"
+                    },
+                    {
+                        "icon": 75,
+                        "title": "#sf轮换webui密钥",
+                        "desc": "强制轮换 JWT Secret"
+                    },
+                    {
+                        "icon": 76,
+                        "title": "#sf在线用户",
+                        "desc": "查看当前在线用户"
+                    },
+                    {
+                        "icon": 77,
+                        "title": "#sf强制下线 QQ号",
+                        "desc": "强制踢出指定用户"
+                    },
+                ]
+            },
+            {
+                "group": "WebUI 用户安全",
+                "list": [
+                    {
+                        "icon": 78,
+                        "title": "#sf我的webui状态",
+                        "desc": "查看自己的 WebUI 状态"
+                    },
+                    {
+                        "icon": 79,
+                        "title": "#sf登录历史",
+                        "desc": "查看自己的登录记录"
+                    },
                 ]
             }
         ]
