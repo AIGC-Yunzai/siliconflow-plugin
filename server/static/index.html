@@ -65,6 +65,741 @@
             font-weight: 500;
             height: 100vh;
             overflow: hidden;
+            display: flex;
+            flex-direction: row;
+        }
+        
+        /* 主内容区域包装器 */
+        .main-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            transition: margin-left 0.3s ease;
+            position: relative;
+        }
+
+        /* 预设侧边栏样式 - 覆盖模式（默认） */
+        .preset-sidebar {
+            position: fixed;
+            left: 0;
+            /* 使用 transform 替代 left: -350px，彻底隐藏不受宽度影响 */
+            transform: translateX(calc(-100% - 20px)); 
+            top: 0;
+            width: 320px;
+            min-width: 250px;
+            max-width: 500px;
+            height: 100vh;
+            background: rgba(255, 255, 255, 0.98);
+            backdrop-filter: blur(10px);
+            border-right: 1px solid rgba(255, 182, 193, 0.3);
+            z-index: 1000;
+            /* 动画改为监听 transform */
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+        
+        .preset-sidebar.open {
+            /* 使用 transform 替代 left: 0 */
+            transform: translateX(0);
+        }
+        
+        /* 固定模式 - 侧边栏作为 flex item */
+        .preset-sidebar.pinned {
+            position: relative;
+            transform: none !important; /* 关键：固定模式取消 transform 偏移 */
+            height: calc(100vh - 40px);
+            /* 🛠️ 关键修复：去除了上下和左侧的多余 margin，只保留右侧 10px 的间距 */
+            margin: 0 10px 0 0;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            flex-shrink: 0;
+        }
+        
+        /* 固定模式下，主容器只需正常适应剩余空间 */
+        body.has-pinned-sidebar .main-container {
+            margin-left: 0;
+            min-width: 0;
+        }
+        
+        /* 调整大小的拖拽条 */
+        .preset-resize-handle {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            cursor: col-resize;
+            background: transparent;
+            transition: background 0.2s;
+            z-index: 1001;
+            touch-action: none; /* 禁止触摸时的默认滚动和缩放 */
+        }
+        
+        .preset-resize-handle:hover,
+        .preset-resize-handle.resizing {
+            background: rgba(255, 105, 180, 0.3);
+        }
+        
+        /* 遮罩层（仅在悬浮打开时显示） */
+        .sidebar-backdrop {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(2px);
+            z-index: 999; /* 在侧边栏(1000)之下 */
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        /* 当侧边栏打开且非固定模式时，显示遮罩 */
+        body.sidebar-open:not(.has-pinned-sidebar) .sidebar-backdrop {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        /* 当侧边栏打开时，给 body 加一个状态标记 */
+        body.sidebar-open {
+            overflow: hidden; /* 防止底层滚动 */
+        }
+        
+        /* 移动端响应式处理 (屏幕宽度 < 768px 时) */
+        @media (max-width: 768px) {
+            .preset-sidebar {
+                width: 85vw !important; /* 忽略拖拽宽度，占满屏幕85% */
+                max-width: 350px;
+            }
+            
+            /* 强制移动端不能使用固定模式 */
+            .preset-sidebar.pinned {
+                position: fixed;
+                left: -100%;
+                height: 100vh;
+                margin: 0;
+                border-radius: 0;
+                z-index: 1000;
+                box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            }
+            
+            .preset-sidebar.pinned.open {
+                left: 0;
+            }
+            
+            /* 恢复主内容区域宽度 */
+            body.has-pinned-sidebar .main-container {
+                margin-left: 0;
+            }
+            
+            /* 隐藏固定按钮 */
+            .preset-pin {
+                display: none;
+            }
+            
+            /* 即使是固定模式，移动端也要显示悬浮按钮 */
+            body.has-pinned-sidebar .preset-toggle {
+                display: flex;
+            }
+        }
+        
+        /* 固定/取消固定按钮 */
+        .preset-pin {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #ccc;
+            cursor: pointer;
+            padding: 5px;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+            margin-right: 8px;
+        }
+        
+        .preset-pin:hover {
+            background: #ffe4ec;
+            color: #ff69b4;
+        }
+        
+        .preset-pin.pinned {
+            color: #ff69b4;
+            transform: rotate(-45deg);
+        }
+        
+        .preset-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #ffe4ec;
+            flex-shrink: 0;
+        }
+        
+        .preset-header-left {
+            display: flex;
+            align-items: center;
+            flex: 1;
+        }
+        
+        .preset-header-actions {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .preset-header h3 {
+            margin: 0;
+            color: #ff69b4;
+            font-size: 18px;
+        }
+        
+        .preset-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            transition: all 0.2s;
+        }
+        
+        .preset-close:hover {
+            background: #ffe4ec;
+            color: #ff69b4;
+        }
+        
+        .current-preset {
+            background: linear-gradient(135deg, #fff0f5 0%, #ffe4ec 100%);
+            border: 1px solid #ffb6c1;
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .preset-label {
+            color: #888;
+            font-size: 12px;
+        }
+        
+        .preset-name {
+            color: #ff69b4;
+            font-weight: bold;
+            flex: 1;
+            word-break: break-all;
+        }
+        
+        .preset-clear {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            line-height: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .preset-clear:hover {
+            background: #ff5252;
+        }
+        
+        .preset-list {
+            flex: 1;
+            overflow-y: scroll;
+            overflow-x: hidden;
+            margin-bottom: 15px;
+            padding-right: 5px;
+            min-height: 100px;
+        }
+        
+        /* 自定义滚动条 - 始终显示避免闪动 */
+        .preset-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .preset-list::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        
+        .preset-list::-webkit-scrollbar-thumb {
+            background: #ffb6c1;
+            border-radius: 3px;
+        }
+        
+        .preset-list::-webkit-scrollbar-thumb:hover {
+            background: #ff69b4;
+        }
+        
+        .preset-item {
+            background: #fff;
+            border: 1px solid #ffe4ec;
+            border-radius: 10px;
+            padding: 12px;
+            margin-bottom: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            position: relative;
+        }
+        
+        .preset-item:hover {
+            background: #fff5f8;
+            border-color: #ffb6c1;
+            transform: translateX(3px);
+        }
+        
+        .preset-item.active {
+            background: linear-gradient(135deg, #ffe4ec 0%, #fff0f5 100%);
+            border-color: #ff69b4;
+            box-shadow: 0 2px 8px rgba(255, 105, 180, 0.2);
+        }
+        
+        .preset-item-name {
+            font-weight: bold;
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        
+        .preset-item-preview {
+            color: #888;
+            font-size: 12px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .preset-item-delete {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            background: none;
+            border: none;
+            color: #ccc;
+            cursor: pointer;
+            font-size: 16px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            display: none;
+        }
+        
+        .preset-item:hover .preset-item-delete {
+            display: block;
+        }
+        
+        .preset-item-delete:hover {
+            color: #ff6b6b;
+            background: #ffe4ec;
+        }
+        
+        .preset-loading, .preset-empty {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-size: 14px;
+        }
+        
+        .temp-preset-section, .custom-preset-section {
+            border-top: 1px solid #ffe4ec;
+            padding-top: 15px;
+            margin-top: 10px;
+        }
+        
+        .section-title {
+            font-size: 12px;
+            color: #ff69b4;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+        
+        .temp-preset-section textarea, .custom-preset-section textarea {
+            width: 100%;
+            border: 1px solid #ffe4ec;
+            border-radius: 8px;
+            padding: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            resize: vertical;
+            margin-bottom: 8px;
+            background: #fff;
+        }
+        
+        .temp-preset-section textarea:focus, .custom-preset-section textarea:focus {
+            outline: none;
+            border-color: #ff69b4;
+        }
+        
+        .custom-preset-section input {
+            width: 100%;
+            border: 1px solid #ffe4ec;
+            border-radius: 8px;
+            padding: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            margin-bottom: 8px;
+            background: #fff;
+        }
+        
+        .custom-preset-section input:focus {
+            outline: none;
+            border-color: #ff69b4;
+        }
+        
+        .preset-btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+        
+        .temp-btn {
+            background: linear-gradient(135deg, #ffb6c1 0%, #ff69b4 100%);
+            color: white;
+        }
+        
+        .temp-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .custom-btn {
+            background: linear-gradient(135deg, #4CAF50 0%, #2e7d32 100%);
+            color: white;
+        }
+        
+        .custom-btn:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+        }
+        
+        .preset-toggle {
+            position: absolute;
+            left: 20px;
+            bottom: 100px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ffb6c1 0%, #ff69b4 100%);
+            border: none;
+            cursor: pointer;
+            z-index: 99;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(255, 105, 180, 0.3);
+            transition: all 0.3s;
+        }
+        
+        .preset-toggle:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 16px rgba(255, 105, 180, 0.4);
+        }
+        
+        .preset-toggle svg {
+            width: 24px;
+            height: 24px;
+            fill: white;
+        }
+        
+        .preset-toggle.active {
+            background: linear-gradient(135deg, #ff69b4 0%, #ff1493 100%);
+        }
+        
+        /* 侧边栏固定时，切换按钮隐藏 */
+        body.has-pinned-sidebar .preset-toggle {
+            display: none;
+        }
+
+        /* API 选择区域 */
+        .api-section {
+            border-bottom: 1px solid #ffe4ec;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+        }
+        
+        /* ========== API 选择器美化 ========== */
+        .api-selector {
+            width: calc(100% - 5px);
+            padding: 12px 36px 12px 14px;
+            border: 1px solid #ffe4ec;
+            border-radius: 12px;
+            background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23ff69b4' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E") no-repeat right 14px center;
+            appearance: none;
+            -webkit-appearance: none;
+            font-family: inherit;
+            font-size: 14px;
+            color: #444;
+            cursor: pointer;
+            margin-bottom: 12px;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 8px rgba(255,182,193,0.1);
+            font-weight: 500;
+        }
+        .api-selector:hover {
+            border-color: #ffb6c1;
+            box-shadow: 0 4px 12px rgba(255,182,193,0.18);
+            transform: translateY(-1px);
+        }
+        .api-selector:focus {
+            outline: none;
+            border-color: #ff69b4;
+            box-shadow: 0 0 0 4px rgba(255,105,180,0.12);
+        }
+        .api-selector option {
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        .api-prompt-box {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 8px;
+            padding: 10px;
+            font-size: 12px;
+        }
+        
+        .api-prompt-label {
+            color: #888;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        
+        .api-prompt-text {
+            color: #333;
+            max-height: 80px;
+            overflow-y: auto;
+            word-break: break-all;
+            line-height: 1.4;
+        }
+        
+        .api-prompt-edit {
+            margin-top: 8px;
+            padding: 5px 12px;
+            background: #ff69b4;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        .api-prompt-edit:hover {
+            background: #ff1493;
+        }
+        
+        .api-prompt-edit-box {
+            margin-top: 10px;
+        }
+        
+        .api-prompt-edit-box textarea {
+            width: 100%;
+            border: 1px solid #ffe4ec;
+            border-radius: 8px;
+            padding: 8px;
+            font-family: inherit;
+            font-size: 12px;
+            resize: vertical;
+            background: #fff;
+        }
+        
+        .api-prompt-edit-box textarea:focus {
+            outline: none;
+            border-color: #ff69b4;
+        }
+        
+        .api-prompt-buttons {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+        }
+        
+        .api-prompt-save, .api-prompt-cancel {
+            flex: 1;
+            padding: 6px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .api-prompt-save {
+            background: #4CAF50;
+            color: white;
+        }
+        
+        .api-prompt-save:hover {
+            background: #2e7d32;
+        }
+        
+        .api-prompt-cancel {
+            background: #e0e0e0;
+            color: #666;
+        }
+        
+        .api-prompt-cancel:hover {
+            background: #d0d0d0;
+        }
+
+        /* 预设标签页 */
+        .preset-tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 12px;
+            border-bottom: 2px solid #ffe4ec;
+            padding-bottom: 10px;
+        }
+        
+        .preset-tab {
+            flex: 1;
+            padding: 8px;
+            background: #fff;
+            border: 1px solid #ffe4ec;
+            border-radius: 8px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 13px;
+            color: #666;
+            transition: all 0.2s;
+        }
+        
+        .preset-tab:hover {
+            background: #fff5f8;
+        }
+        
+        .preset-tab.active {
+            background: linear-gradient(135deg, #ffb6c1 0%, #ff69b4 100%);
+            color: white;
+            border-color: #ff69b4;
+        }
+
+        /* ========== 预设搜索框 ========== */
+        .preset-search-box {
+            margin-bottom: 10px;
+            padding-right: 5px;
+        }
+        .preset-search-box input {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid #ffe4ec;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 13px;
+            outline: none;
+            background: #fff;
+            transition: all 0.2s;
+            box-shadow: 0 2px 5px rgba(255,182,193,0.08);
+        }
+        .preset-search-box input:focus {
+            border-color: #ff69b4;
+            box-shadow: 0 0 0 3px rgba(255,105,180,0.1);
+        }
+        .preset-search-box input::placeholder {
+            color: #bbb;
+        }
+
+        /* ========== 临时预设文本框样式 ========== */
+        #temp-preset-input {
+            width: 100%;
+            border: 1px solid #ffe4ec;
+            border-radius: 8px;
+            padding: 8px;
+            font-family: inherit;
+            font-size: 13px;
+            resize: vertical;
+            margin-bottom: 8px;
+            background: #fff;
+            box-sizing: border-box;
+            transition: all 0.2s;
+        }
+        #temp-preset-input:focus {
+            outline: none;
+            border-color: #ff69b4;
+            box-shadow: 0 0 0 3px rgba(255,105,180,0.1);
+        }
+
+        /* ========== 折叠面板样式 ========== */
+        .preset-collapse-section {
+            border-top: 1px solid #ffe4ec;
+            margin-top: 12px;
+            padding-top: 5px;
+        }
+        .preset-collapse-section summary {
+            font-size: 13px;
+            color: #ff69b4;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 8px 0;
+            user-select: none;
+            outline: none;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            transition: all 0.2s;
+        }
+        .preset-collapse-section summary:hover {
+            color: #ff1493;
+        }
+        .preset-collapse-section summary::-webkit-details-marker {
+            display: none;
+        }
+        .preset-collapse-section summary::before {
+            content: '▶';
+            display: inline-block;
+            margin-right: 8px;
+            font-size: 10px;
+            transition: transform 0.2s ease;
+            color: #ffb6c1;
+        }
+        .preset-collapse-section[open] summary::before {
+            transform: rotate(90deg);
+            color: #ff69b4;
+        }
+        .collapse-content {
+            padding: 10px 0 5px 0;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            animation: slideDown 0.2s ease-out;
+        }
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .preset-action-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .preset-action-buttons .preset-btn {
+            flex: 1;
+            margin: 0;
         }
 
         /* MathJax 公式样式 */
@@ -75,6 +810,7 @@
         }
 
         .chat-container {
+            flex: 1;
             width: 100%;
             max-width: 1200px;
             height: calc(100vh - 40px);
@@ -92,7 +828,7 @@
         }
 
         .input-container {
-            position: fixed;
+            position: absolute;
             bottom: 35px;
             left: 50%;
             transform: translateX(-50%);
@@ -1246,7 +1982,106 @@
 </head>
 
 <body>
-    <div class="chat-container">
+    <!-- 遮罩层（用于点击关闭侧边栏） -->
+    <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+    
+    <!-- 预设侧边栏 -->
+    <div class="preset-sidebar" id="preset-sidebar">
+        <!-- 调整大小的拖拽条 -->
+        <div class="preset-resize-handle" id="preset-resize-handle"></div>
+        
+        <div class="preset-header">
+            <div class="preset-header-left">
+                <h3>🎭 预设人设</h3>
+            </div>
+            <div class="preset-header-actions">
+                <button class="preset-pin" id="preset-pin" title="固定侧边栏">📌</button>
+                <button class="preset-close" id="preset-close" title="关闭">&times;</button>
+            </div>
+        </div>
+        
+        <!-- API 选择和系统提示词 -->
+        <div class="api-section">
+            <div class="section-title">API 设置</div>
+            <select id="api-selector" class="api-selector">
+                <option value="">加载中...</option>
+            </select>
+            <div class="api-prompt-box" id="api-prompt-box" style="display: none;">
+                <div class="api-prompt-label">当前 API 系统提示词:</div>
+                <div class="api-prompt-text" id="api-prompt-text"></div>
+                <button class="api-prompt-edit" id="api-prompt-edit" style="display: none;">编辑</button>
+            </div>
+            <div class="api-prompt-edit-box" id="api-prompt-edit-box" style="display: none;">
+                <textarea id="api-prompt-input" rows="4" placeholder="输入系统提示词..."></textarea>
+                <div class="api-prompt-buttons">
+                    <button class="api-prompt-save" id="api-prompt-save">保存</button>
+                    <button class="api-prompt-cancel" id="api-prompt-cancel">取消</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 当前预设显示 -->
+        <div class="current-preset" id="current-preset">
+            <span class="preset-label">当前预设:</span>
+            <span class="preset-name" id="current-preset-name">无</span>
+            <button class="preset-clear" id="preset-clear" title="清除预设">&times;</button>
+        </div>
+        
+        <!-- 预设标签页 -->
+        <div class="preset-tabs">
+            <button class="preset-tab active" data-tab="personal">个人预设</button>
+            <button class="preset-tab" data-tab="global">全局预设</button>
+        </div>
+        
+        <!-- 搜索预设 -->
+        <div class="preset-search-box">
+            <input type="text" id="preset-search-input" placeholder="🔍 搜索预设..." autocomplete="off">
+        </div>
+
+        <!-- 预设列表 -->
+        <div class="preset-list" id="preset-list">
+            <div class="preset-loading">加载中...</div>
+        </div>
+        
+        <!-- 临时预设 / 预览（默认展开） -->
+        <details class="preset-collapse-section" id="temp-preset-container" open>
+            <summary class="section-title">💡 临时预设 / 预览编辑</summary>
+            <div class="collapse-content">
+                <textarea id="temp-preset-input" placeholder="输入临时预设内容，或点击上方预设进行预览和修改..." rows="4"></textarea>
+                <div class="preset-action-buttons">
+                    <button class="preset-btn temp-btn" id="apply-temp-preset">应用临时</button>
+                    <button class="preset-btn custom-btn" id="save-edited-preset" style="display: none;">💾 保存修改</button>
+                </div>
+            </div>
+        </details>
+        
+        <!-- 添加新预设（默认折叠） -->
+        <details class="preset-collapse-section" id="add-preset-container">
+            <summary class="section-title">➕ 添加新预设</summary>
+            <div class="collapse-content">
+                <div class="custom-preset-section" id="personal-preset-section">
+                    <input type="text" id="personal-preset-name" placeholder="个人预设名称">
+                    <textarea id="personal-preset-prompt" placeholder="预设内容..." rows="3"></textarea>
+                    <button class="preset-btn custom-btn" id="add-personal-preset">保存个人预设</button>
+                </div>
+                
+                <div class="custom-preset-section" id="global-preset-section" style="display: none;">
+                    <input type="text" id="global-preset-name" placeholder="全局预设名称">
+                    <textarea id="global-preset-prompt" placeholder="预设内容..." rows="3"></textarea>
+                    <button class="preset-btn custom-btn" id="add-global-preset">保存全局预设</button>
+                </div>
+            </div>
+        </details>
+    </div>
+    
+    <!-- 预设侧边栏切换按钮 -->
+    <button class="preset-toggle" id="preset-toggle" title="预设人设">
+        <svg viewBox="0 0 24 24"><path d="M12,5.5A3.5,3.5 0 0,1 15.5,9A3.5,3.5 0 0,1 12,12.5A3.5,3.5 0 0,1 8.5,9A3.5,3.5 0 0,1 12,5.5M5,8C5.56,8 6.08,8.15 6.53,8.42C6.38,9.85 6.8,11.27 7.66,12.38C7.16,13.34 6.16,14 5,14A3,3 0 0,1 2,11A3,3 0 0,1 5,8M19,8A3,3 0 0,1 22,11A3,3 0 0,1 19,14C17.84,14 16.84,13.34 16.34,12.38C17.2,11.27 17.62,9.85 17.47,8.42C17.92,8.15 18.44,8 19,8M5.5,18.25C5.5,16.18 8.41,14.5 12,14.5C15.59,14.5 18.5,16.18 18.5,18.25V20H5.5V18.25Z"></path></svg>
+    </button>
+    
+    <!-- 主内容区域 -->
+    <div class="main-container" id="main-container">
+        <div class="chat-container">
         <!-- 聊天消息将在这里动态添加 -->
     </div>
     
@@ -1260,6 +2095,7 @@
             <textarea id="message-input" placeholder="请输入消息..."></textarea>
             <button id="send-button" aria-label="发送"></button>
         </div>
+    </div>
     </div>
 
     <div class="modal-overlay" id="modal-overlay"></div>
@@ -1508,6 +2344,11 @@
             modeToggle.classList.add(`${currentMode}-mode`);
             saveSettings();
             
+            // 如果侧边栏打开，重新加载 API 列表
+            if (presetSidebar.classList.contains('open') && currentMode !== 'dd') {
+                loadApis();
+            }
+            
             if (wsConnected) {
                 const codeQQ = document.getElementById('code-qq');
                 const userQQ = codeQQ ? codeQQ.value.trim() || 'web_user' : 'web_user';
@@ -1748,6 +2589,9 @@
                     });
                 }
                 
+                // 获取当前预设内容
+                const activePreset = getActivePresetContent();
+                
                 const codeQQ = document.getElementById('code-qq');
                 const userQQ = codeQQ ? codeQQ.value.trim() || 'web_user' : 'web_user';
                 wsConnection.send(JSON.stringify({
@@ -1755,7 +2599,8 @@
                     content: message,
                     timestamp: Date.now(),
                     images: images.length > 0 ? images : undefined,
-                    userQQ: userQQ
+                    userQQ: userQQ,
+                    preset: activePreset || undefined
                 }));
                 
                 addMessage(displayContent, 'right', true);
@@ -2046,6 +2891,12 @@
                                 
                                 // 检查主人权限（显示用户管理菜单）
                                 checkMasterPermission();
+                                
+                                // 🌟 修复：认证成功后，如果侧边栏已打开，重新加载 API 和预设
+                                if (presetSidebar.classList.contains('open') || isSidebarPinned) {
+                                    loadApis();
+                                    loadPresets();
+                                }
                                 
                                 // 如果服务器返回了用户信息，自动填充 QQ
                                 if (msgObj.user && msgObj.user.qq) {
@@ -2496,6 +3347,793 @@
                 loadUserList(currentUserTab);
             }
         });
+
+        // ==================== 预设侧边栏功能 ====================
+        let currentPreset = null; // 当前选中的预设
+        let tempPresetText = ''; // 临时预设文本
+        let isMasterUser = false; // 是否为主人
+        let currentPresetTab = 'personal'; // 当前预设标签页
+        let currentApiList = []; // 当前 API 列表
+        let currentApiIndex = 1; // 当前选中的 API
+
+        // 获取DOM元素
+        const presetSidebar = document.getElementById('preset-sidebar');
+        const presetToggle = document.getElementById('preset-toggle');
+        const presetClose = document.getElementById('preset-close');
+        const presetPin = document.getElementById('preset-pin');
+        const presetResizeHandle = document.getElementById('preset-resize-handle');
+        const mainContainer = document.getElementById('main-container');
+        
+        // 侧边栏状态
+        let isSidebarPinned = localStorage.getItem('sf_sidebar_pinned') === 'true';
+        let sidebarWidth = parseInt(localStorage.getItem('sf_sidebar_width')) || 320;
+        
+        // 应用保存的宽度
+        if (sidebarWidth) {
+            presetSidebar.style.width = sidebarWidth + 'px';
+        }
+        
+        // 应用固定状态
+        if (isSidebarPinned) {
+            presetSidebar.classList.add('pinned');
+            presetPin.classList.add('pinned');
+            document.body.classList.add('has-pinned-sidebar');
+            presetSidebar.classList.add('open');
+            // 固定模式不需要添加 sidebar-open（不需要遮罩层）
+        }
+        const presetList = document.getElementById('preset-list');
+        const currentPresetName = document.getElementById('current-preset-name');
+        const presetClear = document.getElementById('preset-clear');
+        const tempPresetInput = document.getElementById('temp-preset-input');
+        const applyTempPresetBtn = document.getElementById('apply-temp-preset');
+        const personalPresetSection = document.getElementById('personal-preset-section');
+        const globalPresetSection = document.getElementById('global-preset-section');
+        const personalPresetName = document.getElementById('personal-preset-name');
+        const personalPresetPrompt = document.getElementById('personal-preset-prompt');
+        const globalPresetName = document.getElementById('global-preset-name');
+        const globalPresetPrompt = document.getElementById('global-preset-prompt');
+        const addPersonalPresetBtn = document.getElementById('add-personal-preset');
+        const addGlobalPresetBtn = document.getElementById('add-global-preset');
+        const apiSelector = document.getElementById('api-selector');
+        const apiPromptBox = document.getElementById('api-prompt-box');
+        const apiPromptText = document.getElementById('api-prompt-text');
+        const apiPromptEdit = document.getElementById('api-prompt-edit');
+        const apiPromptEditBox = document.getElementById('api-prompt-edit-box');
+        const apiPromptInput = document.getElementById('api-prompt-input');
+        const apiPromptSave = document.getElementById('api-prompt-save');
+        const apiPromptCancel = document.getElementById('api-prompt-cancel');
+
+        // 获取遮罩层元素
+        const sidebarBackdrop = document.getElementById('sidebar-backdrop');
+
+        // 1. 状态切换函数 (封装逻辑，避免散落)
+        function toggleSidebar(forceState) {
+            const isOpen = forceState !== undefined ? forceState : !presetSidebar.classList.contains('open');
+            
+            if (isOpen) {
+                presetSidebar.classList.add('open');
+                presetToggle.classList.add('active');
+                document.body.classList.add('sidebar-open');
+                initPresetSidebar(); // 加载 API 和预设
+            } else {
+                presetSidebar.classList.remove('open');
+                presetToggle.classList.remove('active');
+                document.body.classList.remove('sidebar-open');
+            }
+        }
+
+        // 2. 事件监听：开关按钮与遮罩层
+        presetToggle.addEventListener('click', () => {
+            // 如果当前是固定模式，切换为悬浮模式
+            if (isSidebarPinned) {
+                togglePinState(false);
+            }
+            toggleSidebar();
+        });
+
+        presetClose.addEventListener('click', () => {
+            if (isSidebarPinned) {
+                togglePinState(false);
+            }
+            toggleSidebar(false);
+        });
+
+        // 使用遮罩层代替 document.click 监听，彻底解决误触问题
+        sidebarBackdrop.addEventListener('click', () => {
+            toggleSidebar(false);
+        });
+
+        // 3. 固定/取消固定状态管理
+        function togglePinState(pin) {
+            isSidebarPinned = pin;
+            localStorage.setItem('sf_sidebar_pinned', isSidebarPinned);
+            
+            if (isSidebarPinned) {
+                presetSidebar.classList.add('pinned');
+                presetPin.classList.add('pinned');
+                document.body.classList.add('has-pinned-sidebar');
+                toggleSidebar(true);
+                showToast('侧边栏已固定');
+            } else {
+                presetSidebar.classList.remove('pinned');
+                presetPin.classList.remove('pinned');
+                document.body.classList.remove('has-pinned-sidebar');
+                toggleSidebar(false);
+                showToast('侧边栏已取消固定');
+            }
+        }
+
+        presetPin.addEventListener('click', () => {
+            togglePinState(!isSidebarPinned);
+        });
+
+        // 4. 完美兼容鼠标和触摸屏的拉伸逻辑
+        let isResizing = false;
+        let startX = 0;
+        let startWidth = 0;
+        let rafId = null;
+        let pendingWidth = null;
+
+        function startResize(e) {
+            isResizing = true;
+            // 兼容 Touch 和 Mouse 事件
+            startX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            startWidth = presetSidebar.getBoundingClientRect().width;
+            
+            presetResizeHandle.classList.add('resizing');
+            document.body.style.cursor = 'col-resize';
+            document.body.style.userSelect = 'none';
+            presetSidebar.style.transition = 'none'; // 拖拽时取消动画，防止卡顿
+        }
+
+        function doResize(e) {
+            if (!isResizing) return;
+            
+            const currentX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+            const diff = currentX - startX;
+            let newWidth = startWidth + diff;
+            
+            // 限制宽度
+            const minWidth = 250;
+            // 如果屏幕很窄，限制最大宽度不超过屏幕宽度的 85%
+            const maxWidth = window.innerWidth < 768 ? window.innerWidth * 0.85 : 500;
+            newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+            
+            // 使用 requestAnimationFrame 保证 60fps 的流畅拖拽
+            pendingWidth = newWidth;
+            if (!rafId) {
+                rafId = requestAnimationFrame(() => {
+                    if (pendingWidth !== null) {
+                        presetSidebar.style.width = pendingWidth + 'px';
+                        sidebarWidth = pendingWidth;
+                        pendingWidth = null;
+                    }
+                    rafId = null;
+                });
+            }
+        }
+
+        function stopResize() {
+            if (isResizing) {
+                isResizing = false;
+                presetResizeHandle.classList.remove('resizing');
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                presetSidebar.style.transition = ''; // 恢复动画
+                
+                if (rafId) {
+                    cancelAnimationFrame(rafId);
+                    rafId = null;
+                }
+                localStorage.setItem('sf_sidebar_width', sidebarWidth);
+            }
+        }
+
+        // 绑定鼠标事件
+        presetResizeHandle.addEventListener('mousedown', startResize);
+        document.addEventListener('mousemove', doResize);
+        document.addEventListener('mouseup', stopResize);
+
+        // 绑定触摸事件 (passive: false 允许我们在需要时 preventDefault)
+        presetResizeHandle.addEventListener('touchstart', startResize, { passive: true });
+        document.addEventListener('touchmove', doResize, { passive: true });
+        document.addEventListener('touchend', stopResize);
+
+        // 初始化预设侧边栏
+        async function initPresetSidebar() {
+            await checkMasterPermission();
+            
+            // 根据当前标签页初始化添加预设区域的显示状态
+            if (currentPresetTab === 'personal') {
+                personalPresetSection.style.display = 'block';
+                globalPresetSection.style.display = 'none';
+            } else {
+                personalPresetSection.style.display = 'none';
+                globalPresetSection.style.display = isMasterUser ? 'block' : 'none';
+            }
+            
+            // 确保固定状态正确显示
+            if (isSidebarPinned) {
+                presetSidebar.classList.add('pinned');
+                presetPin.classList.add('pinned');
+                document.body.classList.add('has-pinned-sidebar');
+            }
+            
+            // 如果侧边栏打开且非固定模式，添加 sidebar-open 类以显示遮罩层
+            if (presetSidebar.classList.contains('open') && !isSidebarPinned) {
+                document.body.classList.add('sidebar-open');
+            }
+            
+            await loadApis();
+            await loadPresets();
+        }
+
+        // 检查主人权限
+        async function checkMasterPermission() {
+            try {
+                const token = sessionStorage.getItem('sf_ws_token');
+                if (!token) return;
+                
+                const payload = JSON.parse(atob(token.split('.')[1]));
+                const response = await fetch(`/api/user/permission?qq=${payload.qq}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+                
+                if (result.success && result.data?.isMaster) {
+                    isMasterUser = true;
+                    // 🌟 修复 Bug：只有当当前处于"全局预设"标签页时，才允许其显示
+                    if (currentPresetTab === 'global') {
+                        globalPresetSection.style.display = 'block';
+                    }
+                    apiPromptEdit.style.display = 'inline-block';
+                }
+            } catch (error) {
+                console.error('[SF WebUI] 检查权限失败:', error);
+            }
+        }
+
+        // 加载 API 列表
+        async function loadApis() {
+            // 🌟 修复：DD 模式没有 API 列表，直接返回提示
+            if (currentMode === 'dd') {
+                apiSelector.innerHTML = '<option value="">🎨 DD 模式无需选择 API</option>';
+                apiPromptBox.style.display = 'none';
+                apiPromptEdit.style.display = 'none';
+                return;
+            }
+            
+            try {
+                const token = sessionStorage.getItem('sf_ws_token');
+                if (!token) return;
+
+                const response = await fetch(`/api/apis/${currentMode}`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const result = await response.json();
+
+                if (result.success) {
+                    currentApiList = result.data.apis;
+                    currentApiIndex = result.data.currentApi;
+                    renderApiSelector();
+                    updateApiPromptDisplay();
+                }
+            } catch (error) {
+                console.error('[SF WebUI] 加载 API 列表失败:', error);
+            }
+        }
+
+        // 渲染 API 选择器
+        function renderApiSelector() {
+            if (!currentApiList || currentApiList.length === 0) {
+                apiSelector.innerHTML = '<option value="">无可用 API</option>';
+                return;
+            }
+
+            apiSelector.innerHTML = currentApiList.map(api => `
+                <option value="${api.index}" ${api.index === currentApiIndex ? 'selected' : ''}>
+                    ${api.index}. ${escapeHtml(api.name)} ${api.model ? '(' + escapeHtml(api.model) + ')' : ''}
+                </option>
+            `).join('');
+        }
+
+        // 更新 API 系统提示词显示
+        function updateApiPromptDisplay() {
+            const currentApi = currentApiList.find(api => api.index === currentApiIndex);
+            if (currentApi && currentApi.systemPrompt) {
+                apiPromptText.textContent = currentApi.systemPrompt;
+                apiPromptBox.style.display = 'block';
+            } else {
+                apiPromptBox.style.display = 'none';
+            }
+        }
+
+        // API 切换事件
+        apiSelector.addEventListener('change', async (e) => {
+            const newIndex = parseInt(e.target.value);
+            if (newIndex === currentApiIndex) return;
+
+            try {
+                const token = sessionStorage.getItem('sf_ws_token');
+                const response = await fetch(`/api/apis/${currentMode}/switch`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ apiIndex: newIndex })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    currentApiIndex = newIndex;
+                    updateApiPromptDisplay();
+                    showToast(`已切换到 API ${newIndex}`);
+                } else {
+                    alert(result.error || '切换失败');
+                    apiSelector.value = currentApiIndex;
+                }
+            } catch (error) {
+                console.error('[SF WebUI] 切换 API 失败:', error);
+                apiSelector.value = currentApiIndex;
+            }
+        });
+
+        // 编辑 API 系统提示词
+        apiPromptEdit.addEventListener('click', () => {
+            const currentApi = currentApiList.find(api => api.index === currentApiIndex);
+            if (currentApi) {
+                apiPromptInput.value = currentApi.systemPrompt || '';
+                apiPromptEditBox.style.display = 'block';
+                apiPromptBox.style.display = 'none';
+            }
+        });
+
+        // 保存 API 系统提示词
+        apiPromptSave.addEventListener('click', async () => {
+            const newPrompt = apiPromptInput.value.trim();
+            
+            try {
+                const token = sessionStorage.getItem('sf_ws_token');
+                const response = await fetch(`/api/apis/${currentMode}/prompt`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ 
+                        apiIndex: currentApiIndex, 
+                        systemPrompt: newPrompt 
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    // 更新本地数据
+                    const api = currentApiList.find(a => a.index === currentApiIndex);
+                    if (api) api.systemPrompt = newPrompt;
+                    
+                    updateApiPromptDisplay();
+                    apiPromptEditBox.style.display = 'none';
+                    showToast('系统提示词已更新');
+                } else {
+                    alert(result.error || '保存失败');
+                }
+            } catch (error) {
+                console.error('[SF WebUI] 保存系统提示词失败:', error);
+                alert('保存失败');
+            }
+        });
+
+        // 取消编辑 API 系统提示词
+        apiPromptCancel.addEventListener('click', () => {
+            apiPromptEditBox.style.display = 'none';
+            updateApiPromptDisplay();
+        });
+
+        // 预设标签页切换
+        document.querySelectorAll('.preset-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.preset-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+                currentPresetTab = tab.dataset.tab;
+                
+                // 切换添加预设区域显示
+                if (currentPresetTab === 'personal') {
+                    personalPresetSection.style.display = 'block';
+                    globalPresetSection.style.display = isMasterUser ? 'none' : 'none';
+                } else {
+                    personalPresetSection.style.display = 'none';
+                    globalPresetSection.style.display = isMasterUser ? 'block' : 'none';
+                }
+                
+                loadPresets();
+            });
+        });
+
+        // 加载预设列表
+        async function loadPresets() {
+            try {
+                const token = sessionStorage.getItem('sf_ws_token');
+                if (!token) {
+                    presetList.innerHTML = '<div class="preset-empty">请先登录</div>';
+                    return;
+                }
+
+                if (currentPresetTab === 'personal') {
+                    // 加载个人预设
+                    const response = await fetch('/api/user/presets', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        renderPresetList(result.data.presets, 'personal');
+                    } else {
+                        presetList.innerHTML = '<div class="preset-empty">加载失败</div>';
+                    }
+                } else {
+                    // 加载全局预设
+                    const response = await fetch('/api/presets', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await response.json();
+
+                    if (result.success) {
+                        renderPresetList(result.data.presets, 'global');
+                    } else {
+                        presetList.innerHTML = '<div class="preset-empty">加载失败</div>';
+                    }
+                }
+            } catch (error) {
+                console.error('[SF WebUI] 加载预设失败:', error);
+                presetList.innerHTML = '<div class="preset-empty">加载失败</div>';
+            }
+        }
+
+        // 渲染预设列表
+        function renderPresetList(presets, type) {
+            if (!presets || presets.length === 0) {
+                presetList.innerHTML = '<div class="preset-empty">暂无预设</div>';
+                return;
+            }
+
+            presetList.innerHTML = presets.map(preset => `
+                <div class="preset-item ${currentPreset?.name === preset.name && currentPreset?.type === type ? 'active' : ''}" 
+                     data-name="${escapeHtml(preset.name)}" data-type="${type}">
+                    <div class="preset-item-name">${escapeHtml(preset.name)}</div>
+                    <div class="preset-item-preview">${escapeHtml(preset.prompt.substring(0, 50))}${preset.prompt.length > 50 ? '...' : ''}</div>
+                    <button class="preset-item-delete" data-name="${escapeHtml(preset.name)}" data-type="${type}" title="删除">&times;</button>
+                </div>
+            `).join('');
+
+            // 绑定预设点击事件
+            presetList.querySelectorAll('.preset-item').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    if (e.target.classList.contains('preset-item-delete')) {
+                        e.stopPropagation();
+                        deletePreset(item.dataset.name, item.dataset.type);
+                    } else {
+                        selectPreset(item.dataset.name, item.dataset.type);
+                    }
+                });
+            });
+        }
+
+        // 选择预设（修改版：支持预览编辑）
+        async function selectPreset(name, type) {
+            const token = sessionStorage.getItem('sf_ws_token');
+            if (!token) {
+                alert('请先登录');
+                return;
+            }
+
+            try {
+                let presets;
+                if (type === 'personal') {
+                    const response = await fetch('/api/user/presets', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await response.json();
+                    presets = result.data?.presets || [];
+                } else {
+                    const response = await fetch('/api/presets', {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const result = await response.json();
+                    presets = result.data?.presets || [];
+                }
+
+                const preset = presets.find(p => p.name === name);
+                if (preset) {
+                    currentPreset = { ...preset, type };
+                    
+                    // 🌟 核心修改：将预设内容加载到临时预设框进行预览/编辑
+                    tempPresetInput.value = preset.prompt;
+                    tempPresetText = preset.prompt;
+                    
+                    // 展开预览区域，显示保存按钮
+                    document.getElementById('temp-preset-container').open = true;
+                    document.getElementById('save-edited-preset').style.display = 'block';
+                    
+                    updateCurrentPresetDisplay();
+                    loadPresets(); // 刷新列表高亮状态
+                    showToast(`已加载预设: ${preset.name}（可预览编辑）`);
+                }
+            } catch (error) {
+                console.error('[SF WebUI] 选择预设失败:', error);
+                showToast('加载预设失败');
+            }
+        }
+
+        // 清除预设
+        presetClear.addEventListener('click', () => {
+            currentPreset = null;
+            tempPresetText = '';
+            tempPresetInput.value = '';
+            document.getElementById('save-edited-preset').style.display = 'none';
+            updateCurrentPresetDisplay();
+            loadPresets();
+            showToast('已清除预设');
+        });
+
+        // 更新当前预设显示
+        function updateCurrentPresetDisplay() {
+            if (currentPreset) {
+                currentPresetName.textContent = `${currentPreset.type === 'personal' ? '[个人]' : '[全局]'} ${currentPreset.name}`;
+                currentPresetName.style.color = '#ff69b4';
+            } else if (tempPresetText) {
+                currentPresetName.textContent = '临时预设';
+                currentPresetName.style.color = '#ffb6c1';
+            } else {
+                currentPresetName.textContent = '使用 API 默认';
+                currentPresetName.style.color = '#999';
+            }
+        }
+
+        // 应用临时预设
+        applyTempPresetBtn.addEventListener('click', () => {
+            const text = tempPresetInput.value.trim();
+            if (!text) {
+                alert('请输入临时预设内容');
+                return;
+            }
+            tempPresetText = text;
+            currentPreset = null; // 清除已选预设
+            updateCurrentPresetDisplay();
+            loadPresets();
+            showToast('临时预设已应用');
+        });
+
+        // 添加个人预设
+        addPersonalPresetBtn.addEventListener('click', async () => {
+            const name = personalPresetName.value.trim();
+            const prompt = personalPresetPrompt.value.trim();
+            
+            if (!name || !prompt) {
+                alert('请输入预设名称和内容');
+                return;
+            }
+
+            try {
+                const token = sessionStorage.getItem('sf_ws_token');
+                const response = await fetch('/api/user/presets', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name, prompt })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    personalPresetName.value = '';
+                    personalPresetPrompt.value = '';
+                    loadPresets();
+                    showToast('个人预设已添加');
+                } else {
+                    alert(result.error || '添加失败');
+                }
+            } catch (error) {
+                console.error('[SF WebUI] 添加个人预设失败:', error);
+                alert('添加失败');
+            }
+        });
+
+        // 添加全局预设
+        addGlobalPresetBtn.addEventListener('click', async () => {
+            const name = globalPresetName.value.trim();
+            const prompt = globalPresetPrompt.value.trim();
+            
+            if (!name || !prompt) {
+                alert('请输入预设名称和内容');
+                return;
+            }
+
+            try {
+                const token = sessionStorage.getItem('sf_ws_token');
+                const response = await fetch('/api/presets/custom', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ name, prompt })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    globalPresetName.value = '';
+                    globalPresetPrompt.value = '';
+                    loadPresets();
+                    showToast('全局预设已添加');
+                } else {
+                    alert(result.error || '添加失败');
+                }
+            } catch (error) {
+                console.error('[SF WebUI] 添加全局预设失败:', error);
+                alert('添加失败');
+            }
+        });
+
+        // 删除预设
+        async function deletePreset(name, type) {
+            if (!confirm(`确定要删除${type === 'personal' ? '个人' : '全局'}预设 "${name}" 吗？`)) {
+                return;
+            }
+
+            try {
+                const token = sessionStorage.getItem('sf_ws_token');
+                const endpoint = type === 'personal' 
+                    ? `/api/user/presets/${encodeURIComponent(name)}`
+                    : `/api/presets/${encodeURIComponent(name)}`;
+                
+                const response = await fetch(endpoint, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    if (currentPreset?.name === name && currentPreset?.type === type) {
+                        currentPreset = null;
+                        updateCurrentPresetDisplay();
+                    }
+                    loadPresets();
+                    showToast('预设已删除');
+                } else {
+                    alert(result.error || '删除失败');
+                }
+            } catch (error) {
+                console.error('[SF WebUI] 删除预设失败:', error);
+                alert('删除失败');
+            }
+        }
+
+        // 获取当前有效的预设内容（用于发送消息时）
+        function getActivePresetContent() {
+            if (currentPreset) {
+                return { type: currentPreset.type, name: currentPreset.name, content: currentPreset.prompt };
+            } else if (tempPresetText) {
+                return { type: 'temp', name: '临时预设', content: tempPresetText };
+            }
+            return null;
+        }
+
+        // 简单的 HTML 转义
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // 显示提示
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.style.cssText = `
+                position: fixed;
+                top: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background: rgba(255, 105, 180, 0.9);
+                color: white;
+                padding: 10px 20px;
+                border-radius: 20px;
+                font-size: 14px;
+                z-index: 10000;
+                animation: fadeInOut 2s ease;
+            `;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 2000);
+        }
+
+        // 添加淡入淡出动画
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes fadeInOut {
+                0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+                20% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+                100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            }
+        `;
+        document.head.appendChild(style);
+
+        // 🌟 新增：预设搜索功能
+        const presetSearchInput = document.getElementById('preset-search-input');
+        if (presetSearchInput) {
+            presetSearchInput.addEventListener('input', (e) => {
+                const keyword = e.target.value.toLowerCase().trim();
+                const presetItems = document.querySelectorAll('.preset-item');
+                
+                presetItems.forEach(item => {
+                    const name = item.dataset.name.toLowerCase();
+                    const preview = item.querySelector('.preset-item-preview')?.textContent.toLowerCase() || '';
+                    
+                    if (!keyword || name.includes(keyword) || preview.includes(keyword)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        }
+
+        // 🌟 新增：保存修改后的预设
+        document.getElementById('save-edited-preset').addEventListener('click', async () => {
+            if (!currentPreset) {
+                showToast('请先选择一个预设');
+                return;
+            }
+            
+            const newPrompt = tempPresetInput.value.trim();
+            if (!newPrompt) {
+                alert('预设内容不能为空');
+                return;
+            }
+            
+            // 如果内容没有变化，直接提示
+            if (newPrompt === currentPreset.prompt) {
+                showToast('内容未修改');
+                return;
+            }
+
+            try {
+                const token = sessionStorage.getItem('sf_ws_token');
+                // 个人预设使用 /api/user/presets，全局预设使用 /api/presets/custom
+                const endpoint = currentPreset.type === 'personal' 
+                    ? '/api/user/presets' 
+                    : '/api/presets/custom';
+                
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ 
+                        name: currentPreset.name, 
+                        prompt: newPrompt 
+                    })
+                });
+
+                const result = await response.json();
+                if (result.success) {
+                    currentPreset.prompt = newPrompt;
+                    showToast('✅ 预设修改已保存');
+                    loadPresets(); // 刷新列表
+                } else {
+                    alert(result.error || '保存失败');
+                }
+            } catch (error) {
+                console.error('[SF WebUI] 保存预设修改失败:', error);
+                alert('保存失败，请检查网络');
+            }
+        });
+
+        // ==================== 预设侧边栏功能结束 ====================
 
         // 注册 Service Worker
         if ('serviceWorker' in navigator) {

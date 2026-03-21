@@ -283,22 +283,32 @@ class WebUIServer {
    * @returns {boolean}
    */
   isMaster(qq) {
-    if (!qq) return false
+    if (!qq) {
+      logger.debug('[sf插件][isMaster] 传入 qq 为空，返回 false')
+      return false
+    }
+    
+    const qqStr = String(qq).trim()
+    
+    // 调试日志
+    logger.debug(`[sf插件][isMaster] 检查 QQ: "${qqStr}" (类型: ${typeof qq})`)
     
     // 特殊处理 stdin 用户（本地控制台用户）
-    if (qq === 'stdin' || qq === '标准输入') {
+    if (qqStr === 'stdin' || qqStr === '标准输入') {
+      logger.mark(`[sf插件][isMaster] stdin 用户识别为主人`)
       return true
     }
     
     const masters = this.getMasterList()
-    const qqStr = String(qq)
     
     // 调试日志
     if (process.env.DEBUG_MASTER) {
       logger.debug(`[sf插件][isMaster] 检查 QQ: ${qqStr}, 主人列表: ${JSON.stringify(masters)}`)
     }
     
-    return masters.includes(qqStr)
+    const result = masters.includes(qqStr)
+    logger.debug(`[sf插件][isMaster] QQ "${qqStr}" 是否主人: ${result}`)
+    return result
   }
 
   /**
@@ -835,8 +845,13 @@ class WebUIServer {
         }
         
         if (isValid) {
+          logger.mark(`[sf插件][验证码登录] 用户 "${qq}" 验证码验证通过`)
+          
           // 检查是否仅允许主人登录
-          if (config.webUI?.security?.onlyMaster && !this.isMaster(qq)) {
+          const masterCheck = this.isMaster(qq)
+          logger.mark(`[sf插件][验证码登录] 用户 "${qq}" 是否主人: ${masterCheck}`)
+          
+          if (config.webUI?.security?.onlyMaster && !masterCheck) {
             this.logAccess(req, 'CODE_LOGIN_REJECTED', `非主人登录尝试: ${qq}`)
             res.status(403).json({
               success: false,
@@ -945,8 +960,13 @@ class WebUIServer {
           return
         }
         
+        logger.mark(`[sf插件][短链接登录] 找到用户: "${foundQQ}"`)
+        
         // 检查是否仅允许主人登录
-        if (config.webUI?.security?.onlyMaster && !this.isMaster(foundQQ)) {
+        const masterCheck = this.isMaster(foundQQ)
+        logger.mark(`[sf插件][短链接登录] 用户 "${foundQQ}" 是否主人: ${masterCheck}`)
+        
+        if (config.webUI?.security?.onlyMaster && !masterCheck) {
           this.logAccess(req, 'SHORT_LOGIN_REJECTED', `非主人登录尝试: ${foundQQ}`)
           res.status(403).json({
             success: false,
@@ -1015,11 +1035,15 @@ class WebUIServer {
         let qq = req.query.qq
         const authHeader = req.headers.authorization
         
+        logger.debug(`[sf插件][权限检查] 请求参数 qq: "${qq}", authHeader: ${authHeader ? '存在' : '缺失'}`)
+        
         if (authHeader?.startsWith('Bearer ')) {
           const token = authHeader.substring(7)
           const userInfo = auth.verifyToken(token)
+          logger.debug(`[sf插件][权限检查] Token 解析结果: ${JSON.stringify(userInfo)}`)
           if (userInfo?.qq) {
             qq = userInfo.qq  // 使用 token 中的 QQ，忽略 query 参数
+            logger.debug(`[sf插件][权限检查] 使用 Token 中的 qq: "${qq}"`)
           }
         }
         
@@ -1038,7 +1062,9 @@ class WebUIServer {
         const myRequest = pendingRequests.find(r => r.qq === qq)
         
         const permission = checkPermission(qq, approvalMode)
+        logger.debug(`[sf插件][权限检查] 检查前 qq 值: "${qq}" (类型: ${typeof qq})`)
         const isMaster = this.isMaster(qq)
+        logger.mark(`[sf插件][权限检查] QQ "${qq}" 是否主人: ${isMaster}`)
         
         // 确定用户角色和权限等级
         let role = 'guest'
@@ -1421,6 +1447,348 @@ class WebUIServer {
         res.status(500).json({ success: false, error: error.message })
       }
     })
+
+    // 获取预设列表
+    this.app.get('/api/presets', async (req, res) => {
+      try {
+        const authHeader = req.headers.authorization
+        if (!authHeader?.startsWith('Bearer ')) {
+          return res.status(401).json({ success: false, error: '未提供认证令牌' })
+        }
+        
+        const token = authHeader.substring(7)
+        const userInfo = auth.verifyToken(token)
+        
+        if (!userInfo) {
+          return res.status(401).json({ success: false, error: '无效的令牌' })
+        }
+        
+        const config = await Config.getConfig()
+        const presets = config.presets || []
+        
+        res.json({
+          success: true,
+          data: {
+            presets: presets.map(p => ({ name: p.name, prompt: p.prompt }))
+          }
+        })
+      } catch (error) {
+        logger.error('[sf插件] 获取预设列表失败:', error)
+        res.status(500).json({ success: false, error: error.message })
+      }
+    })
+
+    // 添加自定义预设（仅主人）
+    this.app.post('/api/presets/custom', express.json(), async (req, res) => {
+      try {
+        const authHeader = req.headers.authorization
+        if (!authHeader?.startsWith('Bearer ')) {
+          return res.status(401).json({ success: false, error: '未提供认证令牌' })
+        }
+        
+        const token = authHeader.substring(7)
+        const userInfo = auth.verifyToken(token)
+        
+        if (!userInfo) {
+          return res.status(401).json({ success: false, error: '无效的令牌' })
+        }
+        
+        // 只有主人可以添加全局预设
+        if (!this.isMaster(userInfo.qq)) {
+          return res.status(403).json({ success: false, error: '只有主人可以添加全局预设' })
+        }
+        
+        const { name, prompt } = req.body
+        if (!name || !prompt) {
+          return res.status(400).json({ success: false, error: '预设名称和内容不能为空' })
+        }
+        
+        const config = await Config.getConfig()
+        if (!config.presets) config.presets = []
+        
+        // 检查是否已存在同名预设
+        const existingIndex = config.presets.findIndex(p => p.name === name)
+        if (existingIndex >= 0) {
+          config.presets[existingIndex] = { name, prompt }
+        } else {
+          config.presets.push({ name, prompt })
+        }
+        
+        await Config.saveConfig(config)
+        
+        res.json({ success: true, message: '预设已保存' })
+      } catch (error) {
+        logger.error('[sf插件] 保存预设失败:', error)
+        res.status(500).json({ success: false, error: error.message })
+      }
+    })
+
+    // 删除预设（仅主人）
+    this.app.delete('/api/presets/:name', async (req, res) => {
+      try {
+        const authHeader = req.headers.authorization
+        if (!authHeader?.startsWith('Bearer ')) {
+          return res.status(401).json({ success: false, error: '未提供认证令牌' })
+        }
+        
+        const token = authHeader.substring(7)
+        const userInfo = auth.verifyToken(token)
+        
+        if (!userInfo) {
+          return res.status(401).json({ success: false, error: '无效的令牌' })
+        }
+        
+        if (!this.isMaster(userInfo.qq)) {
+          return res.status(403).json({ success: false, error: '只有主人可以删除预设' })
+        }
+        
+        const presetName = decodeURIComponent(req.params.name)
+        const config = await Config.getConfig()
+        
+        if (!config.presets) {
+          return res.json({ success: true, message: '预设不存在' })
+        }
+        
+        config.presets = config.presets.filter(p => p.name !== presetName)
+        await Config.saveConfig(config)
+        
+        res.json({ success: true, message: '预设已删除' })
+      } catch (error) {
+        logger.error('[sf插件] 删除预设失败:', error)
+        res.status(500).json({ success: false, error: error.message })
+      }
+    })
+
+    // ============ 个人预设 API ============
+    
+    // 获取用户个人预设
+    this.app.get('/api/user/presets', async (req, res) => {
+      try {
+        const authHeader = req.headers.authorization
+        if (!authHeader?.startsWith('Bearer ')) {
+          return res.status(401).json({ success: false, error: '未提供认证令牌' })
+        }
+        
+        const token = authHeader.substring(7)
+        const userInfo = auth.verifyToken(token)
+        
+        if (!userInfo) {
+          return res.status(401).json({ success: false, error: '无效的令牌' })
+        }
+        
+        const { getUserPresets } = await import('../utils/userPresetManager.js')
+        const presets = getUserPresets(userInfo.qq)
+        
+        res.json({
+          success: true,
+          data: { presets }
+        })
+      } catch (error) {
+        logger.error('[sf插件] 获取个人预设失败:', error)
+        res.status(500).json({ success: false, error: error.message })
+      }
+    })
+
+    // 添加用户个人预设
+    this.app.post('/api/user/presets', express.json(), async (req, res) => {
+      try {
+        const authHeader = req.headers.authorization
+        if (!authHeader?.startsWith('Bearer ')) {
+          return res.status(401).json({ success: false, error: '未提供认证令牌' })
+        }
+        
+        const token = authHeader.substring(7)
+        const userInfo = auth.verifyToken(token)
+        
+        if (!userInfo) {
+          return res.status(401).json({ success: false, error: '无效的令牌' })
+        }
+        
+        const { name, prompt } = req.body
+        if (!name || !prompt) {
+          return res.status(400).json({ success: false, error: '预设名称和内容不能为空' })
+        }
+        
+        const { addUserPreset } = await import('../utils/userPresetManager.js')
+        const result = addUserPreset(userInfo.qq, name, prompt)
+        
+        res.json(result)
+      } catch (error) {
+        logger.error('[sf插件] 添加个人预设失败:', error)
+        res.status(500).json({ success: false, error: error.message })
+      }
+    })
+
+    // 删除用户个人预设
+    this.app.delete('/api/user/presets/:name', async (req, res) => {
+      try {
+        const authHeader = req.headers.authorization
+        if (!authHeader?.startsWith('Bearer ')) {
+          return res.status(401).json({ success: false, error: '未提供认证令牌' })
+        }
+        
+        const token = authHeader.substring(7)
+        const userInfo = auth.verifyToken(token)
+        
+        if (!userInfo) {
+          return res.status(401).json({ success: false, error: '无效的令牌' })
+        }
+        
+        const presetName = decodeURIComponent(req.params.name)
+        const { deleteUserPreset } = await import('../utils/userPresetManager.js')
+        const result = deleteUserPreset(userInfo.qq, presetName)
+        
+        res.json(result)
+      } catch (error) {
+        logger.error('[sf插件] 删除个人预设失败:', error)
+        res.status(500).json({ success: false, error: error.message })
+      }
+    })
+
+    // ============ API 管理接口 ============
+    
+    // 获取 API 列表（SS/GG 模式）
+    this.app.get('/api/apis/:mode', async (req, res) => {
+      try {
+        const authHeader = req.headers.authorization
+        if (!authHeader?.startsWith('Bearer ')) {
+          return res.status(401).json({ success: false, error: '未提供认证令牌' })
+        }
+        
+        const token = authHeader.substring(7)
+        const userInfo = auth.verifyToken(token)
+        
+        if (!userInfo) {
+          return res.status(401).json({ success: false, error: '无效的令牌' })
+        }
+        
+        const mode = req.params.mode // 'ss' 或 'gg'
+        if (!['ss', 'gg'].includes(mode)) {
+          return res.status(400).json({ success: false, error: '无效的模式' })
+        }
+        
+        const config = await Config.getConfig()
+        const apiKey = `${mode}_APIList`
+        const usingKey = `${mode}_usingAPI`
+        
+        const apiList = config[apiKey] || []
+        const currentApiIndex = config[usingKey] || 1
+        
+        // 只返回必要信息，隐藏 key
+        const safeApiList = apiList.map((api, index) => ({
+          index: index + 1,
+          name: api.name || `API ${index + 1}`,
+          model: api.model || '',
+          systemPrompt: api.systemPrompt || '',
+          useContext: api.useContext || false,
+          isCurrent: (index + 1) === currentApiIndex
+        }))
+        
+        res.json({
+          success: true,
+          data: {
+            apis: safeApiList,
+            currentApi: currentApiIndex
+          }
+        })
+      } catch (error) {
+        logger.error('[sf插件] 获取 API 列表失败:', error)
+        res.status(500).json({ success: false, error: error.message })
+      }
+    })
+
+    // 切换当前 API
+    this.app.post('/api/apis/:mode/switch', express.json(), async (req, res) => {
+      try {
+        const authHeader = req.headers.authorization
+        if (!authHeader?.startsWith('Bearer ')) {
+          return res.status(401).json({ success: false, error: '未提供认证令牌' })
+        }
+        
+        const token = authHeader.substring(7)
+        const userInfo = auth.verifyToken(token)
+        
+        if (!userInfo) {
+          return res.status(401).json({ success: false, error: '无效的令牌' })
+        }
+        
+        const mode = req.params.mode
+        const { apiIndex } = req.body
+        
+        if (!['ss', 'gg'].includes(mode)) {
+          return res.status(400).json({ success: false, error: '无效的模式' })
+        }
+        
+        if (!apiIndex || apiIndex < 1) {
+          return res.status(400).json({ success: false, error: '无效的 API 索引' })
+        }
+        
+        const config = await Config.getConfig()
+        const apiKey = `${mode}_APIList`
+        const usingKey = `${mode}_usingAPI`
+        
+        const apiList = config[apiKey] || []
+        if (apiIndex > apiList.length) {
+          return res.status(400).json({ success: false, error: 'API 索引超出范围' })
+        }
+        
+        config[usingKey] = apiIndex
+        await Config.saveConfig(config)
+        
+        res.json({ success: true, message: 'API 已切换' })
+      } catch (error) {
+        logger.error('[sf插件] 切换 API 失败:', error)
+        res.status(500).json({ success: false, error: error.message })
+      }
+    })
+
+    // 更新 API 系统提示词（主人可以更新全局，普通用户只能更新个人配置）
+    this.app.post('/api/apis/:mode/prompt', express.json(), async (req, res) => {
+      try {
+        const authHeader = req.headers.authorization
+        if (!authHeader?.startsWith('Bearer ')) {
+          return res.status(401).json({ success: false, error: '未提供认证令牌' })
+        }
+        
+        const token = authHeader.substring(7)
+        const userInfo = auth.verifyToken(token)
+        
+        if (!userInfo) {
+          return res.status(401).json({ success: false, error: '无效的令牌' })
+        }
+        
+        const mode = req.params.mode
+        const { apiIndex, systemPrompt } = req.body
+        
+        if (!['ss', 'gg'].includes(mode)) {
+          return res.status(400).json({ success: false, error: '无效的模式' })
+        }
+        
+        if (!apiIndex || systemPrompt === undefined) {
+          return res.status(400).json({ success: false, error: '参数不完整' })
+        }
+        
+        const config = await Config.getConfig()
+        const apiKey = `${mode}_APIList`
+        
+        if (!config[apiKey] || apiIndex > config[apiKey].length) {
+          return res.status(400).json({ success: false, error: 'API 不存在' })
+        }
+        
+        // 只有主人可以修改全局 API 配置
+        if (!this.isMaster(userInfo.qq)) {
+          return res.status(403).json({ success: false, error: '只有主人可以修改 API 系统提示词' })
+        }
+        
+        config[apiKey][apiIndex - 1].systemPrompt = systemPrompt
+        await Config.saveConfig(config)
+        
+        res.json({ success: true, message: '系统提示词已更新' })
+      } catch (error) {
+        logger.error('[sf插件] 更新系统提示词失败:', error)
+        res.status(500).json({ success: false, error: error.message })
+      }
+    })
   }
 
   /**
@@ -1629,7 +1997,7 @@ class WebUIServer {
    * 处理 WebSocket 消息
    */
   async handleWebSocketMessage(ws, msgObj, config, logLevel) {
-    const { type, content, images, userQQ } = msgObj
+    const { type, content, images, userQQ, preset } = msgObj
 
     if (logLevel === 'debug') {
       logger.mark(`[sf插件] 收到 WebSocket 消息: ${JSON.stringify(msgObj)}`)
@@ -1644,13 +2012,13 @@ class WebUIServer {
         if (logLevel === 'debug' || logLevel === 'info') {
           logger.mark(`[sf插件] 处理 SS 消息: ${content?.substring(0, 50)}...`)
         }
-        await sfPainting.handleSSMessage(ws, content, images, userQQ)
+        await sfPainting.handleSSMessage(ws, content, images, userQQ, preset)
         break
       case 'gg':
         if (logLevel === 'debug' || logLevel === 'info') {
           logger.mark(`[sf插件] 处理 GG 消息: ${content?.substring(0, 50)}...`)
         }
-        await sfPainting.handleGGMessage(ws, content, images, userQQ)
+        await sfPainting.handleGGMessage(ws, content, images, userQQ, preset)
         break
       case 'dd':
         if (logLevel === 'debug' || logLevel === 'info') {

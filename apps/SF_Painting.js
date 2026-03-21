@@ -158,7 +158,7 @@ export class SF_Painting extends plugin {
     }
 
     // 处理SS模式消息
-    async handleSSMessage(ws, content, images, userQQ = 'web_user') {
+    async handleSSMessage(ws, content, images, userQQ = 'web_user', preset = null) {
         try {
             const type = "ss"
             let msg = content;
@@ -170,6 +170,13 @@ export class SF_Painting extends plugin {
             if (msg.startsWith('#')) {
                 const result = await this.handleCommands(ws, msg, userQQ, config);
                 if (result) return; // 如果是命令且已处理,直接返回
+            }
+
+            // 如果有预设，应用到消息中
+            if (preset && preset.content) {
+                // 将预设内容添加到消息前面
+                msg = `${preset.content}\n\n${msg}`;
+                logger.mark(`[sf插件] WebUI 使用${preset.type === 'temp' ? '临时' : ''}预设: ${preset.name}`);
             }
 
             // 构造模拟的e对象
@@ -202,7 +209,7 @@ export class SF_Painting extends plugin {
     }
 
     // 处理GG模式消息
-    async handleGGMessage(ws, content, images, userQQ = 'web_user') {
+    async handleGGMessage(ws, content, images, userQQ = 'web_user', preset = null) {
         try {
             const type = "gg"
             let msg = content;
@@ -214,6 +221,13 @@ export class SF_Painting extends plugin {
             if (msg.startsWith('#')) {
                 const result = await this.handleCommands(ws, msg, userQQ, config);
                 if (result) return; // 如果是命令且已处理,直接返回
+            }
+
+            // 如果有预设，应用到消息中
+            if (preset && preset.content) {
+                // 将预设内容添加到消息前面
+                msg = `${preset.content}\n\n${msg}`;
+                logger.mark(`[sf插件] WebUI 使用${preset.type === 'temp' ? '临时' : ''}预设: ${preset.name}`);
             }
 
             // 构造模拟的e对象
@@ -616,6 +630,8 @@ export class SF_Painting extends plugin {
      */
     async sf_login(e) {
         const userQQ = String(e.user_id)
+        logger.mark(`[sf插件][sf_login] 用户请求登录验证码，userQQ: "${userQQ}"`)
+        
         const config = Config.getConfig()
         
         // 检查 WebUI 是否启用
@@ -624,15 +640,22 @@ export class SF_Painting extends plugin {
             return
         }
         
+        // stdin 用户特殊日志
+        if (userQQ === 'stdin' || userQQ === '标准输入') {
+            logger.mark(`[sf插件][sf_login] stdin 用户请求登录验证码`)
+        }
+        
         // 检查是否已有未过期的验证码
         if (auth.hasValidCode(userQQ)) {
             const remaining = auth.getCodeRemainingTime(userQQ)
+            logger.mark(`[sf插件][sf_login] 用户 "${userQQ}" 验证码还未失效，剩余 ${remaining} 秒`)
             await e.reply(`当前验证码还未失效，请 ${remaining} 秒后再试`, true)
             return
         }
         
         // 生成新的验证码（绑定用户 QQ 号）
         const code = auth.generateLoginCode(userQQ)
+        logger.mark(`[sf插件][sf_login] 为用户 "${userQQ}" 生成验证码成功`)
         
         // 自动注册或获取用户
         const user = userManager.getOrCreateUser(userQQ)
@@ -3267,7 +3290,7 @@ async function init_legacy_server(config) {
                     if (logLevel === 'debug') {
                         logger.mark(`[sf插件] 收到WebSocket消息: ${JSON.stringify(msgObj)}`);
                     }
-                    const { type, content, images, userQQ } = msgObj;
+                    const { type, content, images, userQQ, preset } = msgObj;
                     const sfPainting = new SF_Painting();
 
                     // 根据类型处理消息
@@ -3282,13 +3305,13 @@ async function init_legacy_server(config) {
                             if (logLevel === 'debug' || logLevel === 'info') {
                                 logger.mark(`[sf插件] 处理SS消息: ${content}`);
                             }
-                            await sfPainting.handleSSMessage(ws, content, images, userQQ);
+                            await sfPainting.handleSSMessage(ws, content, images, userQQ, preset);
                             break;
                         case 'gg':
                             if (logLevel === 'debug' || logLevel === 'info') {
                                 logger.mark(`[sf插件] 处理GG消息: ${content}`);
                             }
-                            await sfPainting.handleGGMessage(ws, content, images, userQQ);
+                            await sfPainting.handleGGMessage(ws, content, images, userQQ, preset);
                             break;
                         case 'dd':
                             if (logLevel === 'debug' || logLevel === 'info') {
