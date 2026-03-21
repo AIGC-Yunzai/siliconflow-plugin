@@ -31,16 +31,16 @@ export class WebUIApproval extends plugin {
                     // 所有人可用，申请使用 WebUI
                 },
                 {
-                    reg: '^#(sf|SF)(批准|同意|通过)(@?[\\d]+)?$',
+                    // 支持：#sf批准 QQ号、#sf批准 编号、#sf批准 1,2,3、#sf批准 全部
+                    reg: '^#(sf|SF)(批准|同意|通过)(\\s.+)?$',
                     fnc: 'sf_approveRequest',
                     permission: 'master'
-                    // 主人权限，批准申请
                 },
                 {
-                    reg: '^#(sf|SF)(拒绝|驳回)(@?[\\d]+)?$',
+                    // 支持：#sf拒绝 QQ号、#sf拒绝 编号、#sf拒绝 1,2,3
+                    reg: '^#(sf|SF)(拒绝|驳回)(\\s.+)?$',
                     fnc: 'sf_rejectRequest',
                     permission: 'master'
-                    // 主人权限，拒绝申请
                 },
                 {
                     reg: '^#(sf|SF)(批准|审批)(列表|清单|待办)$',
@@ -49,16 +49,15 @@ export class WebUIApproval extends plugin {
                     // 主人权限，查看待审批列表
                 },
                 {
-                    reg: '^#(sf|SF)(拉黑|黑名单)(@?[\\d]+)?$',
+                    // 仅匹配 #sf拉黑，避免与查看黑名单命令冲突
+                    reg: '^#(sf|SF)拉黑(\\s.+)?$',
                     fnc: 'sf_blockUser',
                     permission: 'master'
-                    // 主人权限，拉黑用户
                 },
                 {
-                    reg: '^#(sf|SF)(解封|解除)(@?[\\d]+)?$',
+                    reg: '^#(sf|SF)(解封|解除)(\\s.+)?$',
                     fnc: 'sf_unblockUser',
                     permission: 'master'
-                    // 主人权限，解封用户
                 },
                 {
                     reg: '^#(sf|SF)(webui|WebUI)?(白名单|已通过)$',
@@ -67,10 +66,10 @@ export class WebUIApproval extends plugin {
                     // 主人权限，查看白名单
                 },
                 {
+                    // 仅匹配查看黑名单（不带额外参数），与 #sf拉黑 区分
                     reg: '^#(sf|SF)(webui|WebUI)?(黑名单|已拉黑)$',
                     fnc: 'sf_blacklist',
                     permission: 'master'
-                    // 主人权限，查看黑名单
                 },
                 {
                     reg: '^#(sf|SF)我的(webui|WebUI)?状态$',
@@ -95,7 +94,7 @@ export class WebUIApproval extends plugin {
                     // 主人权限，查看在线用户
                 },
                 {
-                    reg: '^#(sf|SF)(webui|WebUI)?(强制下线|踢出)(@?[\\d]+)?$',
+                    reg: '^#(sf|SF)(webui|WebUI)?(强制下线|踢出)(\\s.+)?$',
                     fnc: 'sf_forceLogout',
                     permission: 'master'
                     // 主人权限，强制下线用户
@@ -357,27 +356,28 @@ export class WebUIApproval extends plugin {
         const items = input.split(/[,，\s]+/).filter(s => s.trim())
         const targetQQs = []
         const failedItems = []
-        
+
         for (const item of items) {
-            // 检查是否是编号（1-999）
             if (/^\d+$/.test(item)) {
-                const index = parseInt(item) - 1
-                if (index >= 0 && index < requests.length) {
-                    targetQQs.push(requests[index].qq)
+                const num = parseInt(item)
+                // 数字在待审批列表范围内（1~N），视为序号；否则视为QQ号
+                if (num >= 1 && num <= requests.length) {
+                    targetQQs.push(requests[num - 1].qq)
                 } else {
-                    failedItems.push(`${item}(无效编号)`)
+                    // 超出序号范围，作为QQ号处理
+                    targetQQs.push(item)
                 }
             } else {
-                // 作为QQ号处理
+                // 非纯数字，直接作为QQ号处理
                 targetQQs.push(item)
             }
         }
-        
+
         if (targetQQs.length === 0) {
             await e.reply(`❌ 未找到有效的用户\n失败项: ${failedItems.join(', ')}`, true)
             return
         }
-        
+
         // 批量处理
         let approvedCount = 0
         const results = []
@@ -436,27 +436,26 @@ export class WebUIApproval extends plugin {
         const items = input.split(/[,，\s]+/).filter(s => s.trim())
         const targetQQs = []
         const failedItems = []
-        
+
         for (const item of items) {
-            // 检查是否是编号（1-999）
             if (/^\d+$/.test(item)) {
-                const index = parseInt(item) - 1
-                if (index >= 0 && index < requests.length) {
-                    targetQQs.push(requests[index].qq)
+                const num = parseInt(item)
+                // 数字在待审批列表范围内（1~N），视为序号；否则视为QQ号
+                if (num >= 1 && num <= requests.length) {
+                    targetQQs.push(requests[num - 1].qq)
                 } else {
-                    failedItems.push(`${item}(无效编号)`)
+                    targetQQs.push(item)
                 }
             } else {
-                // 作为QQ号处理
                 targetQQs.push(item)
             }
         }
-        
+
         if (targetQQs.length === 0) {
             await e.reply(`❌ 未找到有效的用户\n失败项: ${failedItems.join(', ')}`, true)
             return
         }
-        
+
         // 批量处理
         let rejectedCount = 0
         const results = []
@@ -561,7 +560,7 @@ export class WebUIApproval extends plugin {
      * 拉黑用户
      */
     async sf_blockUser(e) {
-        const match = e.msg.match(/^#(?:sf|SF)(?:拉黑|黑名单)(@?\d+)?/i)
+        const match = e.msg.match(/^#(?:sf|SF)拉黑\s*(@?\d+)?/i)
         let targetQQ = match?.[1]?.replace('@', '')
         
         if (!targetQQ && e.at) {
@@ -601,7 +600,7 @@ export class WebUIApproval extends plugin {
      * 解封用户
      */
     async sf_unblockUser(e) {
-        const match = e.msg.match(/^#(?:sf|SF)(?:解封|解除)(@?\d+)?/i)
+        const match = e.msg.match(/^#(?:sf|SF)(?:解封|解除)\s*(@?\d+)?/i)
         let targetQQ = match?.[1]?.replace('@', '')
         
         if (!targetQQ && e.at) {
@@ -802,7 +801,7 @@ export class WebUIApproval extends plugin {
      * 强制下线用户（主人）
      */
     async sf_forceLogout(e) {
-        const match = e.msg.match(/^#(?:sf|SF)(?:webui|WebUI)?(?:强制下线|踢出)(@?\d+)?/i)
+        const match = e.msg.match(/^#(?:sf|SF)(?:webui|WebUI)?(?:强制下线|踢出)\s*(@?\d+)?/i)
         let targetQQ = match?.[1]?.replace('@', '')
         
         if (!targetQQ && e.at) {

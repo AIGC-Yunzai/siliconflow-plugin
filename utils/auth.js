@@ -263,7 +263,7 @@ export function rotateJwtSecret() {
     
     // 检查是否需要轮换（默认 30 天）
     const createdAt = config.webUI?.jwtSecretCreatedAt || 0
-    const rotateInterval = config.webUI?.jwtRotateInterval || 30 * 24 * 60 * 60 * 1000 // 30天
+    const rotateInterval = config.webUI?.security?.jwtRotateInterval || config.webUI?.jwtRotateInterval || 30 * 24 * 60 * 60 * 1000 // 30天
     
     if (Date.now() - createdAt < rotateInterval) {
       return false // 未到轮换时间

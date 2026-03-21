@@ -381,8 +381,8 @@ class WebUIServer {
       // HTTPS 服务器
       if (enableHttps) {
         let key, cert
-        let certPath = httpsConfig.key
-        let keyPath = httpsConfig.cert
+        let certPath = httpsConfig.cert
+        let keyPath = httpsConfig.key
         
         // 自动生成证书
         if (httpsConfig.autoGenerate && (!httpsConfig.key || !httpsConfig.cert)) {
@@ -426,8 +426,8 @@ class WebUIServer {
         // HTTP 仅用于跳转
         const redirectApp = express()
         redirectApp.use((req, res) => {
-          const host = req.headers.host?.split(':')[0] || host
-          res.redirect(301, `https://${host}:${httpsPort}${req.url}`)
+          const reqHostname = req.headers.host?.split(':')[0] || 'localhost'
+          res.redirect(301, `https://${reqHostname}:${httpsPort}${req.url}`)
         })
         this.httpServer = createHttpServer(redirectApp)
         logger.mark(`[sf插件] WebUI HTTP 跳转服务已配置，端口: ${httpPort} -> ${httpsPort}`)
