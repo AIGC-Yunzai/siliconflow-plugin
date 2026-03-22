@@ -2042,7 +2042,7 @@ export function supportGuoba() {
         },
         {
           component: "Divider",
-          label: "WebSocket服务配置",
+          label: "WebSocket服务配置（远程版）",
           componentProps: {
             orientation: "left",
             plain: true,
@@ -2099,7 +2099,15 @@ export function supportGuoba() {
         },
         {
           component: "Divider",
-          label: "WebUI服务配置（新版，推荐）",
+          label: "WebSocket服务配置（远程版）↑所有配置结束↑",
+          componentProps: {
+            orientation: "left",
+            plain: true,
+          },
+        },
+        {
+          component: "Divider",
+          label: "WebUI服务配置（本地版）",
           componentProps: {
             orientation: "left",
             plain: true,
@@ -2108,7 +2116,7 @@ export function supportGuoba() {
         {
           field: "webUI.enable",
           label: "启用WebUI服务",
-          bottomHelpMessage: "是否启用WebUI服务，启用后可通过 http://服务器IP:端口 直接访问对话界面，支持IPv6，无需代理；重启或执行#sf设置webui 开后生效",
+          bottomHelpMessage: "是否启用WebUI服务，启用后可通过 http://服务器IP:端口 直接访问对话界面，支持IPv6，无需代理；重启生效；可用指令：#sf设置webui服务开 #sf登录 #sfweb帮助",
           component: "Switch",
         },
         {

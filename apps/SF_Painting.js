@@ -580,6 +580,7 @@ export class SF_Painting extends plugin {
                     const { default: WebUIServer } = await import('../components/WebUIServer.js');
                     if (isWebUIEnable) {
                         await WebUIServer.start();
+                        e.reply(`可用指令\n#sf登录\n#sfweb帮助`, true)
                     } else {
                         await WebUIServer.stop();
                     }
