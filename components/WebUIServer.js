@@ -1534,6 +1534,9 @@ class WebUIServer {
         if (!name || !prompt) {
           return res.status(400).json({ success: false, error: '预设名称和内容不能为空' })
         }
+        if (name.length > 200) {
+          return res.status(400).json({ success: false, error: '预设名称过长（最大200字符）' })
+        }
 
         const { saveGlobalPreset } = await import('../utils/presetManager.js')
         const result = saveGlobalPreset(name, prompt)
@@ -1565,6 +1568,13 @@ class WebUIServer {
         }
 
         const presetName = decodeURIComponent(req.params.name)
+        if (!presetName || presetName.trim().length === 0) {
+          return res.status(400).json({ success: false, error: '预设名称不能为空' })
+        }
+        if (presetName.length > 200) {
+          return res.status(400).json({ success: false, error: '预设名称过长' })
+        }
+
         const { deleteGlobalPreset } = await import('../utils/presetManager.js')
         const result = deleteGlobalPreset(presetName)
 
@@ -1624,6 +1634,9 @@ class WebUIServer {
         if (!name || !prompt) {
           return res.status(400).json({ success: false, error: '预设名称和内容不能为空' })
         }
+        if (name.length > 200) {
+          return res.status(400).json({ success: false, error: '预设名称过长（最大200字符）' })
+        }
 
         const { saveUserPreset } = await import('../utils/presetManager.js')
         const result = saveUserPreset(userInfo.qq, name, prompt)
@@ -1651,9 +1664,16 @@ class WebUIServer {
         }
         
         const presetName = decodeURIComponent(req.params.name)
+        if (!presetName || presetName.trim().length === 0) {
+          return res.status(400).json({ success: false, error: '预设名称不能为空' })
+        }
+        if (presetName.length > 200) {
+          return res.status(400).json({ success: false, error: '预设名称过长' })
+        }
+
         const { deleteUserPreset } = await import('../utils/presetManager.js')
         const result = deleteUserPreset(userInfo.qq, presetName)
-        
+
         res.json(result)
       } catch (error) {
         logger.error('[sf插件] 删除个人预设失败:', error)

@@ -32,13 +32,30 @@ function ensurePresetDirs() {
 }
 
 /**
- * 清理文件名中的非法字符
+ * 清理文件名中的非法字符，防止路径遍历攻击
  * @param {string} name 原始预设名
  * @returns {string} 安全的文件名
  */
 function sanitizeFileName(name) {
-  // 替换 Windows/Unix 不允许的字符
-  return name.replace(/[\\/:*?"<>|]/g, '_').trim()
+  if (!name || typeof name !== 'string') {
+    return ''
+  }
+  // 1. 替换 Windows/Unix 不允许的字符
+  // 2. 移除路径遍历字符 (../, ./, ..\\, .\\)
+  // 3. 移除以点开头的隐藏文件名
+  // 4. 限制长度（大多数文件系统限制文件名长度为255字节）
+  const sanitized = name
+    .replace(/[\\/:*?"<>|]/g, '_')
+    .replace(/\.{2,}[/\\]?/g, '_')
+    .replace(/^\.+/, '_')
+    .trim()
+
+  // 限制文件名长度（预留 .md 后缀空间）
+  const MAX_FILENAME_LENGTH = 240
+  if (sanitized.length > MAX_FILENAME_LENGTH) {
+    return sanitized.substring(0, MAX_FILENAME_LENGTH)
+  }
+  return sanitized
 }
 
 /**
@@ -127,6 +144,20 @@ export function saveGlobalPreset(name, prompt) {
     return { success: false, error: '预设名称和内容不能为空' }
   }
 
+  // 验证名称安全性
+  const safeName = sanitizeFileName(name)
+  if (!safeName || safeName.length === 0) {
+    return { success: false, error: '预设名称包含非法字符' }
+  }
+  if (safeName.length > 200) {
+    return { success: false, error: '预设名称过长（最大200字符）' }
+  }
+
+  // 验证内容大小（防止超大文件）
+  if (prompt.length > 10 * 1024 * 1024) { // 10MB 限制
+    return { success: false, error: '预设内容过大（最大10MB）' }
+  }
+
   ensurePresetDirs()
 
   try {
@@ -209,6 +240,20 @@ export function getUserPresets(qq) {
 export function saveUserPreset(qq, name, prompt) {
   if (!qq || !name || !prompt) {
     return { success: false, error: '参数不能为空' }
+  }
+
+  // 验证名称安全性
+  const safeName = sanitizeFileName(name)
+  if (!safeName || safeName.length === 0) {
+    return { success: false, error: '预设名称包含非法字符' }
+  }
+  if (safeName.length > 200) {
+    return { success: false, error: '预设名称过长（最大200字符）' }
+  }
+
+  // 验证内容大小
+  if (prompt.length > 10 * 1024 * 1024) { // 10MB 限制
+    return { success: false, error: '预设内容过大（最大10MB）' }
   }
 
   ensurePresetDirs()

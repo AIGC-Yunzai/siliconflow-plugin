@@ -332,9 +332,14 @@ export function cleanupOldRequests() {
   const pending = data.requests.filter(r => r.status === STATUS.PENDING)
   const processed = data.requests
     .filter(r => r.status !== STATUS.PENDING)
-    .sort((a, b) => b.approvedTime || b.rejectedTime - a.approvedTime || a.rejectedTime)
+    .sort((a, b) => {
+      // 获取处理时间（批准或拒绝时间）
+      const timeA = a.approvedTime || a.rejectedTime || a.requestTime || 0
+      const timeB = b.approvedTime || b.rejectedTime || b.requestTime || 0
+      return timeB - timeA // 降序排列，最新的在前
+    })
     .slice(0, 100)
-  
+
   data.requests = [...pending, ...processed]
   saveData(data)
 }
