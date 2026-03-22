@@ -120,25 +120,29 @@ class WebUIServer {
    */
   getMasterList() {
     const masters = new Set()
-    
+
     try {
       // 方式1: 从 Yunzai 运行时配置读取（包括 stdin 插件设置的主人）
       try {
         // TRSS-Yunzai / Yunzai-Bot 的 Bot 配置
         if (typeof Bot !== 'undefined' && Bot.config) {
+          logger.mark(`[sf插件][getMasterList] Bot.config 存在: ${JSON.stringify(Bot.config)}`)
+
           // masterQQ 字段（简单列表）
           const botMastersQQ = Bot.config.masterQQ || Bot.config.master_qq
           if (botMastersQQ) {
+            logger.mark(`[sf插件][getMasterList] Bot.config.masterQQ: ${JSON.stringify(botMastersQQ)}`)
             if (Array.isArray(botMastersQQ)) {
               botMastersQQ.forEach(m => masters.add(String(m)))
             } else {
               masters.add(String(botMastersQQ))
             }
           }
-          
+
           // master 字段（TRSS-Yunzai 格式：BotQQ:主人QQ）
           const botMaster = Bot.config.master
           if (botMaster) {
+            logger.mark(`[sf插件][getMasterList] Bot.config.master: ${JSON.stringify(botMaster)}`)
             if (Array.isArray(botMaster)) {
               botMaster.forEach(m => {
                 const masterQQ = this.parseMasterEntry(m)
@@ -150,12 +154,15 @@ class WebUIServer {
             }
           }
         }
-        
+
         // 尝试从全局 config 对象读取（Yunzai V3）
         if (typeof config !== 'undefined' && config) {
+          logger.mark(`[sf插件][getMasterList] 全局 config 存在`)
+
           // masterQQ 字段
           const cfgMastersQQ = config.masterQQ || config.master_qq
           if (cfgMastersQQ) {
+            logger.mark(`[sf插件][getMasterList] config.masterQQ: ${JSON.stringify(cfgMastersQQ)}`)
             if (Array.isArray(cfgMastersQQ)) {
               cfgMastersQQ.forEach(m => masters.add(String(m)))
             } else {
@@ -165,6 +172,7 @@ class WebUIServer {
           // master 字段（TRSS-Yunzai 格式）
           const cfgMaster = config.master
           if (cfgMaster && !Bot?.config?.master) {  // 避免重复读取
+            logger.mark(`[sf插件][getMasterList] config.master: ${JSON.stringify(cfgMaster)}`)
             if (Array.isArray(cfgMaster)) {
               cfgMaster.forEach(m => {
                 const masterQQ = this.parseMasterEntry(m)
@@ -177,16 +185,20 @@ class WebUIServer {
           }
         }
       } catch (e) {
-        // 忽略运行时读取错误
+        logger.error('[sf插件][getMasterList] 读取运行时配置出错:', e)
       }
-      
+
       // 方式2: 从 other.yaml 读取（TRSS-Yunzai 配置）
       const otherConfigPath = path.join(process.cwd(), 'config', 'config', 'other.yaml')
+      logger.mark(`[sf插件][getMasterList] 检查 other.yaml: ${otherConfigPath}`)
       if (existsSync(otherConfigPath)) {
         const content = readFileSync(otherConfigPath, 'utf8')
+        logger.mark(`[sf插件][getMasterList] other.yaml 内容长度: ${content.length}`)
+
         // masterQQ 字段
         const masterQQMatch = content.match(/masterQQ:\s*\n((?:\s*-\s*.+\n?)+)/)
         if (masterQQMatch) {
+          logger.mark(`[sf插件][getMasterList] other.yaml masterQQ 匹配: ${masterQQMatch[1]}`)
           const lines = masterQQMatch[1].split('\n')
           lines.forEach(line => {
             const match = line.match(/-\s*"?([^"\n]+)"?/)
@@ -195,10 +207,14 @@ class WebUIServer {
               if (masterQQ) masters.add(masterQQ)
             }
           })
+        } else {
+          logger.mark(`[sf插件][getMasterList] other.yaml 未匹配到 masterQQ`)
         }
+
         // master 字段（BotQQ:主人QQ 格式）
         const masterMatch = content.match(/master:\s*\n((?:\s*-\s*.+\n?)+)/)
         if (masterMatch) {
+          logger.mark(`[sf插件][getMasterList] other.yaml master 匹配: ${masterMatch[1]}`)
           const lines = masterMatch[1].split('\n')
           lines.forEach(line => {
             const match = line.match(/-\s*"?([^"\n]+)"?/)
@@ -208,8 +224,10 @@ class WebUIServer {
             }
           })
         }
+      } else {
+        logger.mark(`[sf插件][getMasterList] other.yaml 不存在`)
       }
-      
+
       // 方式3: 从 config.yaml 读取
       const yunzaiConfigPath = path.join(process.cwd(), 'config', 'config.yaml')
       if (existsSync(yunzaiConfigPath)) {
@@ -227,7 +245,7 @@ class WebUIServer {
           if (cfgMasters) cfgMasters.forEach(m => masters.add(m))
         }
       }
-      
+
       // 方式4: 从本插件配置读取
       try {
         const config = Config.getConfig()
@@ -241,8 +259,10 @@ class WebUIServer {
       } catch (e) {
         // 忽略配置读取错误
       }
-      
-      return Array.from(masters)
+
+      const result = Array.from(masters)
+      logger.mark(`[sf插件][getMasterList] 最终主人列表: ${JSON.stringify(result)}`)
+      return result
     } catch (error) {
       logger.error('[sf插件] 获取主人列表失败:', error)
       return Array.from(masters)
@@ -287,27 +307,25 @@ class WebUIServer {
       logger.debug('[sf插件][isMaster] 传入 qq 为空，返回 false')
       return false
     }
-    
+
     const qqStr = String(qq).trim()
-    
-    // 调试日志
-    logger.debug(`[sf插件][isMaster] 检查 QQ: "${qqStr}" (类型: ${typeof qq})`)
-    
+
+    // 调试日志 - 始终输出，帮助诊断问题
+    logger.mark(`[sf插件][isMaster] 检查 QQ: "${qqStr}"`)
+
     // 特殊处理 stdin 用户（本地控制台用户）
     if (qqStr === 'stdin' || qqStr === '标准输入') {
-      logger.mark(`[sf插件][isMaster] stdin 用户识别为主人`)
+      logger.mark(`[sf插件][isMaster] stdin 用户直接识别为主人`)
       return true
     }
-    
+
     const masters = this.getMasterList()
-    
-    // 调试日志
-    if (process.env.DEBUG_MASTER) {
-      logger.debug(`[sf插件][isMaster] 检查 QQ: ${qqStr}, 主人列表: ${JSON.stringify(masters)}`)
-    }
-    
+
+    // 始终输出主人列表用于调试
+    logger.mark(`[sf插件][isMaster] 主人列表: ${JSON.stringify(masters)}`)
+
     const result = masters.includes(qqStr)
-    logger.debug(`[sf插件][isMaster] QQ "${qqStr}" 是否主人: ${result}`)
+    logger.mark(`[sf插件][isMaster] QQ "${qqStr}" 是否主人: ${result}`)
     return result
   }
 
