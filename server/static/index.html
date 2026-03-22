@@ -2671,6 +2671,7 @@
                     console.log('[SF WebUI] 短链接登录成功，QQ:', result.data.user.qq);
                     wsToken = result.data.token;
                     sessionStorage.setItem('sf_ws_token', result.data.token);
+                    console.log('[SF WebUI] token 已保存到 sessionStorage');
                     // 自动填充 QQ
                     document.getElementById('code-qq').value = result.data.user.qq;
                     document.getElementById('password-qq').value = result.data.user.qq;
@@ -2678,6 +2679,7 @@
                     const cleanUrl = window.location.href.replace(/\/login\/[A-F0-9]{16}/i, '');
                     window.history.replaceState({}, '', cleanUrl);
                     // 连接 WebSocket
+                    console.log('[SF WebUI] 准备连接 WebSocket');
                     connectWebSocket();
                 } else {
                     showToast('登录失败: ' + (result.error || '验证码无效或已过期'));
@@ -2881,7 +2883,8 @@
                 wsConnection.onmessage = (event) => {
                     try {
                         const msgObj = JSON.parse(event.data);
-                        
+                        console.log('[SF WebUI] 收到 WebSocket 消息:', msgObj.type, msgObj);
+
                         if (msgObj.type === 'auth') {
                             if (msgObj.success) {
                                 wsAuthenticated = true;
@@ -3083,40 +3086,46 @@
         let currentUserRole = 'guest';
         async function checkMasterPermission() {
             const token = sessionStorage.getItem('sf_ws_token');
+
             if (!token) {
-                // 未登录，隐藏用户信息
                 document.getElementById('user-info-card').style.display = 'none';
                 return;
             }
-            
-            // 从 token 中解析 QQ（JWT payload 中的 qq 字段）
+
+            // 从 token 中解析 QQ
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 currentUserQQ = payload.qq || '';
             } catch (e) {
-                console.error('[SF WebUI] 解析 token 失败:', e);
                 return;
             }
-            
+
             if (!currentUserQQ) return;
-            
+
             try {
                 const response = await fetch(`/api/user/permission?qq=${encodeURIComponent(currentUserQQ)}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const result = await response.json();
-                
+
                 if (result.success) {
                     const data = result.data;
                     currentUserRole = data.role || 'guest';
-                    
-                    // 显示用户管理菜单（仅主人）
+
+                    // 主人专属功能
                     if (data.isMaster) {
                         isCurrentUserMaster = true;
+                        isMasterUser = true;
                         document.getElementById('user-management-menu').style.display = 'block';
+                        if (typeof globalPresetSection !== 'undefined' && currentPresetTab === 'global') {
+                            globalPresetSection.style.display = 'block';
+                        }
+                        if (typeof apiPromptEdit !== 'undefined') {
+                            apiPromptEdit.style.display = 'inline-block';
+                        }
                     }
-                    
-                    // 更新用户信息显示
+
+                    // 更新用户信息卡片
                     updateUserInfoCard(data);
                 }
             } catch (error) {
@@ -3566,31 +3575,6 @@
             
             await loadApis();
             await loadPresets();
-        }
-
-        // 检查主人权限
-        async function checkMasterPermission() {
-            try {
-                const token = sessionStorage.getItem('sf_ws_token');
-                if (!token) return;
-                
-                const payload = JSON.parse(atob(token.split('.')[1]));
-                const response = await fetch(`/api/user/permission?qq=${payload.qq}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                const result = await response.json();
-                
-                if (result.success && result.data?.isMaster) {
-                    isMasterUser = true;
-                    // 🌟 修复 Bug：只有当当前处于"全局预设"标签页时，才允许其显示
-                    if (currentPresetTab === 'global') {
-                        globalPresetSection.style.display = 'block';
-                    }
-                    apiPromptEdit.style.display = 'inline-block';
-                }
-            } catch (error) {
-                console.error('[SF WebUI] 检查权限失败:', error);
-            }
         }
 
         // 加载 API 列表
