@@ -334,6 +334,22 @@ class WebUIServer {
     rotateJwtSecret() // 自动轮换（如果到期）
     getJwtSecret() // 确保 Secret 存在
 
+    // 迁移旧版全局预设（从 config.presets 到文件存储）
+    try {
+      const { migrateGlobalPresets } = await import('../utils/presetManager.js')
+      if (config.presets && Array.isArray(config.presets) && config.presets.length > 0) {
+        const migrated = migrateGlobalPresets(config.presets)
+        if (migrated > 0) {
+          // 清空 config.presets 避免重复迁移
+          config.presets = []
+          Config.setConfig(config)
+          logger.mark(`[sf插件] 已将 ${migrated} 个全局预设迁移到文件存储`)
+        }
+      }
+    } catch (migrateError) {
+      logger.error('[sf插件] 迁移全局预设失败:', migrateError)
+    }
+
     try {
       const { 
         host = '0.0.0.0', 
@@ -1479,9 +1495,9 @@ class WebUIServer {
           return res.status(401).json({ success: false, error: '无效的令牌' })
         }
         
-        const config = await Config.getConfig()
-        const presets = config.presets || []
-        
+        const { getGlobalPresets } = await import('../utils/presetManager.js')
+        const presets = getGlobalPresets()
+
         res.json({
           success: true,
           data: {
@@ -1518,21 +1534,11 @@ class WebUIServer {
         if (!name || !prompt) {
           return res.status(400).json({ success: false, error: '预设名称和内容不能为空' })
         }
-        
-        const config = await Config.getConfig()
-        if (!config.presets) config.presets = []
-        
-        // 检查是否已存在同名预设
-        const existingIndex = config.presets.findIndex(p => p.name === name)
-        if (existingIndex >= 0) {
-          config.presets[existingIndex] = { name, prompt }
-        } else {
-          config.presets.push({ name, prompt })
-        }
-        
-        Config.setConfig(config)
-        
-        res.json({ success: true, message: '预设已保存' })
+
+        const { saveGlobalPreset } = await import('../utils/presetManager.js')
+        const result = saveGlobalPreset(name, prompt)
+
+        res.json(result)
       } catch (error) {
         logger.error('[sf插件] 保存预设失败:', error)
         res.status(500).json({ success: false, error: error.message })
@@ -1557,18 +1563,12 @@ class WebUIServer {
         if (!this.isMaster(userInfo.qq)) {
           return res.status(403).json({ success: false, error: '只有主人可以删除预设' })
         }
-        
+
         const presetName = decodeURIComponent(req.params.name)
-        const config = await Config.getConfig()
-        
-        if (!config.presets) {
-          return res.json({ success: true, message: '预设不存在' })
-        }
-        
-        config.presets = config.presets.filter(p => p.name !== presetName)
-        Config.setConfig(config)
-        
-        res.json({ success: true, message: '预设已删除' })
+        const { deleteGlobalPreset } = await import('../utils/presetManager.js')
+        const result = deleteGlobalPreset(presetName)
+
+        res.json(result)
       } catch (error) {
         logger.error('[sf插件] 删除预设失败:', error)
         res.status(500).json({ success: false, error: error.message })
@@ -1592,7 +1592,7 @@ class WebUIServer {
           return res.status(401).json({ success: false, error: '无效的令牌' })
         }
         
-        const { getUserPresets } = await import('../utils/userPresetManager.js')
+        const { getUserPresets } = await import('../utils/presetManager.js')
         const presets = getUserPresets(userInfo.qq)
         
         res.json({
@@ -1624,9 +1624,9 @@ class WebUIServer {
         if (!name || !prompt) {
           return res.status(400).json({ success: false, error: '预设名称和内容不能为空' })
         }
-        
-        const { addUserPreset } = await import('../utils/userPresetManager.js')
-        const result = addUserPreset(userInfo.qq, name, prompt)
+
+        const { saveUserPreset } = await import('../utils/presetManager.js')
+        const result = saveUserPreset(userInfo.qq, name, prompt)
         
         res.json(result)
       } catch (error) {
@@ -1651,7 +1651,7 @@ class WebUIServer {
         }
         
         const presetName = decodeURIComponent(req.params.name)
-        const { deleteUserPreset } = await import('../utils/userPresetManager.js')
+        const { deleteUserPreset } = await import('../utils/presetManager.js')
         const result = deleteUserPreset(userInfo.qq, presetName)
         
         res.json(result)
