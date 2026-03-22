@@ -235,24 +235,29 @@ export function unblockUser(qq) {
  * @param {string} approvalMode 审批模式
  * @returns {Object} {allowed, reason}
  */
-export function checkPermission(qq, approvalMode = 'auto') {
+export function checkPermission(qq, approvalMode = 'auto', isMasterQQ = false) {
   const data = loadData()
-  
-  // 检查是否在黑名单
+
+  // 检查是否在黑名单（即使是主人也要检查黑名单）
   if (data.blacklist.some(item => item.qq === qq)) {
     return { allowed: false, reason: '你已被拉黑，无法使用WebUI' }
   }
-  
+
+  // 主人始终允许（除了黑名单）
+  if (isMasterQQ) {
+    return { allowed: true, isMaster: true }
+  }
+
   // 自动模式：所有人可用
   if (approvalMode === 'auto') {
     return { allowed: true }
   }
-  
+
   // 仅主人模式
   if (approvalMode === 'master_only') {
     return { allowed: false, reason: '当前仅允许主人使用WebUI' }
   }
-  
+
   // 审批模式：检查白名单
   if (approvalMode === 'approval') {
     if (data.whitelist.some(item => item.qq === qq)) {
@@ -260,7 +265,7 @@ export function checkPermission(qq, approvalMode = 'auto') {
     }
     return { allowed: false, reason: '你未获得WebUI使用权限，请先申请' }
   }
-  
+
   return { allowed: true }
 }
 

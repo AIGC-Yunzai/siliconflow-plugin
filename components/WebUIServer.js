@@ -864,8 +864,8 @@ class WebUIServer {
           const approvalMode = config.webUI?.security?.approvalMode || 'auto'
           if (approvalMode !== 'auto') {
             const { checkPermission } = await import('../utils/approvalManager.js')
-            const permission = checkPermission(qq, approvalMode)
-            
+            const permission = checkPermission(qq, approvalMode, masterCheck)
+
             if (!permission.allowed) {
               this.logAccess(req, 'CODE_LOGIN_REJECTED', `未授权用户登录尝试: ${qq}`)
               res.status(403).json({
@@ -965,7 +965,7 @@ class WebUIServer {
         // 检查是否仅允许主人登录
         const masterCheck = this.isMaster(foundQQ)
         logger.mark(`[sf插件][短链接登录] 用户 "${foundQQ}" 是否主人: ${masterCheck}`)
-        
+
         if (config.webUI?.security?.onlyMaster && !masterCheck) {
           this.logAccess(req, 'SHORT_LOGIN_REJECTED', `非主人登录尝试: ${foundQQ}`)
           res.status(403).json({
@@ -974,7 +974,23 @@ class WebUIServer {
           })
           return
         }
-        
+
+        // 检查审批模式（短链接登录也需要检查审批权限）
+        const approvalMode = config.webUI?.security?.approvalMode || 'auto'
+        if (approvalMode !== 'auto') {
+          const { checkPermission } = await import('../utils/approvalManager.js')
+          const permission = checkPermission(foundQQ, approvalMode, masterCheck)
+
+          if (!permission.allowed) {
+            this.logAccess(req, 'SHORT_LOGIN_REJECTED', `未授权用户登录尝试: ${foundQQ}`)
+            res.status(403).json({
+              success: false,
+              error: permission.reason || '你暂无权限使用 WebUI'
+            })
+            return
+          }
+        }
+
         // 获取或创建用户
         const { getOrCreateUser, updateUserLogin } = await import('../utils/userManager.js')
         const user = getOrCreateUser(foundQQ)
@@ -1061,9 +1077,9 @@ class WebUIServer {
         const pendingRequests = getPendingRequests()
         const myRequest = pendingRequests.find(r => r.qq === qq)
         
-        const permission = checkPermission(qq, approvalMode)
         logger.debug(`[sf插件][权限检查] 检查前 qq 值: "${qq}" (类型: ${typeof qq})`)
         const isMaster = this.isMaster(qq)
+        const permission = checkPermission(qq, approvalMode, isMaster)
         logger.mark(`[sf插件][权限检查] QQ "${qq}" 是否主人: ${isMaster}`)
         
         // 确定用户角色和权限等级
@@ -1514,7 +1530,7 @@ class WebUIServer {
           config.presets.push({ name, prompt })
         }
         
-        await Config.saveConfig(config)
+        Config.setConfig(config)
         
         res.json({ success: true, message: '预设已保存' })
       } catch (error) {
@@ -1550,7 +1566,7 @@ class WebUIServer {
         }
         
         config.presets = config.presets.filter(p => p.name !== presetName)
-        await Config.saveConfig(config)
+        Config.setConfig(config)
         
         res.json({ success: true, message: '预设已删除' })
       } catch (error) {
@@ -1733,7 +1749,7 @@ class WebUIServer {
         }
         
         config[usingKey] = apiIndex
-        await Config.saveConfig(config)
+        Config.setConfig(config)
         
         res.json({ success: true, message: 'API 已切换' })
       } catch (error) {
@@ -1781,7 +1797,7 @@ class WebUIServer {
         }
         
         config[apiKey][apiIndex - 1].systemPrompt = systemPrompt
-        await Config.saveConfig(config)
+        Config.setConfig(config)
         
         res.json({ success: true, message: '系统提示词已更新' })
       } catch (error) {

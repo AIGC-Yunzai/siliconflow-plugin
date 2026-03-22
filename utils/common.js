@@ -9,31 +9,47 @@ export function readYaml(filePath) {
 
 /**
  * 获取服务器访问地址
+ * 优先返回常见的局域网 IP（192.168.x.x、10.x.x.x、172.16-31.x.x），避免大内网环境中的虚拟网卡 IP
  * @param {object} config 配置对象
  * @returns {string} 服务器地址
  */
 export function getServerAddress(config) {
   const webUI = config?.webUI || {}
-  const port = webUI.port || 8082
+  const port = webUI.http?.port || webUI.port || 8082
   const basePath = webUI.basePath || '/'
-  
+
   // 判断是否使用 HTTPS
   const isHttps = webUI.tls?.enable
   const protocol = isHttps ? 'https' : 'http'
-  
-  // 获取本机 IP
+
+  // 获取本机 IP，优先选择常见的私有网段
   const interfaces = os.networkInterfaces()
   let localIP = '127.0.0.1'
-  
+  const candidates = []
+
   for (const name in interfaces) {
     for (const iface of interfaces[name]) {
       if (iface.family === 'IPv4' && !iface.internal) {
-        localIP = iface.address
-        break
+        const ip = iface.address
+        candidates.push(ip)
+
+        // 优先返回常见的局域网 IP 段
+        // 192.168.x.x 是最常见的家用路由器网段
+        if (ip.startsWith('192.168.')) {
+          localIP = ip
+        }
+        // 其次 10.x.x.x 是企业常用网段
+        else if (ip.startsWith('10.') && localIP === '127.0.0.1') {
+          localIP = ip
+        }
+        // 最后 172.16-31.x.x
+        else if (ip.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./) && localIP === '127.0.0.1') {
+          localIP = ip
+        }
       }
     }
   }
-  
+
   return `${protocol}://${localIP}:${port}${basePath}`
 }
 
