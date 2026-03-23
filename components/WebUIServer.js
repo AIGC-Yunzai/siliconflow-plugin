@@ -1708,12 +1708,13 @@ class WebUIServer {
         const currentApiIndex = userPref || globalIndex
 
         // 只返回必要信息，隐藏 key
+        // 注意：prompt 是 getter，从独立文件读取；systemPrompt 是旧字段（已废弃）
         const safeApiList = apiList.map((api, index) => ({
           index: index + 1,
           name: api.name || `API ${index + 1}`,
           remark: api.remark || '',
           model: api.model || '',
-          systemPrompt: api.systemPrompt || '',
+          systemPrompt: api.prompt || api.systemPrompt || '',
           useContext: api.useContext || false,
           isCurrent: (index + 1) === currentApiIndex
         }))

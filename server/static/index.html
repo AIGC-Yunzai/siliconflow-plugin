@@ -607,17 +607,48 @@
             overflow-y: auto;
             word-break: break-all;
             line-height: 1.4;
+            transition: max-height 0.3s ease;
+        }
+
+        .api-prompt-text.expanded {
+            max-height: 400px;
+        }
+
+        .api-prompt-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 8px;
+            align-items: center;
+        }
+
+        .api-prompt-toggle {
+            padding: 4px 10px;
+            background: #e9ecef;
+            color: #666;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 11px;
+        }
+
+        .api-prompt-toggle:hover {
+            background: #dee2e6;
+        }
+
+        .api-prompt-info {
+            color: #999;
+            font-size: 11px;
+            margin-left: auto;
         }
         
         .api-prompt-edit {
-            margin-top: 8px;
-            padding: 5px 12px;
+            padding: 4px 10px;
             background: #ff69b4;
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 4px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 11px;
         }
         
         .api-prompt-edit:hover {
@@ -2019,7 +2050,11 @@
             <div class="api-prompt-box" id="api-prompt-box" style="display: none;">
                 <div class="api-prompt-label">当前 API 系统提示词:</div>
                 <div class="api-prompt-text" id="api-prompt-text"></div>
-                <button class="api-prompt-edit" id="api-prompt-edit" style="display: none;">编辑</button>
+                <div class="api-prompt-actions">
+                    <button class="api-prompt-toggle" id="api-prompt-toggle">展开</button>
+                    <button class="api-prompt-edit" id="api-prompt-edit" style="display: none;">编辑</button>
+                    <span class="api-prompt-info" id="api-prompt-info"></span>
+                </div>
             </div>
             <div class="api-prompt-edit-box" id="api-prompt-edit-box" style="display: none;">
                 <textarea id="api-prompt-input" rows="4" placeholder="输入系统提示词..."></textarea>
@@ -3421,6 +3456,8 @@
         const apiPromptInput = document.getElementById('api-prompt-input');
         const apiPromptSave = document.getElementById('api-prompt-save');
         const apiPromptCancel = document.getElementById('api-prompt-cancel');
+        const apiPromptToggle = document.getElementById('api-prompt-toggle');
+        const apiPromptInfo = document.getElementById('api-prompt-info');
 
         // 获取遮罩层元素
         const sidebarBackdrop = document.getElementById('sidebar-backdrop');
@@ -3636,11 +3673,30 @@
             const currentApi = currentApiList.find(api => api.index === currentApiIndex);
             if (currentApi && currentApi.systemPrompt) {
                 apiPromptText.textContent = currentApi.systemPrompt;
+                // 重置展开状态
+                apiPromptText.classList.remove('expanded');
+                apiPromptToggle.textContent = '展开';
+                // 显示字符数信息
+                const charCount = currentApi.systemPrompt.length;
+                const displayCount = charCount > 1000 ? `${(charCount/1000).toFixed(1)}K` : charCount;
+                apiPromptInfo.textContent = `${displayCount} 字符`;
                 apiPromptBox.style.display = 'block';
             } else {
                 apiPromptBox.style.display = 'none';
             }
         }
+
+        // 展开/折叠按钮事件
+        apiPromptToggle.addEventListener('click', () => {
+            const isExpanded = apiPromptText.classList.contains('expanded');
+            if (isExpanded) {
+                apiPromptText.classList.remove('expanded');
+                apiPromptToggle.textContent = '展开';
+            } else {
+                apiPromptText.classList.add('expanded');
+                apiPromptToggle.textContent = '折叠';
+            }
+        });
 
         // API 切换事件
         apiSelector.addEventListener('change', async (e) => {
