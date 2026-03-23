@@ -9,48 +9,85 @@ export function readYaml(filePath) {
 
 /**
  * 获取服务器访问地址
- * 优先返回常见的局域网 IP（192.168.x.x、10.x.x.x、172.16-31.x.x），避免大内网环境中的虚拟网卡 IP
  * @param {object} config 配置对象
- * @returns {string} 服务器地址
+ * @returns {object} 包含本机、内网、外网地址的对象
  */
 export function getServerAddress(config) {
   const webUI = config?.webUI || {}
   const port = webUI.http?.port || webUI.port || 8082
-  const basePath = webUI.basePath || '/'
+  // 确保 basePath 格式正确
+  let basePath = webUI.basePath || '/'
+  if (!basePath.startsWith('/')) basePath = '/' + basePath
 
   // 判断是否使用 HTTPS
-  const isHttps = webUI.tls?.enable
+  const isHttps = !!webUI.tls?.enable
   const protocol = isHttps ? 'https' : 'http'
 
-  // 获取本机 IP，优先选择常见的私有网段
+  // 统一构建 URL 的辅助函数
+  const buildUrl = (ip) => `${protocol}://${ip}:${port}${basePath}`
+
   const interfaces = os.networkInterfaces()
-  let localIP = '127.0.0.1'
-  const candidates = []
+
+  // 分类存储各类 IP
+  const ipGroups = {
+    local: ['127.0.0.1'], // 默认本机地址
+    lan: [],              // 内网地址 (局域网)
+    wan: []               // 外网地址 (公网)
+  }
 
   for (const name in interfaces) {
     for (const iface of interfaces[name]) {
-      if (iface.family === 'IPv4' && !iface.internal) {
-        const ip = iface.address
-        candidates.push(ip)
+      // 只处理 IPv4
+      if (iface.family === 'IPv4') {
+        // 本机环回地址
+        if (iface.internal) {
+          if (!ipGroups.local.includes(iface.address)) {
+            ipGroups.local.push(iface.address)
+          }
+          continue
+        }
 
-        // 优先返回常见的局域网 IP 段
-        // 192.168.x.x 是最常见的家用路由器网段
-        if (ip.startsWith('192.168.')) {
-          localIP = ip
-        }
-        // 其次 10.x.x.x 是企业常用网段
-        else if (ip.startsWith('10.') && localIP === '127.0.0.1') {
-          localIP = ip
-        }
-        // 最后 172.16-31.x.x
-        else if (ip.match(/^172\.(1[6-9]|2[0-9]|3[0-1])\./) && localIP === '127.0.0.1') {
-          localIP = ip
+        const ip = iface.address
+        // 判断是否为私有内网 IP 网段
+        const isLan =
+          ip.startsWith('192.168.') ||
+          ip.startsWith('10.') ||
+          /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)
+
+        if (isLan) {
+          ipGroups.lan.push(ip)
+        } else {
+          ipGroups.wan.push(ip) // 不属于内网网段的归类为外网地址
         }
       }
     }
   }
 
-  return `${protocol}://${localIP}:${port}${basePath}`
+  // 对内网 IP 进行排序，确保优先返回常见的局域网 IP
+  ipGroups.lan.sort((a, b) => {
+    const getScore = (ip) => {
+      if (ip.startsWith('192.168.')) return 3 // 家用路由器最常见，优先级最高
+      if (ip.startsWith('10.')) return 2      // 企业内网常见，优先级次之
+      if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)) return 1
+      return 0
+    }
+    return getScore(b) - getScore(a) // 分数高的排前面
+  })
+
+  // 构造最终的返回对象
+  return {
+    // 推荐使用的单个地址（供快速访问）
+    local: buildUrl(ipGroups.local[0]),
+    lan: ipGroups.lan.length > 0 ? buildUrl(ipGroups.lan[0]) : null,
+    wan: ipGroups.wan.length > 0 ? buildUrl(ipGroups.wan[0]) : null,
+
+    // 如果有多个网卡，可以从这里获取完整的列表（适合在终端打印）
+    all: {
+      local: ipGroups.local.map(buildUrl),
+      lan: ipGroups.lan.map(buildUrl),
+      wan: ipGroups.wan.map(buildUrl)
+    }
+  }
 }
 
 /** 写入YAML文件 */
