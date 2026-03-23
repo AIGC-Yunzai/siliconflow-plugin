@@ -195,14 +195,18 @@ export class SF_Painting extends plugin {
                 isMaster: true  // WebSocket用户默认为主人权限
             };
 
-            const apiList = config[`${type}_APIList`];
+            // 读取用户 WebUI 偏好，覆盖全局 usingAPI（不修改原配置）
+            const userPrefSs = userManager.getUserApiPreference(String(userQQ), 'ss')
+            const effectiveConfig = userPrefSs ? { ...config, ss_usingAPI: userPrefSs } : config
+
+            const apiList = effectiveConfig[`${type}_APIList`];
             // 判断 是否开启 上下文功能
-            const apiIndex = config[`${type}_usingAPI`] - 1;
+            const apiIndex = effectiveConfig[`${type}_usingAPI`] - 1;
             if (apiIndex > -1)
-                config.gg_ss_useContext = apiList[apiIndex].useContext ? true : false;
+                effectiveConfig.gg_ss_useContext = apiList[apiIndex].useContext ? true : false;
 
             // 调用原有的sf_chat方法
-            await this.sf_chat(e, config);
+            await this.sf_chat(e, effectiveConfig);
         } catch (error) {
             this.sendError(ws, error.message);
         }
@@ -246,14 +250,18 @@ export class SF_Painting extends plugin {
                 isMaster: true  // WebSocket用户默认为主人权限
             };
 
-            const apiList = config[`${type}_APIList`];
+            // 读取用户 WebUI 偏好，覆盖全局 usingAPI（不修改原配置）
+            const userPrefGg = userManager.getUserApiPreference(String(userQQ), 'gg')
+            const effectiveConfig = userPrefGg ? { ...config, gg_usingAPI: userPrefGg } : config
+
+            const apiList = effectiveConfig[`${type}_APIList`];
             // 判断 是否开启 上下文功能
-            const apiIndex = config[`${type}_usingAPI`] - 1;
+            const apiIndex = effectiveConfig[`${type}_usingAPI`] - 1;
             if (apiIndex > -1)
-                config.gg_ss_useContext = apiList[apiIndex].useContext ? true : false;
+                effectiveConfig.gg_ss_useContext = apiList[apiIndex].useContext ? true : false;
 
             // 调用原有的gg_chat方法
-            await this.gg_chat(e, config);
+            await this.gg_chat(e, effectiveConfig);
         } catch (error) {
             this.sendError(ws, error.message);
         }
