@@ -125,6 +125,16 @@
             margin-left: 0;
             min-width: 0;
         }
+
+        /* 固定模式下，聊天卡片填满剩余空间，消除侧边栏与卡片之间的空隙 */
+        body.has-pinned-sidebar .chat-container {
+            max-width: 100%;
+            margin: 0;
+        }
+
+        body.has-pinned-sidebar .input-container {
+            max-width: calc(100% - 60px);
+        }
         
         /* 调整大小的拖拽条 */
         .preset-resize-handle {
