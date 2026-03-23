@@ -1707,6 +1707,7 @@ class WebUIServer {
         const safeApiList = apiList.map((api, index) => ({
           index: index + 1,
           name: api.name || `API ${index + 1}`,
+          remark: api.remark || '',
           model: api.model || '',
           systemPrompt: api.systemPrompt || '',
           useContext: api.useContext || false,

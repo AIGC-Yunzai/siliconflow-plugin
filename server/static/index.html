@@ -3616,7 +3616,7 @@
 
             apiSelector.innerHTML = currentApiList.map(api => `
                 <option value="${api.index}" ${api.index === currentApiIndex ? 'selected' : ''}>
-                    ${api.index}. ${escapeHtml(api.name)} ${api.model ? '(' + escapeHtml(api.model) + ')' : ''}
+                    ${api.index}. ${escapeHtml(api.remark || api.name)} ${api.model ? '(' + escapeHtml(api.model) + ')' : ''}
                 </option>
             `).join('');
         }
