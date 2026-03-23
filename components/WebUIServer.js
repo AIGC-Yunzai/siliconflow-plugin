@@ -1698,11 +1698,15 @@ class WebUIServer {
         
         const config = await Config.getConfig()
         const apiKey = `${mode}_APIList`
-        const usingKey = `${mode}_usingAPI`
-        
+
         const apiList = config[apiKey] || []
-        const currentApiIndex = config[usingKey] || 1
-        
+
+        // 优先使用用户的个人 WebUI 偏好，避免影响全局群聊配置
+        const { getUserApiPreference } = await import('../utils/userManager.js')
+        const userPref = getUserApiPreference(String(userInfo.qq), mode)
+        const globalIndex = config[`${mode}_usingAPI`] || 1
+        const currentApiIndex = userPref || globalIndex
+
         // 只返回必要信息，隐藏 key
         const safeApiList = apiList.map((api, index) => ({
           index: index + 1,
@@ -1713,7 +1717,7 @@ class WebUIServer {
           useContext: api.useContext || false,
           isCurrent: (index + 1) === currentApiIndex
         }))
-        
+
         res.json({
           success: true,
           data: {
@@ -1754,17 +1758,15 @@ class WebUIServer {
         }
         
         const config = await Config.getConfig()
-        const apiKey = `${mode}_APIList`
-        const usingKey = `${mode}_usingAPI`
-        
-        const apiList = config[apiKey] || []
+        const apiList = config[`${mode}_APIList`] || []
         if (apiIndex > apiList.length) {
           return res.status(400).json({ success: false, error: 'API 索引超出范围' })
         }
-        
-        config[usingKey] = apiIndex
-        Config.setConfig(config)
-        
+
+        // 只写入用户个人偏好，不修改全局 usingAPI，避免影响群聊默认配置
+        const { setUserApiPreference } = await import('../utils/userManager.js')
+        setUserApiPreference(String(userInfo.qq), mode, apiIndex)
+
         res.json({ success: true, message: 'API 已切换' })
       } catch (error) {
         logger.error('[sf插件] 切换 API 失败:', error)

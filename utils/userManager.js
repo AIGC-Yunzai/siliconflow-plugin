@@ -224,6 +224,33 @@ export function getAllUsers() {
 }
 
 /**
+ * 获取用户在 WebUI 中的 API 偏好（不影响全局配置）
+ * @param {string} qq 用户 QQ 号
+ * @param {string} mode 模式 'ss' 或 'gg'
+ * @returns {number|null} API 索引，未设置时返回 null
+ */
+export function getUserApiPreference(qq, mode) {
+  const user = getUser(qq)
+  if (!user || !user.webuiApis) return null
+  return user.webuiApis[mode] || null
+}
+
+/**
+ * 设置用户在 WebUI 中的 API 偏好（不影响全局配置）
+ * @param {string} qq 用户 QQ 号
+ * @param {string} mode 模式 'ss' 或 'gg'
+ * @param {number} apiIndex API 索引
+ */
+export function setUserApiPreference(qq, mode, apiIndex) {
+  const data = loadUsers()
+  const user = data.users[qq]
+  if (!user) return
+  if (!user.webuiApis) user.webuiApis = {}
+  user.webuiApis[mode] = apiIndex
+  saveUsers(data)
+}
+
+/**
  * 获取用户统计信息
  * @returns {object}
  */
@@ -247,5 +274,7 @@ export default {
   updateUserLogin,
   deleteUser,
   getAllUsers,
-  getUserStats
+  getUserStats,
+  getUserApiPreference,
+  setUserApiPreference
 }
