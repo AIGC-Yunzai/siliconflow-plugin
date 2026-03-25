@@ -126,6 +126,19 @@ export class update extends plugin {
     if (/(Already up[ -]to[ -]date|已经是最新的)/.test(ret.stdout)) {
       await this.reply(`siliconflow-plugin${isDevUpdate ? '(dev分支)' : ''}${isMainUpdate ? '(main分支)' : ''}已经是最新版本\n最后更新时间：${time}`)
     } else {
+      // await this.reply('更新拉取完成，正在执行 pnpm i 安装依赖，请稍等...')
+      uping = true
+      let pnpmRet = await this.execSync('cd ./plugins/siliconflow-plugin/ && pnpm i')
+      uping = false
+
+      if (pnpmRet.error) {
+        logger.error(`[siliconflow-plugin] 依赖安装失败：\n${pnpmRet.stderr || pnpmRet.error}`)
+        await this.reply(`依赖安装失败，请手动前往插件目录执行 pnpm i`)
+      } else {
+        logger.mark(`[siliconflow-plugin] 依赖安装成功`)
+        // await this.reply(`依赖安装成功！`)
+      }
+
       await this.reply(`siliconflow-plugin${isDevUpdate ? '(dev分支)' : ''}${isMainUpdate ? '(main分支)' : ''}\n最后更新时间：${time}`)
       this.isUp = true
       /** 获取siliconflow-plugin的更新日志 */
