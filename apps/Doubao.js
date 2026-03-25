@@ -89,7 +89,7 @@ export class Doubao extends plugin {
         // 处理引用图片
         await parseSourceImg(e)
         if (e.img) {
-            let souce_image_base64 = await url2Base64(e.img[0], false, true)
+            let souce_image_base64 = await url2Base64(e.img[0], false, false, { onlyCheck: true })
             if (!souce_image_base64) {
                 e.reply('引用的图片地址已失效，请重新发送图片', true)
                 return true
@@ -235,7 +235,7 @@ export class Doubao extends plugin {
         // 处理引用图片
         await parseSourceImg(e)
         if (e.img) {
-            let souce_image_base64 = await url2Base64(e.img[0], false, true)
+            let souce_image_base64 = await url2Base64(e.img[0], false, false, { onlyCheck: true })
             if (!souce_image_base64) {
                 e.reply('引用的图片地址已失效，请重新发送图片', true)
                 return true
