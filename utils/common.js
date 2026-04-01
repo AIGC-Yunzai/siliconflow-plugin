@@ -352,3 +352,33 @@ export function extractBase64Images(text, checkOnly = false) {
 export function removeTrailingSlash(url) {
   return url.endsWith('/') ? url.slice(0, -1) : url;
 }
+
+/** 日志输出时不要被base64刷屏 */
+export function summarizeImgUrl(imgUrl) {
+  if (typeof imgUrl !== "string") return imgUrl;
+
+  // 处理 base64:// 格式
+  if (imgUrl.startsWith("base64://")) {
+    const base64 = imgUrl.slice("base64://".length);
+    const preview = base64.slice(0, 16);
+    let bytes = 0;
+    try { bytes = Buffer.from(base64, "base64").length; } catch (e) {}
+    return `base64://${preview}... [bytes=${bytes}]`;
+  }
+
+  // 处理 data:image/xxx;base64, 格式
+  if (imgUrl.startsWith("data:")) {
+    const commaIndex = imgUrl.indexOf(",");
+    if (commaIndex !== -1) {
+      const header = imgUrl.slice(0, commaIndex + 1); // 例如 "data:image/jpeg;base64,"
+      const base64 = imgUrl.slice(commaIndex + 1);
+      const preview = base64.slice(0, 16);
+      let bytes = 0;
+      try { bytes = Buffer.from(base64, "base64").length; } catch (e) {}
+      return `${header}${preview}... [bytes=${bytes}]`;
+    }
+  }
+
+  // 如果是普通 http/https 图片 URL，直接原样返回
+  return imgUrl;
+}

@@ -38,6 +38,7 @@ import {
     splitString_Enter,
     extractBase64Images,
     removeTrailingSlash,
+    summarizeImgUrl,
 } from '../utils/common.js'
 import ChatCooldown from '../utils/chatCooldown.js'
 import WebUIServer from '../components/WebUIServer.js'
@@ -1119,8 +1120,8 @@ export class SF_Painting extends plugin {
         }
         let currentImages = [];
         if (e.img && e.img.length > 0 && enableImageUpload) {
-            // 记录获取到的图片链接
-            logger.info(`[SF插件][ss]获取到图片链接:\n${e.img.join('\n')}`)
+            logger.info(`[SF插件][ss]获取到图片链接:\n${e.img.map(img => summarizeImgUrl(img)).join('\n')}`);
+
             // 获取所有图片数据
             for (const imgUrl of e.img) {
                 try {
@@ -1978,8 +1979,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             }
         }
         else if (e.img && e.img.length > 0) {
-            // 处理图片逻辑
-            logger.info(`[派蒙nai][gg]获取到图片链接:\n${e.img.join('\n')}`)
+            logger.info(`[SF插件][gg]获取到图片链接:\n${e.img.map(img => summarizeImgUrl(img)).join('\n')}`);
             for (const imgUrl of e.img) {
                 try {
                     // 如果已经是base64格式 (支持 data:, base64://, 以及纯base64字符串)
