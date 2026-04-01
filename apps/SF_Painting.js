@@ -713,7 +713,7 @@ export class SF_Painting extends plugin {
 
         // 生成一键登录短链接（使用 16 位验证码）
         const { getServerAddress } = await import('../utils/common.js')
-        const addrs = getServerAddress(config)
+        const addrs = await getServerAddress(config)
 
         // 辅助函数：处理结尾斜杠并拼接免密登录短链接
         const makeQuickUrl = (addr) => {
@@ -751,6 +751,13 @@ export class SF_Painting extends plugin {
             forwardMsg.push(`🏠 【局域网访问】
 一键登录: ${makeQuickUrl(addrs.lan)}
 手动访问: ${addrs.lan}`)
+        }
+
+        // 如果存在ipv6地址
+        if (addrs.ipv6) {
+            forwardMsg.push(`🏠 【ipv6访问】
+一键登录: ${makeQuickUrl(addrs.ipv6)}
+手动访问: ${addrs.ipv6}`)
         }
 
         // 如果既没有外网也没有内网（极端情况），回退到本机地址

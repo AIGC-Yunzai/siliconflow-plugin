@@ -34,6 +34,7 @@ class WebUIServer {
     // 证书缓存
     this.autoCertPath = null
     this.autoKeyPath = null
+    this.accessAddresses = null
   }
 
   /**
@@ -2188,34 +2189,89 @@ class WebUIServer {
   }
 
   /**
-   * 打印访问地址
+   * 打印并储存访问地址
    */
   async printAccessUrls(host, port, basePath, protocol) {
     const os = process.platform
     
-    // 本机地址
-    logger.info(`[sf插件] 本机访问: ${protocol}://127.0.0.1:${port}${basePath}`)
+    // 初始化或重置地址储存对象
+    if (!this.accessAddresses) {
+      this.accessAddresses = {
+        local: [],
+        lan: [],
+        wan: [],
+        ipv6: []
+      }
+    }
+
+    const localUrl = `${protocol}://127.0.0.1:${port}${basePath}`
+    this.accessAddresses.local.push(localUrl)
+    logger.info(`[sf插件] 本机访问: ${localUrl}`)
     
-    // 如果绑定的是 0.0.0.0，显示局域网地址
+    // 如果绑定的是 0.0.0.0，获取并分类局域网和公网地址
     if (host === '0.0.0.0') {
       try {
         const { networkInterfaces } = await import('os')
         const nets = networkInterfaces()
         
+        // 临时储存带有 IP 的对象，方便后续排序
+        let lanList = []
+        let wanList = []
+
         for (const name of Object.keys(nets)) {
           for (const net of nets[name]) {
-            // IPv4 地址
-            if (net.family === 'IPv4' && !net.internal) {
-              logger.info(`[sf插件] 局域网访问: ${protocol}://${net.address}:${port}${basePath}`)
+            if (net.internal) continue;
+
+            // IPv4 地址分类
+            if (net.family === 'IPv4') {
+              const ip = net.address
+              const url = `${protocol}://${ip}:${port}${basePath}`
+              
+              // 判断是否为私有内网 IP 网段
+              const isLan = ip.startsWith('192.168.') || ip.startsWith('10.') || /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)
+
+              if (isLan) {
+                lanList.push({ ip, url })
+                logger.info(`[sf插件] 局域网访问: ${url}`)
+              } else {
+                wanList.push({ ip, url })
+                logger.info(`[sf插件] 公网访问: ${url}`)
+              }
             }
             // IPv6 地址
-            if (net.family === 'IPv6' && !net.internal) {
-              logger.info(`[sf插件] IPv6 访问: ${protocol}://[${net.address}]:${port}${basePath}`)
+            if (net.family === 'IPv6') {
+              const url = `${protocol}://[${net.address}]:${port}${basePath}`
+              this.accessAddresses.ipv6.push(url)
+              logger.info(`[sf插件] IPv6 访问: ${url}`)
             }
           }
         }
+
+        // 对内网 IP 进行排序，确保优先返回常见的局域网 IP
+        lanList.sort((a, b) => {
+          const getScore = (ip) => {
+            if (ip.startsWith('192.168.')) return 3
+            if (ip.startsWith('10.')) return 2
+            if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)) return 1
+            return 0
+          }
+          return getScore(b.ip) - getScore(a.ip)
+        })
+
+        // 提取排序后的 url 存入最终对象
+        this.accessAddresses.lan = lanList.map(item => item.url)
+        this.accessAddresses.wan = wanList.map(item => item.url)
+
+        // 将公网 IPv6 优先排在前面，把 fe80 开头的本地地址放后面
+        this.accessAddresses.ipv6.sort((a, b) => {
+          const isLocalA = a.includes('[fe80:');
+          const isLocalB = b.includes('[fe80:');
+          return isLocalA === isLocalB ? 0 : isLocalA ? 1 : -1;
+        });
+
       } catch (e) {
         // 忽略网络接口获取错误
+        logger.error('[sf插件] 获取网络接口失败:', e)
       }
     }
     
@@ -2226,7 +2282,16 @@ class WebUIServer {
       logger.mark('[sf插件] 安全: 已启用 HTTPS 加密传输')
     }
     
-    logger.info('[sf插件] 提示: 公网访问需在安全组/防火墙开放端口')
+    if (host === '0.0.0.0' && this.accessAddresses.wan.length > 0) {
+      logger.info('[sf插件] 提示: 公网访问需在安全组/防火墙开放端口')
+    }
+  }
+
+  /**
+   * 获取已储存的服务器访问地址数据
+   */
+  getAccessAddresses() {
+    return this.accessAddresses
   }
 }
 

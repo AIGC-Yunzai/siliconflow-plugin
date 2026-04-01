@@ -8,84 +8,87 @@ export function readYaml(filePath) {
 }
 
 /**
- * 获取服务器访问地址
- * @param {object} config 配置对象
- * @returns {object} 包含本机、内网、外网地址的对象
+ * 获取真实的公网 IP (通过访问外部 API)
  */
-export function getServerAddress(config) {
-  const webUI = config?.webUI || {}
-  const port = webUI.http?.port || webUI.port || 8082
-  // 确保 basePath 格式正确
-  let basePath = webUI.basePath || '/'
-  if (!basePath.startsWith('/')) basePath = '/' + basePath
+async function fetchRealWanIp() {
+  // 备用测 IP 接口池 (防止某个接口挂掉或者在国内被墙)
+  const apis = [
+    'https://api.ipify.org',       // 国外常用，稳定
+    'https://icanhazip.com',       // Cloudflare 提供，极快
+    'https://ip.sb'                // 国内外访问都很快
+  ];
 
-  // 判断是否使用 HTTPS
-  const isHttps = !!webUI.tls?.enable
-  const protocol = isHttps ? 'https' : 'http'
+  for (const api of apis) {
+    try {
+      // 设置 3 秒超时，防止网络不通导致程序一直卡着启动不了
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 3000);
 
-  // 统一构建 URL 的辅助函数
-  const buildUrl = (ip) => `${protocol}://${ip}:${port}${basePath}`
+      const response = await fetch(api, { signal: controller.signal });
+      clearTimeout(timeoutId);
 
-  const interfaces = os.networkInterfaces()
-
-  // 分类存储各类 IP
-  const ipGroups = {
-    local: ['127.0.0.1'], // 默认本机地址
-    lan: [],              // 内网地址 (局域网)
-    wan: []               // 外网地址 (公网)
-  }
-
-  for (const name in interfaces) {
-    for (const iface of interfaces[name]) {
-      // 只处理 IPv4
-      if (iface.family === 'IPv4') {
-        // 本机环回地址
-        if (iface.internal) {
-          if (!ipGroups.local.includes(iface.address)) {
-            ipGroups.local.push(iface.address)
-          }
-          continue
-        }
-
-        const ip = iface.address
-        // 判断是否为私有内网 IP 网段
-        const isLan =
-          ip.startsWith('192.168.') ||
-          ip.startsWith('10.') ||
-          /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)
-
-        if (isLan) {
-          ipGroups.lan.push(ip)
-        } else {
-          ipGroups.wan.push(ip) // 不属于内网网段的归类为外网地址
+      if (response.ok) {
+        const ip = await response.text();
+        // 简单正则验证一下是不是合法的 IPv4 格式
+        const cleanIp = ip.trim();
+        if (/^(\d{1,3}\.){3}\d{1,3}$/.test(cleanIp)) {
+          return cleanIp;
         }
       }
+    } catch (e) {
+      // 当前接口失败，静默继续尝试下一个
+      continue;
+    }
+  }
+  return null; // 如果全都失败，返回 null
+}
+
+/**
+ * 获取服务器访问地址 (从 WebUIServer 储存的对象中读取 + 外部探测)
+ * @returns {object|null} 包含本机、内网、外网地址的对象。如果服务未启动则返回空结构
+ */
+export async function getServerAddress(config = {}) {
+  const { default: WebUIServer } = await import('../components/WebUIServer.js');
+  // 从 WebUI 服务实例获取已计算好的地址
+  const addresses = WebUIServer.getAccessAddresses();
+
+  // 如果 WebUI 尚未启动或获取失败，返回空结构防止报错
+  if (!addresses) {
+    return {
+      local: null,
+      lan: null,
+      wan: null,
+      all: { local: [], lan: [], wan: [], ipv6: [] }
     }
   }
 
-  // 对内网 IP 进行排序，确保优先返回常见的局域网 IP
-  ipGroups.lan.sort((a, b) => {
-    const getScore = (ip) => {
-      if (ip.startsWith('192.168.')) return 3 // 家用路由器最常见，优先级最高
-      if (ip.startsWith('10.')) return 2      // 企业内网常见，优先级次之
-      if (/^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(ip)) return 1
-      return 0
-    }
-    return getScore(b) - getScore(a) // 分数高的排前面
-  })
+  let realWanIp = await fetchRealWanIp();
+  let wanList = addresses.wan ? [...addresses.wan] : [];
 
-  // 构造最终的返回对象
+  if (realWanIp) {
+    const webUI = config?.webUI || {}
+    // 将真实公网 IP 放在第一位推荐位
+    if (webUI.http?.enable)
+      wanList.unshift(`http://${realWanIp}:${webUI.http?.port ?? 8082}`);
+    if (webUI.tls?.enable)
+      wanList.unshift(`https://${realWanIp}:${webUI.tls?.port ?? 8443}`);
+    // 去重
+    wanList = [...new Set(wanList)];
+  }
+
   return {
     // 推荐使用的单个地址（供快速访问）
-    local: buildUrl(ipGroups.local[0]),
-    lan: ipGroups.lan.length > 0 ? buildUrl(ipGroups.lan[0]) : null,
-    wan: ipGroups.wan.length > 0 ? buildUrl(ipGroups.wan[0]) : null,
+    local: addresses.local.length > 0 ? addresses.local[0] : null,
+    lan: addresses.lan.length > 0 ? addresses.lan[0] : null,
+    wan: wanList.length > 0 ? wanList[0] : null,
+    ipv6: addresses.ipv6.length > 0 ? addresses.ipv6[0] : null,
 
-    // 如果有多个网卡，可以从这里获取完整的列表（适合在终端打印）
+    // 完整的列表
     all: {
-      local: ipGroups.local.map(buildUrl),
-      lan: ipGroups.lan.map(buildUrl),
-      wan: ipGroups.wan.map(buildUrl)
+      local: addresses.local,
+      lan: addresses.lan,
+      wan: wanList, // 包含真实公网 IP 和原本推测的 IP
+      ipv6: addresses.ipv6
     }
   }
 }
@@ -362,7 +365,7 @@ export function summarizeImgUrl(imgUrl) {
     const base64 = imgUrl.slice("base64://".length);
     const preview = base64.slice(0, 16);
     let bytes = 0;
-    try { bytes = Buffer.from(base64, "base64").length; } catch (e) {}
+    try { bytes = Buffer.from(base64, "base64").length; } catch (e) { }
     return `base64://${preview}... [bytes=${bytes}]`;
   }
 
@@ -374,7 +377,7 @@ export function summarizeImgUrl(imgUrl) {
       const base64 = imgUrl.slice(commaIndex + 1);
       const preview = base64.slice(0, 16);
       let bytes = 0;
-      try { bytes = Buffer.from(base64, "base64").length; } catch (e) {}
+      try { bytes = Buffer.from(base64, "base64").length; } catch (e) { }
       return `${header}${preview}... [bytes=${bytes}]`;
     }
   }
