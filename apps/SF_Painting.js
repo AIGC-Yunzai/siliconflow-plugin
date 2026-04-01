@@ -1124,15 +1124,28 @@ export class SF_Painting extends plugin {
             // 获取所有图片数据
             for (const imgUrl of e.img) {
                 try {
-                    // 如果已经是base64格式，直接使用
-                    if (typeof imgUrl === 'string' && (imgUrl.startsWith('data:image') || imgUrl.match(/^[A-Za-z0-9+/=]+$/))) {
-                        // 如果是完整的data URL，提取base64部分
-                        const base64Data = imgUrl.startsWith('data:image') ? imgUrl.split(',')[1] : imgUrl;
-                        currentImages.push(base64Data);
-                        continue;
+                    if (typeof imgUrl !== 'string') continue;
+                    // 判断是否为 data: 协议、base64:// 协议，或者本身就是纯 Base64 字符串
+                    // if (imgUrl.startsWith('data:') || imgUrl.startsWith('base64://') || imgUrl.match(/^[A-Za-z0-9+/=]+$/)) {
+                    if (imgUrl.startsWith('data:') || imgUrl.startsWith('base64://')) {
+                        let base64Data = imgUrl;
+                        if (imgUrl.startsWith('base64://')) {
+                            base64Data = imgUrl.replace(/^base64:\/\//i, '');
+                        } else if (imgUrl.startsWith('data:')) {
+                            const match = imgUrl.match(/^data:([^;]+);base64,(.+)$/);
+                            if (match) {
+                                base64Data = match[2];
+                            } else {
+                                base64Data = imgUrl.split(',')[1] || imgUrl;
+                            }
+                        }
+                        if (base64Data) {
+                            currentImages.push(base64Data);
+                            continue;
+                        }
                     }
 
-                    // 尝试转换为base64
+                    // 尝试转换普通的 http/https URL 为 base64
                     const base64Image = await url2Base64(imgUrl);
                     if (!base64Image) {
                         logger.error(`[SF插件][ss]图片处理失败: ${imgUrl}`);
@@ -1901,11 +1914,24 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         if (isVideo && targetUrl) {
             isVideoMsg = true;
             try {
-                // 如果已经是base64格式，直接使用
-                if (typeof targetUrl === 'string' && (targetUrl.startsWith('data:video') || targetUrl.match(/^[A-Za-z0-9+/=]+$/))) {
+                // 如果已经是base64格式 (支持 data:, base64://, 以及纯base64字符串)
+                // if (typeof targetUrl === 'string' && (targetUrl.startsWith('data:') || targetUrl.startsWith('base64://') || targetUrl.match(/^[A-Za-z0-9+/=]+$/))) {
+                if (typeof targetUrl === 'string' && (targetUrl.startsWith('data:') || targetUrl.startsWith('base64://'))) {
                     logger.info(`[派蒙nai][gg]获取到视频Base64数据`);
 
-                    const base64Data = targetUrl.startsWith('data:video') ? targetUrl.split(',')[1] : targetUrl;
+                    let base64Data = targetUrl;
+                    let mimeType = 'video/mp4'; // 默认设为 mp4
+                    if (targetUrl.startsWith('base64://')) {
+                        base64Data = targetUrl.replace(/^base64:\/\//i, '');
+                    } else if (targetUrl.startsWith('data:')) {
+                        const match = targetUrl.match(/^data:([^;]+);base64,(.+)$/);
+                        if (match) {
+                            mimeType = match[1];
+                            base64Data = match[2];
+                        } else {
+                            base64Data = targetUrl.split(',')[1] || targetUrl;
+                        }
+                    }
 
                     // 校验 Base64 视频体积 (Base64 长度 * 0.75 约等于实际字节数)
                     // 减去末尾的 '=' 填充符计算更精确，但粗略计算也足够用来拦截超大文件
@@ -1914,12 +1940,6 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
 
                     if (estimatedSizeBytes > maxSizeBytes) {
                         throw new Error(`视频(Base64)大小超过限制 (${maxSizeMB}MB)`);
-                    }
-
-                    let mimeType = 'video/mp4'; // 默认设为 mp4
-                    if (targetUrl.startsWith('data:video')) {
-                        const match = targetUrl.match(/^data:(video\/\w+);base64,/);
-                        if (match) mimeType = match[1];
                     }
 
                     currentMedia.push({ mimeType: mimeType, data: base64Data });
@@ -1962,17 +1982,26 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             logger.info(`[派蒙nai][gg]获取到图片链接:\n${e.img.join('\n')}`)
             for (const imgUrl of e.img) {
                 try {
-                    // 如果已经是base64格式，直接使用
-                    if (typeof imgUrl === 'string' && (imgUrl.startsWith('data:image') || imgUrl.match(/^[A-Za-z0-9+/=]+$/))) {
-                        const base64Data = imgUrl.startsWith('data:image') ? imgUrl.split(',')[1] : imgUrl;
-                        currentImages.push(base64Data); // 兼容旧版
+                    // 如果已经是base64格式 (支持 data:, base64://, 以及纯base64字符串)
+                    // if (typeof imgUrl === 'string' && (imgUrl.startsWith('data:') || imgUrl.startsWith('base64://') || imgUrl.match(/^[A-Za-z0-9+/=]+$/))) {
+                    if (typeof imgUrl === 'string' && (imgUrl.startsWith('data:') || imgUrl.startsWith('base64://'))) {
+                        let base64Data = imgUrl;
+                        let mimeType = 'image/jpeg'; // 默认设为 jpeg
 
-                        let mimeType = 'image/jpeg';
-                        if (imgUrl.startsWith('data:image')) {
-                            const match = imgUrl.match(/^data:(image\/\w+);base64,/);
-                            if (match) mimeType = match[1];
+                        if (imgUrl.startsWith('base64://')) {
+                            base64Data = imgUrl.replace(/^base64:\/\//i, '');
+                        } else if (imgUrl.startsWith('data:')) {
+                            const match = imgUrl.match(/^data:([^;]+);base64,(.+)$/);
+                            if (match) {
+                                mimeType = match[1];
+                                base64Data = match[2];
+                            } else {
+                                base64Data = imgUrl.split(',')[1] || imgUrl;
+                            }
                         }
-                        currentMedia.push({ mimeType, data: base64Data }); // 写入新版
+
+                        currentImages.push(base64Data); // 兼容旧版
+                        currentMedia.push({ mimeType: mimeType, data: base64Data }); // 写入新版
                         continue;
                     }
 
@@ -1999,7 +2028,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
                     }
 
                     currentImages.push(base64Image); // 兼容旧版
-                    currentMedia.push({ mimeType, data: base64Image }); // 写入新版
+                    currentMedia.push({ mimeType: mimeType, data: base64Image }); // 写入新版
                 } catch (error) {
                     logger.error(`[派蒙nai][gg]获取图片时出错: ${error.message}`);
                     continue;
