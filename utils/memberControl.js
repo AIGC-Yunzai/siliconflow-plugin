@@ -28,7 +28,7 @@ export async function checkUserPermission(e, config) {
 
     const currentTime = moment()
     const userId = String(e.user_id)
-    const groupId = String(e.group_id) || "8888"
+    const groupId = String(e.group_id ?? "8888")
     const isMaster = e.isMaster
     const isUnlimitedUser = unlimitedUsers.includes(String(userId))
     const isWhiteGroup = onlyGroupID.includes(String(groupId))
