@@ -111,6 +111,7 @@ ggKey: ""
 gg_useMarkdown: false # 是否使用markdown图片展示
 gg_forwardMessage: true # 是否转发消息
 gg_mustNeedImgLength: 0 # 必需图片
+gg_defaultImages: [] # 必需图片的默认本地图片路径列表
 gg_mustReturnImgRetriesTimes: 0 # 必须返回图片
 gg_groupContextLength: 0 # 读取近期群聊天记录条数
 gg_quoteMessage: true # 是否引用原消息
