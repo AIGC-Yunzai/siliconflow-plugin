@@ -1256,6 +1256,9 @@ export class SF_Painting extends plugin {
             paintModel: paintModel
         }
 
+        // 适配器发送“正在输入”状态
+        if (e.send_typing) e.send_typing();
+
         logger.info(`[sf prompt]${'[图片]'.repeat(e.img?.length || 0)}${toAiMessage}`)
         let { content: answer, imageBase64Array: generatedImageArray, isError } = await this.generatePrompt(toAiMessage, use_sf_key, config_date, true, apiBaseUrl, model, opt, historyMessages, e)
 
@@ -2161,6 +2164,9 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
             useMarkdown: useMarkdown,
             paintModel: paintModel
         }
+
+        // 适配器发送“正在输入”状态
+        if (e.send_typing) e.send_typing();
 
         logger.info(`[sf prompt]${isVideoMsg ? '[视频]' : '[图片]'.repeat(e.img?.length || 0)}${toAiMessage}`)
         let { answer, sources, imageBase64, textImagePairs, isError } = await this.generateGeminiPrompt(toAiMessage, ggBaseUrl, ggKey, opt, historyMessages, e)

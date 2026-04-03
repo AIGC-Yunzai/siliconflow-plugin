@@ -1370,7 +1370,7 @@ export function supportGuoba() {
               {
                 field: "defaultImages",
                 label: "默认图片",
-                bottomHelpMessage: "设置此接口必需图片的默认本地图片路径，当需要图片时会自动读取这些本地图片与用户发送的图片合并（仅在必需图片数>0时生效）。Windows示例：D:\\xiazai\\image.jpg ；Linux示例：/home/user/images/ref.jpg ；支持带空格/引号的路径",
+                bottomHelpMessage: "设置此接口必需图片的默认本地图片路径，当需要图片时会自动读取这些本地图片与用户发送的图片合并（仅在必需图片数>0时生效）。Windows示例：D:\\Downloads\\image.jpg ；Linux示例：/root/Downloads/image.jpg ；支持带空格/引号的路径",
                 component: "GTags",
                 componentProps: {
                   placeholder: '请输入本地图片绝对路径',
