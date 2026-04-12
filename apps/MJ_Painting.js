@@ -71,13 +71,13 @@ export class MJ_Painting extends plugin {
                     config_date.mj_translationEnabled = value.toLowerCase() === '开'
                     break
                 default:
-                    await e.reply('未知的设置类型')
+                    await e.reply('未知的设置类型', true)
                     return
             }
             Config.setConfig(config_date)
-            await e.reply(`${type}设置成功！`)
+            await e.reply(`${type}设置成功！`, true)
         } else {
-            await e.reply('设置格式错误，请使用 "#sfmj设置[类型] [值]"')
+            await e.reply('设置格式错误，请使用 "#sfmj设置[类型] [值]"', true)
         }
     }
 
@@ -87,7 +87,7 @@ export class MJ_Painting extends plugin {
         const mode = e.msg.includes('快速') ? 'fast' : 'slow'
         config_date.mj_mode = mode
         Config.setConfig(config_date)
-        await e.reply(`已切换到${mode === 'fast' ? '快速' : '慢速'}模式`)
+        await e.reply(`已切换到${mode === 'fast' ? '快速' : '慢速'}模式`, true)
     }
 
     async mj_draw(e) {
@@ -98,7 +98,7 @@ export class MJ_Painting extends plugin {
             if (e.ws) {
                 this.sendMessage(e.ws, 'error', errorMsg);
             } else {
-                await e.reply(errorMsg);
+                await e.reply(errorMsg, true);
             }
             return;
         }
@@ -137,7 +137,7 @@ export class MJ_Painting extends plugin {
         }
 
         if (!prompt && !e.img) {
-            await e.reply('请输入提示词或者提供一张图片')
+            await e.reply('请输入提示词或者提供一张图片', true)
             return
         }
 
@@ -157,7 +157,7 @@ export class MJ_Painting extends plugin {
 
         result_member.record();
 
-        e.reply('正在生成图片，请稍候...')
+        e.reply('正在生成图片，请稍候...', true, { recallMsg: 60 })
         this.mj_send_pic(e, prompt, botType, config_date, base64Array)
         return true;
     }
@@ -255,7 +255,7 @@ export class MJ_Painting extends plugin {
             if (e.ws) {
                 this.sendMessage(e.ws, 'error', errorMsg);
             } else {
-                await e.reply(errorMsg);
+                await e.reply(errorMsg, true);
             }
             return;
         }
@@ -285,7 +285,7 @@ export class MJ_Painting extends plugin {
                 if (e.ws) {
                     this.sendMessage(e.ws, 'error', errorMsg);
                 } else {
-                    await e.reply(errorMsg);
+                    await e.reply(errorMsg, true);
                 }
                 return;
             }
@@ -295,7 +295,7 @@ export class MJ_Painting extends plugin {
             if (e.ws) {
                 this.sendMessage(e.ws, 'mj', '正在处理，请稍候...');
             } else {
-                await e.reply('正在处理，请稍候...');
+                await e.reply('正在处理，请稍候...', true, { recallMsg: 60 });
             }
 
             try {
@@ -305,7 +305,7 @@ export class MJ_Painting extends plugin {
                     if (e.ws) {
                         this.sendMessage(e.ws, 'error', errorMsg);
                     } else {
-                        await e.reply(errorMsg);
+                        await e.reply(errorMsg, true);
                     }
                     return;
                 }
@@ -327,14 +327,15 @@ export class MJ_Painting extends plugin {
                     if (e.ws) {
                         this.sendMessage(e.ws, 'error', errorMsg);
                     } else {
-                        await e.reply(errorMsg);
+                        await e.reply(errorMsg, true);
                     }
                     return;
                 }
 
                 const result = await this.pollTaskResult(newTaskId, config_date)
-                if (result) {
-                    const replyMsg = `操作完成！\n操作类型：${action}${position}\n新任务ID：${newTaskId}\n图片链接：${result.imageUrl}`;
+                if (result && result.imageUrl) {
+                    logger.info(`[sf插件][mjp] 成功获取到图片链接: ` + result.imageUrl)
+                    const replyMsg = `${action}${position} 操作完成\n新任务ID：${newTaskId}`;
 
                     if (e.ws) {
                         this.sendMessage(e.ws, 'mj', replyMsg);
@@ -361,7 +362,7 @@ export class MJ_Painting extends plugin {
                         // 限制历史记录长度为50条对话(100条消息)
                         redis.lTrim(historyKey, 0, 99);
                     } else {
-                        await e.reply(replyMsg);
+                        await e.reply(replyMsg, true);
                         await e.reply({ ...segment.image(result.imageUrl), origin: true });
                     }
 
@@ -371,7 +372,7 @@ export class MJ_Painting extends plugin {
                     if (e.ws) {
                         this.sendMessage(e.ws, 'error', errorMsg);
                     } else {
-                        await e.reply(errorMsg);
+                        await e.reply(errorMsg, true);
                     }
                 }
             } catch (error) {
@@ -380,7 +381,7 @@ export class MJ_Painting extends plugin {
                 if (e.ws) {
                     this.sendMessage(e.ws, 'error', errorMsg);
                 } else {
-                    await e.reply(errorMsg);
+                    await e.reply(errorMsg, true);
                 }
             }
         }
@@ -474,7 +475,7 @@ MJP插件帮助：
                     if (e.ws) {
                         this.sendMessage(e.ws, 'mj', `翻译后的提示词：${prompt}`);
                     } else {
-                        await e.reply(`翻译后的提示词：${prompt}`);
+                        await e.reply(`翻译后的提示词：${prompt}`, true);
                     }
                 }
             }
@@ -485,14 +486,15 @@ MJP插件帮助：
                 if (e.ws) {
                     this.sendMessage(e.ws, 'error', errorMsg);
                 } else {
-                    await e.reply(errorMsg);
+                    await e.reply(errorMsg, true);
                 }
                 return;
             }
 
             const result = await this.pollTaskResult(taskId, config_date)
-            if (result) {
-                const replyMsg = `@${e.sender?.card || e.sender?.nickname || 'User'} ${e.user_id}您的图片已生成完成：\n\n原始提示词：${prompt}\n任务ID：${taskId}\n图片链接：${result.imageUrl}`;
+            if (result && result.imageUrl) {
+                logger.info(`[sf插件][mjp] 成功获取到图片链接: ` + result.imageUrl)
+                const replyMsg = `@${e.sender?.card || e.sender?.nickname || 'User'} ${e.user_id}您的图片已生成完成：\n原始提示词：${prompt}\n任务ID：${taskId}\n可用指令：#放大[左上|右上|左下|右下] [任务ID]?`;
 
                 if (e.ws) {
                     // WebSocket连接，发送消息和图片
@@ -521,7 +523,7 @@ MJP插件帮助：
                     redis.lTrim(historyKey, 0, 99);
                 } else {
                     // 普通聊天
-                    await e.reply(replyMsg);
+                    await e.reply(replyMsg, true);
                     e.reply({ ...segment.image(result.imageUrl), origin: true });
                 }
 
@@ -531,7 +533,7 @@ MJP插件帮助：
                 if (e.ws) {
                     this.sendMessage(e.ws, 'error', errorMsg);
                 } else {
-                    e.reply(errorMsg);
+                    e.reply(errorMsg, true);
                 }
             }
         } catch (error) {
@@ -540,7 +542,7 @@ MJP插件帮助：
             if (e.ws) {
                 this.sendMessage(e.ws, 'error', errorMsg);
             } else {
-                e.reply(errorMsg);
+                e.reply(errorMsg, true);
             }
         }
     }
@@ -651,14 +653,14 @@ MJP插件帮助：
             ws.send(JSON.stringify(message));
         } catch (error) {
             logger.error("图片生成失败", error)
-            e.reply('生成图片时遇到了一个错误，请稍后再试。')
+            e.reply('生成图片时遇到了一个错误，请稍后再试。', true)
         }
     }
 
     async mj_draw_with_link(e) {
         let config_date = Config.getConfig()
         if (!config_date.mj_apiKey || !config_date.mj_apiBaseUrl) {
-            await e.reply('请先设置API Key和API Base URL。使用命令：\n#mjp设置apikey [值]\n#mjp设置apibaseurl [值]\n（仅限主人设置）')
+            await e.reply('请先设置API Key和API Base URL。使用命令：\n#mjp设置apikey [值]\n#mjp设置apibaseurl [值]\n（仅限主人设置）', true)
             return
         }
 
@@ -695,7 +697,7 @@ MJP插件帮助：
         await parseSourceImg(e)
 
         if (!prompt || !e.img) {
-            await e.reply('请输入提示词并提供一张图片')
+            await e.reply('请输入提示词并提供一张图片', true)
             return
         }
 
@@ -711,22 +713,22 @@ MJP插件帮助：
 
             if (!uploadedUrl) {
                 logger.error('[MJ_Painting] Failed to get image link')
-                await e.reply('获取图片直链失败，请重试')
+                await e.reply('获取图片直链失败，请重试', true)
                 return
             }
 
             // 构建最终的 prompt
-            prompt = `${prompt} --cref ${uploadedUrl}${isNiji ? ' --niji' : ''}`
+            prompt = `${prompt} ${isNiji ? `--niji 6 --cref ${uploadedUrl}` : `--oref ${uploadedUrl}`}`;
             logger.info(`[MJ_Painting] Final prompt: ${prompt}`)
 
-            await e.reply('正在生成图片，请稍候...')
+            await e.reply('正在生成图片，请稍候...', true, { recallMsg: 60 })
             const botType = isNiji ? 'NIJI_JOURNEY' : 'MID_JOURNEY'
             await this.mj_send_pic(e, prompt, botType, config_date, [])
             return true
 
         } catch (err) {
             logger.error('[MJ_Painting] Error in mj_draw_with_link:', err)
-            await e.reply('处理图片时发生错误，请重试')
+            await e.reply('处理图片时发生错误，请重试', true)
             return false
         }
     }

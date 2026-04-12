@@ -49,27 +49,27 @@ export class help extends plugin {
                     {
                         "icon": 1,
                         "title": "#mjp [描述]",
-                        "desc": "使用 MID_JOURNEY 绘画"
+                        "desc": "使用 MID_JOURNEY 绘画，生成 MJ 图片；可引用图片作整体参考"
                     },
                     {
                         "icon": 5,
                         "title": "#niji [描述]",
-                        "desc": "使用 NIJI_JOURNEY 绘画"
+                        "desc": "使用 NIJI_JOURNEY 绘画，生成二次元风格图片；可引用图片作整体参考"
                     },
                     {
                         "icon": 8,
                         "title": "#mjc [描述]",
-                        "desc": "引用一张图片,自动在提示词后添加--cref URL，可在描述中加--cw 0~100,数字越低变化越大"
+                        "desc": "引用图片作角色参考, 自动在提示词后添加 --oref, 可在描述中加--cw 0~100, 数字越低角色变化越大"
                     },
                     {
                         "icon": 2,
                         "title": "#nic [描述]",
-                        "desc": "与mjc相同，但会自动添加--niji参数，生成二次元风格图片"
+                        "desc": "引用图片作角色参考, 自动在提示词后添加 --niji 6 --cref, 可在描述中加--cw 0~100"
                     },
                     {
                         "icon": 7,
                         "title": "#sf绘图 [描述]",
-                        "desc": "使用 Siliconflow 预设模型绘画"
+                        "desc": "使用 Siliconflow 预设模型绘画" 
                     },
                     {
                         "icon": 11,
