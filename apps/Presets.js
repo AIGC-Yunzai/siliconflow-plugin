@@ -46,7 +46,8 @@ export class Jimeng extends plugin {
 
     async managePresetsList(e) {
         const presets_config = Config.getConfig("presets")
-        const action = e.msg.match(/^#sf预设(添加|删除|查看)/)[1]
+        const msg = e.msg.replace(/{预设:(.*?)}/g, '$1')
+        const action = msg.match(/^#sf预设(添加|删除|查看)/)[1]
 
         if (action === '查看') {
             if (!presets_config.presets || presets_config.presets.length === 0) {
@@ -55,7 +56,7 @@ export class Jimeng extends plugin {
             }
 
             // 获取要查看的预设名称或序号
-            let viewTarget = e.msg.replace(/^#sf预设查看/, '').trim()
+            let viewTarget = msg.replace(/^#sf预设查看/, '').trim()
 
             if (!viewTarget) {
                 // 显示预设列表
@@ -96,7 +97,7 @@ export class Jimeng extends plugin {
 
         } else if (action === '添加') {
             // 获取预设名称
-            let presetName = e.msg.replace(/^#sf预设添加/, '').trim()
+            let presetName = msg.replace(/^#sf预设添加/, '').trim()
 
             if (!presetName) {
                 await e.reply('请在120秒内发送预设名称：', true, { recallMsg: 119 })
@@ -153,7 +154,7 @@ export class Jimeng extends plugin {
             }
 
             // 获取要删除的预设名称或序号
-            let deleteTarget = e.msg.replace(/^#sf预设删除/, '').trim()
+            let deleteTarget = msg.replace(/^#sf预设删除/, '').trim()
 
             if (!deleteTarget) {
                 // 显示预设列表
