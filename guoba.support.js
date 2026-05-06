@@ -691,7 +691,7 @@ export function supportGuoba() {
                 label: "预设名",
                 component: "Input",
                 required: true,
-                bottomHelpMessage: "预设触发词为: {预设:'预设名'} ；可用指令：#sf预设列表 #sf预设[添加|删除|查看]",
+                bottomHelpMessage: "将绘画输入文本中的 预设名 替换为 预设文本；可用指令：#sf预设列表 #sf预设[添加|删除|查看]",
               },
               {
                 field: "prompt",
@@ -701,6 +701,12 @@ export function supportGuoba() {
               },
             ],
           },
+        },
+        {
+          field: "config_presets.antiMisoperation",
+          label: "预设防误触",
+          bottomHelpMessage: "开启后 绘画预设触发词更改为: {预设:预设名} ；例如 #sf绘画{预设:可爱女孩}",
+          component: "Switch",
         },
         {
           field: "replyStartMsg",
