@@ -60,7 +60,7 @@ export class Jimeng extends plugin {
                 `上传图片数:
 --upimgs [1|2|10]`,
                 `更换模型:
---model [jimeng-video-seedance-2.0|jimeng-video-seedance-2.0-fast|jimeng-video-3.5-pro|jimeng-video-veo3|jimeng-video-veo3.1|jimeng-video-sora2|jimeng-video-3.0-pro|jimeng-video-3.0|jimeng-video-3.0-fast]`,
+--model [jimeng-video-seedance-2.0|jimeng-video-seedance-2.0-fast|jimeng-video-3.5-pro|jimeng-video-veo3|jimeng-video-veo3.1|jimeng-video-sora2]`,
                 `全能模式:
 --functionMode omni_reference`,
                 `更改时长:
@@ -186,7 +186,7 @@ ntags = [tags]`,
             const useMultiParams = images.length > 2 || videos.length > 0;
 
             requestBody = {
-                "model": param.model || "jimeng-video-3.0",
+                "model": param.model || "jimeng-video-3.5-pro",
                 "prompt": param.input || "一个女人在花园里跳舞",
                 "ratio": param.parameters.ratio || undefined,
                 "resolution": param.parameters.resolution || undefined,
@@ -317,28 +317,37 @@ ${data.created ? `创建时间：${new Date(data.created * 1000).toLocaleString(
                     }
 
                     // 下载视频并发送
-                    try {
-                        logger.info(`[即梦视频]开始下载视频: ${videoUrl}`)
-                        const videoResponse = await axios.get(videoUrl, {
-                            headers: {
-                                'referer': 'https://jimeng.jianying.com/',
-                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
-                            },
-                            responseType: 'arraybuffer',
-                            timeout: 60 * 60 * 1000,
-                            validateStatus: () => true
-                        })
+                    let downloadSuccess = false;
+                    for (let attempt = 1; attempt <= 3; attempt++) {
+                        try {
+                            logger.info(`[即梦视频]开始下载视频 (第${attempt}次尝试): ${videoUrl}`)
+                            const videoResponse = await axios.get(videoUrl, {
+                                headers: {
+                                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+                                },
+                                responseType: 'arraybuffer',
+                                timeout: 60 * 60 * 1000,
+                                validateStatus: () => true
+                            })
 
-                        if (videoResponse.status !== 200) {
-                            throw new Error(`视频下载失败: HTTP ${videoResponse.status}`)
+                            if (videoResponse.status !== 200) {
+                                throw new Error(`视频下载失败: HTTP ${videoResponse.status}`)
+                            }
+
+                            const videoBuffer = Buffer.from(videoResponse.data)
+                            // logger.info(`[即梦视频]视频下载成功，大小: ${(videoBuffer.length / 1024 / 1024).toFixed(2)}MB`)
+                            await e.reply(segment.video(videoBuffer))
+                            downloadSuccess = true;
+                            break; // 成功则跳出循环
+                        } catch (videoError) {
+                            logger.warn(`[sf插件][即梦视频]第${attempt}次视频下载失败\n`, videoError)
+                            if (attempt === 3) {
+                                await e.reply(`视频生成成功，但下载失败。视频链接：${videoUrl}`, true)
+                            } else {
+                                // 等待3秒后重试
+                                await new Promise(resolve => setTimeout(resolve, 3000));
+                            }
                         }
-
-                        const videoBuffer = Buffer.from(videoResponse.data)
-                        // logger.info(`[即梦视频]视频下载成功，大小: ${(videoBuffer.length / 1024 / 1024).toFixed(2)}MB`)
-                        await e.reply(segment.video(videoBuffer))
-                    } catch (videoError) {
-                        logger.warn("[sf插件][即梦视频]视频下载失败\n", videoError)
-                        await e.reply(`视频生成成功，但下载失败。视频链接：${videoUrl}`, true)
                     }
 
                     return true
