@@ -79,7 +79,7 @@ export class help extends plugin {
                     {
                         "icon": 29,
                         "title": "#dd [描述]",
-                        "desc": "使用openai格式的接口生成AI绘图"
+                        "desc": "可用指令：#sfdd接口列表"
                     },
                     {
                         "icon": 10,
@@ -89,7 +89,7 @@ export class help extends plugin {
                     {
                         "icon": 54,
                         "title": "#ss [对话]",
-                        "desc": "可用指令：#sf结束[全部|ss|gg|dd]对话"
+                        "desc": "使用 OpenAI API 接口回答问题"
                     },
                     {
                         "icon": 55,
@@ -103,8 +103,8 @@ export class help extends plugin {
                     },
                     {
                         "icon": 86,
-                        "title": "#sf删除[ss|gg]前[num]条对话",
-                        "desc": "设置生成提示词开关"
+                        "title": "#sf结束[全部|ss|gg|dd]对话",
+                        "desc": "#sf删除[ss|gg]前[num]条对话"
                     },
                     {
                         "icon": 61,
