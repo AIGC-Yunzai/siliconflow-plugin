@@ -1202,9 +1202,11 @@ export function supportGuoba() {
               {
                 field: "model",
                 label: "接口模型",
-                bottomHelpMessage: '默认值：gemini-2.0-flash；推荐：gemini-exp-1206,gemini-2.0-flash-thinking-exp-01-21；可用模型每日自动更新，立即更新指令：#sf插件立即执行每日自动任务',
+                bottomHelpMessage: '默认值：gemini-flash-latest；只能选择/填写1个模型；可用模型每日自动更新，立即更新指令：#sf插件立即执行每日自动任务',
                 component: 'Select',
                 componentProps: {
+                  mode: 'tags',
+                  maxTagCount: 1,
                   options: geminiModelsByFetch.map(s => { return { label: s, value: s } })
                 }
               },
@@ -2459,6 +2461,37 @@ export function supportGuoba() {
           } else {
             lodash.set(config, keyPath, value)
           }
+        }
+        /**
+         * @description: 转换 config.{} component: 'Select' 的 mode: 'tags'
+         * @param {*} targetObj config
+         * @param {*} sourceObj data
+         * @param {*} path data[''] 中的点路径字符串值
+         * @return {*}
+         */
+        const assignFirstElementIfExists = (targetObj, sourceObj, path) => {
+          const sourceData = sourceObj[path];
+          if (sourceData == null) return;
+          const firstElement = Array.isArray(sourceData) ? sourceData[0] : sourceData;
+          if (firstElement != null) {
+            const assignPath = path.startsWith('config.') ? path.slice(7) : path;
+            const keys = assignPath.split('.');
+            let current = targetObj;
+            for (let i = 0; i < keys.length - 1; i++) {
+              const key = keys[i];
+              if (current[key] == null) {
+                current[key] = {};
+              }
+              current = current[key];
+            }
+            const lastKey = keys[keys.length - 1];
+            current[lastKey] = firstElement;
+          }
+        };
+        if (Array.isArray(config.gg_APIList)) {
+          config.gg_APIList.forEach(item => {
+            assignFirstElementIfExists(item, item, 'model');
+          });
         }
 
         // 验证配置
