@@ -2279,8 +2279,16 @@ export function supportGuoba() {
           },
         },
         {
-          label: '视频解析',
+          label: '杂项',
           component: 'SOFT_GROUP_BEGIN'
+        },
+        {
+          component: 'Divider',
+          label: '视频解析',
+          componentProps: {
+            orientation: 'left',
+            plain: true,
+          },
         },
         {
           field: "douyinTV",
@@ -2310,6 +2318,20 @@ export function supportGuoba() {
             min: 1,
             step: 1
           }
+        },
+        {
+          component: 'Divider',
+          label: '图片工具',
+          componentProps: {
+            orientation: 'left',
+            plain: true,
+          },
+        },
+        {
+          field: "PY_ImageToolsSwitch",
+          label: "图片操作",
+          bottomHelpMessage: "开启指令 #图片操作帮助，例如 #gif变速 2x；需要安装 Python3 和 依赖 pip install Pillow requests pil-utils ；此开关重启生效",
+          component: "Switch",
         },
         {
           label: '帮助',

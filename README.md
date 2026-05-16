@@ -7,7 +7,7 @@
 - 一个适用于 [Yunzai 系列机器人框架](https://github.com/yhArcadia/Yunzai-Bot-plugins-index) 多功能AI集成插件，支持多种AI服务和模型：
   - 🎨 AI绘图：接入 SiliconFlow（硅基流动）、Midjourney、modelscope（魔搭社区）、Jimeng-Api（即梦） 等平台，免费图片视频生成。[点我跳转到使用教程](#使用教程)
   - 🤖 AI对话：接入 OpenAI, Gemini 接口，支持多key负载均衡、预设列表快速切换，预设拥有独立上下文，结合Markdown图片输出以获得沉浸式角色扮演体验 或 作为Skill工作
-  - 🌡️ 暖群功能：群自动Gemini打招呼、群自动偷取发送表情包、复读 & 打断等功能
+  - 🌡️ 暖群功能：群自动Gemini打招呼、群自动偷取发送表情包、复读 & 打断、图片操作 等功能
   - 🔍 实时搜索：通过#gg命令实现智能搜索和信息聚合
   - 🗣️ 语音合成：集成Fishaudio的高质量TTS服务
   - 📱 视频解析：支持抖音、快手、哔哩哔哩视频解析
