@@ -2,13 +2,17 @@
 
 - [目录](#目录)
 - [SF插件 两种 API 接口简介](#sf插件-两种-api-接口简介)
+- [API 动态](#api-动态)
+  - [2026年5月10日](#2026年5月10日)
+  - [2025年10月11日](#2025年10月11日)
 - [`#g手办化` 接口创建教程](#g手办化-接口创建教程)
-  - [2025年10月11日 更新说明](#2025年10月11日-更新说明)
   - [配置教程](#配置教程)
 - [类似 ControlNet 一般控制图片](#类似-controlnet-一般控制图片)
 - [`#s手办化` 接口创建教程](#s手办化-接口创建教程)
-  - [2025年9月5日 更新说明](#2025年9月5日-更新说明)
+  - [OpenAI API 接入教程](#openai-api-接入教程)
   - [OpenRouter.ai 配置教程](#openrouterai-配置教程)
+  - [2025年9月5日 更新说明](#2025年9月5日-更新说明)
+  - [OpenRouter.ai 配置教程](#openrouterai-配置教程-1)
 - [多模态模型的更多的提示词](#多模态模型的更多的提示词)
     - [🎨 让AI绘画成为日常，让创意永不枯竭！✨](#-让ai绘画成为日常让创意永不枯竭)
 
@@ -16,29 +20,35 @@
 
 - 目前市面上存在 **OpenAI** 接口和 **GEMINI API** 接口这两种调用LLM的方式
 - `#g` 接口为 SF插件 调用 **GEMINI API** 接口的命令前缀
-- `#s` 接口为 SF插件 调用 **OpenAI** 接口的命令前缀
+- `#s` 接口为 SF插件 调用 **OpenAI API** 接口的命令前缀
 
+# API 动态
+
+## 2026年5月10日（推荐使用）
+
+- GPT-Image-2: 推荐使用 [chatgpt2api](https://github.com/basketikun/chatgpt2api) 项目以个人学习、研究、教育用途地免费使用 `GPT-Image-2` 模型
+- 部署好 [chatgpt2api](https://github.com/basketikun/chatgpt2api) 之后继续阅读[OpenAI API 配置教程](#openai-api-接入教程)接入 OpenAI API 接口
+
+## 2025年10月11日
+
+- 大香蕉: 推荐使用 [gcli2api](https://github.com/su-kaka/gcli2api) 以个人学习、研究、教育用途地免费使用 `gemini-2.5-flash-image-preview` 模型
+- 部署好 [gcli2api](https://github.com/su-kaka/gcli2api) 之后将 GeminiCLI 转换为 **GEMINI API** 接口后继续阅读[下面](#配置教程)的教程, 其中 `接口地址` 和 `接口密钥` 填写你部署好的 [gcli2api](https://github.com/su-kaka/gcli2api) 提供的 `接口地址` 和 `接口密钥` 
 
 # `#g手办化` 接口创建教程
-
-## 2025年10月11日 更新说明
-
-- 目前 Gemini 官网并未推出 `gemini-2.5-flash-image-preview (Nano-Banana)` 模型的免费额度, 推荐使用 [gcli2api](https://github.com/su-kaka/gcli2api) 以个人学习、研究、教育用途地免费使用 `gemini-2.5-flash-image-preview` 模型
-- 部署好 [gcli2api](https://github.com/su-kaka/gcli2api) 之后将 GeminiCLI 转换为 **GEMINI API** 接口后继续阅读[下面](#配置教程)的教程, 其中 `接口地址` 和 `接口密钥` 填写你部署好的 [gcli2api](https://github.com/su-kaka/gcli2api) 提供的 `接口地址` 和 `接口密钥` 
 
 ## 配置教程
 
 > [!TIP]
 > 连接 Gemini 官网或使用反代
 > 
-> 其中 `gemini-2.5-flash-image-preview` 模型目前Google对其限时免费，考虑到其属于 flash 类别，将来也许将永久免费
+> 目前（2026年5月10日）Gemini已经不提供免费的 大/小香蕉 额度了，不过还有其他方法（免费学生会员法），请大家八仙过海吧。
 >
 
-- 按照图片填入 [锅巴插件](https://github.com/guoba-yunzai/guoba-plugin)-sf插件配置-对话功能(标签页)-[#gg]接口列表 中
-  - 其中接口地址留空则优先使用全局 `[#gg]Gemini反代地址`
+- 按照图片填入 [锅巴插件](https://github.com/guoba-yunzai/guoba-plugin)-sf插件配置-对话功能(标签页)-`模型提供商-Gemini`-接口列表 中
+  - 其中接口地址留空则优先使用插件内自带的Gemini反代地址
   - 其中Key填写你的 [GeminiKey](https://aistudio.google.com/app/apikey) 或者留空使用本插件的公益站（如果还有额度的话）
  
-    <img width="400" alt="image" src="https://github.com/user-attachments/assets/ac8c2bbd-b560-4023-85e5-9bb29b2e9e58" />
+    <img width="500" alt="image" src="https://github.com/user-attachments/assets/ac8c2bbd-b560-4023-85e5-9bb29b2e9e58" />
 
 
     其中提示词为:
@@ -51,36 +61,31 @@
 
     <img width="400" alt="image" src="https://github.com/user-attachments/assets/2fd8a3a1-128b-42b2-97f0-571880399da5" />
 
+# `#s手办化` 接口创建教程
 
-# 类似 ControlNet 一般控制图片
+## OpenAI API 接入教程
 
-> [!TIP]
-> 同时适用于 `#s` 和 `#g` 接口
->
+- 按照图片填入 [锅巴插件](https://github.com/guoba-yunzai/guoba-plugin)-sf插件配置-对话功能(标签页)-`模型提供商-OpenAI API`-接口列表 中
 
-- 锅巴设置中如下，把 `必需图片` 改为 `2`
-
-    <img width="800" alt="image" src="https://github.com/user-attachments/assets/7360abf1-6ffa-405f-913b-334cc84b385b" />
+<img width="494" alt="image" src="https://github.com/user-attachments/assets/68631430-1c75-4475-84a0-3221c068af5d" />
 
 - 对Bot使用该指令
 
-    <img width="400" alt="image" src="https://github.com/user-attachments/assets/0cf678db-bc68-4cf4-9a87-af38b147d9fa" />
+<img width="614" height="563" alt="image" src="https://github.com/user-attachments/assets/ba6c6980-8c0a-4a90-8a56-eb8a89f0460b" />
 
 - Bot返回
 
-    <img width="400" alt="image" src="https://github.com/user-attachments/assets/97a0a07d-e1c4-40b4-b9e0-74961ac22142" />
+<img width="441" height="504" alt="image" src="https://github.com/user-attachments/assets/cd9fdc8d-ee06-432b-bde3-1049b34f9e7d" />
 
 
-# `#s手办化` 接口创建教程
+## OpenRouter.ai 配置教程
 
 > [!TIP]
 > 本篇无任何 **邀请码（AFF）**，纯发电
->
-
-## 2025年9月5日 更新说明
-
-- OpenRouter.ai 的 google/gemini-2.5-flash-image-preview:free 开始收费了...
-- 不过它还有其他的免费模型，例如参考下面的**配置教程**用免费的 [DeepSeek: DeepSeek V3.1 (free)](https://openrouter.ai/deepseek/deepseek-chat-v3.1:free) 或 [Venice: Uncensored (free)](https://openrouter.ai/cognitivecomputations/dolphin-mistral-24b-venice-edition:free) 玩玩角色扮演对话... >///<
+> 
+> 目前（2025年9月5日）OpenRouter.ai 的 google/gemini-2.5-flash-image-preview:free 开始收费了
+> 
+> 不过它还有其他的免费模型，例如参考下面的**配置教程**用免费的 [DeepSeek: DeepSeek V3.1 (free)](https://openrouter.ai/deepseek/deepseek-chat-v3.1:free) 或 [Venice: Uncensored (free)](https://openrouter.ai/cognitivecomputations/dolphin-mistral-24b-venice-edition:free) 玩玩角色扮演对话... >///<
 
 ## OpenRouter.ai 配置教程
 
@@ -118,7 +123,7 @@
     })
     });
     ```
-- 按照图片填入 [锅巴插件](https://github.com/guoba-yunzai/guoba-plugin)-sf插件配置-对话功能(标签页)-[#ss]接口列表 中
+- 按照图片填入 [锅巴插件](https://github.com/guoba-yunzai/guoba-plugin)-sf插件配置-对话功能(标签页)-`模型提供商-OpenAI API`-接口列表 中
 
     <img width="800" alt="image" src="https://github.com/user-attachments/assets/11c60eea-b12a-42c1-83cd-88845558e98b" />
 
@@ -134,11 +139,28 @@
 
     <img width="400" alt="image" src="https://github.com/user-attachments/assets/b599b948-4ea1-4d38-826d-a164e3fb7400" />
 
+# 类似 ControlNet 一般控制图片
+
+> [!TIP]
+> 同时适用于 `#s` 和 `#g` 接口
+>
+
+- 锅巴设置中如下，把 `必需图片` 改为 `2`
+
+    <img width="400" alt="image" src="https://github.com/user-attachments/assets/36179ba7-7415-4e25-8c33-52d9f65b4715" />
+
+- 对Bot使用该指令
+
+    <img width="400" alt="image" src="https://github.com/user-attachments/assets/0cf678db-bc68-4cf4-9a87-af38b147d9fa" />
+
+- Bot返回
+
+    <img width="400" alt="image" src="https://github.com/user-attachments/assets/97a0a07d-e1c4-40b4-b9e0-74961ac22142" />
+
 
 # 多模态模型的更多的提示词
 
 - 参考[这篇文章](https://bytedance.larkoffice.com/docx/L4vCdah1DoDg7axVdYGcoplSn9f)
-
 
 ---
 

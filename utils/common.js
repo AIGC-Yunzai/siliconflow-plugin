@@ -292,6 +292,8 @@ export function extractBase64Images(text, checkOnly = false) {
     /!\[[^\]]*\]\(\s*(data:image\/[a-zA-Z]+[:;]base64,[a-zA-Z0-9+\/=]+)\s*\)/gi,
     // 直接的 data:image 格式 (可能有冒号或分号)
     /data:image\/[a-zA-Z]+[:;]base64,[a-zA-Z0-9+\/=]+/gi,
+    // Markdown 图片格式: ![alt](http...)
+    /!\[[^\]]*\]\(\s*(https?:\/\/[^\s)]+)\s*\)/gi,
   ];
 
   // 如果仅检查模式，只需要知道是否有图片即可
@@ -314,9 +316,9 @@ export function extractBase64Images(text, checkOnly = false) {
         let dataUrl;
         if (match.startsWith('![')) {
           // 从 markdown 格式中提取
-          const urlMatch = match.match(/data:image\/[a-zA-Z]+[:;]base64,[a-zA-Z0-9+\/=]+/i);
-          if (urlMatch) {
-            dataUrl = urlMatch[0];
+          const urlMatch = match.match(/\(\s*(data:image\/[a-zA-Z]+[:;]base64,[a-zA-Z0-9+\/=]+)\s*\)/i) || match.match(/\(\s*(https?:\/\/[^\s)]+)\s*\)/i);
+          if (urlMatch && urlMatch[1]) {
+            dataUrl = urlMatch[1];
           }
         } else {
           dataUrl = match;
@@ -324,7 +326,9 @@ export function extractBase64Images(text, checkOnly = false) {
 
         if (dataUrl) {
           // 标准化格式: 将 data:image/png:;base64 转换为 data:image/png;base64
-          dataUrl = dataUrl.replace(/data:image\/([a-zA-Z]+):;base64,/, 'data:image/$1;base64,');
+          if (dataUrl.startsWith('data:image')) {
+            dataUrl = dataUrl.replace(/data:image\/([a-zA-Z]+):;base64,/, 'data:image/$1;base64,');
+          }
 
           // 避免重复添加
           if (!imageBase64Array.includes(dataUrl)) {

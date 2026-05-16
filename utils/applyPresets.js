@@ -32,11 +32,17 @@ export function applyPresets(text, config, e = {}) {
     // 按预设名长度降序排序,优先匹配较长的预设名
     const sortedPresets = [...presets]
         .filter(p => p.name && p.prompt)
-        .map(p => ({
-            name: p.name.trim(),
-            prompt: p.prompt.trim(),
-            regex: new RegExp(`\\{预设:${escapeRegExp(p.name.trim())}\\}`, 'gi')
-        }))
+        .map(p => {
+            const nameTrimmed = p.name.trim();
+            const regexStr = config.antiMisoperation
+                ? `\\{预设:${escapeRegExp(nameTrimmed)}\\}`
+                : escapeRegExp(nameTrimmed);
+            return {
+                name: nameTrimmed,
+                prompt: p.prompt.trim(),
+                regex: new RegExp(regexStr, 'gi')
+            };
+        })
         .sort((a, b) => b.name.length - a.name.length)
 
     // 收集所有匹配项并按位置排序

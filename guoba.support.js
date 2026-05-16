@@ -691,7 +691,7 @@ export function supportGuoba() {
                 label: "预设名",
                 component: "Input",
                 required: true,
-                bottomHelpMessage: "预设触发词为: {预设:'预设名'} ；可用指令：#sf预设列表 #sf预设[添加|删除|查看]",
+                bottomHelpMessage: "将绘画输入文本中的 预设名 替换为 预设文本；可用指令：#sf预设列表 #sf预设[添加|删除|查看]",
               },
               {
                 field: "prompt",
@@ -701,6 +701,12 @@ export function supportGuoba() {
               },
             ],
           },
+        },
+        {
+          field: "config_presets.antiMisoperation",
+          label: "预设防误触",
+          bottomHelpMessage: "开启后 绘画预设触发词更改为: {预设:预设名} ；例如 #sf绘画{预设:可爱女孩}",
+          component: "Switch",
         },
         {
           field: "replyStartMsg",
@@ -827,7 +833,7 @@ export function supportGuoba() {
                 field: "apiBaseUrl",
                 label: "接口地址",
                 component: "Input",
-                bottomHelpMessage: "设置#ss[对话]的API接口地址，兼容所有OpenAI格式的API接口；通常是以 /v1 结尾",
+                bottomHelpMessage: "设置#s [对话]的API接口地址，兼容所有OpenAI格式的API接口；通常是以 /v1 结尾",
                 componentProps: {
                   placeholder: 'https://api.siliconflow.cn/v1',
                 },
@@ -836,25 +842,45 @@ export function supportGuoba() {
                 field: "apiKey",
                 label: "接口密钥",
                 component: "InputPassword",
-                bottomHelpMessage: "设置#ss[对话]的API接口密钥，多个密钥使用英文逗号分割，自动轮询。",
+                bottomHelpMessage: "设置#s [对话]的API接口密钥，多个密钥使用英文逗号分割，自动轮询。",
               },
               {
                 field: "model",
                 label: "接口模型",
                 component: "Input",
-                bottomHelpMessage: "设置#ss[对话]的API接口模型",
+                bottomHelpMessage: "设置#s [对话]的API接口模型",
                 componentProps: {
                   placeholder: 'gpt-4',
                 },
               },
               {
+                field: "enableImageUpload",
+                label: "多模态模型",
+                component: "Switch",
+                bottomHelpMessage: "是否多模态模型，开启后支持上传图片给模型，关闭后将忽略消息中的图片",
+              },
+              {
+                component: "Divider",
+                label: "输入控制",
+                componentProps: {
+                  orientation: "left",
+                  plain: true,
+                },
+              },
+              {
                 field: "prompt",
-                label: "接口提示词",
+                label: "系统提示词",
                 component: "InputTextArea",
-                bottomHelpMessage: "设置#ss[对话]的API接口提示词，自动将提示词中的字符串 {{user_name}} 替换为用户昵称/群昵称",
+                bottomHelpMessage: "设置#s [对话]的API接口的系统提示词，并可自动将提示词中的字符串 {{user_name}} 替换为用户昵称/群昵称",
                 componentProps: {
                   placeholder: 'You are a helpful assistant, you prefer to speak Chinese',
                 },
+              },
+              {
+                field: "useContext",
+                label: "上下文功能",
+                component: "Switch",
+                bottomHelpMessage: "开启后将对该接口保留对话历史记录，默认为关闭",
               },
               {
                 field: 'groupContextLength',
@@ -865,30 +891,6 @@ export function supportGuoba() {
                   min: 0,
                   step: 1,
                 },
-              },
-              {
-                field: "useMarkdown",
-                label: "图片对话模式",
-                component: "Switch",
-                bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
-              },
-              {
-                field: "forwardMessage",
-                label: "发送合并消息",
-                component: "Switch",
-                bottomHelpMessage: "开启后在图片对话模式下会同时转发原始消息",
-              },
-              {
-                field: "quoteMessage",
-                label: "引用原消息",
-                component: "Switch",
-                bottomHelpMessage: "开启后回复时会引用原消息",
-              },
-              {
-                field: "enableImageUpload",
-                label: "图片上传功能",
-                component: "Switch",
-                bottomHelpMessage: "开启后支持上传图片给模型，关闭后将忽略消息中的图片",
               },
               {
                 field: "mustNeedImgLength",
@@ -914,6 +916,38 @@ export function supportGuoba() {
                 },
               },
               {
+                component: "Divider",
+                label: "输出控制",
+                componentProps: {
+                  orientation: "left",
+                  plain: true,
+                },
+              },
+              {
+                field: "paintModel",
+                label: "仅绘画模式",
+                component: "Switch",
+                bottomHelpMessage: "开启后改接口转为绘画模式：1.仅发送图片，不回复文字；2.可以使用 绘画功能-绘画全局设置-绘画预设；3.与图片对话模式兼容；4.不保存上下文；5.将发送绘画开始信息；6.支持使用 --upimgs [num] 控制必需图片张数",
+              },
+              {
+                field: "useMarkdown",
+                label: "图片对话模式",
+                component: "Switch",
+                bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
+              },
+              {
+                field: "forwardMessage",
+                label: "发送合并消息",
+                component: "Switch",
+                bottomHelpMessage: "开启后在图片对话模式下会同时转发原始消息",
+              },
+              {
+                field: "quoteMessage",
+                label: "引用原消息",
+                component: "Switch",
+                bottomHelpMessage: "开启后回复时会引用原消息",
+              },
+              {
                 field: "mustReturnImgRetriesTimes",
                 label: "必须返回图片",
                 bottomHelpMessage: "重试次数：该接口必须返回图片，若没有返回图片，则执行重试的次数。",
@@ -925,22 +959,18 @@ export function supportGuoba() {
                 },
               },
               {
-                field: "paintModel",
-                label: "仅绘画模式",
-                component: "Switch",
-                bottomHelpMessage: "开启后改接口转为绘画模式：1.仅发送图片，不回复文字；2.可以使用 绘画功能-绘画全局设置-绘画预设；3.与图片对话模式兼容；4.不保存上下文；5.将发送绘画开始信息；6.支持使用 --upimgs [num] 控制必需图片张数",
-              },
-              {
                 field: "forwardThinking",
                 label: "转发思考",
                 component: "Switch",
                 bottomHelpMessage: "开启后会转发思考过程，如果开启图片对话模式，则需要开启发送合并消息",
               },
               {
-                field: "useContext",
-                label: "上下文功能",
-                component: "Switch",
-                bottomHelpMessage: "开启后将对该接口保留对话历史记录，默认为关闭",
+                component: "Divider",
+                label: "触发控制",
+                componentProps: {
+                  orientation: "left",
+                  plain: true,
+                },
               },
               {
                 field: "remark",
@@ -1017,7 +1047,7 @@ export function supportGuoba() {
         {
           field: 'ss_usingAPI',
           label: '默认使用接口',
-          bottomHelpMessage: "选择 [#ss]指令/主人/BOT名称触发时要使用的接口配置；可用指令：#sfss接口列表 #sfss使用接口[数字]",
+          bottomHelpMessage: "选择 [#ss]指令/主人/BOT名称触发时要使用的接口配置；新添加的接口刷新网页后显示；可用指令：#sfss接口列表 #sfss使用接口[数字]",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.ss_APIList || []).map((item, index) => {
@@ -1028,7 +1058,7 @@ export function supportGuoba() {
         // {
         //   field: "ss_apiBaseUrl",
         //   label: "[#ss]对话接口地址",
-        //   bottomHelpMessage: "设置#ss[对话] 的对话API接口地址，兼容所有OpenAI格式的API接口，默认无连续对话功能，如有需要可以打开下面的上下文开关，若不填则使用SF接口",
+        //   bottomHelpMessage: "设置#s [对话] 的对话API接口地址，兼容所有OpenAI格式的API接口，默认无连续对话功能，如有需要可以打开下面的上下文开关，若不填则使用SF接口",
         //   component: "Input",
         //   componentProps: {
         //     placeholder: 'https://api.siliconflow.cn/v1',
@@ -1158,7 +1188,7 @@ export function supportGuoba() {
                 field: "apiBaseUrl",
                 label: "接口地址",
                 component: "Input",
-                bottomHelpMessage: "设置#gg[对话]的API接口地址，对https://generativelanguage.googleapis.com 反代，内置反代不可用时可选用： https://a.geminiproxy.ggff.net",
+                bottomHelpMessage: "设置#g [对话]的API接口地址，对https://generativelanguage.googleapis.com 反代，留空则使用内置反代，内置反代不可用时可选用 https://a.geminiproxy.ggff.net 或自行搭建",
                 componentProps: {
                   placeholder: 'https://a.geminiproxy.ggff.net',
                 },
@@ -1167,25 +1197,59 @@ export function supportGuoba() {
                 field: "apiKey",
                 label: "接口密钥",
                 component: "InputPassword",
-                bottomHelpMessage: "设置#gg[对话]的API接口密钥，Key可以在https://aistudio.google.com/app/apikey获取，多个密钥使用英文逗号分割，自动轮询。",
+                bottomHelpMessage: "设置#g [对话]的API接口密钥，Key可以在https://aistudio.google.com/app/apikey获取，多个密钥使用英文逗号分割，自动轮询。",
               },
               {
                 field: "model",
                 label: "接口模型",
-                bottomHelpMessage: '默认值：gemini-2.0-flash；推荐：gemini-exp-1206,gemini-2.0-flash-thinking-exp-01-21；可用模型每日自动更新，立即更新指令：#sf插件立即执行每日自动任务',
+                bottomHelpMessage: '默认值：gemini-flash-latest；只能选择/填写1个模型；可用模型每日自动更新，立即更新指令：#sf插件立即执行每日自动任务',
                 component: 'Select',
                 componentProps: {
+                  mode: 'tags',
+                  maxTagCount: 1,
                   options: geminiModelsByFetch.map(s => { return { label: s, value: s } })
                 }
               },
               {
+                field: "useSearch",
+                label: "搜索功能",
+                component: "Switch",
+                bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型及后续支持该功能的模型",
+              },
+              {
+                field: "enableImageGeneration",
+                label: "文生图功能",
+                component: "Switch",
+                bottomHelpMessage: "开启后Gemini将支持文生图功能，可以生成图片，仅限gemini-2.0-flash-exp模型及后续支持该功能的模型",
+              },
+              {
+                field: "useVertexAI",
+                label: "使用Vertex AI格式",
+                component: "Switch",
+                bottomHelpMessage: "开启后将使用Google Vertex AI的请求格式（在Google Cloud Vertex AI平台上调用Gemini API的请求和响应格式），不知道是什么的话就关闭",
+              },
+              {
+                component: "Divider",
+                label: "输入控制",
+                componentProps: {
+                  orientation: "left",
+                  plain: true,
+                },
+              },
+              {
                 field: "prompt",
-                label: "接口提示词",
+                label: "系统提示词",
                 component: "InputTextArea",
-                bottomHelpMessage: "设置#gg[对话]的API接口提示词，自动将提示词中的字符串 {{user_name}} 替换为用户昵称/群昵称",
+                bottomHelpMessage: "设置#g [对话]的API接口的系统提示词，并可自动将提示词中的字符串 {{user_name}} 替换为用户昵称/群昵称",
                 componentProps: {
                   placeholder: '你是一个有用的助手，你更喜欢说中文。你会根据用户的问题，通过搜索引擎获取最新的信息来回答问题。你的回答会尽可能准确、客观。',
                 },
+              },
+              {
+                field: "useContext",
+                label: "上下文功能",
+                component: "Switch",
+                bottomHelpMessage: "开启后将对该接口保留对话历史记录，默认为关闭",
               },
               {
                 field: 'groupContextLength',
@@ -1196,36 +1260,6 @@ export function supportGuoba() {
                   min: 0,
                   step: 1,
                 },
-              },
-              {
-                field: "useMarkdown",
-                label: "图片对话模式",
-                component: "Switch",
-                bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
-              },
-              {
-                field: "forwardMessage",
-                label: "发送合并消息",
-                component: "Switch",
-                bottomHelpMessage: "开启后在图片对话模式下会同时转发原始消息",
-              },
-              {
-                field: "quoteMessage",
-                label: "引用原消息",
-                component: "Switch",
-                bottomHelpMessage: "开启后回复时会引用原消息",
-              },
-              {
-                field: "useSearch",
-                label: "搜索功能",
-                component: "Switch",
-                bottomHelpMessage: "开启后Gemini将使用搜索引擎获取最新信息来回答问题，仅限gemini-2.0-flash-exp模型及后续支持该功能的模型",
-              },
-              {
-                field: "useVertexAI",
-                label: "使用Vertex AI格式",
-                component: "Switch",
-                bottomHelpMessage: "开启后将使用Google Vertex AI的请求格式（在Google Cloud Vertex AI平台上调用Gemini API的请求和响应格式），不知道是什么的话就关闭",
               },
               {
                 field: "mustNeedImgLength",
@@ -1251,10 +1285,36 @@ export function supportGuoba() {
                 },
               },
               {
-                field: "enableImageGeneration",
-                label: "文生图功能",
+                component: "Divider",
+                label: "输出控制",
+                componentProps: {
+                  orientation: "left",
+                  plain: true,
+                },
+              },
+              {
+                field: "paintModel",
+                label: "仅绘画模式",
                 component: "Switch",
-                bottomHelpMessage: "开启后Gemini将支持文生图功能，可以生成图片，仅限gemini-2.0-flash-exp模型及后续支持该功能的模型",
+                bottomHelpMessage: "开启后改接口转为绘画模式：1.仅发送图片，不回复文字；2.可以使用 绘画功能-绘画全局设置-绘画预设；3.与图片对话模式兼容；4.不保存上下文；5.将发送绘画开始信息；6.支持使用  --upimgs [num] 控制必需图片张数",
+              },
+              {
+                field: "useMarkdown",
+                label: "图片对话模式",
+                component: "Switch",
+                bottomHelpMessage: "开启后将以图片形式显示对话内容，支持markdown格式",
+              },
+              {
+                field: "forwardMessage",
+                label: "发送合并消息",
+                component: "Switch",
+                bottomHelpMessage: "开启后在图片对话模式下会同时转发原始消息",
+              },
+              {
+                field: "quoteMessage",
+                label: "引用原消息",
+                component: "Switch",
+                bottomHelpMessage: "开启后回复时会引用原消息",
               },
               {
                 field: "mustReturnImgRetriesTimes",
@@ -1268,16 +1328,12 @@ export function supportGuoba() {
                 },
               },
               {
-                field: "paintModel",
-                label: "仅绘画模式",
-                component: "Switch",
-                bottomHelpMessage: "开启后改接口转为绘画模式：1.仅发送图片，不回复文字；2.可以使用 绘画功能-绘画全局设置-绘画预设；3.与图片对话模式兼容；4.不保存上下文；5.将发送绘画开始信息；6.支持使用  --upimgs [num] 控制必需图片张数",
-              },
-              {
-                field: "useContext",
-                label: "上下文功能",
-                component: "Switch",
-                bottomHelpMessage: "开启后将对该接口保留对话历史记录，默认为关闭",
+                component: "Divider",
+                label: "触发控制",
+                componentProps: {
+                  orientation: "left",
+                  plain: true,
+                },
               },
               {
                 field: "remark",
@@ -1354,7 +1410,7 @@ export function supportGuoba() {
         {
           field: 'gg_usingAPI',
           label: '默认使用接口',
-          bottomHelpMessage: "选择 [#gg]指令/主人/BOT名称触发时要使用的接口配置；其他用户可使用指令：#sfgg接口列表 #sfgg使用接口[数字]",
+          bottomHelpMessage: "选择 [#gg]指令/主人/BOT名称触发时要使用的接口配置；新添加的接口刷新网页后显示；其他用户可使用指令：#sfgg接口列表 #sfgg使用接口[数字]",
           component: 'Select',
           componentProps: {
             options: (Config.getConfig()?.gg_APIList || []).map((item, index) => {
@@ -1365,7 +1421,7 @@ export function supportGuoba() {
         // {
         //   field: "ggBaseUrl",
         //   label: "[#gg]Gemini反代地址",
-        //   bottomHelpMessage: "设置#gg[对话] 的API接口地址，对https://generativelanguage.googleapis.com 反代；留空则使用内置地址，内置反代不可用时可选用： https://a.geminiproxy.ggff.net",
+        //   bottomHelpMessage: "设置#g [对话] 的API接口地址，对https://generativelanguage.googleapis.com 反代；留空则使用内置地址，内置反代不可用时可选用： https://a.geminiproxy.ggff.net",
         //   component: "Input",
         //   componentProps: {
         //     placeholder: 'https://a.geminiproxy.ggff.net',
@@ -2369,7 +2425,7 @@ export function supportGuoba() {
           component: 'Input',
           componentProps: {
             readonly: true,
-            defaultValue: 'https://github.com/AIGC-Yunzai/siliconflow-plugin/blob/main/docs/openrouter_ai.md'
+            defaultValue: 'https://github.com/AIGC-Yunzai/siliconflow-plugin/blob/main/docs/OpemAI_API_Gemini.md'
           }
         },
         {
@@ -2427,6 +2483,37 @@ export function supportGuoba() {
           } else {
             lodash.set(config, keyPath, value)
           }
+        }
+        /**
+         * @description: 转换 config.{} component: 'Select' 的 mode: 'tags'
+         * @param {*} targetObj config
+         * @param {*} sourceObj data
+         * @param {*} path data[''] 中的点路径字符串值
+         * @return {*}
+         */
+        const assignFirstElementIfExists = (targetObj, sourceObj, path) => {
+          const sourceData = sourceObj[path];
+          if (sourceData == null) return;
+          const firstElement = Array.isArray(sourceData) ? sourceData[0] : sourceData;
+          if (firstElement != null) {
+            const assignPath = path.startsWith('config.') ? path.slice(7) : path;
+            const keys = assignPath.split('.');
+            let current = targetObj;
+            for (let i = 0; i < keys.length - 1; i++) {
+              const key = keys[i];
+              if (current[key] == null) {
+                current[key] = {};
+              }
+              current = current[key];
+            }
+            const lastKey = keys[keys.length - 1];
+            current[lastKey] = firstElement;
+          }
+        };
+        if (Array.isArray(config.gg_APIList)) {
+          config.gg_APIList.forEach(item => {
+            assignFirstElementIfExists(item, item, 'model');
+          });
         }
 
         // 验证配置

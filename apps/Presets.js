@@ -37,7 +37,7 @@ export class Jimeng extends plugin {
         }
 
         const presetNames = presets_config.presets.map((preset, index) => {
-            return `${index + 1}. {预设:${preset.name}}`
+            return presets_config.antiMisoperation ? `${index + 1}. {预设:${preset.name}}` : `${index + 1}. ${preset.name}`
         }).join('\n')
 
         const message = `当前预设列表：\n${presetNames}`
@@ -61,7 +61,7 @@ export class Jimeng extends plugin {
             if (!viewTarget) {
                 // 显示预设列表
                 const presetList = presets_config.presets.map((preset, index) => {
-                    return `${index + 1}. {预设:${preset.name}}`
+                    return presets_config.antiMisoperation ? `${index + 1}. {预设:${preset.name}}` : `${index + 1}. ${preset.name}`
                 }).join('\n')
                 await e.reply(`请在120秒内发送要查看的预设名称或序号：\n${presetList}`, true, { recallMsg: 119 })
                 const e_view = await this.awaitContext()
@@ -140,11 +140,11 @@ export class Jimeng extends plugin {
                 }
                 presets_config.presets[existingIndex] = { name: presetName, prompt: presetPrompt }
                 await Config.setConfig(presets_config, "presets")
-                await e.reply(`预设"${presetName}"已更新成功！触发词：\n {预设:${presetName}}\n` + this.helpMsg, true)
+                await e.reply(`预设"${presetName}"已更新成功！触发词：\n ${presets_config.antiMisoperation ? `{预设:${presetName}}` : presetName}\n` + this.helpMsg, true)
             } else {
                 presets_config.presets.push({ name: presetName, prompt: presetPrompt })
                 await Config.setConfig(presets_config, "presets")
-                await e.reply(`预设"${presetName}"添加成功！触发词：\n {预设:${presetName}}\n` + this.helpMsg, true)
+                await e.reply(`预设"${presetName}"添加成功！触发词：\n ${presets_config.antiMisoperation ? `{预设:${presetName}}` : presetName}\n` + this.helpMsg, true)
             }
 
         } else if (action === '删除') {
@@ -159,7 +159,7 @@ export class Jimeng extends plugin {
             if (!deleteTarget) {
                 // 显示预设列表
                 const presetList = presets_config.presets.map((preset, index) => {
-                    return `${index + 1}. {预设:${preset.name}}`
+                    return presets_config.antiMisoperation ? `${index + 1}. {预设:${preset.name}}` : `${index + 1}. ${preset.name}`
                 }).join('\n')
                 await e.reply(`请在120秒内发送要删除的预设名称或序号：\n${presetList}`, true, { recallMsg: 119 })
                 const e_delete = await this.awaitContext()

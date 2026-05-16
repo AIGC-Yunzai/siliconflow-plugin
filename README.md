@@ -83,7 +83,7 @@ pip install aiohttp requests
 > [!TIP]
 > 绘画&对话接口配置教程：[接入SiliconFlow](https://aigc-yunzai.me/)
 > 
-> 手办化ai生图配置教程：[gg&ss接口配置教程](./docs/openrouter_ai.md)
+> 手办化ai生图配置教程：[OpenAI API接口与Gemini配置教程](./docs/OpemAI_API_Gemini.md)
 > 
 > 魔搭绘画配置教程：[接入魔搭绘画API](./docs/moscope.md)
 > 

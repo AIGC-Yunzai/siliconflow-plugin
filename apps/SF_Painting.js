@@ -140,10 +140,12 @@ export class SF_Painting extends plugin {
                 {
                     reg: '^#(s|S)(?!f|F|s|S)(.+)',
                     fnc: 'sf_select_and_chat',
+                    log: false
                 },
                 {
                     reg: '^#(g|G)(?!g|G)(.+)',
                     fnc: 'gg_select_and_chat',
+                    log: false
                 },
                 {
                     /** At模式 */
@@ -1344,7 +1346,11 @@ export class SF_Painting extends plugin {
                         // 如果markdown生成失败，使用普通方式发送
                         const replyArray = [cleanedAnswer];
                         generatedImageArray.forEach((imageBase64) => {
-                            replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
+                            if (imageBase64.startsWith('http')) {
+                                replyArray.push({ ...segment.image(imageBase64), origin: true });
+                            } else {
+                                replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
+                            }
                         });
                         await e.reply(replyArray, quoteMessage);
                     }
@@ -1352,7 +1358,11 @@ export class SF_Painting extends plugin {
                     if (forwardMessage) {
                         const forwardMsg = [];
                         generatedImageArray.forEach((imageBase64) => {
-                            forwardMsg.push({ ...segment.image(`base64://${imageBase64.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
+                            if (imageBase64.startsWith('http')) {
+                                forwardMsg.push({ ...segment.image(imageBase64), origin: true });
+                            } else {
+                                forwardMsg.push({ ...segment.image(`base64://${imageBase64.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
+                            }
                         });
                         forwardMsg.push(...(splitString_Enter(cleanedAnswer)));
                         // 如果有思考过程且开启了转发思考
@@ -1367,7 +1377,11 @@ export class SF_Painting extends plugin {
                     if (!paintModel)
                         replyArray.push(cleanedAnswer)
                     generatedImageArray.forEach((imageBase64) => {
-                        replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
+                        if (imageBase64.startsWith('http')) {
+                            replyArray.push({ ...segment.image(imageBase64), origin: true });
+                        } else {
+                            replyArray.push({ ...segment.image(`base64://${imageBase64.replace(/^data:image\/\w+;base64,/, "")}`), origin: true });
+                        }
                     });
                     await e.reply(replyArray, quoteMessage);
 
