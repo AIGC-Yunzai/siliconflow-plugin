@@ -1764,7 +1764,7 @@ export function supportGuoba() {
               {
                 field: 'maxEmojiCount',
                 label: '表情包最大数量',
-                bottomHelpMessage: '本群最多保存多少个表情包，超出后随机删除旧表情，默认100',
+                bottomHelpMessage: '本群最多保存多少个表情包，超出后随机删除旧表情，默认50',
                 component: 'InputNumber',
                 componentProps: {
                   min: 1,

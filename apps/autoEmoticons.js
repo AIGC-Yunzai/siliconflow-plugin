@@ -328,7 +328,7 @@ export class autoEmoticons extends plugin {
         // 合并群独立配置与全局配置
         const groupConf = {
             confirmCount: groupConfItem?.confirmCount ?? 3,
-            maxEmojiCount: groupConfItem?.maxEmojiCount ?? 100,
+            maxEmojiCount: groupConfItem?.maxEmojiCount ?? 50,
             sendCD: groupConfItem?.sendCD ?? 299,
             replyRate: groupConfItem?.replyRate ?? 0.05
         }
@@ -761,7 +761,7 @@ export class autoEmoticons extends plugin {
         // 合并群独立配置和全局配置
         const groupConf = {
             confirmCount: groupConfItem?.confirmCount ?? 3,
-            maxEmojiCount: groupConfItem?.maxEmojiCount ?? 100,
+            maxEmojiCount: groupConfItem?.maxEmojiCount ?? 50,
             sendCD: groupConfItem?.sendCD ?? 299,
             replyRate: groupConfItem?.replyRate ?? 0.05
         }
