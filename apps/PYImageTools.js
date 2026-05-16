@@ -10,8 +10,6 @@ import {
 } from '../utils/getImg.js'
 import Config from "../components/Config.js";
 
-const { PY_ImageToolsSwitch } = Config.getConfig();
-
 // 根据操作系统判断：Windows(win32) 下默认使用 'python'，其他系统(如 linux/macOS) 使用 'python3'
 const defaultPythonPath = process.platform === 'win32' ? 'python' : 'python3'
 
@@ -46,7 +44,7 @@ export class ImageTools extends plugin {
     }
 
     async sendHelp(e) {
-        if (!PY_ImageToolsSwitch) {
+        if (!Config.getConfig().PY_ImageToolsSwitch) {
             return false;
         }
         let helpMsg = `🎨 ImageTools 图片操作帮助 🎨
@@ -121,7 +119,7 @@ export class ImageTools extends plugin {
     }
 
     async handleImageCmd(e) {
-        if (!PY_ImageToolsSwitch) {
+        if (!Config.getConfig().PY_ImageToolsSwitch) {
             return false;
         }
         let match = e.msg.match(new RegExp(`^#(${commands.join('|')})(.*)$`));

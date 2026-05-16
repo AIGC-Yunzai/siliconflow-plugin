@@ -2,8 +2,6 @@ import Config from '../components/Config.js'
 import plugin from '../../../lib/plugins/plugin.js'
 import _ from 'lodash'
 
-const { turnOnBilitv, video_maxSizeMB } = Config.getConfig();
-
 const regB23 = /(b23\.tv|bili2233.cn)\\?\/\w{7}/
 const regBV = /BV1\w{9}/
 const regAV = /av\d+/
@@ -56,7 +54,7 @@ export class bilitv extends plugin {
     }
 
     async jxsp(e) {
-        if (!turnOnBilitv)
+        if (!Config.getConfig().turnOnBilitv)
             return false;
         logger.info('[sf插件]b站解析:', e.msg);
         let bvid = ""
@@ -134,8 +132,8 @@ export class bilitv extends plugin {
                 if (contentLength) {
                     const fileSizeBytes = parseInt(contentLength);
                     const fileSizeMB = fileSizeBytes / (1024 * 1024);
-                    if (fileSizeMB > video_maxSizeMB) {
-                        e.reply(`视频文件太大惹(${fileSizeMB.toFixed(1)}MB > ${video_maxSizeMB}MB)，人家不敢解析QAQ`, true);
+                    if (fileSizeMB > Config.getConfig().video_maxSizeMB) {
+                        e.reply(`视频文件太大惹(${fileSizeMB.toFixed(1)}MB > ${Config.getConfig().video_maxSizeMB}MB)，人家不敢解析QAQ`, true);
                         return true;
                     }
                     logger.debug(`视频大小: ${fileSizeMB.toFixed(1)}MB，开始下载...`);
@@ -160,7 +158,7 @@ export class bilitv extends plugin {
 
 
     async jxfj(e) {
-        if (!turnOnBilitv)
+        if (!Config.getConfig().turnOnBilitv)
             return false;
         logger.info('[sf插件]b站解析:', e.msg);
         let epid = ""

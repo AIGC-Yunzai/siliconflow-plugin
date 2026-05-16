@@ -4,8 +4,6 @@ import { Kuaishou_parser } from '../utils/Video_parser_nodejs.js'
 import fetch from 'node-fetch'
 import common from '../../../lib/common/common.js'
 
-const { kuaishouTV, video_maxSizeMB } = Config.getConfig();
-
 export class Kuaishou_Video extends plugin {
     constructor() {
         super({
@@ -23,7 +21,7 @@ export class Kuaishou_Video extends plugin {
     }
 
     async kuaishouParser(e) {
-        if (!kuaishouTV) {
+        if (!Config.getConfig().kuaishouTV) {
             return false;
         }
         logger.info('[sf插件]快手解析:', e.msg);
@@ -71,8 +69,8 @@ export class Kuaishou_Video extends plugin {
                                     const contentLength = headResponse.headers.get('content-length');
                                     if (contentLength) {
                                         const fileSizeMB = parseInt(contentLength) / (1024 * 1024);
-                                        if (fileSizeMB > video_maxSizeMB) {
-                                            await e.reply(`视频文件过大 (${fileSizeMB.toFixed(1)}MB > ${video_maxSizeMB}MB)，跳过下载\n请手动访问：${item.video_url}`, true);
+                                        if (fileSizeMB > Config.getConfig().video_maxSizeMB) {
+                                            await e.reply(`视频文件过大 (${fileSizeMB.toFixed(1)}MB > ${Config.getConfig().video_maxSizeMB}MB)，跳过下载\n请手动访问：${item.video_url}`, true);
                                             continue;
                                         }
                                         logger.debug(`视频大小: ${fileSizeMB.toFixed(1)}MB，开始下载...`);

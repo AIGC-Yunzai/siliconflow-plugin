@@ -2349,25 +2349,25 @@ export function supportGuoba() {
         {
           field: "douyinTV",
           label: "抖音解析",
-          bottomHelpMessage: "启用抖音解析；需要安装 Python3 和 依赖 pip install aiohttp ；此开关重启生效",
+          bottomHelpMessage: "启用抖音解析；需要安装 Python3 和 依赖 pip install aiohttp",
           component: "Switch",
         },
         {
           field: "kuaishouTV",
           label: "快手解析",
-          bottomHelpMessage: "启用快手解析；需要安装 Python3 和 依赖 pip3 install requests ；此开关重启生效",
+          bottomHelpMessage: "启用快手解析；需要安装 Python3 和 依赖 pip3 install requests",
           component: "Switch",
         },
         {
           field: 'turnOnBilitv',
           label: 'b站解析',
-          bottomHelpMessage: '开启b站后，将会解析并发送bilibili链接或小程序关联的视频；此开关重启生效',
+          bottomHelpMessage: '开启b站后，将会解析并发送bilibili链接或小程序关联的视频',
           component: 'Switch'
         },
         {
           field: 'video_maxSizeMB',
           label: '视频大小限制',
-          bottomHelpMessage: 'b站、抖音解析视频容量超过该值将不会下载，防止发送信息时爆内存重启；此值重启生效',
+          bottomHelpMessage: 'b站、抖音解析视频容量超过该值将不会下载，防止发送信息时爆内存重启',
           helpMessage: '单位：MB',
           component: 'InputNumber',
           componentProps: {
@@ -2386,7 +2386,7 @@ export function supportGuoba() {
         {
           field: "PY_ImageToolsSwitch",
           label: "图片操作",
-          bottomHelpMessage: "开启指令 #图片操作帮助，例如 #gif变速 2x；需要安装 Python3 和 依赖 pip install Pillow requests pil-utils ；此开关重启生效",
+          bottomHelpMessage: "开启指令 #图片操作帮助，例如 #gif变速 2x；需要安装 Python3 和 依赖 pip install Pillow requests pil-utils",
           component: "Switch",
         },
         {

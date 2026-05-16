@@ -4,8 +4,6 @@ import { Douyin_parser } from '../utils/Video_parser_nodejs.js'
 import fetch from 'node-fetch'
 import common from '../../../lib/common/common.js'
 
-const { douyinTV, video_maxSizeMB } = Config.getConfig();
-
 export class Douyin_Video extends plugin {
     constructor() {
         super({
@@ -23,7 +21,7 @@ export class Douyin_Video extends plugin {
     }
 
     async douyinParser(e) {
-        if (!douyinTV) {
+        if (!Config.getConfig().douyinTV) {
             return false;
         }
         logger.info('[sf插件]抖音解析:', e.msg);
@@ -83,8 +81,8 @@ export class Douyin_Video extends plugin {
                                     if (contentLength) {
                                         const fileSizeBytes = parseInt(contentLength);
                                         const fileSizeMB = fileSizeBytes / (1024 * 1024);
-                                        if (fileSizeMB > video_maxSizeMB) {
-                                            await e.reply(`视频文件过大 (${fileSizeMB.toFixed(1)}MB > ${video_maxSizeMB}MB)，跳过下载\n请手动访问：${item.video_url}`, true);
+                                        if (fileSizeMB > Config.getConfig().video_maxSizeMB) {
+                                            await e.reply(`视频文件过大 (${fileSizeMB.toFixed(1)}MB > ${Config.getConfig().video_maxSizeMB}MB)，跳过下载\n请手动访问：${item.video_url}`, true);
                                             continue; // 跳过当前视频，处理下一个
                                         }
                                         logger.debug(`视频大小: ${fileSizeMB.toFixed(1)}MB，开始下载...`);
