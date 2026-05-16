@@ -8,6 +8,7 @@ import {
     url2Base64,
     getMediaFrom_awaitContext,
 } from '../utils/getImg.js'
+import Config from "../components/Config.js";
 
 const { PY_ImageToolsSwitch } = Config.getConfig();
 
