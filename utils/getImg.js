@@ -123,8 +123,8 @@ export async function parseSourceImg(e, alsoGetAtAvatar = true) {
 }
 
 /**
- * @description: URL下载图片(或视频)转Base64 （默认） 或 Buffer 或 Blob，支持 base64:// 协议
- * @param {string} url 可以是 http(s)://, base64://, 或者是 data:image/...;base64,
+ * @description: URL下载图片(或视频)转Base64 （默认） 或 Buffer 或 Blob，支持 base64:// 协议及 file:// 本地路径
+ * @param {string} url 可以是 http(s)://, base64://, data:image/...;base64, 或 file:// (及本地绝对路径)
  * @param {*} isReturnBuffer 是否返回 Buffer ，默认 false
  * @param {*} isReturnBlob 是否返回 blob ，默认 false
  * @param {object} opt 可选
@@ -160,8 +160,37 @@ export async function url2Base64(url, isReturnBuffer = false, isReturnBlob = fal
       buffer = Buffer.from(base64Str, 'base64');
       contentLength = buffer.length;
 
+    }
+    // 2. 判断是否为 file:// 协议或本地绝对路径 (兼容 Windows / Linux)
+    else if (url.startsWith('file://') || /^[a-zA-Z]:(\\|\/)|^\//.test(url)) {
+      const fs = await import('node:fs');
+      let localPath = url;
+
+      // 解析 file:// 协议为实际路径
+      if (localPath.startsWith('file://')) {
+        const urlModule = await import('node:url');
+        localPath = urlModule.fileURLToPath(localPath);
+      }
+
+      if (!fs.existsSync(localPath)) {
+        throw new Error(`找不到本地文件: ${localPath}`);
+      }
+
+      buffer = fs.readFileSync(localPath);
+      contentLength = buffer.length;
+
+      // 简单推断 contentType，用于后续 Blob 和格式化
+      const ext = localPath.split('.').pop().toLowerCase();
+      const mimeMap = {
+        'png': 'image/png', 'jpg': 'image/jpeg', 'jpeg': 'image/jpeg',
+        'gif': 'image/gif', 'webp': 'image/webp',
+        'mp4': 'video/mp4', 'webm': 'video/webm',
+        'mp3': 'audio/mpeg', 'wav': 'audio/wav', 'ogg': 'audio/ogg', 'm4a': 'audio/mp4'
+      };
+      contentType = mimeMap[ext] || 'application/octet-stream';
+
     } else {
-      // 2. 常规 URL 下载
+      // 3. 常规 URL 下载
       const response = await axios.get(url, {
         responseType: 'arraybuffer',
         timeout: 60000 // 设置超时时间为60秒
@@ -175,7 +204,7 @@ export async function url2Base64(url, isReturnBuffer = false, isReturnBlob = fal
       buffer = Buffer.from(response.data, 'binary');
     }
 
-    // 3. 校验文件大小
+    // 4. 校验文件大小
     if (contentLength && parseInt(contentLength) > maxSizeInBytes) {
       logger.mark(logger.blue('[sf插件]'), logger.cyan(`[url2Base64 出错]`), logger.red(`文件大小超过${maxSizeInBytes / 1024 / 1024}MB，已中断执行`));
       if (e.reply) {
@@ -217,9 +246,7 @@ export async function url2Base64(url, isReturnBuffer = false, isReturnBlob = fal
     if (isReturnBuffer) {
       return buffer;
     } else if (isReturnBlob) {
-      // 修复：之前这里依赖 response.headers，现在统一使用提取好的 contentType
       const imageBlob = new Blob([buffer], { type: contentType });
-      // 动态判断一下文件名后缀（兼容你提到的MP4情况）
       const fileName = isVideo ? 'video.mp4' : 'image.png';
       return { imageBlob, contentLength, fileName };
     } else {
@@ -227,7 +254,7 @@ export async function url2Base64(url, isReturnBuffer = false, isReturnBlob = fal
     }
 
   } catch (error) {
-    logger.mark(logger.blue('[sf插件]'), logger.cyan(`[url2Base64 错误] 可能是链接已失效 或 Base64解析失败`), logger.red(error.message || error));
+    logger.mark(logger.blue('[sf插件]'), logger.cyan(`[url2Base64 错误]`), logger.red(error.message || error));
     if (e.reply) {
       if (!e.isFromHandUpRepaint) e.reply('引用的文件地址已失效或解析失败，请重新发送.', true);
     }
