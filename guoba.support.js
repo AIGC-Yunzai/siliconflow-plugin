@@ -59,7 +59,7 @@ export function supportGuoba() {
         {
           field: "sf_keys",
           label: "sf keys",
-          bottomHelpMessage: "设置sf的key；登录https://cloud.siliconflow.cn/account/ak 后获取API密钥；用于免费/收费画图；设置多个时可多路并发",
+          bottomHelpMessage: "设置sf的key；登录https://cloud.siliconflow.cn/account/ak 后获取API密钥；用于免费/收费画图；设置多个时可并发；配置教程看帮助页",
           component: "GSubForm",
           componentProps: {
             multiple: true,
@@ -114,9 +114,11 @@ export function supportGuoba() {
         {
           field: "imageModel",
           label: "SF绘图模型",
-          bottomHelpMessage: "SF设置绘图模型，同步自 https://cloud.siliconflow.cn/models?types=to-image ",
+          bottomHelpMessage: "SF设置绘图模型；只能选择/填写1个模型；可用模型来自 https://cloud.siliconflow.cn/models?types=to-image ",
           component: "Select",
           componentProps: {
+            mode: 'tags',
+            maxTagCount: 1,
             options: [
               { label: "stabilityai/stable-diffusion-2-1（免费/图生图）", value: "stabilityai/stable-diffusion-2-1" },
               { label: "stabilityai/stable-diffusion-3-medium（免费/图生图）", value: "stabilityai/stable-diffusion-3-medium" },
@@ -129,9 +131,13 @@ export function supportGuoba() {
               { label: "black-forest-labs/FLUX.1-pro", value: "black-forest-labs/FLUX.1-pro" },
               { label: "Pro/black-forest-labs/FLUX.1-schnell", value: "Pro/black-forest-labs/FLUX.1-schnell" },
               { label: "stabilityai/stable-diffusion-3-5-large-turbo", value: "stabilityai/stable-diffusion-3-5-large-turbo" },
-              { label: "Kwai-Kolors/Kolors（免费/文生图）", value: "Kwai-Kolors/Kolors" },
+              { label: "Kwai-Kolors/Kolors（免费/图生图）", value: "Kwai-Kolors/Kolors" },
               { label: "Qwen/Qwen-Image", value: "Qwen/Qwen-Image" },
-              { label: "Qwen/Qwen-Image-Edit", value: "Qwen/Qwen-Image-Edit" },
+              { label: "Qwen/Qwen-Image-Edit（图生图）", value: "Qwen/Qwen-Image-Edit" },
+              { label: "Qwen/Qwen-Image-Edit-2509（图生图）", value: "Qwen/Qwen-Image-Edit-2509" },
+              { label: "Tongyi-MAI/Z-Image-Turbo", value: "Tongyi-MAI/Z-Image-Turbo" },
+              { label: "Tongyi-MAI/Z-Image", value: "Tongyi-MAI/Z-Image" },
+              { label: "baidu/ERNIE-Image-Turbo", value: "baidu/ERNIE-Image-Turbo" },
               // 添加图生图模型后，还需要添加正则表达式： SF_Painting.js 处理支持图生图模型 match(/.../)
             ],
           },
@@ -343,7 +349,7 @@ export function supportGuoba() {
         {
           field: "dd_APIList",
           label: "DD接口列表",
-          bottomHelpMessage: "设置DD绘图的API接口列表，可添加多个接口配置",
+          bottomHelpMessage: "设置DD绘图的API接口列表，可添加多个接口配置；配置教程看帮助页",
           component: "GSubForm",
           componentProps: {
             multiple: true,
@@ -824,7 +830,7 @@ export function supportGuoba() {
         {
           field: "ss_APIList",
           label: "接口列表",
-          bottomHelpMessage: "设置 OpenAI API 格式的接口列表，可添加多个接口配置",
+          bottomHelpMessage: "设置 OpenAI API 格式的接口列表，可添加多个接口配置；配置教程看帮助页",
           component: "GSubForm",
           componentProps: {
             multiple: true,
@@ -1179,7 +1185,7 @@ export function supportGuoba() {
         {
           field: "gg_APIList",
           label: "接口列表",
-          bottomHelpMessage: "设置 Gemini 格式的接口列表，可添加多个接口配置",
+          bottomHelpMessage: "设置 Gemini 格式的接口列表，可添加多个接口配置；配置教程看帮助页",
           component: "GSubForm",
           componentProps: {
             multiple: true,
@@ -2335,7 +2341,7 @@ export function supportGuoba() {
           },
         },
         {
-          label: '杂项',
+          label: '小功能',
           component: 'SOFT_GROUP_BEGIN'
         },
         {
@@ -2515,6 +2521,7 @@ export function supportGuoba() {
             assignFirstElementIfExists(item, item, 'model');
           });
         }
+        assignFirstElementIfExists(config, data, 'imageModel');
 
         // 验证配置
         try {
