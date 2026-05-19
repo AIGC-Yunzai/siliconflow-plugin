@@ -531,9 +531,42 @@ export function supportGuoba() {
         },
         {
           field: "Jimeng.model",
-          label: "绘画模型",
-          bottomHelpMessage: "即梦绘画使用的模型；也可以在绘画中使用参数例如 --model nanobanana 实时更换模型",
-          component: "Input",
+          label: "图片生成模型",
+          bottomHelpMessage: "#即梦绘画 使用的模型；只能选择/填写1个模型；默认值 jimeng-5.0 ；也可以在绘画中使用参数例如 --model nanobanana 实时更换模型",
+          component: "Select",
+          componentProps: {
+            mode: 'tags',
+            maxTagCount: 1,
+            options: [
+              { label: "jimeng-5.0", value: "jimeng-5.0" },
+              { label: "nanobanana", value: "nanobanana" },
+              { label: "nanobananapro", value: "nanobananapro" },
+              { label: "jimeng-4.6", value: "jimeng-4.6" },
+              { label: "jimeng-4.5", value: "jimeng-4.5" },
+              { label: "jimeng-4.1", value: "jimeng-4.1" },
+              { label: "jimeng-4.0", value: "jimeng-4.0" },
+              { label: "jimeng-3.1", value: "jimeng-3.1" },
+              { label: "jimeng-3.0", value: "jimeng-3.0" },
+            ],
+          },
+        },
+        {
+          field: "Jimeng.videoModel",
+          label: "视频生成模型",
+          bottomHelpMessage: "#即梦视频 使用的模型；只能选择/填写1个模型",
+          component: "Select",
+          componentProps: {
+            mode: 'tags',
+            maxTagCount: 1,
+            options: [
+              { label: "jimeng-video-seedance-2.0", value: "jimeng-video-seedance-2.0" },
+              { label: "jimeng-video-seedance-2.0-fast", value: "jimeng-video-seedance-2.0-fast" },
+              { label: "jimeng-video-3.5-pro", value: "jimeng-video-3.5-pro" },
+              { label: "jimeng-video-veo3", value: "jimeng-video-veo3" },
+              { label: "jimeng-video-veo3.1", value: "jimeng-video-veo3.1" },
+              { label: "jimeng-video-sora2", value: "jimeng-video-sora2" },
+            ],
+          },
         },
         {
           field: "Jimeng.sessionid_ITN",
@@ -2522,6 +2555,8 @@ export function supportGuoba() {
           });
         }
         assignFirstElementIfExists(config, data, 'imageModel');
+        assignFirstElementIfExists(config, data, 'Jimeng.model');
+        assignFirstElementIfExists(config, data, 'Jimeng.videoModel');
 
         // 验证配置
         try {

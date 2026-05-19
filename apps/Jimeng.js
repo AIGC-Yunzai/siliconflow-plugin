@@ -186,7 +186,7 @@ ntags = [tags]`,
             const useMultiParams = images.length > 2 || videos.length > 0;
 
             requestBody = {
-                "model": param.model || "jimeng-video-3.5-pro",
+                "model": param.model || config_data.Jimeng.videoModel || "jimeng-video-3.5-pro",
                 "prompt": param.input || "一个女人在花园里跳舞",
                 "ratio": param.parameters.ratio || undefined,
                 "resolution": param.parameters.resolution || undefined,
