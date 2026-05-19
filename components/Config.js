@@ -148,7 +148,7 @@ class Config {
   enhanceConfig(config, configName) {
     if (configName === 'config') {
       // 读取gemini额外的模型列表
-      const defaultGeminiModels = ['gemini-3.1-flash-lite', 'gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-image-preview', 'gemini-3-pro-image-preview', 'gemini-pro-latest', 'gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-3.1-flash-lite-preview']
+      const defaultGeminiModels = ['gemini-3.5-flash', 'gemini-3.1-flash-lite', 'gemini-3-flash-preview', 'gemini-3.1-pro-preview', 'gemini-3.1-flash-image-preview', 'gemini-3-pro-image-preview', 'gemini-pro-latest', 'gemini-flash-latest', 'gemini-flash-lite-latest', 'gemini-3.1-flash-lite-preview']
       try {
         const modelPath = `${pluginRoot}/config/config/geminiModelsByFetch.yaml`
         const fetchGeminiModels = YAML.parse(fs.readFileSync(modelPath, 'utf-8')) || []
