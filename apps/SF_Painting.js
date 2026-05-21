@@ -29,7 +29,6 @@ import fs from 'fs';
 import { MJ_Painting } from './MJ_Painting.js'
 import { memberControlProcess } from '../utils/memberControl.js'
 import {
-    getChatHistory_w,
     buildChatHistoryPrompt,
 } from '../utils/onebotUtils.js'
 import { applyPresets } from '../utils/applyPresets.js'
@@ -43,6 +42,7 @@ import {
 } from '../utils/common.js'
 import ChatCooldown from '../utils/chatCooldown.js'
 import WebUIServer from '../components/WebUIServer.js'
+import { msgHistoryMgr } from '../model/Onebot11_MessageHistoryManager.js'
 
 // 兼容旧版 WebSocket 服务变量
 var Ws_Server = {};
@@ -1267,7 +1267,7 @@ export class SF_Painting extends plugin {
         if (e.isGroup && groupContextLength > 0) {
             let chatHistory = []
             try {
-                chatHistory = await getChatHistory_w(e.group ?? (e.bot.pickGroup ? e.bot.pickGroup(e.group_id) : (e.bot[e.group_id] ? e.bot[e.group_id].pickGroup(e.group_id) : null)), groupContextLength)
+                chatHistory = await msgHistoryMgr.getChatHistorySafe(e.group ?? (e.bot.pickGroup ? e.bot.pickGroup(e.group_id) : (e.bot[e.group_id] ? e.bot[e.group_id].pickGroup(e.group_id) : null)), groupContextLength)
                 logger.debug(`[群自动打招呼] 群 ${e.group_id} 获取到 ${chatHistory.length} 条聊天记录`)
             } catch (error) {
                 logger.error(`[群自动打招呼] 获取群 ${e.group_id} 聊天记录失败: ${error}`)
@@ -2155,7 +2155,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         if (e.isGroup && groupContextLength > 0) {
             let chatHistory = []
             try {
-                chatHistory = await getChatHistory_w(e.group ?? (e.bot.pickGroup ? e.bot.pickGroup(e.group_id) : (e.bot[e.group_id] ? e.bot[e.group_id].pickGroup(e.group_id) : null)), groupContextLength)
+                chatHistory = await msgHistoryMgr.getChatHistorySafe(e.group ?? (e.bot.pickGroup ? e.bot.pickGroup(e.group_id) : (e.bot[e.group_id] ? e.bot[e.group_id].pickGroup(e.group_id) : null)), groupContextLength)
                 logger.debug(`[群自动打招呼] 群 ${e.group_id} 获取到 ${chatHistory.length} 条聊天记录`)
             } catch (error) {
                 logger.error(`[群自动打招呼] 获取群 ${e.group_id} 聊天记录失败: ${error}`)

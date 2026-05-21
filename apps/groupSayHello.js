@@ -2,13 +2,13 @@ import plugin from '../../../lib/plugins/plugin.js'
 import Config from '../components/Config.js'
 import {
     getBotByQQ,
-    getChatHistory_w,
     buildChatHistoryPrompt,
 } from '../utils/onebotUtils.js'
 import {
     hidePrivacyInfo,
     removeCQCode,
 } from '../utils/common.js'
+import { msgHistoryMgr } from '../model/Onebot11_MessageHistoryManager.js'
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms))
 const groupSayHello_Switch = Config.getConfig().groupSayHello?.enabled;
@@ -243,7 +243,7 @@ export class groupSayHello extends plugin {
         // 获取聊天记录
         let chatHistory = []
         try {
-            chatHistory = await getChatHistory_w(group, 50)
+            chatHistory = await msgHistoryMgr.getChatHistorySafe(group, 50)
             logger.debug(`[群自动打招呼] 群 ${groupId} 获取到 ${chatHistory.length} 条聊天记录`)
         } catch (error) {
             logger.error(`[群自动打招呼] 获取群 ${groupId} 聊天记录失败: ${error}`)
