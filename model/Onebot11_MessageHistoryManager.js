@@ -3,10 +3,8 @@
  */
 class MessageHistoryManager {
   constructor() {
-    // 对应 Python 中的 self.cfg
     this.cfg = {
-      max_msg_count: 2000,       // 目标用户最多获取的文本消息条数
-      per_query_count: 200       // 每次 API 请求拉取的消息数，严格限制最大200
+      per_query_count: 200       // 每次 API 请求拉取的消息数
     };
 
     // 群级扫描断点：groupId -> message_seq
@@ -72,7 +70,7 @@ class MessageHistoryManager {
   }
 
   /**
-   * @description: 获取聊天历史记录，带安全重试与防风控机制（已修复超过200条的Bug）
+   * @description: 获取聊天历史记录，带安全重试与防风控机制
    * @param {Object} target 目标对象 (e.group 或 e.friend)
    * @param {Number} count 最大获取条数 (如 2000)
    * @param {String|Number} seq 序列号或 message_id
@@ -86,7 +84,6 @@ class MessageHistoryManager {
     let remainingCount = count;
 
     const seenMsgIds = new Set();
-
     const endTime = Math.floor(date_end.getTime() / 1000);
     const cutoffTime = duration_hours > 0 ? endTime - (duration_hours * 60 * 60) : 0;
 
@@ -106,7 +103,8 @@ class MessageHistoryManager {
           const result = await target.getChatHistory(currentSeq, batchSize, true);
 
           if (!result || !Array.isArray(result) || result.length === 0) {
-            return sortMessagesByTime(allResults); // 彻底没有历史消息了
+            // 彻底没有历史消息了
+            return sortMessagesByTime(allResults);
           }
 
           // 过滤掉已经获取过的边界消息
@@ -153,7 +151,8 @@ class MessageHistoryManager {
           currentSeq = nextSeq;
 
           success = true;
-          break; // 成功获取，跳出重试循环
+          // 成功获取，跳出重试循环
+          break;
         } catch (err) {
           logger.warn(`[历史消息获取] 拉取失败，正在重试 (${retry}/${maxRetries})，错误: ${err.message || err}`);
           await this._sleep(1500 * retry);
@@ -175,21 +174,70 @@ class MessageHistoryManager {
   }
 
   /**
+   * @description: 业务包装层：获取指定事件 e 的群历史消息上下文，并自动补全群员名片
+   * @param {Object} e YunZai/Miao-Yunzai 的事件对象
+   * @param {Number} num 需要获取的总消息条数（包含当前这条 e）
+   * @return {Promise<Array>} 补全了发送者信息的历史消息数组（时间升序）
+   */
+  async getGroupHistoryContext(e, num) {
+    if (!e.group) return [e];
+
+    this._collectMessages(e.group_id, [e]);
+
+    const startSeq = e.seq || e.message_id;
+
+    let chats = await this.getChatHistorySafe(e.group, num - 1, startSeq);
+
+    const seenIds = new Set(chats.map(msg => msg.message_id || msg.seq));
+    const currentId = e.message_id || e.seq;
+    if (!seenIds.has(currentId)) {
+      chats.push(e);
+    }
+
+    chats.sort((a, b) => (a.time || 0) - (b.time || 0));
+    if (chats.length > num) {
+      chats = chats.slice(chats.length - num);
+    }
+
+    // 补全发送者名片信息
+    try {
+      if (e.bot && e.bot.gml) {
+        const memberMap = await e.bot.gml;
+        if (memberMap && typeof memberMap.get === 'function') {
+          for (const chat of chats) {
+            if (chat.sender?.user_id) {
+              const fullSender = memberMap.get(chat.sender.user_id);
+              if (fullSender) {
+                chat.sender = { ...chat.sender, ...fullSender };
+              }
+            }
+          }
+        }
+      }
+    } catch (err) {
+      logger.warn(`[群历史上下文] 补全发送者名片失败: ${err.message || err}`);
+    }
+
+    return chats;
+  }
+
+  /**
    * 获取指定用户在群内的历史文本消息
    * @param {Object} e 云崽的消息事件对象 e
    * @param {String|Number} target_id 目标用户的 QQ 号
    * @param {Number} max_rounds 最大请求轮数（推荐10轮，查询2000条就差不多了）
+   * @param {Number} max_msg_count 目标用户最多获取的文本消息条数
    * @returns {Promise<Object>} 结果对象
    */
-  async getUserTexts(e, target_id, max_rounds = 10) {
+  async getUserTexts(e, target_id, max_rounds = 10, max_msg_count = 2000) {
     const group_id = String(e.group_id);
     target_id = String(target_id);
 
     // ---------- cache first (优先读缓存) ----------
     let cached = this._getUserCache(group_id, target_id);
-    if (cached && cached.length >= this.cfg.max_msg_count) {
+    if (cached && cached.length >= max_msg_count) {
       return {
-        texts: cached.slice(0, this.cfg.max_msg_count),
+        texts: cached.slice(0, max_msg_count),
         scanned_messages: 0,
         from_cache: true
       };
@@ -204,7 +252,7 @@ class MessageHistoryManager {
     const count = Math.min(this.cfg.per_query_count, 200);
 
     // ---------- scan group messages (扫描群消息) ----------
-    while (rounds < max_rounds && texts.length < this.cfg.max_msg_count) {
+    while (rounds < max_rounds && texts.length < max_msg_count) {
       try {
         // 调用云崽的 e.group.getChatHistory 接口
         const messages = await e.group.getChatHistory(message_seq, count, true);
@@ -237,7 +285,7 @@ class MessageHistoryManager {
     }
 
     return {
-      texts: texts.slice(0, this.cfg.max_msg_count),
+      texts: texts.slice(0, max_msg_count),
       scanned_messages: rounds * count,
       from_cache: cached !== null
     };
