@@ -131,16 +131,29 @@ export async function getGeminiModelsByFetch(apiKey = '', geminiBaseUrl = '') {
 
   // 将API密钥作为URL参数
   const url = `${endpoint}?key=${apiKey}`;
+  const timeoutMs = 60000;
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
   // 发送请求
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: {
-      'User-Agent': 'Node/1.0.0',
-      'Accept': '*/*'
-    },
-    timeout: 60000 // 60秒超时
-  });
+  let response;
+  try {
+    response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'User-Agent': 'Node/1.0.0',
+        'Accept': '*/*'
+      },
+      signal: controller.signal
+    });
+  } catch (error) {
+    if (error?.name === 'AbortError') {
+      throw new Error(`获取Gemini模型API请求超时: ${timeoutMs / 1000}秒`);
+    }
+    throw error;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   if (!response.ok) {
     throw new Error(`获取Gemini模型API请求失败: ${response.status} ${response.statusText}`);
