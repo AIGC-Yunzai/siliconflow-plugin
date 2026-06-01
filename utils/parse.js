@@ -1,4 +1,5 @@
 import _ from "lodash";
+import Config from '../components/Config.js'
 
 // 尺寸处理
 function scaleParam(text, e) {
@@ -168,6 +169,10 @@ export async function handleParam(e, text, skipImgModel = false) {
     // 确保e和text参数存在
     if (!e) {
         throw new Error('参数e不能为空');
+    }
+    e.sfRuntime ??= {};
+    if (!e.sfRuntime.config) {
+        e.sfRuntime.config = Config.getConfig();
     }
 
     // 确保text是字符串
