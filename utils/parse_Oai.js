@@ -1,7 +1,8 @@
 import _ from "lodash";
+import Config from '../components/Config.js'
 
 // 尺寸处理
-function scaleParam(text) {
+function ratioParam(text) {
     const scale = {
         "竖图": { ratio: "9:16" },
         "长图": { ratio: "9:16" },
@@ -36,6 +37,27 @@ function scaleParam(text) {
             text = text.replace(new RegExp(size, 'g'), '');
         }
     });
+
+    return { parameters, text };
+}
+
+function scaleParam(text, e) {
+    let parameters = {};
+    const result = /(\d{2,7})[\*×](\d{2,7})/.exec(text);
+    if (result) {
+        let [width, height] = [Math.floor(Number(result[1]) / 64) * 64, Math.floor(Number(result[2]) / 64) * 64];
+
+        // 限制最大画图分辨率4k // 暂时不做主人限制
+        const maxArea = 8294400;
+
+        while (width * height > maxArea && (width > 64 || height > 64)) {
+            width -= width > 64 ? 64 : 0;
+            height -= height > 64 ? 64 : 0;
+        }
+
+        parameters = { height, width };
+        text = text.replace(/(\d{2,7})[\*×](\d{2,7})/g, '');
+    }
 
     return { parameters, text };
 }
@@ -180,6 +202,13 @@ async function promptParam(text) {
  * @return {*} { parameters, input }
  */
 export async function handleParam(e, text) {
+    if (!e) {
+        throw new Error('参数e不能为空');
+    }
+    // e.sfRuntime ??= {};
+    // if (!e.sfRuntime.config) {
+    //     e.sfRuntime.config = Config.getConfig();
+    // }
     if (!text || typeof text !== 'string') {
         text = '';
     }
@@ -188,7 +217,10 @@ export async function handleParam(e, text) {
     let result, model
 
     // 尺寸处理
-    result = scaleParam(text)
+    result = ratioParam(text)
+    parameters = Object.assign(parameters, result.parameters)
+    text = result.text
+    result = scaleParam(text, e)
     parameters = Object.assign(parameters, result.parameters)
     text = result.text
     // // 步数处理

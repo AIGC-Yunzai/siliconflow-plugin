@@ -166,7 +166,6 @@ async function promptParam(text, e) {
  * @return {*} { parameters, input }
  */
 export async function handleParam(e, text, skipImgModel = false) {
-    // 确保e和text参数存在
     if (!e) {
         throw new Error('参数e不能为空');
     }
@@ -174,8 +173,6 @@ export async function handleParam(e, text, skipImgModel = false) {
     if (!e.sfRuntime.config) {
         e.sfRuntime.config = Config.getConfig();
     }
-
-    // 确保text是字符串
     if (!text || typeof text !== 'string') {
         text = '';
     }

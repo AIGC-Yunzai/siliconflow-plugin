@@ -213,6 +213,39 @@ export class DD_Painting extends plugin {
 
                 // 插入 extraParams
                 payload = this.buildPayload_for_extraParams(basePayload, apiConfig, param);
+            } else if (formatType === 'openai') {
+                let baseUrl = apiConfig.baseUrl || 'https://api.openai.com/v1';
+
+                // 处理基础URL与端点路径
+                baseUrl = baseUrl.replace(/\/$/, '');
+                if (!baseUrl.endsWith('/v1')) {
+                    baseUrl += '/v1';
+                }
+                requestUrl = baseUrl + (param.souce_image_base64 ? '/images/edits' : '/images/generations');
+
+                const basePayload = {
+                    model: apiConfig.model,
+                    prompt: param.input || " ",
+                    n: 1,
+                    response_format: apiConfig.response_format || 'b64_json',
+                };
+
+                // 添加尺寸参数
+                if (param.parameters.height && param.parameters.width) {
+                    basePayload.size = `${param.parameters.width}x${param.parameters.height}`;
+                }
+
+                // 处理图片链接编辑
+                if (param.souce_image_base64) {
+                    basePayload.images = [
+                        { image_url: `data:image/png;base64,${param.souce_image_base64}` }
+                    ];
+                }
+
+                Object.keys(basePayload).forEach(key => basePayload[key] === undefined && delete basePayload[key]);
+
+                // 插入 extraParams
+                payload = this.buildPayload_for_extraParams(basePayload, apiConfig, param);
             }
 
             // 获取随机API Key
@@ -361,6 +394,68 @@ export class DD_Painting extends plugin {
                         error: 'Nebius API响应格式未知或未返回图片数据'
                     };
                 }
+            } else if (formatType === 'openai') {
+                const response = await fetch(requestUrl, {
+                    method: 'POST',
+                    headers: headers,
+                    body: JSON.stringify(payload, null, 2)
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    logger.error(`OpenAI API请求失败: ${response.status}`, errorText);
+                    return {
+                        success: false,
+                        error: `OpenAI API响应错误 ${response.status}: ${errorText}`
+                    };
+                }
+
+                const data = await response.json();
+
+                let imageUrl;
+                // 支持自定义响应解析路径 // 未启用
+                if (apiConfig.responsePath) {
+                    try {
+                        const pathParts = apiConfig.responsePath.split(/[.\[\]]+/).filter(Boolean);
+                        let val = data;
+                        for (const part of pathParts) {
+                            if (val == null) break;
+                            val = val[part];
+                        }
+                        if (typeof val === 'string') {
+                            imageUrl = val;
+                            if (!imageUrl.startsWith('http') && !imageUrl.startsWith('base64://') && !imageUrl.startsWith('data:')) {
+                                imageUrl = `base64://${imageUrl}`;
+                            }
+                        }
+                    } catch (e) {
+                        logger.error(`解析响应路径 ${apiConfig.responsePath} 失败`, e);
+                    }
+                }
+
+                if (!imageUrl) {
+                    if (data.data && Array.isArray(data.data) && data.data.length > 0) {
+                        if (data.data[0].b64_json) {
+                            imageUrl = `base64://${data.data[0].b64_json}`;
+                        } else if (data.data[0].url) {
+                            imageUrl = data.data[0].url;
+                        }
+                    }
+                }
+
+                if (imageUrl) {
+                    return {
+                        success: true,
+                        imageData: imageUrl,
+                        revised_prompt: param.input,
+                        payload: payload
+                    };
+                } else {
+                    return {
+                        success: false,
+                        error: 'OpenAI API响应格式未知或未返回图片数据'
+                    };
+                }
             }
 
             return {
@@ -401,6 +496,7 @@ export class DD_Painting extends plugin {
         const filteredPayload = { ...payload };
         delete filteredPayload.api_key;
         delete filteredPayload.image_url;
+        delete filteredPayload.images;
 
         // 格式化参数为文本
         let result = [];
