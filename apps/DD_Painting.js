@@ -235,24 +235,15 @@ export class DD_Painting extends plugin {
                     basePayload.size = `${param.parameters.width}x${param.parameters.height}`;
                 }
 
-                // 处理图片链接编辑
+                // 如果存在源图片，标记为图片编辑模式
                 if (param.souce_image_base64) {
-                    basePayload.images = [
-                        { image_url: `data:image/png;base64,${param.souce_image_base64}` }
-                    ];
+                    basePayload.is_edit_mode = true;
                 }
 
                 Object.keys(basePayload).forEach(key => basePayload[key] === undefined && delete basePayload[key]);
 
                 // 插入 extraParams
                 payload = this.buildPayload_for_extraParams(basePayload, apiConfig, param);
-
-                // 插入 parse_Oai 参数
-                e.dd_parse_Oai = {
-                    ...basePayload,
-                    formatType,
-                    maxArea: 8294400,
-                }
             }
 
             // 获取随机API Key
@@ -402,11 +393,62 @@ export class DD_Painting extends plugin {
                     };
                 }
             } else if (formatType === 'openai') {
-                const response = await fetch(requestUrl, {
+                // 准备 fetch 请求参数
+                let fetchOptions = {
                     method: 'POST',
-                    headers: headers,
-                    body: JSON.stringify(payload, null, 2)
-                });
+                    headers: { ...headers }
+                };
+
+                if (payload.is_edit_mode) {
+                    let formData;
+                    try {
+                        // 优先尝试使用 form-data 模块（完美兼容 node-fetch 的方式）
+                        const FormDataModule = await import('form-data');
+                        const NodeFormData = FormDataModule.default || FormDataModule;
+                        formData = new NodeFormData();
+
+                        // 填充普通参数
+                        for (const key in payload) {
+                            if (key === 'is_edit_mode') continue;
+                            const value = payload[key];
+                            formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+                        }
+
+                        // 将 Base64 塞入 Buffer 后上传文件
+                        const imageBuffer = Buffer.from(param.souce_image_base64, 'base64');
+                        formData.append('image', imageBuffer, { filename: 'image.png', contentType: 'image/png' });
+
+                        // form-data 包必须通过 getHeaders 获取边界 (boundary) 参数
+                        delete fetchOptions.headers['Content-Type'];
+                        Object.assign(fetchOptions.headers, formData.getHeaders());
+                        fetchOptions.body = formData;
+
+                    } catch (err) {
+                        // 若未安装 form-data，则平滑回退到 Node.js 18+ 原生 FormData
+                        formData = new FormData();
+                        for (const key in payload) {
+                            if (key === 'is_edit_mode') continue;
+                            const value = payload[key];
+                            formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
+                        }
+
+                        const imageBuffer = Buffer.from(param.souce_image_base64, 'base64');
+                        const imageBlob = new Blob([imageBuffer], { type: 'image/png' });
+                        formData.append('image', imageBlob, 'image.png');
+
+                        // 原生 FormData 只需删掉 Content-Type，fetch 就会自动生成 multipart/form-data 头部
+                        delete fetchOptions.headers['Content-Type'];
+                        fetchOptions.body = formData;
+                    }
+
+                    // 清除标记，防止影响后续发出的合并转发消息日志
+                    delete payload.is_edit_mode;
+                } else {
+                    // 普通文生图保留标准 JSON 模式
+                    fetchOptions.body = JSON.stringify(payload, null, 2);
+                }
+
+                const response = await fetch(requestUrl, fetchOptions);
 
                 if (!response.ok) {
                     const errorText = await response.text();
@@ -615,6 +657,11 @@ export class DD_Painting extends plugin {
                 return true
             }
         }
+
+        e.dd_parse_Oai = {
+            formatType: apiConfig.formatType,
+            maxArea: apiConfig.formatType === 'openai' ? 8294400 : 1048576,
+        };
 
         // 处理预设
         let param = await handleParam(e, applyPresets(prompt, Config.getConfig("presets"), e)?.processedText)
