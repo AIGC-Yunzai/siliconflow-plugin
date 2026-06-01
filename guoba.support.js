@@ -371,7 +371,7 @@ export function supportGuoba() {
                 field: "baseUrl",
                 label: "API地址",
                 component: "Input",
-                bottomHelpMessage: "仅当接口为 OpenAI格式绘画API接口 时填写，以 /images/generations 格式接入；通常是以 /v1 结尾",
+                bottomHelpMessage: "仅当接口为 OpenAI格式绘画API接口 时填写，以 /images/generations 格式接入，此接口对比#s接口可以使用 2160*3840 的语法强制控制宽高；通常是以 /v1 结尾",
                 componentProps: {
                   placeholder: 'https://api.openai.com/v1',
                 },

@@ -221,7 +221,9 @@ export class DD_Painting extends plugin {
                 if (!baseUrl.endsWith('/v1')) {
                     baseUrl += '/v1';
                 }
-                requestUrl = baseUrl + (param.souce_image_base64 ? '/images/edits' : '/images/generations');
+
+                const hasImages = param.source_images && param.source_images.length > 0;
+                requestUrl = baseUrl + (hasImages ? '/images/edits' : '/images/generations');
 
                 const basePayload = {
                     model: apiConfig.model,
@@ -236,7 +238,7 @@ export class DD_Painting extends plugin {
                 }
 
                 // 如果存在源图片，标记为图片编辑模式
-                if (param.souce_image_base64) {
+                if (hasImages) {
                     basePayload.is_edit_mode = true;
                 }
 
@@ -400,46 +402,25 @@ export class DD_Painting extends plugin {
                 };
 
                 if (payload.is_edit_mode) {
-                    let formData;
-                    try {
-                        // 优先尝试使用 form-data 模块（完美兼容 node-fetch 的方式）
-                        const FormDataModule = await import('form-data');
-                        const NodeFormData = FormDataModule.default || FormDataModule;
-                        formData = new NodeFormData();
-
-                        // 填充普通参数
-                        for (const key in payload) {
-                            if (key === 'is_edit_mode') continue;
-                            const value = payload[key];
-                            formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
-                        }
-
-                        // 将 Base64 塞入 Buffer 后上传文件
-                        const imageBuffer = Buffer.from(param.souce_image_base64, 'base64');
-                        formData.append('image', imageBuffer, { filename: 'image.png', contentType: 'image/png' });
-
-                        // form-data 包必须通过 getHeaders 获取边界 (boundary) 参数
-                        delete fetchOptions.headers['Content-Type'];
-                        Object.assign(fetchOptions.headers, formData.getHeaders());
-                        fetchOptions.body = formData;
-
-                    } catch (err) {
-                        // 若未安装 form-data，则平滑回退到 Node.js 18+ 原生 FormData
-                        formData = new FormData();
-                        for (const key in payload) {
-                            if (key === 'is_edit_mode') continue;
-                            const value = payload[key];
-                            formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
-                        }
-
-                        const imageBuffer = Buffer.from(param.souce_image_base64, 'base64');
-                        const imageBlob = new Blob([imageBuffer], { type: 'image/png' });
-                        formData.append('image', imageBlob, 'image.png');
-
-                        // 原生 FormData 只需删掉 Content-Type，fetch 就会自动生成 multipart/form-data 头部
-                        delete fetchOptions.headers['Content-Type'];
-                        fetchOptions.body = formData;
+                    let formData = new FormData();
+                    for (const key in payload) {
+                        if (key === 'is_edit_mode') continue;
+                        const value = payload[key];
+                        formData.append(key, typeof value === 'object' ? JSON.stringify(value) : String(value));
                     }
+
+                    // 处理多图上传
+                    if (param.source_images && param.source_images.length > 0) {
+                        param.source_images.forEach((b64, index) => {
+                            const imageBuffer = Buffer.from(b64, 'base64');
+                            const imageBlob = new Blob([imageBuffer], { type: 'image/png' });
+                            formData.append('image', imageBlob, `image_${index}.png`);
+                        });
+                    }
+
+                    // 原生 FormData 只需删掉 Content-Type，fetch 就会自动生成 multipart/form-data 头部
+                    delete fetchOptions.headers['Content-Type'];
+                    fetchOptions.body = formData;
 
                     // 清除标记，防止影响后续发出的合并转发消息日志
                     delete payload.is_edit_mode;
@@ -648,12 +629,46 @@ export class DD_Painting extends plugin {
         }
 
         // 处理引用图片
-        await parseSourceImg(e)
-        let souce_image_base64 = null;
+        await parseSourceImg(e);
+        let source_images = [];
         if (apiConfig.enableImageUpload && e.img?.length) {
-            souce_image_base64 = await url2Base64(e.img[0])
-            if (!souce_image_base64) {
-                e.reply('引用的图片地址已失效，请重新发送图片', true)
+            for (const imgUrl of e.img) {
+                try {
+                    if (typeof imgUrl !== 'string') continue;
+                    // 判断是否为 data: 协议、base64:// 协议，或者本身就是纯 Base64 字符串
+                    if (imgUrl.startsWith('data:') || imgUrl.startsWith('base64://')) {
+                        let base64Data = imgUrl;
+                        if (imgUrl.startsWith('base64://')) {
+                            base64Data = imgUrl.replace(/^base64:\/\//i, '');
+                        } else if (imgUrl.startsWith('data:')) {
+                            const match = imgUrl.match(/^data:([^;]+);base64,(.+)$/);
+                            if (match) {
+                                base64Data = match[2];
+                            } else {
+                                base64Data = imgUrl.split(',')[1] || imgUrl;
+                            }
+                        }
+                        if (base64Data) {
+                            source_images.push(base64Data);
+                            continue;
+                        }
+                    }
+
+                    // 尝试转换普通的 http/https URL 为 base64
+                    const base64Image = await url2Base64(imgUrl);
+                    if (!base64Image) {
+                        logger.error(`[SF插件][dd]图片处理失败: ${imgUrl}`);
+                        continue;
+                    }
+                    source_images.push(base64Image);
+                } catch (error) {
+                    logger.error(`[SF插件][dd]处理图片时出错: ${error.message}`);
+                    continue;
+                }
+            }
+
+            if (source_images.length === 0) {
+                e.reply('引用的图片地址已失效或无法解析，请重新发送图片', true)
                 return true
             }
         }
@@ -665,7 +680,10 @@ export class DD_Painting extends plugin {
 
         // 处理预设
         let param = await handleParam(e, applyPresets(prompt, Config.getConfig("presets"), e)?.processedText)
-        if (souce_image_base64) param.souce_image_base64 = souce_image_base64;
+        if (source_images.length > 0) {
+            param.souce_image_base64 = source_images[0];
+            param.source_images = source_images;
+        }
 
         // 要求上传更多图片
         let upimgs_num = parseInt(param.parameters.upimgs);
