@@ -45,10 +45,12 @@ function scaleParam(text, e) {
     let parameters = {};
     const result = /(\d{2,7})[\*×](\d{2,7})/.exec(text);
     if (result) {
-        let [width, height] = [Math.floor(Number(result[1]) / 64) * 64, Math.floor(Number(result[2]) / 64) * 64];
+        let [width, height] = [Number(result[1]), Number(result[2])];
+        // dd_parse_Oai 不同于 sd 不需要限制 64 的倍数
+        // let [width, height] = [Math.floor(Number(result[1]) / 64) * 64, Math.floor(Number(result[2]) / 64) * 64];
 
         // 限制最大画图分辨率4k // 暂时不做主人限制
-        const maxArea = 8294400;
+        const maxArea = e?.dd_parse_Oai?.maxArea ?? 1048576;
 
         while (width * height > maxArea && (width > 64 || height > 64)) {
             width -= width > 64 ? 64 : 0;

@@ -175,7 +175,7 @@ export class DD_Painting extends plugin {
     }
 
     // 调用绘图API的工厂函数
-    async callDrawingAPI(apiConfig, param = {}) {
+    async callDrawingAPI(apiConfig, param = {}, e = {}) {
         try {
             let requestUrl, payload
 
@@ -246,6 +246,13 @@ export class DD_Painting extends plugin {
 
                 // 插入 extraParams
                 payload = this.buildPayload_for_extraParams(basePayload, apiConfig, param);
+
+                // 插入 parse_Oai 参数
+                e.dd_parse_Oai = {
+                    ...basePayload,
+                    formatType,
+                    maxArea: 8294400,
+                }
             }
 
             // 获取随机API Key
@@ -632,7 +639,7 @@ export class DD_Painting extends plugin {
 
         try {
             // 调用绘图API
-            const result = await this.callDrawingAPI(apiConfig, param)
+            const result = await this.callDrawingAPI(apiConfig, param, e)
 
             if (!result.success) {
                 await e.reply(`绘画生成失败: ${result.error}`, true)
