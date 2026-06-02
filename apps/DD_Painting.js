@@ -192,7 +192,7 @@ export class DD_Painting extends plugin {
                     image_url: param.souce_image_base64 ? `data:image/png;base64,${param.souce_image_base64}` : undefined,
                     loras: param.parameters.loras || undefined, // 还没想好怎么启用
                 };
-                
+
                 // 添加尺寸参数
                 if (param.parameters.height && param.parameters.width) {
                     basePayload.size = `${param.parameters.width}x${param.parameters.height}`;
@@ -525,8 +525,8 @@ export class DD_Painting extends plugin {
     }
 
     // 格式化请求参数为可读文本
-    formatPayloadToText(payload) {
-        if (!payload) return '';
+    formatPayloadToText(payload, e) {
+        if (!payload) return [];
 
         // 过滤掉不需要显示的敏感字段
         const filteredPayload = { ...payload };
@@ -539,7 +539,7 @@ export class DD_Painting extends plugin {
 
         // 处理常见参数
         if (filteredPayload.model) result.push(`模型: ${filteredPayload.model}`);
-        if (filteredPayload.prompt) result.push(`提示词: ${filteredPayload.prompt}`);
+        if (filteredPayload.prompt && e?.sfRuntime?.had_shouldGenerate) result.push(`最终提示词: ${filteredPayload.prompt}`);
         if (filteredPayload.size) result.push(`尺寸: ${filteredPayload.size}`);
         if (filteredPayload.width && filteredPayload.height) result.push(`尺寸: ${filteredPayload.width}x${filteredPayload.height}`);
         if (filteredPayload.quality) result.push(`质量: ${filteredPayload.quality}`);
@@ -566,7 +566,7 @@ export class DD_Painting extends plugin {
             }
         }
 
-        return result.join('\n');
+        return result;
     }
 
     async txt2img_generatePrompt(e, userPrompt, config_date) {
@@ -686,7 +686,10 @@ export class DD_Painting extends plugin {
         };
 
         // 处理预设
-        let param = await handleParam(e, applyPresets(prompt, Config.getConfig("presets"), e)?.processedText)
+        const presetResult = applyPresets(prompt, Config.getConfig("presets"), e);
+        let param = await handleParam(e, presetResult.processedText);
+        const usedPresets = presetResult.usedPresets || [];
+
         if (source_images.length > 0) {
             param.souce_image_base64 = source_images[0];
             param.source_images = source_images;
@@ -719,7 +722,7 @@ export class DD_Painting extends plugin {
             }
 
             // 构造参数信息文本
-            const paramText = this.formatPayloadToText(result.payload);
+            const paramTextArray = this.formatPayloadToText(result.payload, e);
 
             // 发送合并转发消息
             let msgList = [];
@@ -730,10 +733,10 @@ export class DD_Painting extends plugin {
             }
 
             msgList.push(`使用接口: ${apiConfig.remark || `接口${apiIndex}`}`);
-            msgList.push(`原始提示词: ${prompt}`);
+            msgList.push(`提示词: ${presetResult.originalText || prompt}`);
             msgList.push(`【参数详情】`);
-            if (paramText) {
-                msgList = msgList.concat(paramText.split('\n'));
+            if (paramTextArray && paramTextArray.length > 0) {
+                msgList = msgList.concat(paramTextArray);
             }
             if (e.sfRuntime.isgeneratePrompt === undefined) {
                 msgList.push("tags的额外触发词：\n --自动提示词[开|关]");

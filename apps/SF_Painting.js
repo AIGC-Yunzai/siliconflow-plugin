@@ -910,6 +910,7 @@ export class SF_Painting extends plugin {
                 e.reply('生成提示词失败，请稍后再试。', true)
                 return true
             }
+            e.sfRuntime.had_shouldGenerate = true;
             logger.debug("[sf插件]自动提示词生成：" + finalPrompt);
         }
         if (!onleReplyOnce && config_date.replyStartMsg) {
@@ -1734,8 +1735,7 @@ export class SF_Painting extends plugin {
                 const imageUrl = data.images[0].url
 
                 const str_1 = `@${e.sender.card || e.sender.nickname} ${e.user_id}您的${canImg2Img ? "图生图" : "文生图"}已完成：`
-                const str_2 = `原始提示词：${userPrompt}
-最终提示词：${finalPrompt}
+                const str_2 = `提示词：${userPrompt}${e?.sfRuntime?.had_shouldGenerate ? `\n最终提示词：${finalPrompt}\n` : ``}
 负面提示词：${param.parameters.negative_prompt ? param.parameters.negative_prompt : "sf默认"}
 绘图模型：${param.parameters.imageModel}
 步数：${param.parameters.steps}
