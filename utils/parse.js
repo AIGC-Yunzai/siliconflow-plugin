@@ -44,7 +44,9 @@ function scaleParam(text, e) {
         }
 
         parameters = { height: height, width: width };
-        text = text.replace(/(\d{2,7})[\*×](\d{2,7})/g, '');
+        // 只在支持 scaleParam 参数时 replace
+        if (e?.sf_parse_normal?.useScaleParam)
+            text = text.replace(/(\d{2,7})[\*×](\d{2,7})/g, '');
     }
 
     return { parameters, text };

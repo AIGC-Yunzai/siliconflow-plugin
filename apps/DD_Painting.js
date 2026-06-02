@@ -190,8 +190,14 @@ export class DD_Painting extends plugin {
                     steps: param.parameters.steps || undefined,
                     guidance: param.parameters.guidance || undefined,
                     image_url: param.souce_image_base64 ? `data:image/png;base64,${param.souce_image_base64}` : undefined,
-                    loras: param.parameters.loras || undefined,
+                    loras: param.parameters.loras || undefined, // 还没想好怎么启用
                 };
+                
+                // 添加尺寸参数
+                if (param.parameters.height && param.parameters.width) {
+                    basePayload.size = `${param.parameters.width}x${param.parameters.height}`;
+                }
+
                 Object.keys(basePayload).forEach(key => basePayload[key] === undefined && delete basePayload[key]);
 
                 // 插入 extraParams
@@ -676,6 +682,7 @@ export class DD_Painting extends plugin {
         e.dd_parse_Oai = {
             formatType: apiConfig.formatType,
             maxArea: apiConfig.formatType === 'openai' ? 8294400 : 1048576,
+            useScaleParam: true,
         };
 
         // 处理预设

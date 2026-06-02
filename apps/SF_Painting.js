@@ -875,6 +875,10 @@ export class SF_Painting extends plugin {
         const presetResult = applyPresets(msg, Config.getConfig("presets"), e)
         msg = presetResult.processedText
 
+        e.sf_parse_normal = {
+            useScaleParam: true,
+        };
+
         // 处理 msg
         let param = await handleParam(e, msg)
 

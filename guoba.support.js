@@ -59,7 +59,7 @@ export function supportGuoba() {
         {
           field: "sf_keys",
           label: "sf keys",
-          bottomHelpMessage: "设置sf的key；登录https://cloud.siliconflow.cn/account/ak 后获取API密钥；用于免费/收费画图；设置多个时可并发；配置教程看帮助页",
+          bottomHelpMessage: "设置sf的key；登录https://cloud.siliconflow.cn/account/ak 后获取API密钥；用于免费/收费画图；设置多个时可并发；配置/使用教程看帮助页",
           component: "GSubForm",
           componentProps: {
             multiple: true,
@@ -349,7 +349,7 @@ export function supportGuoba() {
         {
           field: "dd_APIList",
           label: "DD接口列表",
-          bottomHelpMessage: "设置DD绘图的API接口列表，可添加多个接口配置；配置教程看帮助页",
+          bottomHelpMessage: "设置DD绘图的API接口列表，可添加多个接口配置；支持绘画高级语法：查看 配置/使用教程看帮助页",
           component: "GSubForm",
           componentProps: {
             multiple: true,
@@ -873,7 +873,7 @@ export function supportGuoba() {
         {
           field: "ss_APIList",
           label: "接口列表",
-          bottomHelpMessage: "设置 OpenAI API 格式的接口列表，可添加多个接口配置；配置教程看帮助页",
+          bottomHelpMessage: "设置 OpenAI API 格式的接口列表，可添加多个接口配置；配置/使用教程看帮助页",
           component: "GSubForm",
           componentProps: {
             multiple: true,
@@ -1228,7 +1228,7 @@ export function supportGuoba() {
         {
           field: "gg_APIList",
           label: "接口列表",
-          bottomHelpMessage: "设置 Gemini 格式的接口列表，可添加多个接口配置；配置教程看帮助页",
+          bottomHelpMessage: "设置 Gemini 格式的接口列表，可添加多个接口配置；配置/使用教程看帮助页",
           component: "GSubForm",
           componentProps: {
             multiple: true,

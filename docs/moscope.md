@@ -3,6 +3,9 @@
 - [目录](#目录)
 - [魔搭API推理介绍](#魔搭api推理介绍)
 - [配置教程](#配置教程)
+- [使用教程](#使用教程)
+  - [基础语法](#基础语法)
+  - [高级语法](#高级语法)
     - [🎨 让AI绘画成为日常，让创意永不枯竭！✨](#-让ai绘画成为日常让创意永不枯竭)
 
 # 魔搭API推理介绍
@@ -22,11 +25,21 @@
 - 在`绘画模型`中填入你在 [图生图模型](https://www.modelscope.cn/models?filter=inference_type&page=1&tabKey=task&tasks=image-to-image&type=multi-modal) 或 [文生图模型](https://www.modelscope.cn/models?filter=inference_type&page=1&tabKey=task&tasks=text-to-image-synthesis&type=multi-modal) 或 中找到的喜欢的模型，点进去例如 [/Qwen/Qwen-Image-Edit-2511](https://www.modelscope.cn/models/Qwen/Qwen-Image-Edit-2511) ，然后复制粘贴 `模型名`
 - 在 `文件名` 中填写你喜欢的文件名
 - 在 `自定义命令` 中填写你喜欢的自定义命令，例如 `qwenedit`
-- 结束！最后给Bot发送 `#dqwenedit 将女孩改成炫彩发型` 试试~
 
 > [!tip]
 > 你可以创建数个不同的自定义指令对应不同的 model
 
+# 使用教程
+## 基础语法
+- 给Bot发送 `#dqwenedit 将女孩改成炫彩发型` 试试~
+
+## 高级语法
+- 常用参数
+  - 自定义宽高: `#dqwenedit a white cat, 1920*1080`
+  - 开启自动提示词: `#dqwenedit a white cat, --自动提示词开`
+  - 负面提示词: `#dqwenedit a white cat, ntags = nsfw, lowres, {bad}, error`
+- 高级传参
+  - 所有 modelscope 支持的参数都可以通过 `--` 传递给 modelscope : `#dqwenedit a white cat, --model Qwen/Qwen-Image-Edit-2511 --seed 123456 --steps 50 --guidance 0.8 --loras <lora-repo-id>, ntags = nsfw, lowres, {bad}, error`
 
 ---
 

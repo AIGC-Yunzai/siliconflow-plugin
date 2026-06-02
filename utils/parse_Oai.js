@@ -58,7 +58,9 @@ function scaleParam(text, e) {
         }
 
         parameters = { height, width };
-        text = text.replace(/(\d{2,7})[\*×](\d{2,7})/g, '');
+        // 只在支持 scaleParam 参数时 replace
+        if (e?.dd_parse_Oai?.useScaleParam)
+            text = text.replace(/(\d{2,7})[\*×](\d{2,7})/g, '');
     }
 
     return { parameters, text };
