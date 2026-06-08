@@ -1,4 +1,5 @@
 import plugin from '../../../lib/plugins/plugin.js'
+import common from '../../../lib/common/common.js'
 import Config from '../components/Config.js'
 
 export class Jimeng extends plugin {
@@ -36,12 +37,20 @@ export class Jimeng extends plugin {
             return
         }
 
-        const presetNames = presets_config.presets.map((preset, index) => {
+        /** 合并转发最大节点数 */
+        const maxForwardNodes = 80
+        const presetNodes = presets_config.presets.map((preset, index) => {
             return presets_config.antiMisoperation ? `${index + 1}. {预设:${preset.name}}` : `${index + 1}. ${preset.name}`
-        }).join('\n')
+        })
+        const totalForwardMsgs = Math.ceil(presetNodes.length / maxForwardNodes)
 
-        const message = `当前预设列表：\n${presetNames}`
-        e.reply(message + this.helpMsg, true)
+        for (let i = 0; i < presetNodes.length; i += maxForwardNodes) {
+            const chunk = presetNodes.slice(i, i + maxForwardNodes)
+            const currentForwardMsg = Math.floor(i / maxForwardNodes) + 1
+            const title = totalForwardMsgs > 1 ? `当前预设列表 ${currentForwardMsg}/${totalForwardMsgs}` : '当前预设列表'
+
+            await e.reply(await common.makeForwardMsg(e, chunk, title))
+        }
     }
 
     async managePresetsList(e) {
