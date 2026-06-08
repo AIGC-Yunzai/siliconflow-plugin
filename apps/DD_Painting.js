@@ -234,7 +234,7 @@ export class DD_Painting extends plugin {
                 const basePayload = {
                     model: apiConfig.model,
                     prompt: param.input || " ",
-                    n: 1,
+                    n: param.parameters.n || undefined,
                     response_format: apiConfig.response_format || 'b64_json',
                 };
 
@@ -449,6 +449,7 @@ export class DD_Painting extends plugin {
                 const data = await response.json();
 
                 let imageUrl;
+                let imageDataList = [];
                 // 支持自定义响应解析路径 // 未启用
                 if (apiConfig.responsePath) {
                     try {
@@ -463,19 +464,24 @@ export class DD_Painting extends plugin {
                             if (!imageUrl.startsWith('http') && !imageUrl.startsWith('base64://') && !imageUrl.startsWith('data:')) {
                                 imageUrl = `base64://${imageUrl}`;
                             }
+                            imageDataList.push(imageUrl);
+                        } else if (Array.isArray(val)) {
+                            imageDataList = val
+                                .map(item => this.normalizeImageData(item?.b64_json || item?.url || item))
+                                .filter(Boolean);
+                            imageUrl = imageDataList[0];
                         }
                     } catch (e) {
                         logger.error(`解析响应路径 ${apiConfig.responsePath} 失败`, e);
                     }
                 }
 
-                if (!imageUrl) {
+                if (imageDataList.length === 0) {
                     if (data.data && Array.isArray(data.data) && data.data.length > 0) {
-                        if (data.data[0].b64_json) {
-                            imageUrl = `base64://${data.data[0].b64_json}`;
-                        } else if (data.data[0].url) {
-                            imageUrl = data.data[0].url;
-                        }
+                        imageDataList = data.data
+                            .map(item => this.normalizeImageData(item?.b64_json || item?.url))
+                            .filter(Boolean);
+                        imageUrl = imageDataList[0];
                     }
                 }
 
@@ -483,6 +489,7 @@ export class DD_Painting extends plugin {
                     return {
                         success: true,
                         imageData: imageUrl,
+                        imageDataList: imageDataList,
                         revised_prompt: param.input,
                         payload: payload
                     };
@@ -505,6 +512,14 @@ export class DD_Painting extends plugin {
                 error: error.message || '未知错误'
             };
         }
+    }
+
+    normalizeImageData(imageData) {
+        if (typeof imageData !== 'string' || !imageData) return null;
+        if (imageData.startsWith('http') || imageData.startsWith('base64://') || imageData.startsWith('data:')) {
+            return imageData;
+        }
+        return `base64://${imageData}`;
     }
 
     // 构建 extraParams 请求体
@@ -544,6 +559,7 @@ export class DD_Painting extends plugin {
         if (filteredPayload.width && filteredPayload.height) result.push(`尺寸: ${filteredPayload.width}x${filteredPayload.height}`);
         if (filteredPayload.quality) result.push(`质量: ${filteredPayload.quality}`);
         if (filteredPayload.style) result.push(`风格: ${filteredPayload.style}`);
+        if (filteredPayload.n) result.push(`数量: ${filteredPayload.n} 张`);
 
         // Nebius特有参数
         if (filteredPayload.num_inference_steps) result.push(`推理步数: ${filteredPayload.num_inference_steps}`);
@@ -553,7 +569,7 @@ export class DD_Painting extends plugin {
 
         // 其他参数
         const handledKeys = ['model', 'prompt', 'size', 'width', 'height', 'quality', 'style',
-            'num_inference_steps', 'negative_prompt', 'seed', 'response_format'];
+            'n', 'num_inference_steps', 'negative_prompt', 'seed', 'response_format'];
 
         for (const key in filteredPayload) {
             if (!handledKeys.includes(key)) {
@@ -619,6 +635,18 @@ export class DD_Painting extends plugin {
             return false
         }
 
+        e.dd_parse_Oai = {
+            formatType: apiConfig.formatType,
+            maxArea: apiConfig.formatType === 'openai' ? 8294400 : 1048576,
+            useScaleParam: true,
+        };
+
+        // 处理预设
+        const presetResult = applyPresets(prompt, Config.getConfig("presets"), e);
+        let param = await handleParam(e, presetResult.processedText);
+        const usedPresets = presetResult.usedPresets || [];
+        const paintCount = Math.max(1, parseInt(param.parameters.n) || 1);
+
         // CD次数限制
         const memberConfig = {
             feature: `dd_${apiConfig.customCommand}`,
@@ -626,6 +654,7 @@ export class DD_Painting extends plugin {
             dailyLimit: apiConfig.dd_dailyLimit,
             unlimitedUsers: apiConfig.dd_unlimitedUsers,
             onlyGroupID: apiConfig.dd_onlyGroupID,
+            operationCount: paintCount,
         }
         const result_member = await memberControlProcess(e, memberConfig);
         if (!result_member.allowed) {
@@ -679,17 +708,6 @@ export class DD_Painting extends plugin {
             }
         }
 
-        e.dd_parse_Oai = {
-            formatType: apiConfig.formatType,
-            maxArea: apiConfig.formatType === 'openai' ? 8294400 : 1048576,
-            useScaleParam: true,
-        };
-
-        // 处理预设
-        const presetResult = applyPresets(prompt, Config.getConfig("presets"), e);
-        let param = await handleParam(e, presetResult.processedText);
-        const usedPresets = presetResult.usedPresets || [];
-
         if (source_images.length > 0) {
             param.souce_image_base64 = source_images[0];
             param.source_images = source_images;
@@ -703,7 +721,7 @@ export class DD_Painting extends plugin {
                 return true;
         }
 
-        result_member.record();
+        await result_member.record();
 
         if (config_date.replyStartMsg)
             e.reply("人家开始生成啦，请等待1-10分钟", true, { recallMsg: 60 });
@@ -726,10 +744,17 @@ export class DD_Painting extends plugin {
 
             // 发送合并转发消息
             let msgList = [];
+            const imageDataList = Array.isArray(result.imageDataList) && result.imageDataList.length > 0
+                ? result.imageDataList
+                : [result.imageData].filter(Boolean);
             if (config_date.simpleMode) {
-                msgList.push({ ...segment.image(result.imageData), origin: true });
+                imageDataList.forEach(imageData => {
+                    msgList.push({ ...segment.image(imageData), origin: true });
+                });
             } else {
-                e.reply({ ...segment.image(result.imageData), origin: true }, config_date.sendImgQuote_Message)
+                for (const imageData of imageDataList) {
+                    await e.reply({ ...segment.image(imageData), origin: true }, config_date.sendImgQuote_Message)
+                }
             }
 
             msgList.push(`使用接口: ${apiConfig.remark || `接口${apiIndex}`}`);

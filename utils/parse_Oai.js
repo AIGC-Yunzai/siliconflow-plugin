@@ -129,6 +129,85 @@ function callGetImgs(text) {
     return { parameters, text }
 }
 
+function chineseNumberToNumber(chineseNumber) {
+    if (!chineseNumber || typeof chineseNumber !== 'string') return NaN
+
+    const numberMap = {
+        '零': 0,
+        '一': 1,
+        '二': 2,
+        '两': 2,
+        '三': 3,
+        '四': 4,
+        '五': 5,
+        '六': 6,
+        '七': 7,
+        '八': 8,
+        '九': 9,
+        '壹': 1,
+        '贰': 2,
+        '叁': 3,
+        '肆': 4,
+        '伍': 5,
+        '陆': 6,
+        '柒': 7,
+        '捌': 8,
+        '玖': 9,
+    }
+    const unitMap = {
+        '十': 10,
+        '拾': 10,
+        '百': 100,
+        '佰': 100,
+        '千': 1000,
+        '仟': 1000,
+        '万': 10000,
+    }
+
+    let section = 0
+    let number = 0
+    let total = 0
+
+    for (const char of chineseNumber) {
+        if (numberMap[char] !== undefined) {
+            number = numberMap[char]
+            continue
+        }
+
+        const unit = unitMap[char]
+        if (!unit) return NaN
+
+        if (unit === 10000) {
+            total += (section + number) * unit
+            section = 0
+        } else {
+            section += (number || 1) * unit
+        }
+        number = 0
+    }
+
+    return total + section + number
+}
+
+/** 生成图片数量：只提取参数，不从提示词中删除“n张” */
+function picNumParam(text, e) {
+    let parameters = {}
+    const maxN = e?.dd_parse_Oai?.maxN ?? 10
+    const match = text.match(/(\d{1,5}|[一二三四五六七八九十零百千万壹贰两叁肆伍陆柒捌玖拾佰仟]+)\s*张/)
+
+    if (match) {
+        const rawNum = match[1]
+        let n = /^\d+$/.test(rawNum) ? Number(rawNum) : chineseNumberToNumber(rawNum)
+        if (!Number.isNaN(n)) {
+            n = parseInt(Number(n))
+            parameters.n = Math.min(Math.max(1, n), maxN)
+            // text = text.replace(/(\d{1,5}|[一二三四五六七八九十零百千万壹贰两叁肆伍陆柒捌玖拾佰仟]+)\s*张/ig, '')
+        }
+    }
+
+    return { parameters, text }
+}
+
 /**
  * @description: 高级传参方法
  * @param {string} text
@@ -245,6 +324,10 @@ export async function handleParam(e, text) {
     // text = result.text
     // 自动提示词处理
     result = isGeneratePrompt(text, e)
+    text = result.text
+    // 生成图片数量
+    result = picNumParam(text, e)
+    parameters = Object.assign(parameters, result.parameters)
     text = result.text
     // 高级传参
     result = advancedParam(text)
