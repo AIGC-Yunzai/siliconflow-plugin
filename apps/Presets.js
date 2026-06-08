@@ -29,6 +29,26 @@ export class Jimeng extends plugin {
         this.helpMsg = `\n可用指令：\n #sf预设列表 #sf预设[添加|删除|查看]`
     }
 
+    buildPresetNodes(presets_config, withIndex = false, nodeSize = 1) {
+        const presets = presets_config.presets || []
+        const presetList = presets.map((preset, index) => {
+            const presetName = presets_config.antiMisoperation ? `{预设:${preset.name}}` : preset.name
+            return withIndex ? `${index + 1}. ${presetName}` : presetName
+        })
+
+        const nodes = []
+        for (let i = 0; i < presetList.length; i += nodeSize) {
+            nodes.push(presetList.slice(i, i + nodeSize).join('\n'))
+        }
+        return nodes
+    }
+
+    async sendManagePresetsList(e, presets_config, title) {
+        const presetNodes = this.buildPresetNodes(presets_config, true, 50)
+        presetNodes.push(this.helpMsg)
+        await e.reply(await common.makeForwardMsg(e, presetNodes, title))
+    }
+
     async showPresetsList(e) {
         const presets_config = Config.getConfig("presets")
 
@@ -39,9 +59,7 @@ export class Jimeng extends plugin {
 
         /** 合并转发最大节点数 */
         const maxForwardNodes = 80
-        const presetNodes = presets_config.presets.map((preset, index) => {
-            return presets_config.antiMisoperation ? `${index + 1}. {预设:${preset.name}}` : `${index + 1}. ${preset.name}`
-        })
+        const presetNodes = this.buildPresetNodes(presets_config)
         const totalForwardMsgs = Math.ceil(presetNodes.length / maxForwardNodes)
 
         for (let i = 0; i < presetNodes.length; i += maxForwardNodes) {
@@ -49,6 +67,9 @@ export class Jimeng extends plugin {
             const currentForwardMsg = Math.floor(i / maxForwardNodes) + 1
             const title = totalForwardMsgs > 1 ? `当前预设列表 ${currentForwardMsg}/${totalForwardMsgs}` : '当前预设列表'
 
+            if (currentForwardMsg === totalForwardMsgs) {
+                chunk.push(this.helpMsg)
+            }
             await e.reply(await common.makeForwardMsg(e, chunk, title))
         }
     }
@@ -69,10 +90,8 @@ export class Jimeng extends plugin {
 
             if (!viewTarget) {
                 // 显示预设列表
-                const presetList = presets_config.presets.map((preset, index) => {
-                    return presets_config.antiMisoperation ? `${index + 1}. {预设:${preset.name}}` : `${index + 1}. ${preset.name}`
-                }).join('\n')
-                await e.reply(`请在120秒内发送要查看的预设名称或序号：\n${presetList}`, true, { recallMsg: 119 })
+                await e.reply('请在120秒内发送要查看的预设名称或序号：', true, { recallMsg: 119 })
+                await this.sendManagePresetsList(e, presets_config, '可查看预设列表')
                 const e_view = await this.awaitContext()
                 if (!e_view || !e_view.msg) {
                     await e.reply('[sf预设查看]操作已取消', true)
@@ -167,10 +186,8 @@ export class Jimeng extends plugin {
 
             if (!deleteTarget) {
                 // 显示预设列表
-                const presetList = presets_config.presets.map((preset, index) => {
-                    return presets_config.antiMisoperation ? `${index + 1}. {预设:${preset.name}}` : `${index + 1}. ${preset.name}`
-                }).join('\n')
-                await e.reply(`请在120秒内发送要删除的预设名称或序号：\n${presetList}`, true, { recallMsg: 119 })
+                await e.reply('请在120秒内发送要删除的预设名称或序号：', true, { recallMsg: 119 })
+                await this.sendManagePresetsList(e, presets_config, '可删除预设列表')
                 const e_delete = await this.awaitContext()
                 if (!e_delete || !e_delete.msg) {
                     await e.reply('[sf预设删除]操作已取消', true)
