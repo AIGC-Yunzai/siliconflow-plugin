@@ -62,7 +62,7 @@ class WebUIServer {
           logger.mark('[sf插件] 使用现有自签名证书，有效期还剩 ' + Math.floor(daysUntilExpire) + ' 天')
           return { cert: certPath, key: keyPath }
         }
-      } catch (e) {
+      } catch (err) {
         // 证书读取失败，重新生成
       }
     }
@@ -177,7 +177,7 @@ class WebUIServer {
             }
           }
         }
-      } catch (e) {
+      } catch (err) {
         // 忽略运行时读取错误
       }
 
@@ -241,7 +241,7 @@ class WebUIServer {
             masters.add(String(config.webUI.masters))
           }
         }
-      } catch (e) {
+      } catch (err) {
         // 忽略配置读取错误
       }
 
@@ -2269,7 +2269,7 @@ class WebUIServer {
           return isLocalA === isLocalB ? 0 : isLocalA ? 1 : -1;
         });
 
-      } catch (e) {
+      } catch (err) {
         // 忽略网络接口获取错误
         logger.error('[sf插件] 获取网络接口失败:', e)
       }

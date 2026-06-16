@@ -471,8 +471,8 @@ export class DD_Painting extends plugin {
                                 .filter(Boolean);
                             imageUrl = imageDataList[0];
                         }
-                    } catch (e) {
-                        logger.error(`解析响应路径 ${apiConfig.responsePath} 失败`, e);
+                    } catch (err) {
+                        logger.error(`解析响应路径 ${apiConfig.responsePath} 失败`, err);
                     }
                 }
 

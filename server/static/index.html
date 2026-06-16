@@ -3141,7 +3141,7 @@
             try {
                 const payload = JSON.parse(atob(token.split('.')[1]));
                 currentUserQQ = payload.qq || '';
-            } catch (e) {
+            } catch (err) {
                 return;
             }
 

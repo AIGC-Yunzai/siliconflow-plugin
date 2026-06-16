@@ -53,7 +53,7 @@ function extractUrls(text) {
             // 重新编码空格和特殊字符，但保留中文字符
             cleanUrl = cleanUrl.replace(/\s+/g, '%20')
                 .replace(/[[\](){}|\\^<>]/g, encodeURIComponent);
-        } catch (e) {
+        } catch (err) {
             // 如果解码失败，说明URL可能已经是正确格式，直接返回
             return cleanUrl;
         }

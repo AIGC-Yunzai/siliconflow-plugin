@@ -177,7 +177,7 @@ export class WebUIApproval extends plugin {
                     }
                 }
             }
-        } catch (e) {
+        } catch (err) {
             // 忽略错误
         }
         
@@ -206,7 +206,7 @@ export class WebUIApproval extends plugin {
                     }
                 }
             }
-        } catch (e) {
+        } catch (err) {
             // 忽略错误
         }
         
@@ -220,7 +220,7 @@ export class WebUIApproval extends plugin {
                     masters.add(String(config.webUI.masters))
                 }
             }
-        } catch (e) {
+        } catch (err) {
             // 忽略错误
         }
         
@@ -253,7 +253,7 @@ export class WebUIApproval extends plugin {
                     singleLineMatch[1].split(/[,\s]+/).filter(id => /^\d+$/.test(id)).forEach(m => masters.add(m))
                 }
             }
-        } catch (e) {
+        } catch (err) {
             // 忽略错误
         }
         

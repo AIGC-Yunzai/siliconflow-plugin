@@ -84,7 +84,7 @@ export class bilitv extends plugin {
                     e.reply("解析失败", true)
                     return false
                 }
-            } catch (e) {
+            } catch (err) {
                 e.reply("解析失败", true)
                 return false
             }
@@ -198,7 +198,7 @@ export class bilitv extends plugin {
                         return false
                     }
                     ssid = temp.result.media.season_id
-                } catch (e) {
+                } catch (err) {
                     e.reply("解析失败", true)
                     return false
                 }

@@ -35,7 +35,7 @@ async function fetchRealWanIp() {
           return cleanIp;
         }
       }
-    } catch (e) {
+    } catch (err) {
       // 当前接口失败，静默继续尝试下一个
       continue;
     }
@@ -382,7 +382,7 @@ export function summarizeImgUrl(imgUrl) {
     const base64 = imgUrl.slice("base64://".length);
     const preview = base64.slice(0, 16);
     let bytes = 0;
-    try { bytes = Buffer.from(base64, "base64").length; } catch (e) { }
+    try { bytes = Buffer.from(base64, "base64").length; } catch (err) { }
     return `base64://${preview}... [bytes=${bytes}]`;
   }
 
@@ -394,7 +394,7 @@ export function summarizeImgUrl(imgUrl) {
       const base64 = imgUrl.slice(commaIndex + 1);
       const preview = base64.slice(0, 16);
       let bytes = 0;
-      try { bytes = Buffer.from(base64, "base64").length; } catch (e) { }
+      try { bytes = Buffer.from(base64, "base64").length; } catch (err) { }
       return `${header}${preview}... [bytes=${bytes}]`;
     }
   }

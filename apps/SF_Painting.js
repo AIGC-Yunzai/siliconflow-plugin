@@ -371,8 +371,8 @@ export class SF_Painting extends plugin {
                     content: '发送错误消息失败: ' + error.message,
                     timestamp: new Date().getTime()
                 }));
-            } catch (e) {
-                logger.error('发送最终错误消息失败:', e);
+            } catch (err) {
+                logger.error('发送最终错误消息失败:', err);
             }
         }
     }
