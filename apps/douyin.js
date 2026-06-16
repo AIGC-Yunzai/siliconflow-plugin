@@ -96,7 +96,24 @@ export class Douyin_Video extends plugin {
                                 });
                                 if (videoResponse.ok) {
                                     const videoBuffer = Buffer.from(await videoResponse.arrayBuffer());
-                                    await e.reply(segment.video(videoBuffer));
+                                    const sfConfig = Config.getConfig();
+                                    if (sfConfig.napcat_stream_video && e.bot?.sendApi) {
+                                        try {
+                                            const { NapCatStreamClient } = await import('../utils/NapCatStreamClient.js');
+                                            const client = new NapCatStreamClient(e.bot);
+                                            const result = await client.uploadBuffer(videoBuffer, `${item.video_id || 'video'}.mp4`);
+                                            if (result?.file_path) {
+                                                await client.sendVideoByPath(e, result.file_path);
+                                            } else {
+                                                throw new Error('NapCat: 未返回 file_path');
+                                            }
+                                        } catch (streamErr) {
+                                            logger.mark(`[sf插件] NapCat流式上传失败, 回退普通发送: ${streamErr.message}`);
+                                            await e.reply(segment.video(videoBuffer));
+                                        }
+                                    } else {
+                                        await e.reply(segment.video(videoBuffer));
+                                    }
                                 } else {
                                     await e.reply(`视频下载失败，请手动访问：${item.video_url}`, true);
                                 }

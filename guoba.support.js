@@ -2425,6 +2425,12 @@ export function supportGuoba() {
           }
         },
         {
+          field: 'napcat_stream_video',
+          label: '以NapCat流式传输',
+          bottomHelpMessage: '启用后视频通过 NapCat stream API 分片上传发送，绕过 base64 大小限制；需 NapCat OneBot 支持',
+          component: 'Switch'
+        },
+        {
           component: 'Divider',
           label: '图片工具',
           componentProps: {
@@ -2593,3 +2599,4 @@ export function supportGuoba() {
     },
   }
 }
+

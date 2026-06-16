@@ -1,4 +1,4 @@
-# SF插件
+﻿# SF插件
 sf_keys: []
 sfBaseUrl: "https://api.siliconflow.cn/v1"
 translateModel: "Vendor-A/Qwen/Qwen2-72B-Instruct"
@@ -135,7 +135,8 @@ groupMultiChat: false # 是否启用群聊多人对话功能
 enablePrivateChatAI: true # 是否启用私聊模式的AI对话
 douyinTV: true # 开启抖音解析
 kuaishouTV: true # 开启快手解析
-video_maxSizeMB: 50 # 抖音解析视频最大容量 MB
+video_maxSizeMB: 50 # 抖音解析视频最大容量 MB
+napcat_stream_video: false # 启用 NapCat 流式传输视频（需 NapCat OneBot）
 turnOnBilitv: true # 开启bili解析
 PY_ImageToolsSwitch: false # 开启#图片操作
 switch_ChatCooldown: true # 不允许并发对话
@@ -182,3 +183,4 @@ Doubao:
     onlyGroupID: [],
     contextExpiryHours: 24,
   }
+

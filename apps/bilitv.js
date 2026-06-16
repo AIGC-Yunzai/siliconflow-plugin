@@ -147,12 +147,32 @@ export class bilitv extends plugin {
             }
         }
 
-        e.reply(segment.video(Buffer.from(await (await fetch(res.data.durl[0].url, {
+        // 根据配置决定是否使用 NapCat 流式上传发送
+        const sfConfig = Config.getConfig();
+        const videoBuffer = Buffer.from(await (await fetch(res.data.durl[0].url, {
             headers: {
                 'referer': 'https://www.bilibili.com/',
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/86.0.4240.198 Safari/537.36'
             }
-        })).arrayBuffer())))
+        })).arrayBuffer());
+        if (sfConfig.napcat_stream_video && e.bot?.sendApi) {
+            try {
+                const { NapCatStreamClient } = await import('../utils/NapCatStreamClient.js');
+                const client = new NapCatStreamClient(e.bot);
+                const result = await client.uploadBuffer(videoBuffer, `${bvid || 'video'}.mp4`);
+                if (result?.file_path) {
+                    await client.sendVideoByPath(e, result.file_path);
+                } else {
+                    throw new Error('NapCat: 未返回 file_path');
+                }
+                return true;
+            } catch (streamErr) {
+                logger.error(`[sf插件] NapCat流式上传失败, 回退普通发送: ${streamErr.message}`);
+                await e.reply(segment.video(videoBuffer));
+            }
+        } else {
+            await e.reply(segment.video(videoBuffer));
+        }
         return true
     }
 
