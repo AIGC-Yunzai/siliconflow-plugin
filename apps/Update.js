@@ -27,7 +27,7 @@ export class update extends plugin {
       priority: 1009,
       rule: [
         {
-          reg: '^#sf((插件)?(强制)?更新| update)(\s*(dev|DEV|main|MAIN))?$',
+          reg: '^#sf((插件)?(强制)?更新| update)(\\s*(dev|DEV|main|MAIN))?$',
           fnc: 'update'
         },
         {
