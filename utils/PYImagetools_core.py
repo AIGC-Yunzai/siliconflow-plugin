@@ -36,6 +36,39 @@ def save_gif_and_print(bytes_io):
     b64 = base64.b64encode(bytes_io.getvalue()).decode('utf-8')
     print(f"BASE64:{b64}")
 
+def parse_frame_duration(arg):
+    if not arg:
+        return 300
+
+    p_float = r"\d{1,4}(?:\.\d{1,3})?"
+    if match := re.fullmatch(rf"({p_float})ms", arg, re.I):
+        duration = float(match.group(1))
+    elif match := re.fullmatch(rf"({p_float})s", arg, re.I):
+        duration = float(match.group(1)) * 1000
+    elif match := re.fullmatch(rf"({p_float})fps", arg, re.I):
+        fps = float(match.group(1))
+        if fps <= 0:
+            raise Exception("请使用正确的帧间隔格式，如：200ms、0.5s、2fps")
+        duration = 1000 / fps
+    else:
+        raise Exception("请使用正确的帧间隔格式，如：200ms、0.5s、2fps")
+
+    if duration <= 0:
+        raise Exception("请使用正确的帧间隔格式，如：200ms、0.5s、2fps")
+    return max(20, int(round(duration)))
+
+def parse_grid_gif_args(arg):
+    parts = arg.split()
+    if not parts or parts[0] not in ["4", "9", "16", "25", "36"]:
+        raise Exception("请提供宫格数量：#宫格转gif 4/9/16/25/36 [200ms/0.5s/2fps]")
+    if len(parts) > 2:
+        raise Exception("请使用正确格式：#宫格转gif 4/9/16/25/36 [200ms/0.5s/2fps]")
+
+    total = int(parts[0])
+    grid_size = {4: 2, 9: 3, 16: 4, 25: 5, 36: 6}[total]
+    duration = parse_frame_duration(parts[1] if len(parts) == 2 else "")
+    return grid_size, duration
+
 def process_image():
     cmd = sys.argv[1]
     arg = sys.argv[2]
@@ -176,6 +209,33 @@ def process_image():
                 image.seek(i)
                 frames.append(image.copy())
             
+            out = BytesIO()
+            frames[0].save(out, format="GIF", save_all=True, append_images=frames[1:], loop=0, duration=duration)
+            save_gif_and_print(out)
+
+        elif cmd == "宫格转gif":
+            grid_size, duration = parse_grid_gif_args(arg)
+            image = imgs[0].image
+            if image.width != image.height:
+                raise Exception("宫格转gif 需要正方形宫格图片")
+
+            usable_side = image.width - (image.width % grid_size)
+            if usable_side < grid_size:
+                raise Exception("图片尺寸过小，无法切分宫格")
+
+            offset = (image.width - usable_side) // 2
+            if usable_side != image.width:
+                image = image.crop((offset, offset, offset + usable_side, offset + usable_side))
+
+            frame_size = usable_side // grid_size
+            frames = []
+            for row in range(grid_size):
+                for col in range(grid_size):
+                    left = col * frame_size
+                    top = row * frame_size
+                    frame = image.crop((left, top, left + frame_size, top + frame_size)).copy()
+                    frames.append(frame)
+
             out = BytesIO()
             frames[0].save(out, format="GIF", save_all=True, append_images=frames[1:], loop=0, duration=duration)
             save_gif_and_print(out)
