@@ -158,6 +158,12 @@ export class ImageTools extends plugin {
             // 执行脚本
             const { stdout } = await this.runPythonScript(args);
 
+            // 宫格转gif 等功能强依赖 numpy，缺失时不再静默降级，直接提示安装
+            if (stdout.includes('NUMPY_REQUIRED')) {
+                await e.reply(`❌ 该功能需要安装 numpy 模块才能保证效果（缺失会导致切分错位、帧抖动）\n\n请在终端运行以下命令安装：\npip install numpy`);
+                return true;
+            }
+
             // 解析 stdout 获取 Base64 图片数据
             let outBase64List = stdout.trim().split(/\r?\n/)
                 .filter(line => line.startsWith('BASE64:'))
@@ -191,7 +197,9 @@ export class ImageTools extends plugin {
             } else if (errStr.includes('ERROR:IMPORT:') || errStr.includes('No module named')) {
                 let match = errStr.match(/No module named '([^']+)'/);
                 let mod = match ? match[1] : '未知模块';
-                await e.reply(`❌ 缺少必要的 Python 模块：${mod}\n\n请在终端运行以下命令安装：\npip install Pillow requests pil-utils`);
+                await e.reply(`❌ 缺少必要的 Python 模块：${mod}\n\n请在终端运行以下命令安装：\npip install Pillow requests pil-utils numpy`);
+            } else if (errStr.includes('NUMPY_REQUIRED')) {
+                await e.reply(`❌ 该功能需要安装 numpy 模块才能保证效果（缺失会导致切分错位、帧抖动）\n\n请在终端运行以下命令安装：\npip install numpy`);
             } else {
                 // 截取前200个字符作为错误提示反馈给用户
                 let errLog = errStr.substring(0, 200);
