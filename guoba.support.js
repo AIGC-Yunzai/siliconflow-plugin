@@ -818,7 +818,7 @@ export function supportGuoba() {
         {
           field: "defaultCommand",
           label: "默认命令",
-          bottomHelpMessage: "当触发BOT名字时使用的默认接口",
+          bottomHelpMessage: "当触发BOT名字时使用的默认接口；选择此选项后再去选择对应 模型提供商 的 默认使用接口",
           component: "Select",
           componentProps: {
             options: [
