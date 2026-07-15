@@ -618,6 +618,7 @@ export class DD_Painting extends plugin {
         if (!config_date)
             config_date = Config.getConfig();
         e.sfRuntime = config_date;
+        const maxCollectedImages = Math.max(1, Math.floor(Number(config_date.maxCollectedImages) || 5));
 
         // 获取接口配置
         const apiList = config_date.dd_APIList || []
@@ -664,10 +665,20 @@ export class DD_Painting extends plugin {
         }
 
         // 处理引用图片
-        await parseSourceImg(e);
+        await parseSourceImg(e, true, { maxCollectedImages });
+
+        // 要求上传更多图片；先收集完成，再统一限制数量并下载
+        let upimgs_num = parseInt(param.parameters.upimgs);
+        if (!isNaN(upimgs_num) && upimgs_num > 0) {
+            upimgs_num = Math.min(upimgs_num, maxCollectedImages)
+            if (!(await getMediaFrom_awaitContext(e, this, upimgs_num, "upimgs", false, maxCollectedImages)))
+                return true;
+        }
+        if (Array.isArray(e.img)) e.img = e.img.slice(0, maxCollectedImages)
+
         let source_images = [];
         if (apiConfig.enableImageUpload && e.img?.length) {
-            for (const imgUrl of e.img) {
+            for (const imgUrl of e.img.slice(0, maxCollectedImages)) {
                 try {
                     if (typeof imgUrl !== 'string') continue;
                     // 判断是否为 data: 协议、base64:// 协议，或者本身就是纯 Base64 字符串
@@ -711,14 +722,6 @@ export class DD_Painting extends plugin {
         if (source_images.length > 0) {
             param.souce_image_base64 = source_images[0];
             param.source_images = source_images;
-        }
-
-        // 要求上传更多图片
-        let upimgs_num = parseInt(param.parameters.upimgs);
-        if (!isNaN(upimgs_num) && upimgs_num > 0) {
-            upimgs_num = Math.min(upimgs_num, 1)
-            if (!(await getMediaFrom_awaitContext(e, this, upimgs_num, "upimgs")))
-                return true;
         }
 
         await result_member.record();

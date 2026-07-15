@@ -1,32 +1,102 @@
 import axios from 'axios'
 
 /**
+ * 从消息段中提取所有被 At 的用户 ID。
+ * TRSS-Yunzai 的 e.at 在多人 At 时只保留最后一位，因此多人场景必须读取 e.message。
+ *
+ * @param {*} e 消息事件
+ * @returns {string[]} 去重后、保持 At 顺序的用户 ID
+ */
+export function getAtUserIds(e) {
+  const userIds = []
+  const seen = new Set()
+  const selfId = e?.self_id == null ? '' : String(e.self_id)
+
+  if (Array.isArray(e?.message)) {
+    for (const item of e.message) {
+      if (item?.type !== 'at') continue
+
+      const rawUserId = item.qq ?? item.id ?? item.user_id
+      if (rawUserId == null) continue
+
+      const userId = String(rawUserId).trim()
+      if (!userId || userId.toLowerCase() === 'all' || userId === selfId || seen.has(userId)) continue
+
+      seen.add(userId)
+      userIds.push(userId)
+    }
+  }
+
+  // 兼容没有完整 message 数组的适配器
+  if (userIds.length === 0 && e?.at != null) {
+    const userId = String(e.at).trim()
+    if (userId && userId.toLowerCase() !== 'all' && userId !== selfId) {
+      userIds.push(userId)
+    }
+  }
+
+  return userIds
+}
+
+/** 获取单个 At 用户，保持旧版默认使用 e.at（最后一位）的行为 */
+function getLegacyAtUserId(e) {
+  if (e?.at != null) {
+    const userId = String(e.at).trim()
+    const selfId = e?.self_id == null ? '' : String(e.self_id)
+    if (userId && userId.toLowerCase() !== 'all' && userId !== selfId) return userId
+  }
+
+  return getAtUserIds(e).at(-1)
+}
+
+/** 获取群成员头像，失败时回退到 QQ 头像直链 */
+async function getAtAvatarUrl(e, userId) {
+  try {
+    const member = e?.group?.pickMember?.(Number(userId) || userId)
+    const avatarUrl = await member?.getAvatarUrl?.()
+    if (avatarUrl) return avatarUrl
+  } catch (error) {
+    // 使用 QQ 头像直链兜底，单个成员失败不能影响其他头像
+  }
+
+  return `https://q1.qlogo.cn/g?b=qq&s=0&nk=${encodeURIComponent(userId)}`
+}
+
+/**
  * @description: 处理引用消息：获取引用的图片、视频和文本
  * 图片放入 e.img (优先级: e.source.img > e.img)
  * 视频放入 e.get_Video
  * 文本放入 e.sourceMsg
  * @param {*} e
  * @param {*} alsoGetAtAvatar 开启使用At用户头像作为图片，默认 true
+ * @param {object} options 可选配置
+ * @param {number} options.maxCollectedImages 最大收集图片数；不传时保持旧版单头像行为
  * @return {*} e.img e.sourceMsg 和 e.theImgIsGetFromSource ，当图片是从引用中获取的则 e.theImgIsGetFromSource 为 true
  */
-export async function parseSourceImg(e, alsoGetAtAvatar = true) {
-  let reply;
-  // 1. 尝试获取头像作为图片 (如果没有 source/reply/img 且有 at)
-  if (alsoGetAtAvatar && e.at && !e.source && !e.reply_id && !e.img) {
-    // if (e.atBot) { // 不获取Bot的头像，无意义
-    //   e.img = [];
-    //   e.img[0] = e.bot.avatar || `https://q1.qlogo.cn/g?b=qq&s=0&nk=${getUin(e)}`;
-    // }
-    if (e.at) {
-      try {
-        e.img = [await e.group.pickMember(e.at).getAvatarUrl()];
-      } catch (error) {
-        e.img = [`https://q1.qlogo.cn/g?b=qq&s=0&nk=${e.at}`];
-      }
-    }
+export async function parseSourceImg(e, alsoGetAtAvatar = true, options = {}) {
+  // 支持 parseSourceImg(e, { ...options }) 的写法，同时兼容原有布尔参数
+  if (typeof alsoGetAtAvatar === 'object' && alsoGetAtAvatar !== null) {
+    options = alsoGetAtAvatar
+    alsoGetAtAvatar = options.alsoGetAtAvatar ?? true
   }
 
-  // 2. 获取回复的消息对象 (reply)
+  const hasExplicitCollectionLimit = Number.isFinite(Number(options?.maxCollectedImages))
+  const maxCollectedImages = hasExplicitCollectionLimit
+    ? Math.max(1, Math.floor(Number(options.maxCollectedImages)))
+    : 1
+  const messageImages = Array.isArray(e.img) ? [...e.img] : (e.img ? [e.img] : [])
+  let sourceImages = []
+
+  e.atAvatarResult = {
+    requestedUserIds: [],
+    avatarUserIds: [],
+    avatarUrls: [],
+    limit: maxCollectedImages,
+    extracted: false,
+  }
+
+  let reply;
+  // 1. 获取回复的消息对象 (reply)
   // ICQQ原生
   if (e.reply_id) {
     reply = (await e.getReply(e.reply_id)).message;
@@ -39,7 +109,7 @@ export async function parseSourceImg(e, alsoGetAtAvatar = true) {
     }
   }
 
-  // 3. 解析回复内容
+  // 2. 解析回复内容
   if (reply) {
     let i = []
     let text = [] // 用于存储文本消息
@@ -97,7 +167,7 @@ export async function parseSourceImg(e, alsoGetAtAvatar = true) {
       }
     }
     if (Boolean(i.length)) {
-      e.img = i;
+      sourceImages = i;
       e.theImgIsGetFromSource = true;
     }
     if (Boolean(get_Video.length)) {
@@ -119,6 +189,55 @@ export async function parseSourceImg(e, alsoGetAtAvatar = true) {
       e.senderUser_id = senderUser_id;
     }
   }
+
+  // 3. 收集图片：引用图片 > 当前消息图片 > At 用户头像
+  if (hasExplicitCollectionLimit) {
+    const selectedImages = []
+    const seenImages = new Set()
+    const appendImages = (images) => {
+      for (const image of images) {
+        if (selectedImages.length >= maxCollectedImages) break
+        if (typeof image !== 'string' || !image || seenImages.has(image)) continue
+        seenImages.add(image)
+        selectedImages.push(image)
+      }
+    }
+
+    appendImages(sourceImages)
+    appendImages(messageImages)
+
+    if (alsoGetAtAvatar && selectedImages.length < maxCollectedImages) {
+      const atUserIds = getAtUserIds(e)
+      const remainingCount = maxCollectedImages - selectedImages.length
+      const avatarUserIds = atUserIds.slice(0, remainingCount)
+      const avatarUrls = await Promise.all(avatarUserIds.map(userId => getAtAvatarUrl(e, userId)))
+
+      e.atAvatarResult.requestedUserIds = atUserIds
+      e.atAvatarResult.avatarUserIds = avatarUserIds
+      e.atAvatarResult.avatarUrls = avatarUrls
+      e.atAvatarResult.extracted = avatarUrls.length > 0
+      appendImages(avatarUrls)
+    }
+
+    e.img = selectedImages
+  } else if (sourceImages.length > 0) {
+    // 旧调用保持引用图片覆盖当前消息图片的行为
+    e.img = sourceImages
+  } else if (messageImages.length > 0) {
+    e.img = messageImages
+  } else if (alsoGetAtAvatar && !e.source && !e.reply_id) {
+    // 旧调用保持只使用 e.at 最后一位用户头像的行为
+    const userId = getLegacyAtUserId(e)
+    if (userId) {
+      const avatarUrl = await getAtAvatarUrl(e, userId)
+      e.img = [avatarUrl]
+      e.atAvatarResult.requestedUserIds = [userId]
+      e.atAvatarResult.avatarUserIds = [userId]
+      e.atAvatarResult.avatarUrls = [avatarUrl]
+      e.atAvatarResult.extracted = true
+    }
+  }
+
   return e.img;
 }
 
@@ -269,12 +388,20 @@ export async function url2Base64(url, isReturnBuffer = false, isReturnBlob = fal
  * @param {*} needLength 需要的图片或视频总数量
  * @param {*} featureName 显示的名称
  * @param {boolean} countVideo 是否将视频计入总数 (默认为 false)
+ * @param {number} maxCollectedImages 最大收集图片数，默认不限制
  * @return {boolean} 成功获取到指定数量返回 true，否则返回 false
  */
-export async function getMediaFrom_awaitContext(e, context = null, needLength = 1, featureName = "", countVideo = false) {
+export async function getMediaFrom_awaitContext(e, context = null, needLength = 1, featureName = "", countVideo = false, maxCollectedImages = Infinity) {
+  const imageLimit = Number.isFinite(Number(maxCollectedImages))
+    ? Math.max(1, Math.floor(Number(maxCollectedImages)))
+    : Infinity
+  needLength = Math.min(needLength, imageLimit)
+
   // 初始化图片数组
   if (!e.img) {
     e.img = [];
+  } else if (Array.isArray(e.img) && e.img.length > imageLimit) {
+    e.img = e.img.slice(0, imageLimit)
   }
   // 初始化视频数组
   if (!e.get_Video) {
@@ -298,8 +425,12 @@ export async function getMediaFrom_awaitContext(e, context = null, needLength = 
 
     // 1. 处理图片
     if (e_new.img && e_new.img.length > 0) {
-      e.img.push(...e_new.img);
-      hasMedia = true;
+      const remainingImageCount = Math.max(0, imageLimit - e.img.length)
+      const newImages = e_new.img.slice(0, remainingImageCount)
+      if (newImages.length > 0) {
+        e.img.push(...newImages);
+        hasMedia = true;
+      }
     }
 
     // 2. 处理视频（仅当允许视频计数时，才提取视频并标记为有效输入）

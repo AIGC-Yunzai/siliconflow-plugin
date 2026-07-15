@@ -728,6 +728,17 @@ export function supportGuoba() {
           },
         },
         {
+          field: "maxCollectedImages",
+          label: "最大收集图片数",
+          bottomHelpMessage: "设置 #s、#g、#d 单次最多收集并下载的图片总数。引用图片优先，其次是当前消息图片，最后使用 At 用户头像补足；超出数量将静默忽略。",
+          component: "InputNumber",
+          componentProps: {
+            min: 1,
+            max: 20,
+            step: 1,
+          },
+        },
+        {
           field: "config_presets.presets",
           label: "绘画预设",
           bottomHelpMessage: "绘画预设目前支持 #sf绘画 #dd #即梦 #s（仅绘画模式） #g（仅绘画模式）；可用指令：#sf预设列表 #sf预设[添加|删除|查看]",
@@ -2599,4 +2610,3 @@ export function supportGuoba() {
     },
   }
 }
-

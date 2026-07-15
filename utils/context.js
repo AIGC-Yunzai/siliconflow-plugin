@@ -67,8 +67,8 @@ export function formatContextForGemini(messages, options = {}) {
                 });
             }
 
-            // 兼容旧版 currentImages
-            if (currentImages && currentImages.length > 0) {
+            // 仅在没有新版 currentMedia 时兼容旧版 currentImages，避免同一批图片重复传入
+            if ((!currentMedia || currentMedia.length === 0) && currentImages && currentImages.length > 0) {
                 currentImages.forEach(image => {
                     vertexContents.push({ inlineData: { mimeType: "image/jpeg", data: image } });
                 });
@@ -99,8 +99,8 @@ export function formatContextForGemini(messages, options = {}) {
                 });
             }
 
-            // 兼容旧版 currentImages
-            if (currentImages && currentImages.length > 0) {
+            // 仅在没有新版 currentMedia 时兼容旧版 currentImages，避免同一批图片重复传入
+            if ((!currentMedia || currentMedia.length === 0) && currentImages && currentImages.length > 0) {
                 currentParts.push({ text: "\n当前引用的图片:" });
                 currentImages.forEach(image => {
                     currentParts.push({ inline_data: { mime_type: "image/jpeg", data: image } });
@@ -477,4 +477,4 @@ export async function clearAllContext() {
         logger.error('[Context] 清除所有上下文失败:', error)
         return false
     }
-} 
+}
