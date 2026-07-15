@@ -1,6 +1,8 @@
 import _ from 'lodash'
-import { getAtUserIds } from './getImg.js'
-import { getUserDetailedInfo } from './onebotUtils.js'
+import {
+    getAtUserIds,
+    getUserDetailedInfo
+} from './onebotUtils.js'
 
 /**
  * 应用预设到文本中

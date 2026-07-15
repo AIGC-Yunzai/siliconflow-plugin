@@ -1,4 +1,42 @@
 /**
+ * 从消息段中提取所有被 At 的用户 ID。
+ * TRSS-Yunzai 的 e.at 在多人 At 时只保留最后一位，因此多人场景必须读取 e.message。
+ *
+ * @param {*} e 消息事件
+ * @returns {string[]} 去重后、保持 At 顺序的用户 ID
+ */
+export function getAtUserIds(e) {
+  const userIds = []
+  const seen = new Set()
+  const selfId = e?.self_id == null ? '' : String(e.self_id)
+
+  if (Array.isArray(e?.message)) {
+    for (const item of e.message) {
+      if (item?.type !== 'at') continue
+
+      const rawUserId = item.qq ?? item.id ?? item.user_id
+      if (rawUserId == null) continue
+
+      const userId = String(rawUserId).trim()
+      if (!userId || userId.toLowerCase() === 'all' || userId === selfId || seen.has(userId)) continue
+
+      seen.add(userId)
+      userIds.push(userId)
+    }
+  }
+
+  // 兼容没有完整 message 数组的适配器
+  if (userIds.length === 0 && e?.at != null) {
+    const userId = String(e.at).trim()
+    if (userId && userId.toLowerCase() !== 'all' && userId !== selfId) {
+      userIds.push(userId)
+    }
+  }
+
+  return userIds
+}
+
+/**
  * @description: 获取指定QQ号的Bot对象，如果都不存在则返回默认的Bot对象
  * @param {Array} targetQQArr bot qq号数组
  * @return {Object} Bot实例对象
