@@ -2,7 +2,7 @@ import plugin from '../../../lib/plugins/plugin.js'
 import common from '../../../lib/common/common.js'
 import Config from '../components/Config.js'
 
-export class Jimeng extends plugin {
+export class Presets extends plugin {
     constructor() {
         super({
             /** 功能名称 */
@@ -26,7 +26,7 @@ export class Jimeng extends plugin {
                 },
             ]
         })
-        this.helpMsg = `\n可用指令：\n #sf预设列表 #sf预设[添加|删除|查看]`
+        this.helpMsg = `可用指令：\n #sf预设列表 #sf预设[添加|删除|查看]`
     }
 
     buildPresetNodes(presets_config, withIndex = false, nodeSize = 1) {
@@ -53,7 +53,7 @@ export class Jimeng extends plugin {
         const presets_config = Config.getConfig("presets")
 
         if (!presets_config.presets || presets_config.presets.length === 0) {
-            await e.reply("暂无预设列表" + this.helpMsg, true)
+            await e.reply("暂无预设列表" + "\n" + this.helpMsg, true)
             return
         }
 
@@ -81,7 +81,7 @@ export class Jimeng extends plugin {
 
         if (action === '查看') {
             if (!presets_config.presets || presets_config.presets.length === 0) {
-                await e.reply("暂无预设列表" + this.helpMsg, true)
+                await e.reply("暂无预设列表" + "\n" + this.helpMsg, true)
                 return
             }
 
@@ -114,7 +114,7 @@ export class Jimeng extends plugin {
             }
 
             if (viewIndex === -1) {
-                await e.reply(`未找到预设"${viewTarget}"` + this.helpMsg, true)
+                await e.reply(`未找到预设"${viewTarget}"` + "\n" + this.helpMsg, true)
                 return
             }
 
@@ -168,11 +168,11 @@ export class Jimeng extends plugin {
                 }
                 presets_config.presets[existingIndex] = { name: presetName, prompt: presetPrompt }
                 await Config.setConfig(presets_config, "presets")
-                await e.reply(`预设"${presetName}"已更新成功！触发词：\n ${presets_config.antiMisoperation ? `{预设:${presetName}}` : presetName}\n` + this.helpMsg, true)
+                await e.reply(`预设"${presetName}"已更新成功！触发词：\n ${presets_config.antiMisoperation ? `{预设:${presetName}}` : presetName}\n\n` + this.helpMsg, true)
             } else {
                 presets_config.presets.push({ name: presetName, prompt: presetPrompt })
                 await Config.setConfig(presets_config, "presets")
-                await e.reply(`预设"${presetName}"添加成功！触发词：\n ${presets_config.antiMisoperation ? `{预设:${presetName}}` : presetName}\n` + this.helpMsg, true)
+                await e.reply(`预设"${presetName}"添加成功！触发词：\n ${presets_config.antiMisoperation ? `{预设:${presetName}}` : presetName}\n\n` + this.helpMsg, true)
             }
 
         } else if (action === '删除') {
@@ -225,7 +225,7 @@ export class Jimeng extends plugin {
 
             presets_config.presets.splice(deleteIndex, 1)
             await Config.setConfig(presets_config, "presets")
-            await e.reply(`预设"${deletedPreset.name}"已删除成功！` + this.helpMsg, true)
+            await e.reply(`预设"${deletedPreset.name}"已删除成功！` + "\n" + this.helpMsg, true)
         }
     }
 
