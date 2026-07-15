@@ -872,7 +872,7 @@ export class SF_Painting extends plugin {
         let msg = e.msg.replace(/^#(flux|FLUX|(sf|SF)(画图|绘图|绘画))(\n*)?/, '').trim()
 
         // 处理预设
-        const presetResult = applyPresets(msg, Config.getConfig("presets"), e)
+        const presetResult = await applyPresets(msg, Config.getConfig("presets"), e)
         msg = presetResult.processedText
 
         e.sf_parse_normal = {
@@ -1114,7 +1114,7 @@ export class SF_Painting extends plugin {
 
         // 处理预设
         if (paintModel) {
-            const presetResult = applyPresets(toAiMessage, Config.getConfig("presets"), e)
+            const presetResult = await applyPresets(toAiMessage, Config.getConfig("presets"), e)
             toAiMessage = presetResult.processedText
             msg = presetResult.originalText
             // 处理 msg
@@ -1914,7 +1914,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
 
         // 处理预设
         if (paintModel) {
-            const presetResult = applyPresets(toAiMessage, Config.getConfig("presets"), e)
+            const presetResult = await applyPresets(toAiMessage, Config.getConfig("presets"), e)
             toAiMessage = presetResult.processedText
             msg = presetResult.originalText
             // 处理 msg

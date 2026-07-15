@@ -155,7 +155,7 @@ ntags = [tags]`,
         }
 
         // 处理预设
-        const presetResult = applyPresets(msg, Config.getConfig("presets"), e)
+        const presetResult = await applyPresets(msg, Config.getConfig("presets"), e)
         msg = presetResult.processedText
 
         // 处理 msg

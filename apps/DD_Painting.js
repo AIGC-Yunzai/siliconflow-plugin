@@ -643,7 +643,7 @@ export class DD_Painting extends plugin {
         };
 
         // 处理预设
-        const presetResult = applyPresets(prompt, Config.getConfig("presets"), e);
+        const presetResult = await applyPresets(prompt, Config.getConfig("presets"), e);
         let param = await handleParam(e, presetResult.processedText);
         const usedPresets = presetResult.usedPresets || [];
         const paintCount = Math.max(1, parseInt(param.parameters.n) || 1);
