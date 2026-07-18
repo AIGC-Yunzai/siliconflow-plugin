@@ -4,11 +4,12 @@ import Config from '../components/Config.js'
 // 尺寸处理
 function ratioParam(text) {
     const scale = {
-        "竖图": { ratio: "9:16" },
-        "长图": { ratio: "9:16" },
-        "宽图": { ratio: "16:9" },
-        "横图": { ratio: "16:9" },
-        "方图": { ratio: "1:1" },
+        // #d 不解析中文画幅词，避免它们出现在正常提示词中时被误删。
+        // "竖图": { ratio: "9:16" },
+        // "长图": { ratio: "9:16" },
+        // "宽图": { ratio: "16:9" },
+        // "横图": { ratio: "16:9" },
+        // "方图": { ratio: "1:1" },
 
         "--1:1": { ratio: "1:1" },
         "--4:3": { ratio: "4:3" },
