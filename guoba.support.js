@@ -759,6 +759,12 @@ export function supportGuoba() {
                 component: "InputTextArea",
                 bottomHelpMessage: "1.支持的固定参数: 横图, 竖图, 方图, --1:1, --16:9, --9:16, --upimgs 2, reference_strength = 0.8, 1024*1024 等；2.meme制作：支持将预设文本中的 _sender_name_ 替换为当前用户昵称；_at1_name_、_at2_name_、_at3_name_ ... 按 At 顺序替换为被 At 用户的昵称，对应用户不存在时替换为空字符串； _sender_id_ 替换为当前用户qq； _sender_groupid_ 替换为 当前群号； _date_ 替换为 当前日期； _time_ 替换为 当前时间；",
               },
+              {
+                field: "isOnlyMaster",
+                label: "仅主人可用",
+                component: "Switch",
+                bottomHelpMessage: "开启后，此预设仅主人可触发；普通用户误触发时会提示且不生效",
+              },
             ],
           },
         },

@@ -29,11 +29,29 @@ export class Presets extends plugin {
         this.helpMsg = `可用指令：\n #sf预设列表 #sf预设[添加|删除|查看]`
     }
 
-    buildPresetNodes(presets_config, withIndex = false, nodeSize = 1) {
-        const presets = presets_config.presets || []
+    /**
+     * @param {object} presets_config
+     * @param {object} options
+     * @param {boolean} options.withIndex 是否带序号（基于传入列表自身序号）
+     * @param {number} options.nodeSize 每个合并转发节点的条目数
+     * @param {boolean} options.showMasterOnlyTag 是否标注 [主人专属]
+     * @param {boolean} options.hideMasterOnly 是否隐藏仅主人可用的预设
+     */
+    buildPresetNodes(presets_config, {
+        withIndex = false,
+        nodeSize = 1,
+        showMasterOnlyTag = false,
+        hideMasterOnly = false
+    } = {}) {
+        let presets = presets_config.presets || []
+        if (hideMasterOnly) {
+            presets = presets.filter(p => !p.isOnlyMaster)
+        }
+
         const presetList = presets.map((preset, index) => {
             const presetName = presets_config.antiMisoperation ? `{预设:${preset.name}}` : preset.name
-            return withIndex ? `${index + 1}. ${presetName}` : presetName
+            const masterTag = (showMasterOnlyTag && preset.isOnlyMaster) ? ' [主人专属]' : ''
+            return withIndex ? `${index + 1}. ${presetName}${masterTag}` : `${presetName}${masterTag}`
         })
 
         const nodes = []
@@ -44,13 +62,19 @@ export class Presets extends plugin {
     }
 
     async sendManagePresetsList(e, presets_config, title) {
-        const presetNodes = this.buildPresetNodes(presets_config, true, 50)
+        // 管理指令仅主人可用，展示全部并标注主人专属
+        const presetNodes = this.buildPresetNodes(presets_config, {
+            withIndex: true,
+            nodeSize: 50,
+            showMasterOnlyTag: true
+        })
         presetNodes.push(this.helpMsg)
         await e.reply(await common.makeForwardMsg(e, presetNodes, title))
     }
 
     async showPresetsList(e) {
         const presets_config = Config.getConfig("presets")
+        const isMaster = !!e.isMaster
 
         if (!presets_config.presets || presets_config.presets.length === 0) {
             await e.reply("暂无预设列表" + "\n" + this.helpMsg, true)
@@ -59,7 +83,17 @@ export class Presets extends plugin {
 
         /** 合并转发最大节点数 */
         const maxForwardNodes = 80
-        const presetNodes = this.buildPresetNodes(presets_config)
+        // 普通用户隐藏仅主人可用预设；主人展示全部并标注
+        const presetNodes = this.buildPresetNodes(presets_config, {
+            hideMasterOnly: !isMaster,
+            showMasterOnlyTag: isMaster
+        })
+
+        if (presetNodes.length === 0) {
+            await e.reply("暂无可用预设列表" + "\n" + this.helpMsg, true)
+            return
+        }
+
         const totalForwardMsgs = Math.ceil(presetNodes.length / maxForwardNodes)
 
         for (let i = 0; i < presetNodes.length; i += maxForwardNodes) {
@@ -166,11 +200,17 @@ export class Presets extends plugin {
                     await e.reply('[sf预设添加]操作已取消', true)
                     return
                 }
-                presets_config.presets[existingIndex] = { name: presetName, prompt: presetPrompt }
+                // 覆盖时保留原 isOnlyMaster，避免误清空
+                const existing = presets_config.presets[existingIndex] || {}
+                presets_config.presets[existingIndex] = {
+                    name: presetName,
+                    prompt: presetPrompt,
+                    isOnlyMaster: !!existing.isOnlyMaster
+                }
                 await Config.setConfig(presets_config, "presets")
                 await e.reply(`预设"${presetName}"已更新成功！触发词：\n ${presets_config.antiMisoperation ? `{预设:${presetName}}` : presetName}\n\n` + this.helpMsg, true)
             } else {
-                presets_config.presets.push({ name: presetName, prompt: presetPrompt })
+                presets_config.presets.push({ name: presetName, prompt: presetPrompt, isOnlyMaster: false })
                 await Config.setConfig(presets_config, "presets")
                 await e.reply(`预设"${presetName}"添加成功！触发词：\n ${presets_config.antiMisoperation ? `{预设:${presetName}}` : presetName}\n\n` + this.helpMsg, true)
             }

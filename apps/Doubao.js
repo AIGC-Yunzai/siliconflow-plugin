@@ -244,6 +244,7 @@ export class Doubao extends plugin {
 
         // 处理预设
         const presetResult = await applyPresets(msg, Config.getConfig("presets"), e)
+        if (presetResult.blocked) return true
         msg = presetResult.processedText
 
         // 处理 msg，使用 handleParam 解析参数

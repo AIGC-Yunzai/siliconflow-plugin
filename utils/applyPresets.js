@@ -13,15 +13,20 @@ import {
  *   - processedText: 处理后的文本(预设名替换为预设文本)
  *   - usedPresets: 使用过的预设数组 [{name, prompt}]
  *   - originalText: 处理后的文本(预设名替换为占位符： {sf预设: ${presetName}} )
+ *   - blocked: 是否因「仅主人可用」被拦截（非主人误触发）
+ *   - blockedPresets: 被拦截的预设名数组
  */
 export async function applyPresets(text, config, e = {}) {
     const originalTextInput = text || '';
+    const emptyResult = {
+        processedText: text || '',
+        usedPresets: [],
+        originalText: originalTextInput,
+        blocked: false,
+        blockedPresets: []
+    }
     if (!text || typeof text !== 'string') {
-        return {
-            processedText: text || '',
-            usedPresets: [],
-            originalText: originalTextInput
-        }
+        return emptyResult
     }
 
     const presets = config?.presets || []
@@ -29,11 +34,16 @@ export async function applyPresets(text, config, e = {}) {
         return {
             processedText: text,
             usedPresets: [],
-            originalText: originalTextInput
+            originalText: originalTextInput,
+            blocked: false,
+            blockedPresets: []
         }
     }
 
+    const isMaster = !!e?.isMaster
+
     // 按预设名长度降序排序,优先匹配较长的预设名
+    // 同时保留 isOnlyMaster，用于非主人拦截
     const sortedPresets = [...presets]
         .filter(p => p.name && p.prompt)
         .map(p => {
@@ -44,6 +54,7 @@ export async function applyPresets(text, config, e = {}) {
             return {
                 name: nameTrimmed,
                 prompt: p.prompt.trim(),
+                isOnlyMaster: !!p.isOnlyMaster,
                 regex: new RegExp(regexStr, 'gi')
             };
         })
@@ -76,6 +87,38 @@ export async function applyPresets(text, config, e = {}) {
         if (match.start >= lastEnd) {
             validMatches.push(match)
             lastEnd = match.end
+        }
+    }
+
+    // 非主人命中「仅主人可用」预设：提示并拦截，不继续替换
+    if (!isMaster) {
+        const blockedNames = []
+        const blockedNameSet = new Set()
+        for (const match of validMatches) {
+            if (match.preset.isOnlyMaster && !blockedNameSet.has(match.preset.name)) {
+                blockedNameSet.add(match.preset.name)
+                blockedNames.push(match.preset.name)
+            }
+        }
+        if (blockedNames.length > 0) {
+            const names = blockedNames.join('、')
+            const tip = blockedNames.length === 1
+                ? `预设「${names}」仅主人可用`
+                : `以下预设仅主人可用：${names}`
+            try {
+                if (typeof e?.reply === 'function') {
+                    await e.reply(tip, true)
+                }
+            } catch (err) {
+                logger?.error?.('[sf插件] 预设仅主人可用提示失败:', err)
+            }
+            return {
+                processedText: text,
+                usedPresets: [],
+                originalText: originalTextInput,
+                blocked: true,
+                blockedPresets: blockedNames
+            }
         }
     }
 
@@ -112,7 +155,9 @@ export async function applyPresets(text, config, e = {}) {
     return {
         processedText: processedText.trim(),
         usedPresets,
-        originalText
+        originalText,
+        blocked: false,
+        blockedPresets: []
     }
 }
 
