@@ -1,2 +1,3 @@
-presets: [] # 绘画预设
+# 绘画预设；单项字段: name, prompt, isOnlyMaster(可选，默认 false，开启后仅主人可触发)
+presets: []
 antiMisoperation: false

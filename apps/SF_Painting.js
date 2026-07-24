@@ -873,6 +873,7 @@ export class SF_Painting extends plugin {
 
         // 处理预设
         const presetResult = await applyPresets(msg, Config.getConfig("presets"), e)
+        if (presetResult.blocked) return true
         msg = presetResult.processedText
 
         e.sf_parse_normal = {
@@ -1115,6 +1116,7 @@ export class SF_Painting extends plugin {
         // 处理预设
         if (paintModel) {
             const presetResult = await applyPresets(toAiMessage, Config.getConfig("presets"), e)
+            if (presetResult.blocked) return true
             toAiMessage = presetResult.processedText
             msg = presetResult.originalText
             // 处理 msg
@@ -1915,6 +1917,7 @@ ${e.sfRuntime.isgeneratePrompt === undefined ? "Tags中可用：--自动提示�
         // 处理预设
         if (paintModel) {
             const presetResult = await applyPresets(toAiMessage, Config.getConfig("presets"), e)
+            if (presetResult.blocked) return true
             toAiMessage = presetResult.processedText
             msg = presetResult.originalText
             // 处理 msg

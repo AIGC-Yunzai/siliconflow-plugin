@@ -156,6 +156,7 @@ ntags = [tags]`,
 
         // 处理预设
         const presetResult = await applyPresets(msg, Config.getConfig("presets"), e)
+        if (presetResult.blocked) return true
         msg = presetResult.processedText
 
         // 处理 msg
