@@ -20,14 +20,17 @@
   </header>
 
   <section class="summary">
-    <span class="killer-count">{{killerCount}}</span>
-    <span>个模型位于基准左上方：能力不低于基准且成本不高于基准</span>
+    <span class="preferred-count">{{preferredCount}}</span>
+    <span>个模型位于左上优选区</span>
+    <span class="killed-count">{{killedCount}}</span>
+    <span>个模型位于右下斩杀区</span>
   </section>
 
   <section class="chart-shell">
     <div class="y-title">Artificial Analysis Intelligence Index（能力）</div>
     <div class="chart-area" style="width: {{plotWidth}}px; height: {{plotHeight}}px;">
-      <div class="kill-zone" style="left: 0; top: 0; width: {{baselineX}}px; height: {{baselineY}}px;"><span>可斩杀区</span></div>
+      <div class="preferred-zone" style="left: 0; top: 0; width: {{baselineX}}px; height: {{baselineY}}px;"><span>优选区</span></div>
+      <div class="kill-zone" style="left: {{baselineX}}px; top: {{baselineY}}px; width: {{plotWidth - baselineX}}px; height: {{plotHeight - baselineY}}px;"><span>斩杀区</span></div>
       {{each xTicks tick}}
       <div class="grid-v" style="left: {{tick.position}}px;"><span>{{tick.label}}</span></div>
       {{/each}}
@@ -37,7 +40,7 @@
       <div class="baseline-v" style="left: {{baselineX}}px;"></div>
       <div class="baseline-h" style="top: {{baselineY}}px;"></div>
       {{each points point}}
-      <div class="point {{if point.isBaseline}}baseline-point{{else if point.isKiller}}killer-point{{/if}}" style="left: {{point.x}}px; top: {{point.y}}px; --point-color: {{point.color}};">
+      <div class="point {{if point.isBaseline}}baseline-point{{else if point.isPreferred}}preferred-point{{else if point.isKilled}}killed-point{{/if}}" style="left: {{point.x}}px; top: {{point.y}}px; --point-color: {{point.color}};">
         <i></i>
         <b class="label-{{point.labelSide}}" style="left: {{point.labelX}}px; top: {{point.labelY}}px; width: {{point.labelWidth}}px;">{{point.name}}<small>{{point.detail}}</small></b>
       </div>
@@ -48,7 +51,7 @@
 
   <footer>
     <p>筛选：{{filterText}}</p>
-    <p>数据拉取于 {{syncedAt}} · 仅作模型选型参考</p>
+    <p>展示 {{displayedCount}} / {{totalModelCount}} 个模型（按厂商轮转优先最新）· 数据拉取于 {{syncedAt}}</p>
   </footer>
 </main>
 {{/block}}

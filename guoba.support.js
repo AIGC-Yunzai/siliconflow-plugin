@@ -2427,12 +2427,8 @@ export function supportGuoba() {
         {
           field: 'llmKillLine.artificialAnalysisApiKey',
           label: 'Artificial Analysis API Key',
-          bottomHelpMessage: '用于 #LLM模型斩杀线 拉取实时模型能力与任务成本。可在 https://artificialanalysis.ai/ 创建，免费层填 free。',
-          component: 'Input',
-          componentProps: {
-            type: 'password',
-            placeholder: '请输入 API Key',
-          },
+          bottomHelpMessage: '用于 #LLM模型斩杀线 拉取实时模型能力与任务成本数据。可在 https://artificialanalysis.ai/ 创建，免费层填 free。',
+          component: 'InputPassword'
         },
         {
           field: 'llmKillLine.artificialAnalysisApiTier',
