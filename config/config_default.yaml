@@ -88,6 +88,10 @@ enableTranslation: false # 是否开启翻译功能
 targetLang: "JA" # 翻译目标语言 JA/EN
 syncConfig: {} # 同传配置
 fish_text_blacklist: []
+# LLM 模型斩杀线（数据来自 Artificial Analysis）
+llmKillLine:
+  artificialAnalysisApiKey: "" # 在 https://artificialanalysis.ai/ 创建 API Key
+  artificialAnalysisApiTier: "free" # free / pro / commercial
 # 直链配置
 link_domain: "https://xiaozhian-slink.hf.space" # 直链服务器域名
 # #ss 对话

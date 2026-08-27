@@ -1,0 +1,54 @@
+{{extend defaultLayout}}
+
+{{block 'css'}}
+<link rel="stylesheet" type="text/css" href="{{_res_path}}/llmKillLine/index.css"/>
+{{/block}}
+
+{{block 'main'}}
+<main class="kill-line">
+  <header class="hero">
+    <div>
+      <div class="eyebrow">ARTIFICIAL ANALYSIS · {{sourceTier}}</div>
+      <h1>LLM 模型斩杀线</h1>
+      <p>能力越高越好，单项任务成本越低越好（横轴为对数成本）</p>
+    </div>
+    <div class="baseline-card">
+      <span>当前基准</span>
+      <strong>{{baselineName}}</strong>
+      <em>能力 {{baselineScore}} · 成本 {{baselineCost}}</em>
+    </div>
+  </header>
+
+  <section class="summary">
+    <span class="killer-count">{{killerCount}}</span>
+    <span>个模型位于基准左上方：能力不低于基准且成本不高于基准</span>
+  </section>
+
+  <section class="chart-shell">
+    <div class="y-title">Artificial Analysis Intelligence Index（能力）</div>
+    <div class="chart-area" style="width: {{plotWidth}}px; height: {{plotHeight}}px;">
+      <div class="kill-zone" style="left: 0; top: 0; width: {{baselineX}}px; height: {{baselineY}}px;"><span>可斩杀区</span></div>
+      {{each xTicks tick}}
+      <div class="grid-v" style="left: {{tick.position}}px;"><span>{{tick.label}}</span></div>
+      {{/each}}
+      {{each yTicks tick}}
+      <div class="grid-h" style="top: {{tick.position}}px;"><span>{{tick.label}}</span></div>
+      {{/each}}
+      <div class="baseline-v" style="left: {{baselineX}}px;"></div>
+      <div class="baseline-h" style="top: {{baselineY}}px;"></div>
+      {{each points point}}
+      <div class="point {{if point.isBaseline}}baseline-point{{else if point.isKiller}}killer-point{{/if}}" style="left: {{point.x}}px; top: {{point.y}}px; --point-color: {{point.color}};">
+        <i></i>
+        <b class="label-{{point.labelSide}}" style="left: {{point.labelX}}px; top: {{point.labelY}}px; width: {{point.labelWidth}}px;">{{point.name}}<small>{{point.detail}}</small></b>
+      </div>
+      {{/each}}
+    </div>
+    <div class="x-title">单项任务成本（USD，对数刻度）</div>
+  </section>
+
+  <footer>
+    <p>筛选：{{filterText}}</p>
+    <p>数据拉取于 {{syncedAt}} · 仅作模型选型参考</p>
+  </footer>
+</main>
+{{/block}}

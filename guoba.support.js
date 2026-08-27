@@ -2418,6 +2418,37 @@ export function supportGuoba() {
         },
         {
           component: 'Divider',
+          label: 'LLM 模型斩杀线',
+          componentProps: {
+            orientation: 'left',
+            plain: true,
+          },
+        },
+        {
+          field: 'llmKillLine.artificialAnalysisApiKey',
+          label: 'Artificial Analysis API Key',
+          bottomHelpMessage: '用于 #LLM模型斩杀线 拉取实时模型能力与任务成本。可在 https://artificialanalysis.ai/ 创建，免费层填 free。',
+          component: 'Input',
+          componentProps: {
+            type: 'password',
+            placeholder: '请输入 API Key',
+          },
+        },
+        {
+          field: 'llmKillLine.artificialAnalysisApiTier',
+          label: 'Artificial Analysis 层级',
+          bottomHelpMessage: '免费 Key 请选择 free；Pro/Commercial Key 可显示相应订阅目录。',
+          component: 'Select',
+          componentProps: {
+            options: [
+              { label: 'Free', value: 'free' },
+              { label: 'Pro', value: 'pro' },
+              { label: 'Commercial', value: 'commercial' },
+            ],
+          },
+        },
+        {
+          component: 'Divider',
           label: '视频解析',
           componentProps: {
             orientation: 'left',

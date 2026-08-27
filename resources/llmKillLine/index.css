@@ -1,0 +1,53 @@
+body {
+  width: 1410px;
+  background: #10151d;
+  color: #e9eef4;
+  transform: scale(1);
+}
+
+.container {
+  width: 1410px;
+  min-height: 1050px;
+  padding: 38px 56px 20px;
+  background:
+    radial-gradient(circle at 8% 5%, rgba(74, 133, 172, .25), transparent 29%),
+    radial-gradient(circle at 91% 15%, rgba(121, 82, 157, .2), transparent 32%),
+    #10151d;
+}
+
+.kill-line { width: 1298px; }
+.hero { display: flex; align-items: end; justify-content: space-between; gap: 36px; }
+.eyebrow { color: #87a9c6; font-size: 15px; letter-spacing: 2px; font-weight: bold; }
+h1 { margin-top: 8px; font-size: 48px; line-height: 1; letter-spacing: 1px; }
+.hero p { margin-top: 13px; color: #aab8c4; font-size: 18px; }
+.baseline-card { min-width: 345px; padding: 15px 18px; border: 1px solid rgba(126, 209, 174, .58); border-radius: 12px; background: rgba(28, 63, 53, .45); }
+.baseline-card span, .baseline-card em { display: block; color: #a8c9bc; font-size: 14px; font-style: normal; }
+.baseline-card strong { display: block; padding: 5px 0; color: #f2fffa; font-size: 21px; }
+.summary { display: flex; align-items: center; gap: 9px; margin: 22px 0 18px; color: #c4d0da; font-size: 17px; }
+.killer-count { display: inline-grid; place-items: center; min-width: 31px; height: 31px; padding: 0 7px; border-radius: 50%; background: #55c591; color: #102018; font-weight: bold; }
+.chart-shell { position: relative; padding: 26px 36px 54px 112px; border: 1px solid #303c48; border-radius: 14px; background: rgba(13, 19, 27, .83); box-shadow: 0 18px 45px rgba(0, 0, 0, .22); }
+.chart-area { position: relative; overflow: visible; border-left: 1px solid #778795; border-bottom: 1px solid #778795; }
+.y-title { position: absolute; top: 50%; left: 25px; color: #a9bac8; font-size: 15px; transform: rotate(-90deg) translateX(-50%); transform-origin: left top; white-space: nowrap; }
+.x-title { padding-top: 22px; text-align: center; color: #a9bac8; font-size: 15px; }
+.kill-zone { position: absolute; z-index: 0; border-right: 1px dashed rgba(87, 202, 151, .45); border-bottom: 1px dashed rgba(87, 202, 151, .45); background: linear-gradient(135deg, rgba(62, 186, 128, .18), rgba(44, 103, 83, .05)); }
+.kill-zone span { position: absolute; top: 12px; left: 15px; color: rgba(149, 237, 192, .8); font-size: 17px; font-weight: bold; letter-spacing: 3px; }
+.grid-v, .grid-h { position: absolute; z-index: 1; pointer-events: none; }
+.grid-v { top: 0; height: 100%; border-left: 1px dashed rgba(137, 157, 173, .2); }
+.grid-v span { position: absolute; top: 100%; left: 0; margin-top: 10px; color: #91a2b0; font-size: 13px; transform: translateX(-50%); white-space: nowrap; }
+.grid-h { left: 0; width: 100%; border-top: 1px dashed rgba(137, 157, 173, .2); }
+.grid-h span { position: absolute; right: 100%; top: 0; margin-right: 12px; color: #91a2b0; font-size: 13px; transform: translateY(-50%); }
+.baseline-v, .baseline-h { position: absolute; z-index: 2; pointer-events: none; }
+.baseline-v { top: 0; height: 100%; border-left: 2px solid #69d7a3; box-shadow: 0 0 8px rgba(105, 215, 163, .44); }
+.baseline-h { left: 0; width: 100%; border-top: 2px solid #69d7a3; box-shadow: 0 0 8px rgba(105, 215, 163, .44); }
+.point { position: absolute; z-index: 4; width: 0; height: 0; }
+.point i { display: block; width: 13px; height: 13px; border: 2px solid #eaf2f7; border-radius: 50%; background: var(--point-color); box-shadow: 0 0 0 2px rgba(10, 17, 24, .8), 0 2px 7px rgba(0, 0, 0, .45); transform: translate(-50%, -50%); }
+.point b { position: absolute; width: 210px; color: #edf4f8; font-size: 14px; line-height: 17px; font-weight: 600; text-shadow: 0 1px 3px #000; white-space: normal; }
+.point b.label-left { text-align: right; transform: translateX(-100%); }
+.point small { display: block; color: #95a7b6; font-size: 11px; font-weight: normal; line-height: 14px; }
+.killer-point i { width: 17px; height: 17px; border-color: #d9ffed; background: #55cf99; box-shadow: 0 0 0 3px rgba(85, 207, 153, .18), 0 0 14px rgba(85, 207, 153, .65); }
+.killer-point b { color: #bcf7d8; }
+.baseline-point { z-index: 6; }
+.baseline-point i { width: 21px; height: 21px; border: 3px solid #eafff6; background: #23a973; box-shadow: 0 0 0 4px rgba(66, 224, 156, .23), 0 0 18px rgba(66, 224, 156, .85); }
+.baseline-point b { color: #fff; font-size: 16px; }
+footer { display: flex; justify-content: space-between; gap: 20px; padding: 15px 4px 0; color: #8fa0ae; font-size: 13px; }
+.copyright { color: #667887; }
