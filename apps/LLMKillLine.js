@@ -23,6 +23,53 @@ const FAMILY_RULES = [
   { key: 'grok', label: 'Grok ≥ 4.5', pattern: /\bgrok\s+(\d+)(?:\s+(\d+))?/i, min: [4, 5], color: '#cb72cf' },
 ]
 
+// 左下方文案的厂家展示名（与数据中模型名的真实厂家名称一致，如 Claude、Gemini、Kimi）
+const FAMILY_DISPLAY_NAMES = {
+  anthropic: 'Claude',
+  deepseek: 'DeepSeek',
+  gemini: 'Gemini',
+  kimi: 'Kimi',
+  glm: 'GLM',
+  gpt: 'GPT',
+  grok: 'Grok',
+}
+
+// 家族筛选命令可识别的别名（与 FAMILY_RULES.key 精确匹配，避免误伤具体模型名查询）
+const FAMILY_ALIASES = {
+  anthropic: ['anthropic', 'claude'],
+  deepseek: ['deepseek'],
+  gemini: ['gemini', 'google'],
+  kimi: ['kimi'],
+  glm: ['glm'],
+  gpt: ['gpt', 'openai'],
+  grok: ['grok'],
+}
+
+// 数据中可能出现的其他厂家品牌提取规则（用于自动计算左下方的厂家映射名）
+// 顺序：先特异后通用；仅用于模型名首部匹配，不参与命令参数的前缀匹配（避免误伤具体模型名）
+const BRAND_PATTERNS = [
+  ['qwen', /^qwen/],
+  ['mistral', /^(?:ministral|magistral|mistral)/],
+  ['gpt', /^gpt/],
+  ['llama', /^llama/],
+  ['gemma', /^gemma/],
+  ['nemotron', /^nemotron/],
+  ['nvidia', /^nvidia/],
+  ['muse', /^muse/],
+  ['mimo', /^mimo/],
+  ['granite', /^granite/],
+  ['solar', /^solar/],
+  ['minimax', /^minimax/],
+  ['inkling', /^inkling/],
+  ['step', /^step/],
+  ['mercury', /^mercury/],
+  ['hypernova', /^hypernova/],
+  ['longcat', /^longcat/],
+  ['celeris', /^celeris/],
+  ['trinity', /^trinity/],
+  ['ling', /^ling/],
+]
+
 let catalogPromise = null
 
 function finiteNumber(value) {
@@ -39,18 +86,114 @@ function formatMoney(value) {
   return `$${value.toFixed(2)}`
 }
 
-function getModelFamily(model) {
+/** 仅判断模型所属家族，不校验版本斩杀线（用于家族全量展示） */
+function familyRuleOf(model) {
   const text = normaliseText(`${model.name} ${model.slug}`)
-  for (const rule of FAMILY_RULES) {
-    const match = text.match(rule.pattern)
-    if (!match) continue
-    const major = Number(match[1])
-    const minor = Number(match[2] || 0)
-    if (major > rule.min[0] || (major === rule.min[0] && minor >= rule.min[1])) {
-      return rule
-    }
+  return FAMILY_RULES.find(rule => rule.pattern.test(text)) || null
+}
+
+function getModelFamily(model) {
+  const rule = familyRuleOf(model)
+  if (!rule) return null
+  const match = normaliseText(`${model.name} ${model.slug}`).match(rule.pattern)
+  const major = Number(match[1])
+  const minor = Number(match[2] || 0)
+  if (major > rule.min[0] || (major === rule.min[0] && minor >= rule.min[1])) {
+    return rule
   }
   return null
+}
+
+/** 解析逗号分隔的家族筛选参数，如 "kimi,glm,gemini"；支持已知家族别名与动态品牌名；无法识别时返回空数组 */
+function parseFamilyKeys(query) {
+  const tokens = String(query || '')
+    .split(/[,，]+/)
+    .map(token => token.trim().toLowerCase())
+    .filter(Boolean)
+  const keys = []
+  for (const token of tokens) {
+    const rule = FAMILY_RULES.find(item => (FAMILY_ALIASES[item.key] || [item.key]).includes(token))
+    if (rule) {
+      if (!keys.includes(rule.key)) keys.push(rule.key)
+      continue
+    }
+    // 动态品牌：仅精确匹配（如 qwen、mistral），避免把具体模型名（如 qwen3.5）误判为家族
+    const brand = BRAND_PATTERNS.find(([name]) => name === token)
+    if (brand && !keys.includes(brand[0])) keys.push(brand[0])
+  }
+  return keys
+}
+
+/** 从模型名提取厂家品牌词（用于未覆盖已知家族的其他厂家） */
+function extractBrand(model) {
+  const text = normaliseText(model.name)
+  const matched = BRAND_PATTERNS.find(([, pattern]) => pattern.test(text))
+  if (matched) return matched[0]
+  const first = text.split(' ')[0]
+  const brand = first.replace(/[^a-z0-9]+/g, '')
+  return brand || null
+}
+
+/** 家族筛选：已知家族按斩杀线校验，动态品牌按品牌归属（全量） */
+function matchFamilyKey(model, key) {
+  const rule = FAMILY_RULES.find(item => item.key === key)
+  if (rule) return getModelFamily(model)?.key === key
+  return extractBrand(model) === key
+}
+
+/** 家族筛选（放宽版）：已知家族仅判断归属不校验斩杀线，动态品牌按品牌归属 */
+function matchFamilyKeyLoose(model, key) {
+  const rule = FAMILY_RULES.find(item => item.key === key)
+  if (rule) return familyRuleOf(model)?.key === key
+  return extractBrand(model) === key
+}
+
+// 厂家热度排序（2026-08 综合 llm-stats 实时榜与主流人气榜整理）：热门靠前，冷门殿后
+// 未列入的厂家（未来数据中出现的新品牌）自动排到最后
+const HEAT_RANK = [
+  'gpt', 'anthropic', 'gemini', 'deepseek', 'qwen', 'kimi', 'glm', 'grok',
+  'llama', 'mistral', 'minimax', 'step', 'gemma', 'nemotron', 'nvidia', 'muse',
+  'granite', 'mimo', 'solar', 'inkling', 'mercury', 'hypernova', 'longcat',
+  'celeris', 'hy3', 'trinity', 'ling', 'ring',
+]
+
+/** 厂家展示名：已知家族用 FAMILY_DISPLAY_NAMES，动态品牌首字母大写 */
+function familyDisplayName(key) {
+  if (FAMILY_DISPLAY_NAMES[key]) return FAMILY_DISPLAY_NAMES[key]
+  return key.charAt(0).toUpperCase() + key.slice(1)
+}
+
+/** 从数据自动计算实际存在的厂家映射名（按热度排序，热门靠前、冷门殿后） */
+function discoverFamilyMappings(models) {
+  const counts = new Map()
+  for (const model of models) {
+    const known = familyRuleOf(model)
+    const brand = known ? known.key : extractBrand(model)
+    if (brand) counts.set(brand, (counts.get(brand) || 0) + 1)
+  }
+  return Array.from(counts.entries())
+    .sort((a, b) => {
+      const rankA = HEAT_RANK.indexOf(a[0])
+      const rankB = HEAT_RANK.indexOf(b[0])
+      if (rankA !== -1 || rankB !== -1) {
+        if (rankA === -1) return 1
+        if (rankB === -1) return -1
+        return rankA - rankB
+      }
+      return b[1] - a[1]
+    })
+    .map(([brand, count]) => ({
+      brand,
+      label: familyDisplayName(brand),
+      aliases: FAMILY_ALIASES[brand] || [brand],
+      count,
+    }))
+}
+
+/** 生成左下方的筛选说明文案：如 "可选指令: #LLM模型斩杀线 GPT, Qwen, Claude, ..." */
+function buildFilterText(models) {
+  const names = discoverFamilyMappings(models).map(item => item.label)
+  return `可选指令: #LLM模型斩杀线 ${names.join(', ')}`
 }
 
 function normaliseModel(model) {
@@ -161,9 +304,10 @@ function chooseDisplayModels(models, baseline) {
   const familyQueues = new Map()
   for (const model of models) {
     const family = getModelFamily(model)
-    const queue = familyQueues.get(family.key) || []
+    const key = family?.key || '__other__'
+    const queue = familyQueues.get(key) || []
     queue.push(model)
-    familyQueues.set(family.key, queue)
+    familyQueues.set(key, queue)
   }
   for (const queue of familyQueues.values()) {
     queue.sort((a, b) => releaseTime(b) - releaseTime(a) || b.intelligence - a.intelligence || a.costPerTask - b.costPerTask)
@@ -241,7 +385,7 @@ function createChart(models, baseline, source, totalModelCount) {
       ...model,
       x: Math.round(x * 10) / 10,
       y: Math.round(y * 10) / 10,
-      color: family.color,
+      color: family?.color || '#8a8f98',
       isBaseline,
       isPreferred,
       isKilled,
@@ -307,7 +451,7 @@ export class LLMKillLine extends plugin {
       dsc: `展示指定新模型的能力与对数任务成本，并以 ${DEFAULT_BASELINE} 为默认基准`,
       event: 'message',
       priority: 1000,
-      rule: [{ reg: new RegExp('^#LLM模型斩杀线(?:\\s+(.+))?$', 'i'), fnc: 'renderKillLine' }],
+      rule: [{ reg: new RegExp('^#LLM模型斩杀线\\s*(.+)?$', 'i'), fnc: 'renderKillLine' }],
     })
   }
 
@@ -318,19 +462,50 @@ export class LLMKillLine extends plugin {
     try {
       const result = await getCatalog(apiKey, config.artificialAnalysisApiTier)
       const catalog = result.catalog
-      const models = catalog.models
-        .filter(model => model.intelligence !== null && model.costPerTask !== null && model.costPerTask > 0 && getModelFamily(model))
-      const requestedBaseline = e.msg.match(/^#LLM模型斩杀线(?:\s+(.+))?$/i)?.[1] || ''
-      const baseline = findBaseline(models, requestedBaseline)
-      if (!baseline) {
-        await e.reply(requestedBaseline
-          ? `在当前筛选的模型中未找到「${requestedBaseline}」。`
-          : `当前数据中未找到 ${DEFAULT_BASELINE}，无法绘制默认斩杀线。`)
-        return true
-      }
-      if (models.length < 2) {
-        await e.reply('当前可用于绘图的模型数据不足。')
-        return true
+      const allPlottable = catalog.models
+        .filter(model => model.intelligence !== null && model.costPerTask !== null && model.costPerTask > 0)
+      const requestedBaseline = e.msg.match(/^#LLM模型斩杀线\s*(.+)?$/i)?.[1] || ''
+      const familyKeys = parseFamilyKeys(requestedBaseline)
+
+      let models
+      let baseline
+      let filterText
+      if (familyKeys.length) {
+        // 家族筛选模式：如 #llm模型斩杀线 gpt / #llm模型斩杀线 kimi,glm,gemini / #llm模型斩杀线 qwen
+        baseline = findBaseline(allPlottable, '')
+        if (!baseline) {
+          await e.reply(`当前数据中未找到 ${DEFAULT_BASELINE}，无法绘制默认斩杀线。`)
+          return true
+        }
+        // 先按版本斩杀线筛选（动态品牌无斩杀线概念，视为全部）
+        const aboveLineModels = allPlottable.filter(model => familyKeys.some(key => matchFamilyKey(model, key)))
+        if (aboveLineModels.length < MAX_DISPLAY_MODELS) {
+          // 满足斩杀线的模型不足 30 个时，取消版本斩杀线限制，展示该家族全部模型
+          models = allPlottable.filter(model => familyKeys.some(key => matchFamilyKeyLoose(model, key)))
+        } else {
+          models = aboveLineModels
+        }
+        filterText = familyKeys.map(key => familyDisplayName(key)).join(' · ')
+        if (models.length < 2) {
+          await e.reply(`「${requestedBaseline}」家族当前可绘制的模型数据不足。`)
+          return true
+        }
+      } else {
+        // 默认模式：参数作为基准模型名，展示全量满足斩杀线的模型
+        models = allPlottable.filter(model => getModelFamily(model))
+        baseline = findBaseline(models, requestedBaseline)
+        if (!baseline) {
+          await e.reply(requestedBaseline
+            ? `在当前筛选的模型中未找到「${requestedBaseline}」。`
+            : `当前数据中未找到 ${DEFAULT_BASELINE}，无法绘制默认斩杀线。`)
+          return true
+        }
+        if (models.length < 2) {
+          await e.reply('当前可用于绘图的模型数据不足。')
+          return true
+        }
+        // 左下方筛选说明：根据数据自动计算实际存在的厂家映射名
+        filterText = buildFilterText(allPlottable)
       }
 
       if (result.warning) await e.reply(result.warning)
@@ -339,7 +514,7 @@ export class LLMKillLine extends plugin {
       return await Render.render('llmKillLine/index', {
         ...chart,
         sourceTier: String(catalog.tier).toUpperCase(),
-        filterText: FAMILY_RULES.map(rule => rule.label).join(' · '),
+        filterText,
         baselineName: baseline.name,
         baselineCost: formatMoney(baseline.costPerTask),
         baselineScore: baseline.intelligence.toFixed(1),
