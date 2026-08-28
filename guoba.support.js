@@ -2444,6 +2444,16 @@ export function supportGuoba() {
           },
         },
         {
+          field: 'llmKillLine.defaultAnchorModel',
+          label: '默认斩杀锚点模型',
+          bottomHelpMessage: '默认值为 DeepSeek V4 Flash。支持高级模糊匹配（如 gpt 5.6、opus 5 等）',
+          component: 'Input',
+          componentProps: {
+            placeholder: 'deepseek 4 flash',
+            allowClear: true,
+          },
+        },
+        {
           component: 'Divider',
           label: '视频解析',
           componentProps: {

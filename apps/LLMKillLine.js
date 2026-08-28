@@ -5,10 +5,15 @@ import path from 'node:path'
 import Config from '../components/Config.js'
 import Render from '../components/Render.js'
 
+/** Artificial Analysis 接口基础地址，用于拉取模型能力与任务成本数据 */
 const API_BASE_URL = 'https://artificialanalysis.ai/api/v2'
-const CACHE_TTL = 8 * 60 * 60 * 1000
+/** 目录缓存有效期（毫秒）：超时后重新拉取实时数据，未配置 API Key 时始终读本地缓存 */
+const CACHE_TTL = 4 * 60 * 60 * 1000
+/** 目录分页拉取的最大页数，防止接口分页过多导致请求耗时过长 */
 const MAX_PAGES = 20
+/** 图表最多展示的模型数量，超出后按家族分组轮转抽样（优先最新、能力更高的模型） */
 const MAX_DISPLAY_MODELS = 30
+/** 默认斩杀锚点模型：锅巴配置的锚点模糊匹配不到时的兜底基准 */
 const DEFAULT_BASELINE = 'DeepSeek V4 Flash 0731 (Reasoning, Max Effort)'
 // Keep the snapshot outside the plugin directory: plugin updates/restarts may recreate config files.
 const CATALOG_CACHE_FILE = path.join(process.cwd(), 'data', 'sf-plugin', 'llmKillLine', 'llmKillLineCatalog.json')
@@ -84,6 +89,119 @@ function formatMoney(value) {
   if (value < 0.01) return `$${value.toFixed(4)}`
   if (value < 1) return `$${value.toFixed(3)}`
   return `$${value.toFixed(2)}`
+}
+
+// ========== 高级模糊匹配（用于斩杀锚点/基准模型解析） ==========
+// 命中阈值：高于该值视为匹配成功，低于则回退到 DeepSeek V4 Flash
+const ANCHOR_MATCH_THRESHOLD = 0.45
+
+/** 词元命中：目标文本包含该词元即算命中；支持版本号 v 前缀归一化（v4 → 4） */
+function tokenInTarget(token, targetText) {
+  if (targetText.includes(token)) return true
+  const stripped = token.replace(/^v(?=\d)/, '')
+  if (stripped !== token && stripped && targetText.includes(stripped)) return true
+  return false
+}
+
+/** 词元级综合命中：包含 / v 前缀归一化 / 编辑距离(≥0.6，拼写容错) / 子序列（缩写，如 ds → deepseek） */
+function tokenHit(token, targetText, targetTokens) {
+  if (tokenInTarget(token, targetText)) return true
+  if (targetTokens.some(tok => levenshteinSimilarity(token, tok) >= 0.6)) return true
+  if (targetTokens.some(tok => isCharSubsequence(token, tok))) return true
+  return false
+}
+
+/** 字符子序列匹配：query 的字符按顺序出现在 target 中（如 ds → deepseek） */
+function isCharSubsequence(query, target) {
+  let index = 0
+  for (const char of target) {
+    if (char === query[index]) index++
+    if (index === query.length) return true
+  }
+  return index === query.length
+}
+
+/** 编辑距离相似度（处理少量拼写差异，长度差异过大时直接视为不相似） */
+function levenshteinSimilarity(a, b) {
+  if (a === b) return 1
+  if (!a.length || !b.length) return 0
+  const maxLen = Math.max(a.length, b.length)
+  if (Math.abs(a.length - b.length) / maxLen > 0.5) return 0
+  let prev = Array.from({ length: b.length + 1 }, (_, i) => i)
+  let curr = new Array(b.length + 1)
+  for (let i = 1; i <= a.length; i++) {
+    curr[0] = i
+    for (let j = 1; j <= b.length; j++) {
+      curr[j] = Math.min(
+        prev[j] + 1,
+        curr[j - 1] + 1,
+        prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1),
+      )
+    }
+    ;[prev, curr] = [curr, prev]
+  }
+  return Math.max(0, 1 - prev[b.length] / maxLen)
+}
+
+/**
+ * 计算查询串与目标串的相似度（0~1，取多策略最高分）
+ * 策略优先级：完全一致 > 连续包含 > 词元命中 > 字符子序列 > 编辑距离
+ */
+function fuzzySimilarity(query, target) {
+  const q = normaliseText(query)
+  const t = normaliseText(target)
+  if (!q || !t) return 0
+  if (q === t) return 1
+
+  const scores = []
+  const qTokens = q.split(' ').filter(Boolean)
+  const tTokens = t.split(' ').filter(Boolean)
+
+  // 连续包含：按覆盖比例打分
+  if (t.includes(q)) scores.push(Math.min(1, 0.6 + 0.4 * (q.length / t.length)))
+
+  // 词元命中
+  if (qTokens.length === 1) {
+    if (tokenInTarget(qTokens[0], t)) scores.push(0.5)
+    else if (tTokens.some(tok => levenshteinSimilarity(qTokens[0], tok) >= 0.6 || isCharSubsequence(qTokens[0], tok))) scores.push(0.45)
+  } else {
+    const hits = qTokens.filter(token => tokenHit(token, t, tTokens)).length
+    const coverage = hits / qTokens.length
+    // 长度覆盖因子（对称度量 ≤1，避免 query 比 target 长时反向加分）
+    const lengthFactor = Math.min(q.length, t.length) / Math.max(q.length, t.length)
+    // 全词元命中：强匹配；部分命中：弱匹配（需依赖其他策略加成，避免 "v4" 一类歧义词元误伤）
+    if (coverage === 1) scores.push(Math.min(1, 0.55 + 0.25 * lengthFactor))
+    else if (coverage >= 0.5) scores.push(0.2 + 0.35 * coverage + 0.05 * lengthFactor)
+  }
+
+  // 字符子序列（支持缩写，如 ds v4 → deepseek v4）；分数低于命中阈值，仅作为辅助加分，
+  // 避免纯子序列匹配把无关模型（如 qwen…coder…instruct 中恰好含 "ds"）顶上高位
+  if (isCharSubsequence(q, t)) scores.push(0.42)
+
+  // 编辑距离（兜底，处理整体拼写差异）
+  const lev = levenshteinSimilarity(q, t)
+  if (lev > 0) scores.push(lev * 0.8)
+
+  return scores.length ? Math.max(...scores) : 0
+}
+
+/** 高级模糊匹配：在模型列表中查找与查询串最相似的模型，低于命中阈值返回 null */
+function fuzzyFindModel(models, query) {
+  const normalizedQuery = normaliseText(query)
+  if (!normalizedQuery) return null
+  let best = null
+  let bestScore = 0
+  for (const model of models) {
+    const score = Math.max(
+      fuzzySimilarity(normalizedQuery, model.name),
+      fuzzySimilarity(normalizedQuery, model.slug),
+    )
+    if (score > bestScore) {
+      bestScore = score
+      best = model
+    }
+  }
+  return bestScore >= ANCHOR_MATCH_THRESHOLD ? best : null
 }
 
 /** 仅判断模型所属家族，不校验版本斩杀线（用于家族全量展示） */
@@ -334,12 +452,20 @@ function chooseDisplayModels(models, baseline) {
   return selected
 }
 
-function findBaseline(models, query) {
-  const normalizedQuery = normaliseText(query)
-  if (normalizedQuery) {
-    return models.find(model => normaliseText(model.name).includes(normalizedQuery) || normaliseText(model.slug).includes(normalizedQuery))
+function findBaseline(models, query, anchorQuery = '') {
+  // 1. 命令参数优先：高级模糊匹配，找不到则返回 null（由调用方提示未找到）
+  if (normaliseText(query)) {
+    return fuzzyFindModel(models, query)
   }
 
+  // 2. 锅巴配置的默认斩杀锚点模型：高级模糊匹配
+  if (normaliseText(anchorQuery)) {
+    const matched = fuzzyFindModel(models, anchorQuery)
+    if (matched) return matched
+    logger.warn?.(`[SF插件] 默认斩杀锚点模型「${anchorQuery}」未匹配到数据中的模型，已回退使用 ${DEFAULT_BASELINE}`)
+  }
+
+  // 3. 全部匹配不到 → 回退到默认锚点 DeepSeek V4 Flash
   const defaultBaseline = normaliseText(DEFAULT_BASELINE)
   const exactDefault = models.find(model => normaliseText(model.name) === defaultBaseline)
   if (exactDefault) return exactDefault
@@ -448,7 +574,7 @@ export class LLMKillLine extends plugin {
   constructor() {
     super({
       name: 'LLM模型斩杀线',
-      dsc: `展示指定新模型的能力与对数任务成本，并以 ${DEFAULT_BASELINE} 为默认基准`,
+      dsc: `展示指定新模型的能力与对数任务成本，以锅巴配置的默认斩杀锚点模型（默认 ${DEFAULT_BASELINE}）为斩杀线基准`,
       event: 'message',
       priority: 1000,
       rule: [{ reg: new RegExp('^#LLM模型斩杀线\\s*(.+)?$', 'i'), fnc: 'renderKillLine' }],
@@ -458,6 +584,8 @@ export class LLMKillLine extends plugin {
   async renderKillLine(e) {
     const config = Config.getConfig().llmKillLine || {}
     const apiKey = String(config.artificialAnalysisApiKey || '').trim()
+    // 锅巴配置的默认斩杀锚点模型（input 字符串，高级模糊匹配，匹配不到回退 DeepSeek V4 Flash）
+    const defaultAnchor = String(config.defaultAnchorModel || '').trim()
 
     try {
       const result = await getCatalog(apiKey, config.artificialAnalysisApiTier)
@@ -472,7 +600,7 @@ export class LLMKillLine extends plugin {
       let filterText
       if (familyKeys.length) {
         // 家族筛选模式：如 #llm模型斩杀线 gpt / #llm模型斩杀线 kimi,glm,gemini / #llm模型斩杀线 qwen
-        baseline = findBaseline(allPlottable, '')
+        baseline = findBaseline(allPlottable, '', defaultAnchor)
         if (!baseline) {
           await e.reply(`当前数据中未找到 ${DEFAULT_BASELINE}，无法绘制默认斩杀线。`)
           return true
@@ -493,7 +621,7 @@ export class LLMKillLine extends plugin {
       } else {
         // 默认模式：参数作为基准模型名，展示全量满足斩杀线的模型
         models = allPlottable.filter(model => getModelFamily(model))
-        baseline = findBaseline(models, requestedBaseline)
+        baseline = findBaseline(models, requestedBaseline, defaultAnchor)
         if (!baseline) {
           await e.reply(requestedBaseline
             ? `在当前筛选的模型中未找到「${requestedBaseline}」。`

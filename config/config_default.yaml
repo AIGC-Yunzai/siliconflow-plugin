@@ -92,6 +92,7 @@ fish_text_blacklist: []
 llmKillLine:
   artificialAnalysisApiKey: "" # 在 https://artificialanalysis.ai/ 创建 API Key
   artificialAnalysisApiTier: "free" # free / pro / commercial
+  defaultAnchorModel: "" # 默认斩杀锚点模型：不带参数使用 #LLM模型斩杀线 时作为斩杀线基准锚点，支持高级模糊匹配（如 "ds v4"、"deepseek 4 flash"），全部匹配不到时自动回退 DeepSeek V4 Flash
 # 直链配置
 link_domain: "https://xiaozhian-slink.hf.space" # 直链服务器域名
 # #ss 对话
@@ -140,7 +141,7 @@ enablePrivateChatAI: true # 是否启用私聊模式的AI对话
 maxCollectedImages: 5 # #s/#g/#d 单次最多收集并下载的图片总数（引用图片、当前图片、At头像共用）
 douyinTV: true # 开启抖音解析
 kuaishouTV: true # 开启快手解析
-video_maxSizeMB: 50 # 抖音解析视频最大容量 MB
+video_maxSizeMB: 50 # 抖音解析视频最大容量 MB
 napcat_stream_video: false # 启用 NapCat 流式传输视频（需 NapCat OneBot）
 turnOnBilitv: true # 开启bili解析
 PY_ImageToolsSwitch: false # 开启#图片操作
