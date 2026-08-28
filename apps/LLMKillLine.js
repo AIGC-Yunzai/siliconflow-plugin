@@ -307,7 +307,7 @@ export class LLMKillLine extends plugin {
       dsc: `展示指定新模型的能力与对数任务成本，并以 ${DEFAULT_BASELINE} 为默认基准`,
       event: 'message',
       priority: 1000,
-      rule: [{ reg: '^#LLM模型斩杀线(?:\\s+(.+))?$', fnc: 'renderKillLine' }],
+      rule: [{ reg: new RegExp('^#LLM模型斩杀线(?:\\s+(.+))?$', 'i'), fnc: 'renderKillLine' }],
     })
   }
 
@@ -320,7 +320,7 @@ export class LLMKillLine extends plugin {
       const catalog = result.catalog
       const models = catalog.models
         .filter(model => model.intelligence !== null && model.costPerTask !== null && model.costPerTask > 0 && getModelFamily(model))
-      const requestedBaseline = e.msg.match(/^#LLM模型斩杀线(?:\s+(.+))?$/)?.[1] || ''
+      const requestedBaseline = e.msg.match(/^#LLM模型斩杀线(?:\s+(.+))?$/i)?.[1] || ''
       const baseline = findBaseline(models, requestedBaseline)
       if (!baseline) {
         await e.reply(requestedBaseline
