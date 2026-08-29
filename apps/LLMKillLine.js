@@ -73,6 +73,19 @@ const BRAND_PATTERNS = [
   ['celeris', /^celeris/],
   ['trinity', /^trinity/],
   ['ling', /^ling/],
+  ['hy3', /^hy3\b/],
+  ['ring', /^ring\b/],
+  ['agnes', /^agnes\b/],
+  ['motif', /^motif\b/],
+  ['north', /^north\b/],
+  ['command', /^command\b/],
+  ['nex', /^nex\b/],
+  ['jt', /^jt\b/],
+  ['g9v3', /^g9v3\b/],
+  ['kat', /^kat\b/],
+  ['o3', /^o3\b/],
+  ['a', /^a x\b/],
+  ['k', /^k exaone\b/],
 ]
 
 let catalogPromise = null
@@ -235,11 +248,23 @@ function parseFamilyKeys(query) {
       if (!keys.includes(rule.key)) keys.push(rule.key)
       continue
     }
-    // 动态品牌：仅精确匹配（如 qwen、mistral），避免把具体模型名（如 qwen3.5）误判为家族
+    // 动态品牌：先精确匹配品牌名（如 qwen、mistral），避免把具体模型名（如 qwen3.5）误判为家族
     const brand = BRAND_PATTERNS.find(([name]) => name === token)
-    if (brand && !keys.includes(brand[0])) keys.push(brand[0])
+    if (brand) {
+      if (!keys.includes(brand[0])) keys.push(brand[0])
+      continue
+    }
+    // 品牌主干匹配：token 是某动态品牌去尾部版本号后的主干（如 hy → hy3/hy4），识别为版本无关的家族筛选
+    const stemMatched = BRAND_PATTERNS.find(([name]) => brandStem(name) === token)
+    if (stemMatched && !keys.includes(token)) keys.push(token)
   }
   return keys
+}
+
+/** 品牌主干：去掉品牌名尾部的版本号（hy3/hy4 → hy，g9v3 → g9v），用于版本无关的家族筛选 */
+function brandStem(brand) {
+  const stem = String(brand || '').replace(/\d+$/, '')
+  return stem || null
 }
 
 /** 从模型名提取厂家品牌词（用于未覆盖已知家族的其他厂家） */
@@ -252,18 +277,20 @@ function extractBrand(model) {
   return brand || null
 }
 
-/** 家族筛选：已知家族按斩杀线校验，动态品牌按品牌归属（全量） */
+/** 家族筛选：已知家族按斩杀线校验，动态品牌按品牌归属（含品牌主干，如 hy 命中 hy3/hy4） */
 function matchFamilyKey(model, key) {
   const rule = FAMILY_RULES.find(item => item.key === key)
   if (rule) return getModelFamily(model)?.key === key
-  return extractBrand(model) === key
+  const brand = extractBrand(model)
+  return brand === key || brandStem(brand) === key
 }
 
-/** 家族筛选（放宽版）：已知家族仅判断归属不校验斩杀线，动态品牌按品牌归属 */
+/** 家族筛选（放宽版）：已知家族仅判断归属不校验斩杀线，动态品牌按品牌归属（含品牌主干） */
 function matchFamilyKeyLoose(model, key) {
   const rule = FAMILY_RULES.find(item => item.key === key)
   if (rule) return familyRuleOf(model)?.key === key
-  return extractBrand(model) === key
+  const brand = extractBrand(model)
+  return brand === key || brandStem(brand) === key
 }
 
 // 厂家热度排序（2026-08 综合 llm-stats 实时榜与主流人气榜整理）：热门靠前，冷门殿后
@@ -475,7 +502,11 @@ function findBaseline(models, query, anchorQuery = '') {
     .sort((a, b) => a.costPerTask - b.costPerTask || b.intelligence - a.intelligence)[0]
 }
 
-function createChart(models, baseline, source, totalModelCount) {
+function createChart(originalModels, baseline, source, totalModelCount) {
+  // 锚点模型始终入图：家族筛选/动态品牌基准时锚点可能不在 models 里，缺它会导致图上没有斩杀线基准圆点
+  const models = originalModels.some(model => model.id === baseline.id)
+    ? originalModels
+    : [...originalModels, baseline]
   const plotWidth = 3290
   const plotHeight = 1880
   const costs = models.map(model => model.costPerTask)
@@ -614,7 +645,7 @@ export class LLMKillLine extends plugin {
           models = aboveLineModels
         }
         filterText = familyKeys.map(key => familyDisplayName(key)).join(' · ')
-        if (models.length < 2) {
+        if (models.length < 1) {
           await e.reply(`「${requestedBaseline}」家族当前可绘制的模型数据不足。`)
           return true
         }
@@ -622,6 +653,10 @@ export class LLMKillLine extends plugin {
         // 默认模式：参数作为基准模型名，展示全量满足斩杀线的模型
         models = allPlottable.filter(model => getModelFamily(model))
         baseline = findBaseline(models, requestedBaseline, defaultAnchor)
+        if (!baseline && normaliseText(requestedBaseline)) {
+          // 兜底：基准不在已知家族池时，允许把任意模型（含动态品牌，如 qwen3、Hy4）作为斩杀线锚点
+          baseline = fuzzyFindModel(allPlottable, requestedBaseline)
+        }
         if (!baseline) {
           await e.reply(requestedBaseline
             ? `在当前筛选的模型中未找到「${requestedBaseline}」。`
