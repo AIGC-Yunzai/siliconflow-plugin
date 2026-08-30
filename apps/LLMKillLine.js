@@ -11,7 +11,7 @@ const API_BASE_URL = 'https://artificialanalysis.ai/api/v2'
 const CACHE_TTL = 4 * 60 * 60 * 1000
 /** 目录分页拉取的最大页数，防止接口分页过多导致请求耗时过长 */
 const MAX_PAGES = 20
-/** 图表最多展示的模型数量，超出后按家族分组轮转抽样（优先最新、能力更高的模型） */
+/** 图表最多展示的模型数量（含锚点，总数封顶）：左上象限模型优先保留，超出后按家族分组轮转抽样（优先最新、能力更高的模型）剔除 */
 const MAX_DISPLAY_MODELS = 30
 /** 默认斩杀锚点模型：锅巴配置的锚点模糊匹配不到时的兜底基准 */
 const DEFAULT_BASELINE = 'DeepSeek V4 Flash 0731 (Reasoning, Max Effort)'
@@ -444,8 +444,21 @@ function releaseTime(model) {
   return Number.isFinite(timestamp) ? timestamp : 0
 }
 
+/**
+ * 筛选图表展示的模型（总数不超过 MAX_DISPLAY_MODELS，含锚点）：
+ * 1. 左上象限模型（能力 ≥ 锚点、成本 ≤ 锚点，即图上优选区）优先保留；
+ * 2. 仍按家族分组轮转抽样（优先最新发布、能力更高的模型），总数封顶 MAX_DISPLAY_MODELS，
+ *    左上象限若超出上限，多出的部分按同样规则剔除。
+ */
 function chooseDisplayModels(models, baseline) {
   if (models.length <= MAX_DISPLAY_MODELS) return models
+  // 左上象限判定：与图上 isPreferred 保持一致（排除与锚点完全相同、图上重叠的点）
+  const isTopLeft = model =>
+    model.id !== baseline.id
+    && model.intelligence >= baseline.intelligence
+    && model.costPerTask <= baseline.costPerTask
+    && (model.intelligence > baseline.intelligence || model.costPerTask < baseline.costPerTask)
+
   const familyQueues = new Map()
   for (const model of models) {
     const family = getModelFamily(model)
@@ -455,7 +468,13 @@ function chooseDisplayModels(models, baseline) {
     familyQueues.set(key, queue)
   }
   for (const queue of familyQueues.values()) {
-    queue.sort((a, b) => releaseTime(b) - releaseTime(a) || b.intelligence - a.intelligence || a.costPerTask - b.costPerTask)
+    // 左上象限模型排前面优先入选；同类内仍按（最新发布 → 能力更高 → 成本更低）排序
+    queue.sort((a, b) =>
+      Number(isTopLeft(b)) - Number(isTopLeft(a))
+      || releaseTime(b) - releaseTime(a)
+      || b.intelligence - a.intelligence
+      || a.costPerTask - b.costPerTask,
+    )
   }
 
   const selected = [baseline]
@@ -472,7 +491,12 @@ function chooseDisplayModels(models, baseline) {
     const candidates = queues
       .map(queue => queue.find(model => !selectedIds.has(model.id)))
       .filter(Boolean)
-      .sort((a, b) => releaseTime(b) - releaseTime(a) || b.intelligence - a.intelligence)
+      // 左上象限仍优先于非左上象限；同类内按（最新发布 → 能力更高）排序
+      .sort((a, b) =>
+        Number(isTopLeft(b)) - Number(isTopLeft(a))
+        || releaseTime(b) - releaseTime(a)
+        || b.intelligence - a.intelligence,
+      )
     if (!candidates.length) break
     add(candidates[0])
   }
