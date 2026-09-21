@@ -1,6 +1,17 @@
 import moment from 'moment'
 
 /**
+ * 把配置里的 ID 列表归一化成字符串数组
+ * 兼容：未配置(undefined) / null / 非数组 / 数组内为数字型QQ
+ * @param {*} value - 原始配置值
+ * @returns {string[]} 归一化后的字符串数组
+ */
+function toIdArray(value) {
+    if (!Array.isArray(value)) return []
+    return value.filter(v => v !== undefined && v !== null).map(v => String(v))
+}
+
+/**
  * 检查用户权限和限制
  * @param {Object} e - 事件对象
  * @param {Object} config - 配置对象
@@ -30,11 +41,14 @@ export async function checkUserPermission(e, config) {
     const userId = String(e.user_id)
     const groupId = String(e.group_id ?? "8888")
     const isMaster = e.isMaster
-    const isUnlimitedUser = unlimitedUsers.includes(String(userId))
-    const isWhiteGroup = onlyGroupID.includes(String(groupId))
+    // 容错：调用方可能未配置该字段（如接口级配置缺省），或写成非数组 / 数字型 QQ
+    const unlimitedUsers_ = toIdArray(unlimitedUsers)
+    const onlyGroupID_ = toIdArray(onlyGroupID)
+    const isUnlimitedUser = unlimitedUsers_.includes(userId)
+    const isWhiteGroup = onlyGroupID_.includes(groupId)
 
     // 白名单群
-    if (onlyGroupID.length && !isWhiteGroup) {
+    if (onlyGroupID_.length && !isWhiteGroup) {
         logger.info(`[${feature}] ${groupId} 不在白名单群`)
         return {
             allowed: false,
@@ -279,8 +293,15 @@ export async function getRemainingCD(userId, groupId, feature) {
  * @returns {Object} 检查结果和记录函数
  */
 export async function memberControlProcess(e, config) {
+    // 归一化配置：调用方（如接口级配置）可能未提供 unlimitedUsers / onlyGroupID
+    const normalizedConfig = {
+        ...config,
+        unlimitedUsers: toIdArray(config.unlimitedUsers),
+        onlyGroupID: toIdArray(config.onlyGroupID)
+    }
+
     // 检查权限
-    const checkResult = await checkUserPermission(e, config)
+    const checkResult = await checkUserPermission(e, normalizedConfig)
 
     if (!checkResult.allowed) {
         return {
@@ -295,11 +316,11 @@ export async function memberControlProcess(e, config) {
         const { userId, groupId } = checkResult.data
 
         // 记录CD
-        await recordUsageCD(e, config)
+        await recordUsageCD(e, normalizedConfig)
 
         // 记录每日使用次数（如果有限制）
-        if (config.dailyLimit > 0 && !e.isMaster && !config.unlimitedUsers.includes(userId)) {
-            await recordDailyUsage(userId, groupId, config.feature, config.operationCount || 1)
+        if (normalizedConfig.dailyLimit > 0 && !e.isMaster && !normalizedConfig.unlimitedUsers.includes(userId)) {
+            await recordDailyUsage(userId, groupId, normalizedConfig.feature, normalizedConfig.operationCount || 1)
         }
 
         return true
