@@ -7,6 +7,7 @@ import {
 import {
     hidePrivacyInfo,
     removeCQCode,
+    addSpaceAfterAt,
 } from '../utils/common.js'
 import { msgHistoryMgr } from '../model/Onebot11_MessageHistoryManager.js'
 
@@ -55,21 +56,6 @@ function processCQAtCode(text) {
         const remainingText = text.substring(lastIndex)
         if (remainingText) {
             result.push(remainingText)
-        }
-    }
-
-    // 在 At 后面的文本前添加空格
-    for (let i = 0; i < result.length - 1; i++) {
-        const currentItem = result[i];
-        const nextItem = result[i + 1];
-        // 判断当前是否为 at 对象
-        const isAtSegment = typeof currentItem === 'object' && currentItem.type === 'at';
-        // 如果当前是 At，且下一个是字符串
-        if (isAtSegment && typeof nextItem === 'string') {
-            // 如果字符串不是以空格开头，则补充空格
-            if (!nextItem.startsWith(' ')) {
-                result[i + 1] = ' ' + nextItem;
-            }
         }
     }
 
@@ -380,6 +366,9 @@ export class groupSayHello extends plugin {
 
                 // 移除 CQ
                 messages = removeCQCode(messages);
+
+                // 真 At：在 segment.at 后的文本前补一个空格; 必须放在 removeCQCode 之后，因为 removeCQCode 会对文本 trim，先补的空格会被吃掉
+                messages = addSpaceAfterAt(messages);
 
                 // 发送打招呼消息
                 await group.sendMsg(messages)

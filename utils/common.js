@@ -242,6 +242,25 @@ export function removeCQCode(msg) {
 }
 
 /**
+ * 在 At 段落后面的文本前补充一个空格，避免渲染成「@群员你好」
+ * 必须在 removeCQCode 之后调用：removeCQCode 会对文本做 trim，先补的空格会被吃掉
+ * @param {Array} msg - 消息数组
+ * @returns {Array} 处理后的消息数组（原地修改）
+ */
+export function addSpaceAfterAt(msg) {
+  if (!Array.isArray(msg)) return msg
+  for (let i = 0; i < msg.length - 1; i++) {
+    const currentItem = msg[i]
+    const nextItem = msg[i + 1]
+    const isAtSegment = typeof currentItem === 'object' && currentItem?.type === 'at'
+    if (isAtSegment && typeof nextItem === 'string' && nextItem && !/^\s/.test(nextItem)) {
+      msg[i + 1] = ' ' + nextItem
+    }
+  }
+  return msg
+}
+
+/**
  * @description: 把超长字符串按照每 回车 与 chunkSize 字分割成数组
  * @param {string|Array} str
  * @param {number} chunkSize
