@@ -1,185 +1,250 @@
-"""
-抖音解析工具 - 独立版本
-用于Node.js调用的Python脚本
+"""供 Node.js 调用的抖音解析器；stdout 仅输出 JSON，诊断信息写入 stderr。
 
-功能：
-1. 提取抖音链接
-2. 解析抖音视频信息
-3. 获取视频/图片下载链接
+分享页与匿名 ttwid 初始化参考 README 感谢中的 astrbot_plugin_parser：
+https://github.com/Zhalslar/astrbot_plugin_parser/tree/main/core/parsers/douyin
 """
 
-import aiohttp
 import asyncio
-import re
 import json
+import re
 import sys
 from datetime import datetime
-from typing import List, Dict, Optional, Union
+from typing import Dict, List, Optional, Tuple
+from urllib.parse import parse_qs, quote, urljoin, urlparse
+
+import aiohttp
+from yarl import URL
+
+
+class DouyinParseError(Exception):
+    """可直接展示给用户的解析错误。"""
+
 
 class DouyinParser:
-    """抖音解析器 - 独立版本"""
-    
+    HOSTS = {
+        'douyin.com', 'www.douyin.com', 'v.douyin.com', 'jx.douyin.com',
+        'm.douyin.com', 'jingxuan.douyin.com',
+        'iesdouyin.com', 'www.iesdouyin.com',
+    }
+    SHARE_ORIGIN = 'https://www.iesdouyin.com/'
+    TTWID_REGISTER_URL = 'https://ttwid.bytedance.com/ttwid/union/register/'
+
     def __init__(self):
         self.headers = {
-            'User-Agent': 'Mozilla/5.0 (Linux; Android 8.0.0; SM-G955U Build/R16NW) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Mobile Safari/537.36',
-            'Referer': 'https://www.douyin.com/?is_from_mobile_home=1&recommend=1'
+            'User-Agent': (
+                'Mozilla/5.0 (iPhone; CPU iPhone OS 16_6 like Mac OS X) '
+                'AppleWebKit/605.1.15 (KHTML, like Gecko) '
+                'Version/16.6 Mobile/15E148 Safari/604.1 Edg/132.0.0.0'
+            ),
+            'Referer': self.SHARE_ORIGIN,
         }
         self.semaphore = asyncio.Semaphore(10)
+        self.errors: List[str] = []
 
-    def extract_router_data(self, text: str) -> Optional[str]:
-        """从HTML中提取路由数据"""
-        start_flag = 'window._ROUTER_DATA = '
-        start_idx = text.find(start_flag)
-        if start_idx == -1:
-            return None
-        
-        brace_start = text.find('{', start_idx)
-        if brace_start == -1:
-            return None
-        
-        i = brace_start
-        stack = []
-        while i < len(text):
-            if text[i] == '{':
-                stack.append('{')
-            elif text[i] == '}':
-                stack.pop()
-                if not stack:
-                    return text[brace_start:i+1]
-            i += 1
-        return None
-
-    async def fetch_video_info(self, session: aiohttp.ClientSession, video_id: str) -> Optional[Dict]:
-        """获取视频信息"""
-        url = f'https://www.iesdouyin.com/share/video/{video_id}/'
+    async def ensure_ttwid(self, session: aiohttp.ClientSession):
+        """注册匿名 Cookie，并通过回调写入 iesdouyin.com 域。"""
+        share_url = URL(self.SHARE_ORIGIN)
+        if session.cookie_jar.filter_cookies(share_url).get('ttwid'):
+            return
+        payload = {
+            'region': 'cn', 'aid': 1768, 'needFid': False,
+            'service': 'www.iesdouyin.com', 'union': True, 'fid': '',
+        }
         try:
-            async with session.get(url, headers=self.headers) as response:
-                response_text = await response.text()
-                json_str = self.extract_router_data(response_text)
-                if not json_str:
-                    print('未找到 _ROUTER_DATA')
-                    return None
-                
-                # 清理JSON字符串
-                json_str = json_str.replace('\\u002F', '/').replace('\\/', '/')
-                
-                try:
-                    json_data = json.loads(json_str)
-                except Exception as e:
-                    print(f'JSON解析失败: {e}')
-                    return None
-                
-                # 提取视频信息
-                loader_data = json_data.get('loaderData', {})
-                video_info = None
-                for v in loader_data.values():
-                    if isinstance(v, dict) and 'videoInfoRes' in v:
-                        video_info = v['videoInfoRes']
-                        break
-                
-                if not video_info or 'item_list' not in video_info or not video_info['item_list']:
-                    print('未找到视频信息')
-                    return None
-                
-                item_list = video_info['item_list'][0]
-                title = item_list['desc']
-                nickname = item_list['author']['nickname']
-                timestamp = datetime.fromtimestamp(item_list['create_time']).strftime('%Y-%m-%d')
-                thumb_url = item_list['video']['cover']['url_list'][0]
-                
-                # 处理视频URL
-                video = item_list['video']['play_addr']['uri']
-                if video.endswith('.mp3'):
-                    video_url = video
-                elif video.startswith('https://'):
-                    video_url = video
-                else:
-                    video_url = f'https://www.douyin.com/aweme/v1/play/?video_id={video}'
-                
-                # 处理图片（图集）
-                images = [img['url_list'][0] for img in (item_list.get('images') or []) if 'url_list' in img]
-                is_gallery = len(images) > 0
-                
-                return {
-                    'title': title,
-                    'nickname': nickname,
-                    'timestamp': timestamp,
-                    'thumb_url': thumb_url,
-                    'video_url': video_url,
-                    'images': images,
-                    'is_gallery': is_gallery,
-                    'video_id': video_id
-                }
-                
-        except aiohttp.ClientError as e:
-            print(f'请求错误：{e}')
-            return None
-
-    async def get_redirected_url(self, session: aiohttp.ClientSession, url: str) -> str:
-        """获取重定向后的URL"""
-        async with session.head(url, allow_redirects=True) as response:
-            return str(response.url)
-
-    async def parse_single_url(self, session: aiohttp.ClientSession, url: str) -> Optional[Dict]:
-        """解析单个抖音链接"""
-        async with self.semaphore:
-            try:
-                redirected_url = await self.get_redirected_url(session, url)
-                match = re.search(r'(\d+)', redirected_url)
-                if match:
-                    video_id = match.group(1)
-                    return await self.fetch_video_info(session, video_id)
-                else:
-                    return None
-            except aiohttp.ClientError as e:
-                print(f'解析URL失败: {e}')
-                return None
+            async with session.post(
+                self.TTWID_REGISTER_URL, json=payload, headers=self.headers,
+            ) as response:
+                response.raise_for_status()
+                body = await response.json(content_type=None)
+            if not isinstance(body, dict):
+                raise ValueError('注册响应不是 JSON 对象')
+            if body.get('redirect_url'):
+                async with session.get(
+                    body['redirect_url'], headers=self.headers, allow_redirects=False,
+                ) as response:
+                    response.raise_for_status()
+            if not session.cookie_jar.filter_cookies(share_url).get('ttwid'):
+                raise ValueError('注册响应未设置分享页 Cookie')
+        except (aiohttp.ClientError, asyncio.TimeoutError, ValueError) as error:
+            raise DouyinParseError('抖音匿名访问初始化失败，请稍后重试') from error
 
     @staticmethod
-    def extract_video_links(input_text: str) -> List[str]:
-        """从文本中提取抖音链接"""
-        result_links = []
-        
-        # 手机端链接
-        mobile_pattern = r'https?://v\.douyin\.com/[^\s]+'
-        mobile_links = re.findall(mobile_pattern, input_text)
-        result_links.extend(mobile_links)
-        
-        # 网页端链接
-        web_pattern = r'https?://(?:www\.)?douyin\.com/[^\s]*?(\d{19})[^\s]*'
-        web_matches = re.finditer(web_pattern, input_text)
-        for match in web_matches:
-            video_id = match.group(1)
-            standardized_url = f"https://www.douyin.com/video/{video_id}"
-            result_links.append(standardized_url)
-        
-        return result_links
+    def extract_router_data(text: str) -> Optional[str]:
+        """使用 JSON 解码器确定边界，避免标题中的花括号截断数据。"""
+        match = re.search(r'window\._ROUTER_DATA\s*=\s*', text)
+        if not match:
+            return None
+        data = text[match.end():]
+        _, end = json.JSONDecoder().raw_decode(data)
+        return data[:end]
+
+    @classmethod
+    def extract_video_reference(cls, url: str) -> Optional[Tuple[str, str]]:
+        """只从作品路径或明确的作品 ID 参数读取 ID，忽略分享追踪参数。"""
+        parsed = urlparse(url)
+        if parsed.hostname not in cls.HOSTS:
+            return None
+        match = re.fullmatch(r'/(?:share/|m/)?(video|note)/(\d+)/?', parsed.path)
+        if match:
+            return match.group(1), match.group(2)
+        query = parse_qs(parsed.query)
+        for key in ('modal_id', 'aweme_id', 'item_ids'):
+            value = query.get(key, [''])[0]
+            if re.fullmatch(r'\d+', value):
+                return 'video', value
+        return None
+
+    @classmethod
+    def extract_video_links(cls, input_text: str) -> List[str]:
+        links = []
+        # 提取短码时不带分享文案或中文标点；保留 note 路径。
+        pattern = r'https?://(?:[a-zA-Z0-9-]+\.)?(?:douyin|iesdouyin)\.com/[^\s<>"\']*'
+        for match in re.finditer(pattern, input_text):
+            url = match.group(0).rstrip('.,;!?，。；！？、）)]}》')
+            parsed = urlparse(url)
+            if parsed.hostname in ('v.douyin.com', 'jx.douyin.com'):
+                short_code = re.match(r'/([a-zA-Z0-9_-]+)', parsed.path)
+                if not short_code:
+                    continue
+                url = f'https://{parsed.hostname}/{short_code.group(1)}/'
+            else:
+                reference = cls.extract_video_reference(url)
+                if not reference:
+                    continue
+                kind, video_id = reference
+                url = f'{cls.SHARE_ORIGIN}share/{kind}/{video_id}/'
+            if url not in links:
+                links.append(url)
+        return links
+
+    async def get_redirected_url(self, session: aiohttp.ClientSession, url: str) -> str:
+        """用 GET 跟随短链，找到作品 ID 即停止，避免进入登录或风控页。"""
+        for _ in range(5):
+            if self.extract_video_reference(url):
+                return url
+            if urlparse(url).hostname not in self.HOSTS:
+                break
+            async with session.get(
+                url, headers=self.headers, allow_redirects=False,
+            ) as response:
+                response.raise_for_status()
+                if response.status not in (301, 302, 303, 307, 308):
+                    break
+                location = response.headers.get('Location')
+                if not location:
+                    break
+                url = urljoin(url, location)
+        if self.extract_video_reference(url):
+            return url
+        raise DouyinParseError('无法从抖音短链获取作品 ID，链接可能已失效')
+
+    @staticmethod
+    def first_url(address: Optional[Dict]) -> Optional[str]:
+        for url in (address or {}).get('url_list') or []:
+            if isinstance(url, str) and url.startswith(('https://', 'http://')):
+                return url
+        return None
+
+    async def fetch_video_info(
+        self, session: aiohttp.ClientSession, video_id: str, kind: str = 'video',
+    ) -> Dict:
+        url = f'{self.SHARE_ORIGIN}share/{kind}/{video_id}/'
+        async with session.get(url, headers=self.headers) as response:
+            response.raise_for_status()
+            response_text = await response.text()
+        try:
+            json_str = self.extract_router_data(response_text)
+            if not json_str:
+                raise DouyinParseError('抖音未返回分享页数据，请稍后重试')
+            json_data = json.loads(json_str)
+        except (json.JSONDecodeError, ValueError) as error:
+            raise DouyinParseError('抖音分享页数据格式异常') from error
+
+        item = None
+        for page in (json_data.get('loaderData') or {}).values():
+            if not isinstance(page, dict):
+                continue
+            items = (page.get('videoInfoRes') or {}).get('item_list') or []
+            if items:
+                item = items[0]
+                break
+        if not item:
+            raise DouyinParseError('未获取到抖音作品信息，作品可能已删除、设为私密或访问受限')
+
+        images = []
+        for img in item.get('images') or []:
+            image_url = self.first_url(img)
+            if image_url:
+                images.append(image_url)
+        video = item.get('video') or {}
+        play_addr = video.get('play_addr') or {}
+        video_url = self.first_url(play_addr)
+        if not video_url:
+            uri = play_addr.get('uri')
+            if uri:
+                video_url = uri if uri.startswith(('https://', 'http://')) else (
+                    'https://aweme.snssdk.com/aweme/v1/play/'
+                    f'?video_id={quote(uri, safe="")}&ratio=720p'
+                )
+        if video_url:
+            video_url = video_url.replace('/playwm/', '/play/')
+        if not images and not video_url:
+            raise DouyinParseError('抖音作品未返回可下载的视频或图片')
+
+        timestamp = item.get('create_time')
+        return {
+            'title': item.get('desc') or '',
+            'nickname': (item.get('author') or {}).get('nickname') or '未知作者',
+            'timestamp': datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d') if timestamp else '',
+            'thumb_url': self.first_url(video.get('cover')) or (images[0] if images else None),
+            'video_url': video_url,
+            'images': images,
+            'is_gallery': bool(images),
+            'video_id': video_id,
+        }
+
+    async def parse_single_url(self, session: aiohttp.ClientSession, url: str) -> Dict:
+        async with self.semaphore:
+            redirected_url = await self.get_redirected_url(session, url)
+            kind, video_id = self.extract_video_reference(redirected_url)
+            return await self.fetch_video_info(session, video_id, kind)
 
     async def parse_urls(self, urls: List[str]) -> List[Dict]:
-        """批量解析抖音链接"""
+        self.errors = []
         results = []
-        async with aiohttp.ClientSession() as session:
-            tasks = [self.parse_single_url(session, url) for url in urls]
-            parsed_results = await asyncio.gather(*tasks, return_exceptions=True)
-            
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=10)) as session:
+            # 同一批链接共享匿名 Cookie；aiohttp 按域管理注册与回调的 Cookie。
+            await self.ensure_ttwid(session)
+            parsed_results = await asyncio.gather(
+                *(self.parse_single_url(session, url) for url in urls),
+                return_exceptions=True,
+            )
             for result in parsed_results:
-                if result and not isinstance(result, Exception):
+                if isinstance(result, Exception):
+                    message = self.error_message(result)
+                    self.errors.append(message)
+                    print(f'抖音解析失败: {message}', file=sys.stderr)
+                elif result:
                     results.append(result)
-                elif isinstance(result, Exception):
-                    print(f'解析失败: {result}')
-        
         return results
 
     async def parse_text(self, text: str) -> List[Dict]:
-        """从文本中提取并解析抖音链接"""
+        self.errors = []
         urls = self.extract_video_links(text)
-        if not urls:
-            return []
-        return await self.parse_urls(urls)
+        return await self.parse_urls(urls) if urls else []
+
+    @staticmethod
+    def error_message(error: Exception) -> str:
+        if isinstance(error, asyncio.TimeoutError):
+            return '抖音请求超时，请稍后重试'
+        if isinstance(error, aiohttp.ClientResponseError):
+            return f'抖音请求失败（HTTP {error.status}），请稍后重试'
+        if isinstance(error, aiohttp.ClientError):
+            return '无法连接抖音，请检查网络后重试'
+        return str(error) or type(error).__name__
 
 
 def format_result_simple(result: Dict) -> Dict:
-    """格式化结果为简单字典"""
     return {
         'title': result['title'],
         'author': result['nickname'],
@@ -188,56 +253,27 @@ def format_result_simple(result: Dict) -> Dict:
         'cover_url': result['thumb_url'],
         'images': result['images'],
         'is_gallery': result['is_gallery'],
-        'video_id': result['video_id']
+        'video_id': result['video_id'],
     }
 
 
 async def main():
-    """主函数 - 用于命令行调用"""
+    parser = DouyinParser()
     try:
         if len(sys.argv) < 2:
-            print(json.dumps({
-                "success": False,
-                "error": "用法: python douyin_parser.py <抖音链接或包含链接的文本>"
-            }, ensure_ascii=False))
-            sys.exit(1)
-        
-        input_text = sys.argv[1]
-        parser = DouyinParser()
-        
-        try:
-            results = await parser.parse_text(input_text)
-            if not results:
-                print(json.dumps({
-                    "success": False,
-                    "error": "未找到有效的抖音链接"
-                }, ensure_ascii=False))
-                return
-            
-            # 格式化结果
-            formatted_results = [format_result_simple(result) for result in results]
-            
-            # 输出JSON结果
-            print(json.dumps({
-                "success": True,
-                "count": len(formatted_results),
-                "data": formatted_results
-            }, ensure_ascii=False, indent=2))
-            
-        except Exception as e:
-            print(json.dumps({
-                "success": False,
-                "error": f"解析失败: {str(e)}"
-            }, ensure_ascii=False))
-            
-    except Exception as e:
-        # 捕获所有未处理的异常
-        print(json.dumps({
-            "success": False,
-            "error": f"程序异常: {str(e)}"
-        }, ensure_ascii=False))
-        sys.exit(1)
+            raise DouyinParseError('用法: python douyin_parser_standalone.py <抖音链接或分享文案>')
+        # 比 Node 的 30 秒超时提前结束，保证网络超时也能返回 JSON 错误。
+        results = await asyncio.wait_for(parser.parse_text(sys.argv[1]), timeout=25)
+        if not results:
+            raise DouyinParseError(parser.errors[0] if parser.errors else '未找到有效的抖音链接')
+        data = [format_result_simple(result) for result in results]
+        output = {'success': True, 'count': len(data), 'data': data}
+    except Exception as error:
+        message = parser.error_message(error)
+        print(f'抖音解析失败: {message}', file=sys.stderr)
+        output = {'success': False, 'error': message}
+    print(json.dumps(output, ensure_ascii=False))
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     asyncio.run(main())

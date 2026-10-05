@@ -136,7 +136,7 @@ export class Douyin_Video extends plugin {
                     }
                 }
             } else {
-                await e.reply('❌ 解析失败：未获取到有效数据', true);
+                await e.reply(`❌ 抖音解析失败：${result.error || '未获取到有效数据'}`, true);
                 return false;
             }
 
