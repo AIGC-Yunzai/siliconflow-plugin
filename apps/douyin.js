@@ -3,6 +3,7 @@ import Config from '../components/Config.js'
 import { Douyin_parser } from '../utils/Video_parser_nodejs.js'
 import fetch from 'node-fetch'
 import common from '../../../lib/common/common.js'
+import { sendDouyinGallery } from '../utils/douyinGallery.js'
 
 export class Douyin_Video extends plugin {
     constructor() {
@@ -37,28 +38,10 @@ export class Douyin_Video extends plugin {
                     try {
                         // 如果是图集
                         if (item.is_gallery && item.images && item.images.length > 0) {
-                            // 如果图片数量大于3张，使用合并转发
-                            if (item.images.length > 3) {
-                                // 先发送封面和基本信息
-                                if (item.cover_url) {
-                                    await e.reply([segment.image(item.cover_url), `${infoText}\n图数: ${item.images.length}张`], true);
-                                }
-                                // 创建合并转发消息
-                                const forwardMsgs = [
-                                    `${item.title}`,
-                                    `作者: ${item.author}\n日期: ${item.date}\n图数: ${item.images.length} 张`
-                                ];
-                                // 添加所有图片到合并转发
-                                item.images.forEach((img, index) => {
-                                    forwardMsgs.push(segment.image(img));
-                                });
-                                const msgx = await common.makeForwardMsg(e, forwardMsgs);
-                                await e.reply(msgx);
-                            } else {
-                                // 图片数量不超过3张，直接发送所有图片
-                                const imageSegments = item.images.map(img => segment.image(img));
-                                await e.reply([...imageSegments, infoText], true);
-                            }
+                            await sendDouyinGallery(e, item, infoText, {
+                                makeImage: buffer => segment.image(buffer),
+                                makeForwardMsg: common.makeForwardMsg,
+                            });
                         }
                         // 如果是视频
                         else if (item.video_url) {

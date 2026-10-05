@@ -75,6 +75,15 @@ class Session:
 
 
 class LinkTests(unittest.TestCase):
+    def test_gallery_prefers_existing_signed_jpeg_url(self):
+        address = {'url_list': [
+            'https://example.com/body.webp?signature=webp',
+            'https://example.com/body.jpeg?signature=jpeg',
+        ]}
+        self.assertEqual(
+            DouyinParser.first_url(address, prefer_jpeg=True), address['url_list'][1],
+        )
+
     def test_user_share_text_and_duplicate_short_links(self):
         text = f'5.30 BGI:/ k@p.QX 09/21 原神又上央视了 {SHORT_URL}复制此链接！ {SHORT_URL}'
         self.assertEqual(DouyinParser.extract_video_links(text), [SHORT_URL])
@@ -149,6 +158,31 @@ class ParseTests(unittest.IsolatedAsyncioTestCase):
         )
         self.assertIn('video_id=video-token', result['video_url'])
         self.assertIsNone(result['thumb_url'])
+
+    async def test_static_gallery_music_is_not_a_video(self):
+        music_url = 'https://example.com/music.mp3?token=test'
+        item = video_item()
+        item['images'] = [{'url_list': ['https://example.com/original.jpg']}]
+        item['video']['play_addr'] = {
+            'uri': music_url,
+            'url_list': [f'https://aweme.snssdk.com/aweme/v1/playwm/?video_id={music_url}'],
+        }
+        result, _ = await self.run_cli(SHARE_URL, Session([Response(share_html(item))]))
+        parsed = result['data'][0]
+        self.assertTrue(parsed['is_gallery'])
+        self.assertEqual(parsed['images'], ['https://example.com/original.jpg'])
+        self.assertIsNone(parsed['video_url'])
+        self.assertEqual(parsed['audio_url'], music_url)
+
+    async def test_direct_music_url_is_not_a_video(self):
+        item = video_item()
+        item['images'] = [{'url_list': ['https://example.com/original.jpg']}]
+        item['video']['play_addr'] = {'url_list': ['https://example.com/music.mp3']}
+        result = await DouyinParser().fetch_video_info(
+            Session([Response(share_html(item))]), VIDEO_ID,
+        )
+        self.assertIsNone(result['video_url'])
+        self.assertEqual(result['audio_url'], 'https://example.com/music.mp3')
 
     async def run_cli(self, text, session):
         stdout, stderr = io.StringIO(), io.StringIO()

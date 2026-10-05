@@ -139,11 +139,14 @@ class DouyinParser:
         raise DouyinParseError('无法从抖音短链获取作品 ID，链接可能已失效')
 
     @staticmethod
-    def first_url(address: Optional[Dict]) -> Optional[str]:
-        for url in (address or {}).get('url_list') or []:
-            if isinstance(url, str) and url.startswith(('https://', 'http://')):
-                return url
-        return None
+    def first_url(address: Optional[Dict], prefer_jpeg: bool = False) -> Optional[str]:
+        urls = [url for url in (address or {}).get('url_list') or []
+                if isinstance(url, str) and url.startswith(('https://', 'http://'))]
+        if prefer_jpeg:
+            for url in urls:
+                if urlparse(url).path.lower().endswith(('.jpg', '.jpeg', '.png')):
+                    return url
+        return urls[0] if urls else None
 
     async def fetch_video_info(
         self, session: aiohttp.ClientSession, video_id: str, kind: str = 'video',
@@ -173,14 +176,23 @@ class DouyinParser:
 
         images = []
         for img in item.get('images') or []:
-            image_url = self.first_url(img)
+            image_url = self.first_url(img, prefer_jpeg=True)
             if image_url:
                 images.append(image_url)
         video = item.get('video') or {}
         play_addr = video.get('play_addr') or {}
+        uri = play_addr.get('uri')
+        audio_url = None
         video_url = self.first_url(play_addr)
-        if not video_url:
-            uri = play_addr.get('uri')
+        # 静态图文的 play_addr 可能把 MP3 包装在视频播放端点中。
+        # 优先识别原始 URI，不能把背景音乐当作可发送的 MP4。
+        if uri and uri.startswith(('https://', 'http://')) and urlparse(uri).path.lower().endswith('.mp3'):
+            audio_url = uri
+            video_url = None
+        elif video_url and urlparse(video_url).path.lower().endswith('.mp3'):
+            audio_url = video_url
+            video_url = None
+        elif not video_url:
             if uri:
                 video_url = uri if uri.startswith(('https://', 'http://')) else (
                     'https://aweme.snssdk.com/aweme/v1/play/'
@@ -198,6 +210,7 @@ class DouyinParser:
             'timestamp': datetime.fromtimestamp(timestamp).strftime('%Y-%m-%d') if timestamp else '',
             'thumb_url': self.first_url(video.get('cover')) or (images[0] if images else None),
             'video_url': video_url,
+            'audio_url': audio_url,
             'images': images,
             'is_gallery': bool(images),
             'video_id': video_id,
@@ -250,6 +263,7 @@ def format_result_simple(result: Dict) -> Dict:
         'author': result['nickname'],
         'date': result['timestamp'],
         'video_url': result['video_url'],
+        'audio_url': result.get('audio_url'),
         'cover_url': result['thumb_url'],
         'images': result['images'],
         'is_gallery': result['is_gallery'],
